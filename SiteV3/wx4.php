@@ -228,8 +228,8 @@ for($r = 0; $r < count($dataCat); $r++) {
 		td( conv( $HR24['trend'][0][$li] - $HR24['trend'][$diff][$li], $convType[$pos], false, true ), $tdClass );
 	}
 	td( conv( $HR24['changeDay'][$li], $convType[$pos], false, true ), $tdClass );
-	td( conv( $valuesMon[$li], $convType[$pos], false, true ), $tdClass );
-	td( conv( $valuesYear[$li], $convType[$pos], false, true ), $tdClass );
+	td( conv( $HR24['trend'][0][$li] - $valuesMon[$li], $convType[$pos], false, true ), $tdClass );
+	td( conv( $HR24['trend'][0][$li] - $valuesYear[$li], $convType[$pos], false, true ), $tdClass );
 	tr_end();
 }
 table_end();
