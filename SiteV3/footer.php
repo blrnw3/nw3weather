@@ -1,0 +1,66 @@
+<?php
+$message = in_array($file, array(5,2,6)) ? 'Caution: Information provided carries no guarantee.' :
+	'Caution: This data is recorded by an amateur-run personal weather station - its accuracy and reliability cannot be guaranteed.';
+
+$phpload = myround(microtime(get_as_float) - $scriptbeg, 3);
+if($dyear < 2000) { //some sort of non-inclusion
+	$dyear = date("Y");
+	$phpload = 0;
+}
+?>
+<br />
+<div id="footer">
+	<div>
+		<a href="#header">Top</a> |
+		<a href="contact.php" title="E-mail me">Contact</a> |
+		<a href="http://nw3weather.co.uk" title="Browse to homepage">Home</a>
+	</div>
+	<div>
+		&copy; 2010-<?php echo $dyear; ?>, B. Lee-Rodgers<span> | Site version 3</span>
+	</div>
+	<div>
+		<?php echo $message; ?>
+	</div>
+	<div>
+		<span style="font-size:85%">
+			<a href="http://validator.w3.org/check?uri=referer" title="check the W3C validity of this page">XHTML and CSS valid</a> |
+			<?php
+			echo 'PHP executed '. acronym('Session count: '. $_SESSION['count'][$file], 'in ') . $phpload .'s';
+			if(strlen($TIMESTAMP) > 2) {
+				//echo '<br />Last full data process: ' . $TIMESTAMP;
+			}	?>
+		</span>
+	</div>
+</div>
+
+</div> <!-- //end page div -->
+</div>
+
+<?php
+echo "<!-- ";
+if($me) print_r($_SESSION);
+echo "-->";
+
+if(!$me && !$is_bot) {
+	$unitLand = $imperial ? 'US' : ($metric ? 'EU' : 'UK');
+	log_events("siteV3Access.txt", $phpload .' '. $unitLand .' '. makeBool($auto));
+}
+// Mail/logging alerts
+$wcimg = $root.date("Y/Ymd", mkday($dday-1,$dyear)).'dailywebcam.jpg';
+if( !file_exists($wcimg) && date('H') < 3 ) {
+	mail("alerts@nw3weather.co.uk","Old WC image","Warning! Latest webcam image summary not created! Act now!", "From: server");
+}
+if($_SESSION['count'][$file] == 20 && $phpload < 100 && !$is_bot && !$me) {
+	log_events("session_counts.txt", "");
+}
+
+if($phpload > 1 && !$is_bot && !$me) {
+	log_events("process_times.txt", $phpload);
+}
+
+if($mailBufferCount > 0) {
+	foreach($mailBuffer as $email) {
+		server_mail($email['file'], $email['content']);
+	}
+}
+?>
