@@ -274,7 +274,10 @@ for($i = 0; $i < count($forecastIcons); $i++) {
 		break;
 	}
 }
-if( $time > $sunset && ($icon == 'clear' || $icon == 'partlycloudy') ) {
+if($i <= count($forecastIcons) && strpos($fcast, "Chance") !== false) {
+	$icon .= '_showers';
+}
+elseif( $time > $sunset && ($icon == 'clear' || $icon == 'partlycloudy') ) {
 	$icon = 'nt_'. $icon;
 }
 echo '<img src="/static-images/'.$icon.'_lg.png" style="background-color:#CCCEEC;" title="'.$fcast.'" width="83" height="81" alt="London Forecast icon" />';
