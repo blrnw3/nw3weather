@@ -131,7 +131,7 @@ if($tstamp == '0000') {
 	copy(ROOT."stitchedmaingraph_small.png", $target_st .'small_'. $target_en);
 
 	// WU view count
-	$filwu = urlToArray('http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=ILONDONL9', 1);
+	$filwu = urlToArray('http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=ILONDONL9');
 	if($filwu !== false) {
 		for ($i = 650; $i < 1950; $i++) {
 			if(strpos($filwu[$i],"Viewed") > 0) {
@@ -451,7 +451,7 @@ function serialiseCSVm() {
 }
 
 function getSunHrs() {
-	$fileSun = urlToArray("http://www.weatheronline.co.uk/weather/maps/current?CONT=ukuk&TYP=sonne&ART=tabelle");
+	$fileSun = urlToArray("http://www.weatheronline.co.uk/weather/maps/current?CONT=ukuk&TYP=sonne&ART=tabelle", 7);
 	if(!$fileSun) return "0";
 	$len = count($fileSun);
 	$sunHrs = 0;
