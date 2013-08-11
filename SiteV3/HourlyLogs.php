@@ -4,12 +4,17 @@ require('unit-select.php');
 include($root.'functions.php');
 echo "<html>";
 
+//End Date
 $Eday = isset($_GET['Eday']) ? intval($_GET['Eday']) : $day_yest;
 $Emonth = isset($_GET['Emonth']) ? intval($_GET['Emonth']) : $mon_yest;
 $Eyear = isset($_GET['Eyear']) ? intval($_GET['Eyear']) : $yr_yest;
+
+//Start (first) Date
 $Fday = isset($_GET['Fday']) ? intval($_GET['Fday']) : 1;
 $Fmonth = isset($_GET['Fmonth']) ? intval($_GET['Fmonth']) : $mon_yest;
 $Fyear = isset($_GET['Fyear']) ? intval($_GET['Fyear']) : $yr_yest;
+
+$format = isset($_GET['format']) ? $_GET['format'] : 'txt'; 
 
 $names = array( "Hour", "Minute", "Day", "10-min wind speed / mph", "Max Gust / mph",
 		"Wind direction / degrees", "Temperature / C", "Relative humidity / %", "Pressure / hPa", "Dew Point / C",
@@ -22,7 +27,7 @@ while( intval($date) < date("Ymd",mktime(0,0,0,$Emonth,$Eday,$Eyear)) ) {
 	$time = mktime(0,0,0,$Fmonth,$d,$Fyear);
 	$date = date("Ymd",$time);
 	if( date("j",$time) == 1 ) {
-		$handle = fopen( $root."logfiles/monthly/". date("Ym",$time).'hourlog.txt',"w" );
+		$handle = fopen( $root."logfiles/monthly/". date("Ym",$time).'hourlog.'.$format,"w" );
 		fwrite($handle, implode(',', $names) . "\r\n");
 	}
 	$fname = $root."logfiles/daily/".$date."log.txt";

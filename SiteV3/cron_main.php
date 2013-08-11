@@ -201,6 +201,7 @@ if($tstamp % 100 == 0) {
 	if($xml !== false) { //grab the data if available
 		$condition = $xml->forecast->simpleforecast->forecastdays->forecastday->conditions;
 		file_put_contents(ROOT."WUforecast.txt", $condition);
+//		file_put_contents(ROOT."WUforecastDump.txt", print_r($xml->forecast->simpleforecast->forecastdays, true));
 	}
 }
 

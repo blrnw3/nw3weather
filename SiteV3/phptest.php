@@ -34,8 +34,8 @@ require('unit-select.php'); ?>
 <h1>PHP test page 2</h1>
 <?php
 
-// ######## A lesson on why not to use (int) castng in PHP! ##########
-echo '<h2>A lesson on why not to use (int) castng in PHP!</h2>
+// ######## A lesson on why not to use (int) casting in PHP! ##########
+echo '<h2>A lesson on why not to use (int) casting in PHP!</h2>
 <h3>Code</h3>
 <pre>
 $num = 2.3;
@@ -43,7 +43,7 @@ $dpVal = ($num - 2) * 10;
 $dpInt = (int)$dpVal;
 $dpInt2 = (int)round($dpVal);
 </pre>
-<h3>Output</h3>';
+<h3>var_dump() Output for each var above</h3>';
 
 $num = 2.3;
 $dpVal = ($num - 2) * 10;
@@ -55,6 +55,8 @@ var_dump($num);
 var_dump($dpVal);
 var_dump($dpInt);
 var_dump($dpInt2);
+
+echo("<h2>Conclusion: use <code>round(val)</code> NOT (int)val</h3>");
 
  //var_dump($vars);
 

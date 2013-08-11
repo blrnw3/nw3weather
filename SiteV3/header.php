@@ -18,7 +18,7 @@ $timeStampBest = min($timestampCrontags, $dateTimeStamp); //oldest
 echo "<!-- WDtimestamp: $dateTimeStamp, CrontagsTimestamp: $timestampCrontags -->";
 
 if($file == 20): $shr = 'Last Updated: 28 Sep 2012'; //climate
-elseif($file == 7 && !$subfile): $shr = 'Last Upload: 06 Apr 2013';
+elseif($file == 7 && !$subfile): $shr = 'Last Upload: 11 Aug 2013';
 elseif($file == 7 && $subfile): $shr = 'Uploaded on ' . $uploadDate;
 elseif($file == 8): $shr = 'Last Updated: May 2013';
 elseif($file == 9): $shr = 'Page Last Updated: 29 Mar 2013';

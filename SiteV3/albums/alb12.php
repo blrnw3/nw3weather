@@ -1,21 +1,21 @@
 <?php
-$uploadDate = '06 Apr 2013';
+$uploadDate = '11 Aug 2013';
 
 $imgdescrip = array(
-	'9th December, London NW3 Moon rise at 5pm',
-	'19th December, 9am Sunrise over London Docklands to the East',
-	'19th December, 9am Sunrise over City of London to the South-East',
-	'28th December, 5pm London Sunset observed from Hampstead Heath',
-	'5th February, Cambridge Bike Rack after Heavy Snowfall',
-	'10th February, Cambridge still experiencing Cold and Snow',
-	'11th February, Bitter -13&deg;C Cold in Cambridge covers this Tree in Ice (nw3 saw -8&deg;C)',
-	'23rd February, Sunset over Cambridgeshire - much Warmer by now',
-	'23rd February, Sunset over Cambridgeshire 2 - the Warmth would continue through to March',
+	'18th April, NW3 rainbow, one of many in a very wet and showery month',
+	'18th April, NW3 double rainbow, the second of the day',
+	'19th April, NW3 storm clouds over the Heath. Very few dry days that month',
+	'15th May, Cambridge hail shower. The showery weather continued into May, though the month was drier',
+	'15th May, Cambridge hail shower, close-up',
+	'21st August, Tuscan sunset. It was a wet summer in NW3, but much drier in Italy',
+	'7th September, Norwegian rainbow. Near Bergen, a famously wet place of Europe',
+	'7th September, Norwegian rainbow 2. In the hills',
+	'9th September, Norway. Low clouds over a fjord in Flam'
 );
 
-$albdescrip = 'Photos from London in December and Cambridge in February. <br />Decemeber and January were
-	Sunny, Mild and generally benign. February was very Cold and Snowy for the first half, but warmed up
-	considerably to end up close to average, but dry. March was very Warm, Sunny and Dry - in no way
-	can it be included as a Winter month for the 2011-2012 season.
-	<br /> Click on or hover over thumbnail to get the location and date of a photo.';
+$albdescrip = 'Photos of April showers in London, a May hail shower in Cambridge, a Tuscan August
+	sunset, and rainbows/clouds in Norwegian September. <br />
+	In London, a very warm and sunny March gave way to a cool and very wet April.
+	May through september yielded a mixed bag, though a notable cool, wet June.'
+;
 ?>
