@@ -171,19 +171,21 @@ function pause() {
 <td width="25%" align="center"><b><span style="color:#610B0B">Weather Report</span></b>
 <br /><br /><?php //decode WD cond, using metar too
 $rnrt = $HR24['misc']['rnrate'];
+$nw3Raining = (($HR24['trendRn'][0] - $HR24['trendRn'][1]) > 0);
 $METAR = file_get_contents("METAR.txt");
 
 //weather
 $weather = 'Dry'; //default
-if($rnrt > 0) {
+if($nw3Raining) { //Rained in past hour
 	//Detect showers by 30-min temp/hum change
 	$isShower = ( $HR24['trend'][0]['temp'] - $HR24['trend'][30]['temp'] <= -0.3
 		|| $HR24['trend'][0]['hum'] - $HR24['trend'][30]['hum'] >= 5 );
 	$rnType = $isShower ? 'Shower' : 'Rain';
 
 	//Detect intensity based on current rain rate
-	$intensities = array('Slight', 'Light', 'Moderate', 'Heavy', 'Very Heavy', 'Torrential');
-	$intensityThresholds = array(0.5, 2, 8, 35, 60, 500);
+	//If only 0.3mm, no rate is available (i.e. 0), so give no intensity
+	$intensities = array('', 'Slight', 'Light', 'Moderate', 'Heavy', 'Very Heavy', 'Torrential');
+	$intensityThresholds = array(0.1, 0.5, 2, 8, 35, 60, 500);
 	for ($i = 0; $i < count($intensityThresholds); $i++) {
 		if($rnrt < $intensityThresholds[$i]) {
 			$intensity = $intensities[$i];
@@ -217,10 +219,10 @@ if($rnrt > 0) {
 }
 
 //cloud
-$cloud = 'Clear'; //default
+$cloud = ($nw3Raining || $metarRaining || $foggy || $snowing) ? 'Cloudy' : 'Clear'; //default
 $cumulonimbus = strContains($METAR, array('CB')) ? acronym('Cumulonimbus cloud', 'Cb cloud', true) ." observed" : "";
-$METARcloudTypes = array('OVC', 'BKN', 'SCT', 'FEW');
-$METARcloudDescrips = array('Overcast', 'Mostly cloudy', 'Partly cloudy', 'Mostly clear');
+$METARcloudTypes = array('OVC', 'BKN', 'SCT', 'FEW', 'NSC');
+$METARcloudDescrips = array('Overcast', 'Mostly cloudy', 'Partly cloudy', 'Mostly clear', 'Cloudy');
 foreach ($METARcloudTypes as $i => $cloudSrch) {
 	if(strContains($METAR, $cloudSrch)) {
 		$cloud = $METARcloudDescrips[$i];
