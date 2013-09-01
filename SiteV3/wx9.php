@@ -3,7 +3,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?php 
+<?php
 $file = 9;
 ?>
 
@@ -50,9 +50,9 @@ $file = 9;
 	<p>
 		I have developed the <i>Live Weather Compare Europe</i> mobile application for Android. <br />
 		<a href="https://play.google.com/store/apps/details?id=co.uk.wxApp" title="Download from Google Play">Available on GooglePlay</a>
-		and the <a href="http://apps.samsung.com/venus/topApps/topAppsDetail.as?COUNTRY_CODE=GBR&amp;productId=000000547944&amp;listYN=Y" title="Download from Samsung">Samsung Store</a>. <br />
+		 <br />
 		It is free of charge and free of advertising. It allows comparison of the weather across Europe. Data from nw3weather is also available. <br />
-		Part of the app is web-based for all to see: <a href="/CP_Solutions/WxApp/?desktop">Ranked European Live Weather Data</a>.
+		Part of the app is web-based for all to see: <a href="http://wxapp.nw3weather.co.uk/Webview/">Ranked European Live Weather Data</a>.
 	</p>
 
 	<h2>Mobile nw3weather</h2>
@@ -122,7 +122,7 @@ $file = 9;
 				Glossary of Meteorology</a></li>
 		<li>	<a href="http://www.metoffice.gov.uk/corporate/library/factsheets.html"
 				title="Met Office Factsheets - really good!">
-				Meteorological Factsheets from the Met Office</a></li>
+				Meteorological Fact sheets from the Met Office</a></li>
 		<li>	<a href="http://en.wikipedia.org/wiki/Weather_forecasting"
 				title="Weather Forecasting Methods">
 				How Weather Forecasting Works</a></li>
@@ -151,7 +151,7 @@ $file = 9;
 	<ul>
 		<li>	<a href="http://www.w3schools.com/html/default.asp"
 				title="W3schools HTML tutorial">
-				Writing HTML (also good intro to CSS, PHP, Javscript and other web technologies)</a></li>
+				Writing HTML (also good intro to CSS, PHP, JavaScript and other web technologies)</a></li>
 		<li>  <a href="http://www.php.net/manual/en/language.functions.php"
 				 title="PHP function reference">
 				PHP manual - more advanced reference for PHP - the easy way to add server-side functionality</a></li>
