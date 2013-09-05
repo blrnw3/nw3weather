@@ -3,7 +3,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?php 
+<?php
 	$file = 85; ?>
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -77,7 +77,7 @@ if(mkdate() == $sproc) { //include today
 	if(time() > mktime(0,6)) { $custom = $NOW; }
 	if($dhr < 21) { $nmin = $NOW['min']['night']; } else { $nmin = ''; }
 	unset($ddat,$ddatt);
-	
+
 	$ddat = array(
 		$custom['min']['temp'], $custom['max']['temp'], $custom['mean']['temp'],
 		$custom['min']['humi'], $custom['max']['humi'], $custom['mean']['humi'],
@@ -440,7 +440,7 @@ if($todcond) {
 	if($sproc < mkdate(6,27,2012)) { $endtag = 'gif'; } else { $endtag = 'jpg'; }
 	if(file_exists($root. $pastcamstamp. 'webcam.'.$endtag)) { echo '<img src="/', $pastcamstamp, 'webcam.',$endtag,'" alt="daycamsum" />'; }
 	else { echo '<br />Webcam summary not available for this day'; }
-	if($endtag == 'gif' && file_exists($root. $pastcamstamp. 'webcam2.gif')) { echo '<img src="/', $pastcamstamp, 'webcam.gif" alt="daycamsum2" />'; }
+	if($endtag == 'gif' && file_exists($root. $pastcamstamp. 'webcam2.gif')) { echo '<img src="/', $pastcamstamp, 'webcam2.gif" alt="daycamsum2" />'; }
 }
 else { echo 'Daily breakdown not available until 09:07, when a partial report will be generateable.'; }
 ?>
