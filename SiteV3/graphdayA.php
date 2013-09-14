@@ -9,15 +9,20 @@ $autoscale = true;
 include($root.'graphdaygen.php');
 
 //print_m($dextra);
+$rnmaxScale = roundbig($unitcorr2);
+if(false && $me) {
+	echo $rnmaxScale;
+	echo "<br />". $data['rnmax'];
+}
 
 $graph = new Graph($dimx,$dimy); $marg2 = 10;
-if($dtype == 'rain') { $graph->SetScale('text'.$rnlin,0,$unitcorr2); $marg3 = 28; }
+if($dtype == 'rain') { $graph->SetScale('text'.$rnlin,0,$rnmaxScale); $marg3 = 28; }
 elseif($dtype == 'wdir') { $graph->SetScale('textlin',0,360); $wdirSet = true; $marg3 = 22; }
 else { $graph->SetScale('textint'); }
 
 for($i = 0; $i < 5; $i++) {
 	if($dble[$i]) {
-		if($dextra[$i] == 'rain') { $graph->SetYScale($i,$rnlin,0,$unitcorr2); $marg3 = 28; }
+		if($dextra[$i] == 'rain') { $graph->SetYScale($i,$rnlin,0,$rnmaxScale); $marg3 = 28; }
 		else { $graph->SetYScale($i,'int'); }
 	$extra .= ' & '.$daynames[$dextra[$i]]; $marg2 +=45; }
 }

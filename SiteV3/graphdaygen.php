@@ -140,7 +140,8 @@ for($i = 1; $i < $cnt1; $i++) {
 //	}
 }
 //rain smoothing alpha testing
-if($me) {
+//Not keen, deprecate.
+if(false && $me) {
 	for($i = 1; $i < $cnt1; $i++) {
 		$diff2 = $data[10][$i] - $data[10][$i-1];
 		if($diff2 > $baroSmoothDiff) {
@@ -224,7 +225,7 @@ function graphdaydata($logf, $stt, $end, $multi, $wdirNeeded) {
 
 	if(is_array($dat[0])) {
 		$dat['startmin'] = $dat[1][$stt]; if($multi > 1) { $dat['startmin'] = 0; }
-		$dat['rnmax'] = max($dat[10]);
+		$dat['rnmax'] = mymax($dat[10]);
 		$dat['enddate'] = date('H:i, jS M', mktime($dat[0][$i-$multi],$dat[1][$i-$multi],0,$GLOBALS['dmonth'],$dat[2][$i-$multi]));
 		return $dat;
 	} else {
