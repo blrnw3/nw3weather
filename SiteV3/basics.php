@@ -7,7 +7,7 @@ $root = ROOT;
 
 const EXEC_PATH = '/usr/local/bin/php -q /home/nwweathe/public_html/';
 
-/** * Path to the live data text file */
+/** Path to the live data text file */
 const LIVE_DATA_PATH = '/home/nwweathe/public_html/clientraw.txt';
 
 $fullpath = $siteRoot = ROOT;
@@ -86,18 +86,21 @@ const GRAPH_DIMS_LARGE = ' height="1017" width="850" ';
 const GRAPH_DIMS_SMALL = ' height="619" width="542" ';
 
 /*
- * ######  Work needed  #####
- * WD dependendecy elimination - wx2 alldayvid (imagick?), wind rose, rareTags, indoor data
- * grapharchive default to mini-graphs but js-switchable - REWRITE TO BE TOTAL JS
- * new alblum
+ * ###### BUGS #####
+ *
+ * ######  WD dependendecy reduction  #####
+ * webcam timelapses (v. difficult in PHP, but could do ffmpeg locally
+ * wind rose
  *
  * ##### Site switch ######
  * contact casa about clientraw backup
  *
  * ### Postpone to after site-launch ###
+ * Complete redesign of software
  * wx16
  * dynamic-image caching, page cache control, wxhistyear, monthly ranks - extend to min/max/sum/count
  * index (random ranking stat), live compare to EGLL&EGWU&StJames
+ * grapharchive default to mini-graphs but js-switchable - REWRITE TO BE TOTAL JS
  *
  * crontags - execution strategy change: some tags only need generating daily,
  * and SHOULD be to prevent records being set from incomplete day.

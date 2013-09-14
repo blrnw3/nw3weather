@@ -21,7 +21,7 @@ if($crsizeFinal === 0) {
 }
 
 ######## TO BE COMPLETED  ###########
-//pseudeo code for when I get this sorted
+//pseudo code for when I get this sorted
 //if($oldData) {
 //	$usePath = 'ucl data';
 //}

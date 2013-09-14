@@ -29,9 +29,9 @@ $goodlog = ROOT.'goodlog.txt';
 $todaylog = ROOT.'logfiles/daily/todaylog.txt';
 
 //Rebuild 24hr and today data logs, plus neaten.
-//Do hourly (on top of after downtime) just for extra security, and in case the cron missed an append
+//Do 10-minutely (on top of after downtime) just for extra security, and in case the cron missed an append
 $recentWDdowntime = time() - filemtime(ROOT. "Logs/WDuploadReallyBad.txt") < 1200;
-if(date('i') == 50 || $recentWDdowntime) {
+if($tstamp != '0000' && (date('i') % 10 == 0 || $recentWDdowntime)) {
 	$fsize = filesize(ROOT.'customtextout.txt');
 	$fage = time() - filemtime(ROOT.'customtextout.txt');
 	if($fsize > 56000 && $fage < 60) { //probably new and valid
@@ -43,11 +43,16 @@ if(date('i') == 50 || $recentWDdowntime) {
 
 //Prepare data for appending logs
 $lineVars = array($wind, $gust, $wdir, $temp, $humi, $pres, $dewp, $rain);
+$isBadLineData = ($pres == 0);
 $newLine = date('H,i,j,');
 foreach ($lineVars as $value) {
 	$newLine .= round( trim($value), 1) . ',';
 }
 $newLine = substr($newLine, 0, strlen($newLine)-1) . "\r\n";
+########################################################
+//NEWLINE IS SOMETIMES 0,0,0,0,0,0,0,0,0 (AFTER DATETIME STAMP).
+//MUST FIX (POST DATA MAY WELL FIX PROBLEM)
+########################################################
 
 //Midnight procedures
 if($tstamp == '0000') {
@@ -63,15 +68,19 @@ if($tstamp == '0000') {
 	file_put_contents($todaylog, $newLine, FILE_APPEND);
 }
 
-//Append goodlog, deleteing the oldest line
-$oldLines = file($goodlog);
-$len = count($oldLines);
-$filelog = fopen($goodlog, "w");
-for($i = 1; $i < $len; $i++) {
-	fwrite($filelog, $oldLines[$i]);
+//Append goodlog, deleting the oldest line
+if(!$isBadLineData) {
+	$oldLines = file($goodlog);
+	$len = count($oldLines);
+	$filelog = fopen($goodlog, "w");
+	for($i = 1; $i < $len; $i++) {
+		fwrite($filelog, $oldLines[$i]);
+	}
+	fwrite($filelog, $newLine);
+	fclose($filelog);
+} else {
+	quick_log("bad_dataline.txt", "");
 }
-fwrite($filelog, $newLine);
-fclose($filelog);
 
 // make date-alias of goodlog (this is needed, even though goodlog never called elsewhere, to keep the 24hr rolling aspect going
 copy($goodlog, $stamplog);
@@ -176,11 +185,12 @@ if(date('i') % 15 == 1) {
 	}
 }
 
+$HR24 = unserialize(file_get_contents(ROOT. 'serialised_datHr24.txt'));
 //24hr Rain exceeds 20 mm
 $rn24hrs = $HR24['trendRn'][0];
-if($rn24hrs > 20 && $rn24hrs > $rain) {
+if( $rn24hrs > 20 && $rn24hrs > $rain && ($HR24['trendRn'][0] - $HR24['trendRn']['10m'] > 0) ) {
 	quick_log('rain_excess.txt', $rn24hrs);
-	if(date('i') == 33) {
+	if(date('i') % 10 == 0) {
 		mail("blr@nw3weather.co.uk","Rain excess","Notice! More than 20 mm of rain (" . $rn24hrs . ") has fallen in the past 24 hrs", "From: server");
 	}
 }
