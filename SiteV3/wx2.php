@@ -1,5 +1,5 @@
 <?php require('unit-select.php');
-	
+
 	$file = 2;
 ?>
 
@@ -20,15 +20,24 @@
 
 <script type="text/javascript">
 	//<![CDATA[
-	var link = '<embed name="hourVid" src="/videolasthour.wmv" autostart="false" loop="false" height="350" width="425">\n\
-		<noembed>Sorry, your browser does not support the embedding of multimedia.</noembed></embed>';
 	function loadVid() {
+		var link = '<embed name="hourVid" src="/videolasthour.wmv" autostart="true" loop="false" height="350" width="425">\n\
+			<noembed>Sorry, your browser does not support the embedding of multimedia.</noembed></embed>';
 		if(cntJS === 0) {
 			document.getElementById('hourVid').innerHTML = 'loading...';
 			document.getElementById('hourVid').innerHTML = link;
 		}
 		cntJS++;
 	}
+	function loadVid24() {
+		var link = '<object id="flowplayer" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="350" height="425">\n\
+				<param name="flashvars" value=\'config={"key":"#@8d339434b223613a374","clip":"http://icons.wunderground.com/webcamcurrent/t/i/Timmead/1/current.mp4"}\' />\n\
+				<embed autostart="false" type="application/x-shockwave-flash" width="425" height="350" src="http://www.wunderground.com/swf/flowplayer.commercial-3.2.7.swf"\n\
+					   flashvars=\'config={"key":"#@8d339434b223613a374","clip":"http://icons.wunderground.com/webcamcurrent/t/i/Timmead/1/current.mp4"}\'/>\n\
+			</object>';
+		document.getElementById('24hourVid').innerHTML = link;
+	}
+
 	//]]>
 </script>
 
@@ -94,15 +103,8 @@ The latest version is available for download
 		<td align="center"><b> Last 24hrs</b> </td>
 	</tr>
 	<tr>
-		<td id="hourVid" align="center" width="425" onclick="loadVid()">Click to load</td>
-		<td align="center">
-			<!-- <object id="flowplayer" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="350" height="425">
-				<param name="flashvars"value='config={"key":"#@8d339434b223613a374","clip":"http://icons.wunderground.com/webcamcurrent/t/i/Timmead/1/current.mp4"}' />
-				<embed autostart="false" type="application/x-shockwave-flash" width="425" height="350"src="http://www.wunderground.com/swf/flowplayer.commercial-3.2.7.swf"
-					   flashvars='config={"key":"#@8d339434b223613a374","clip":"http://icons.wunderground.com/webcamcurrent/t/i/Timmead/1/current.mp4"}'/>
-			</object> -->
-			Not available yet
-		</td>
+		<td id="hourVid" align="center" width="425" onclick="loadVid();">Click to load</td>
+		<td id="24hourVid" align="center" width="425" onclick="loadVid24();">Click to load</td>
 	</tr>
 </table>
 
