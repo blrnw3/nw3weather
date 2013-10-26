@@ -1,0 +1,1 @@
+The main application directory for the core system source code

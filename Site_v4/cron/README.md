@@ -1,0 +1,1 @@
+For cron scripts
