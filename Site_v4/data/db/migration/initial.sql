@@ -1,0 +1,73 @@
+-- Daily variables (daily summary data as processed daily from the core live variables for a 24hr period) --
+CREATE TABLE IF NOT EXISTS `vars_day` (
+  `day` date NOT NULL,
+
+  `tmin` decimal(3,1) DEFAULT NULL,
+  `tmax` decimal(3,1) DEFAULT NULL,
+  `tmean` decimal(4,2) DEFAULT NULL,
+  `hmin` tinyint(2) unsigned DEFAULT NULL,
+  `hmax` tinyint(2) unsigned DEFAULT NULL,
+  `hmean` decimal(3,1) unsigned DEFAULT NULL,
+  `pmin` smallint(4) unsigned DEFAULT NULL,
+  `pmax` smallint(4) unsigned DEFAULT NULL,
+  `pmean` decimal(5,1) unsigned DEFAULT NULL,
+  `wmean` decimal(4,2) unsigned DEFAULT NULL,
+  `wmax` decimal(3,1) unsigned DEFAULT NULL,
+  `gust` decimal(3,1) unsigned DEFAULT NULL,
+  `wdir` smallint(3) unsigned DEFAULT NULL,
+  `rain` decimal(4,1) unsigned DEFAULT NULL,
+  `hrmax` decimal(3,1) unsigned DEFAULT NULL,
+  `10max` decimal(3,1) unsigned DEFAULT NULL,
+  `ratemax` decimal(4,1) unsigned DEFAULT NULL,
+  `dmin` decimal(3,1) DEFAULT NULL,
+  `dmax` decimal(3,1) DEFAULT NULL,
+  `dmean` decimal(4,2) DEFAULT NULL,
+  `t24min` decimal(3,1) DEFAULT NULL,
+  `t24max` decimal(3,1) DEFAULT NULL,
+  `t24mean` decimal(4,2) DEFAULT NULL,
+  `tchrmin` decimal(2,1) DEFAULT NULL,
+  `tchrmax` decimal(2,1) DEFAULT NULL,
+  `tc10min` decimal(2,1) DEFAULT NULL,
+  `tc10max` decimal(2,1) DEFAULT NULL,
+  `hchrmin` tinyint(2) DEFAULT NULL,
+  `hchrmax` tinyint(2) DEFAULT NULL,
+  `w10max` decimal(3,1) unsigned DEFAULT NULL,
+  `afhrs` decimal(3,1) unsigned DEFAULT NULL,
+  `fmin` decimal(3,1) DEFAULT NULL,
+  `fmax` decimal(3,1) DEFAULT NULL,
+  `fmean` decimal(3,1) DEFAULT NULL,
+  `trange` decimal(3,1) unsigned DEFAULT NULL,
+  `hrange` tinyint(2) unsigned DEFAULT NULL,
+  `prange` tinyint(2) unsigned DEFAULT NULL,
+  `ratemean` decimal(3,1) unsigned DEFAULT NULL,
+  `sunhr` decimal(3,1) unsigned DEFAULT NULL,
+  `wethr` decimal(3,1) unsigned DEFAULT NULL,
+  `cloud` varchar(7) DEFAULT NULL,
+  `snow` varchar(3) DEFAULT NULL,
+  `lysnw` decimal(3,1) unsigned DEFAULT NULL,
+  `hail` enum('0','1','2','3') DEFAULT NULL,
+  `thunder` tinyint(1) unsigned DEFAULT NULL,
+  `fog` enum('no','ns','yes') DEFAULT NULL,
+  `comms` varchar(250) DEFAULT NULL,
+  `extra` varchar(500) DEFAULT NULL,
+  `issues` varchar(500) DEFAULT NULL,
+  `away` tinyint(1) DEFAULT NULL,
+
+  PRIMARY KEY (`day`),
+  KEY `tmin` (`tmin`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- 'Live' variables (once-per-minute sensor readings) --
+CREATE TABLE IF NOT EXISTS `vars_live` (
+  `t` datetime NOT NULL,
+  `rain` decimal(4,1) unsigned DEFAULT NULL,
+  `humi` tinyint(2) unsigned DEFAULT NULL,
+  `pres` smallint(4) unsigned DEFAULT NULL,
+  `wind` decimal(3,1) unsigned DEFAULT NULL,
+  `gust` decimal(3,1) unsigned DEFAULT NULL,
+  `temp` decimal(3,1) DEFAULT NULL,
+  `wdir` smallint(3) unsigned DEFAULT NULL,
+  PRIMARY KEY (`t`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
