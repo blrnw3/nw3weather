@@ -1,0 +1,56 @@
+RewriteEngine on
+
+<Files 403.shtml>
+order allow,deny
+allow from all
+</Files>
+deny from 94.242.237.127
+deny from 117.26.192.253
+deny from 120.37.228.50
+deny from 173.199.117.195
+deny from 188.143.232
+deny from 192.114.71.13
+deny from 198.13.122.5
+deny from 212.36.51.106
+deny from 217.159.204.122
+#Ukraine - spammer
+deny from 91.200.14
+#China - hacker
+deny from 36.248
+deny from 222.77
+#India - spammer
+deny from 182.64
+#Ezooms bot
+deny from 208.115.113.86
+deny from 208.115.111.70
+#Vietnam - spammer
+deny from 113.190
+
+#RewriteCond %{HTTP_HOST} ^www\.nw3weather\.co\.uk [NC]
+#RewriteRule ^(.*)$ http://nw3weather.co.uk/$1 [L,R=301]
+
+redirect 301 /wx.php /
+redirect 301 /dailyreport.htm /dailyreport.php
+redirect 301 /wxaverages.htm /wxaverages.php
+redirect 301 /wxtempltas.html /wxtempltas.php
+redirect 301 /contact.html /contact.php
+redirect 301 /curr24hourgraph.gif /stitchedmaingraph_small.png
+redirect 301 /jpgwebcam.jpg /currcam.jpg
+
+redirect 301 /wxhistyear.php /oldSites/sitev2/wxhistyear.php
+redirect 301 /Historical.php /oldSites/sitev2/Historical.php
+redirect 301 /sitemap.php /
+redirect 301 /sitev3/ /
+
+RewriteCond %{HTTP_HOST} ^.*$
+RewriteRule ^Beaufort\ Scale.html$ /BeaufortScale.php [R=301,L]
+RewriteRule ^Beaufort\ Scale.php$ /BeaufortScale.php [R=301,L]
+RewriteRule ^(wx[0-9]+).html$ "/$1\.php" [R=301,L]
+RewriteRule ^album[0-9]+m?.php$ /wx7.php [R=301,L]
+RewriteRule ^wxhist[0-9\.]+.php$ /wxdataday.php [R=301,L]
+RewriteRule ^wxsumhist[0-9\.]+.php$ /TablesDataMonth.php [R=301,L]
+RewriteRule ^IMG_0417e?.JPG$ /photos/IMG_0417.JPG [R=301,L]
+
+RewriteCond %{HTTP_HOST} ^nw3weather\.co\.uk$ [OR]
+RewriteCond %{HTTP_HOST} ^www\.nw3weather\.co\.uk$
+RewriteRule ^index\.php$ "http\:\/\/nw3weather\.co\.uk\/" [R=301,L]
