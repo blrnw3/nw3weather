@@ -1,0 +1,235 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+
+
+    <title>NW3 Weather - sitev1 - About</title>
+
+
+    <meta name="description" content="Old site v1 - Site and Website Information, accuracy, and comments" />
+
+    <meta http-equiv="content-type" content="application/xhtml+xml; charset=ISO-8859-1" />
+    <link rel="stylesheet" type="text/css" href="weather-screen.css" media="screen" title="screen" />
+    <link rel="stylesheet" type="text/css" href="weather-print.css" media="print" />
+
+  </head>
+
+  <body>
+    <!-- For non-visual user agents: -->
+      <div id="top"><a href="#main-copy" class="doNotDisplay doNotPrint">Skip to main content.</a></div>
+
+    <!-- ##### Header ##### -->
+
+
+    <div id="header">
+      <h1 class="headerTitle">
+        <a href="http://nw3weather.co.uk" title="Browse to homepage">NW3 Weather</a>
+      </h1>
+
+	<div class="headerTemp"><span class="doNotPrint">
+		</span>
+	</div>
+
+      <div class="subHeader">
+        Hampstead, London, England
+
+      </div>
+
+      <div class="subHeaderRight">Last Updated: 04/01/11 </div>
+
+    </div>
+
+    <div id="side-bar">
+
+      <!-- ##### Left Sidebar ##### -->
+
+      <div class="leftSideBar">
+        <p class="sideBarTitle">Navigation</p>
+        <ul>
+          <li><a href="./" title="Return to main page">Home</a></li>
+          <li><a href="wx2.html" title="Live Webcam and Timelapses">Webcam</a></li>
+          <li><a href="wx3.html" title="Latest Daily and Monthly Graphs & Charts">Graphs</a></li>
+          <li><a href="wx4.html" title="Extremes and Trends">Data</a></li>
+          <li><a href="wx5.html" title="Full Local Forecasts and Latest Maps">Forecast</a></li>
+          <li><a href="wx6.html" title="Sun and Moon Data">Astronomy</a></li>
+          <li><a href="wx7.html" title="My Weather Photography">Photos</a></li>
+          <li><b>About</b></li>
+          <li><a href="wx9.html" title="Useful Links">Links</a></li>
+	  <li><hr></li>
+<li><span style=color:gray><b>Detailed Data:</b></span></li>
+	  <li><a href="wx12.html" title="Detailed Rain Data">Rain</a></li>
+	  <li><a href="wx13.html" title="Detailed Wind Data">Wind</a></li>
+	  <li><a href="wx14.html" title="Detailed Temperature Data">Temperature</a></li>
+	  <li><a href="wx10.html" title="Detailed Humidity Data">Humidity</a></li>
+	  <li><a href="wx4.html#bottom" title="Historical Averages and Extremes by Day and Month">Historical</a></li>
+	  <li><a href="wxaverages.htm" title="Long-term climate averages">Climate</a></li>
+          <li><a href="wx15.html" title="System Administration Purposes Only"><span style=color:lightgray>System</span></a></li>
+        </ul>
+
+      </div>
+
+    </div>
+
+    <!-- ##### Main Copy ##### -->
+
+    <div id="main-copy">
+
+<h3>About the Weather Station</h3>
+<p><b>Technical:</b> I am operating an Oregon Scientific WMR-200 and using Weather Display software to collect the data in real time,
+which is then broadcast to this website. The Home page updates every minute; any live data and graphs have an update frequency
+ of 5 or 10 minutes unless specified;
+most other pages are refreshed every hour. The exceptions are the webcam, which updates every minute, and any 
+pages with static content like the photo page, which is not automatically updated.
+In general these uploads occur with a delay of between 10 and 80 seconds. The full schedule can be found
+ <a href="WDuploadtimetable.xls" title="Weather Display upload schedule and history">here.</a>
+It is, however, important to note that these updates will not always be carried out - software glitches,
+internet connection losses and internet crashes can and do happen! Thankfully the WMR-200 has an onboard data logger,
+ so most, if not all data can be recovered in case of a computer crash.</p>
+
+<p><b>Accuracy</b>: The data comes from a personal automatic weather station (PWS/AWS) so there can be no guarantees of accuracy or reliability,
+and the data is not immediately quality controlled, but the setup shown below is designed to provide the most accurate readings possible.
+For temperature and humidity readings this means shielding the sensors from <acronym title="incident solar radiation">insolation</acronym> and providing them with good airflow;
+for rain data the sensor needs to be in as open a place as possible to avoid rain shadow, but not too open since a high wind can cause problems;
+and for wind readings the sensors should be 10m above ground and clear from obstructions (to provide a 'clean' flow of air).
+In an urban environment these conditions are difficult to meet, and this must be considered when using data from such sites,
+especially when comparing them to non-urban sites. 
+A more in-depth guide to siting weather stations can be found <a href="http://www.weatherstations.co.uk/gooddata.htm" title="Optimal siting of a PWS">here.</a> </p>
+<p> It should also be noted that at no point do I quote figures for the errors associated with my readings, though of course they technically do exist.
+This is partly due to conventions in displaying weather data, but also because it can be very difficult to ascertain such values, especially for urban sites:
+ For a given sensor the errors can vary widely from day to day and are sensitive to quite specific factors. 
+All I can say is that I have tried to minimise errors where possible, but some large errors may well exist,
+ and where possible I have attempted to highlight these in my personal data sets (found <a href=wx4.html#bottom title="See spreadsheets section">here</a>).
+
+
+
+<p><b>A note on forecasting:</b> The accuracy of the local forecast on the home page is considered to be low, since it is based entirely on pressure
+trends - falling pressure means cloud, and if it continues to fall, then rain;
+ rising pressure signals sunny intervals then clear conditions. This is obviously very simplistic. The forecasting
+done by national meteorological offices requires the amassing of a huge amount of data from observation sites on land, 
+on the sea, in the air and even from satellites in space. The data is then fed through supercomputers running numerical models
+that supposedly represent science's current best view of extremely complex atmospheric processes.
+The model outputs then need processing and interpreting before a forecast is produced.
+The whole operation costs many millions of pounds to set up and run. Barometric prediction, on the other, is very cheap but has
+severe limitations: it cannot offer regional guidance, it is only relevant for the next 24 hours or so, and it breaks down
+completely in more complex atmospheric set-ups.</p>
+
+<p><b>Extra Info:</b> Every 30 minutes the software downloads the latest weather report, a <acronym title="aviation routine weather report"> METAR</acronym>
+ from the nearest airport, Heathrow;
+this provides the cloud reports information found on the home page.
+ It is also useful for checking the reliability of my own readings from this <acronym title="personal weather station">PWS</acronym>. 
+Incidentally, the data gathered at airports, both commercial and military, around the world is a key component to the information needed by forecasting models,
+which form the basis of modern weather forecasting.</p>
+
+<a name="location"></a>
+
+<b>Location:</b>
+
+ <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Google Maps JavaScript API Example</title>
+    <script src="http://maps.google.com/maps?file=api&v=2&key=ABQIAAAAL81fi9AxiplVcD3Qkl90VBTUNRVXjut8OQXF6ziEFVT3oRI6DxRJlojWd59AgKXZKK4_2AWqC1qYjg"
+      type="text/javascript"></script>
+    <script type="text/javascript">
+    //<![CDATA[
+	
+    var WINDOW_HTML = '<div style="width: 270px; 	padding-right: 20px; height: 125px"><b>NW3 Weather</b> <img src="http://nw3weather.co.uk/gmaps3.jpg" align="right">';	
+	
+    function load() {
+      if (GBrowserIsCompatible()) {
+        var map = new GMap2(document.getElementById("map"));
+	map.addControl(new GSmallMapControl());
+	map.addControl(new GMapTypeControl());
+        map.setCenter(new GLatLng(51.557, -0.156), 12);
+	var marker = new GMarker(new GLatLng(51.556, -0.155));
+	map.addOverlay(marker);
+	GEvent.addListener(marker, "click", function() {
+	marker.openInfoWindowHtml(WINDOW_HTML);
+	  });
+				
+      }
+    }
+    //]]>
+    </script>
+  </head>
+  <body onload="load()" onunload="GUnload()">
+    <div id="map" style="width: 500px; height: 300px"></div>
+  </body>
+The station co-ordinates are approx. 51.556, -0.155, which is ~60m (200ft) above mean sea level.
+<br><br>
+<h3>Setup</h3>
+The station comprises several sensors: a combined thermometer/hygrometer housed in a home-built Stevenson Screen (a radiation shield);
+<br> a combined anemometer & wind vane, located atop a 6m pole attached to the chimney of the house;
+<br> a self-tipping rain gauge modified to a resolution of 0.3mm, which is attached to the roof of the Stevenson Screen;
+<br>and a barometer integrated into the receiving unit (indoors).<br><br>
+<img src="http://nw3weather.co.uk/P1010070.JPG" alt="Thermo/Hygro and Rain Gauge" title="Thermo/Hygro in radiation shield, Rain Gauge on top" width="448" height="352"></img> <img src="http://nw3weather.co.uk/P1010074.JPG" alt="Wind Sensors" title="Anemometer & Wind Vane on top of pole" width="448" height="352"></img><br>
+<br>All the sensors are automatic and send data wirelessly to the receiving unit every 14-60s.<br><br>
+<img src="http://nw3weather.co.uk/PICT2516.JPG" alt="Thermo/Hygro close-up" title="Thermo/Hygro close-up inside radiation shield" width="348" height="242"></img> <img src="http://nw3weather.co.uk/P1010076.JPG" alt="Wind Sensors close-up" title="Wind Sensors close-up" width="348" height="242"></img> <br>
+<br>
+
+<h3>History</h3>
+I started collecting data at this site on 28th July 2010. Prior to that I had been running the same setup in East Finchley, a town 5Km north of here, since February 2009,
+but I have kept temperature records since March 2008.
+Consequently, any records from before July 2010 are for East Finchley, though given the small distance involved, any data comparisons are perfectly valid.
+However, there is one period which is an exception to this - from 17th April to 27th July 2010 the AWS was on a temporary site
+in Finchley Central (~1km from East Finchley). This site was smaller and had more obstructions. Consequently I am not confident
+in the accuracy of the maximum temperatures for this period - I believe them to be a little inflated (especially on sunny days).
+Also, The rain gauge had more of a rain-shadow and so probably under recorded to some extent. Furthermore, I collected absolutely no
+wind records for this period - I instead used the data from the METARs of Heathrow, which reports higher wind speeds due
+to its greater exposure and better equipment. 
+<p> I added a webcam (Logitech C300) to the station on 1st August 2010. This provides the latest and historical webcam images, as well as all the timelapses.
+Another webcam was added on 19th December 2010 - this one is positioned to overlook the ground, so that snow cover and fog can be observed.</p>
+
+<p><b>Technical history:</b><ul>
+<li type="disc">The rain gauge was modified in March 2009 - the original had a resolution of only 1mm.
+This involved fitting a funnel to the collecting channel so that less rain is needed to cause a 'tip' in the internal bucket
+(each tip results in a signal being sent to the receiving unit, which registers the rain).</li>
+<li type="disc"> In July 2009 I built the radiation shield for the temp/hum sensor to improve the accuracy of the readings:
+The walls are double louvred hardwood, the roof is double insulated plywood with a cavity for air flow, and
+the whole thing is painted in white gloss. Maintenance is carried out twice a year, mainly to keep the paint glossy.</li>
+<li type="disc">The combined wind sensor unit was mounted on a 6.1m aluminium-alloy aerial pole in August 2009.</li></ul>
+   
+<br>
+<h3>Website</h3>
+<p>The site was developed, and is therefore best viewed, in Firefox and on a widescreen display, but other browsers and aspect ratios have been tested and found to display most things correctly.
+<br>I built the website in early September 2010, and it launched in a testing stage on 10th September 2010. This ended on the 20th September, but
+some new content is still being added, and changes are occasionally made to some of the pages.</p>
+
+<p>On 8th December 2010, a new home page was designed and uploaded. The old version can be found <a href=wx16.html title="It still updates"> here</a>. 
+
+<p><b>Technical:</b> The CSS template, and some of the HTML code, is sourced from 
+<a href="http://www.carterlake.org/webtemplates.php" title="Weather Display Templates">carterlake.org</a>, though I have written most of these myself.
+<br>The live data is automatically generated using Weather Display tags
+(see <a href="wx9.html" title="Useful Links">links</a> page).
+These convert the data from the software (Weather Display) to readable information on this site.
+<br> The process involved in converting readings from the sensors to the data viewable on this website can be summarised thus: <br>
+<a href="http://nw3weather.co.uk/Sensors to WWW.jpg"><img src="http://nw3weather.co.uk/Sensors to WWW3.jpg" alt="Data flow chart" title="Click for full-size image" width="589" height="318" border="0"></img></a> 
+<br> Each sensor wireless sends data to the base station, which renders this data and transmits it to my home PC (a dedicated low-power machine running Windows 7).
+Weather Display software displays this data, and at every specified upload time, converts the tags in the locally-written files to viewable information.
+It then uploads the newly generated HTML files via FTP (file transfer protocol) to my hosting server - <a href="http://orchardhosting.com/" title="External Link">Orchard Hosting</a> - 
+which broadcasts the web pages to the World Wide Web for anyone with an internet connection and web browser to view.
+</div>
+
+<!-- ##### Footer ##### -->
+
+    <div id="footer">
+      <div class="doNotPrint">
+        <a href="#header">Top</a> |
+
+
+        <a href="contact.html" title="E-mail me">Contact</a> |
+
+ <a href="./" title="Browse to homepage">Home</a>
+
+           </div>
+
+      <div>
+
+
+        &copy; 2010-2011, B. Lee-Rodgers<span class="doNotPrint"> |   
+          <a href="http://www.weather-display.com" title="Powered by Weather Display">Weather Display v10.37</a></span><br />
+      <br class="doNotPrint" />Caution: The accuracy of these ramblings cannot be guaranteed!<br class="doNotPrint" />
+      </div>
+    </div>
+  </body>
+</html>
