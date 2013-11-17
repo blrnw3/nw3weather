@@ -5,10 +5,10 @@ require '../../../app/util/ScriptTimer.php';
 
 const PATH = 'D:\Archive\Weather\CurrentWebsiteBackup\DailyLogs\\';
 
-ini_set('max_execution_time', 1000);
+ini_set('max_execution_time', 3600);
 
-$begin = new DateTime('05 apr 2013');
-$end = new DateTime('05 jun 2013');
+$begin = new DateTime('01 jan 2011');
+$end = new DateTime('01 jan 2013');
 
 $interval = DateInterval::createFromDateString('1 day');
 $period = new DatePeriod($begin, $interval, $end);

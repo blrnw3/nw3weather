@@ -1,5 +1,5 @@
 <?php
-
+namespace nw3\config;
 /**
  * Core configuration
  *

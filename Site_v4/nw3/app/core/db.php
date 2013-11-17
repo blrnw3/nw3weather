@@ -1,4 +1,9 @@
 <?php
+namespace nw3\app\core;
+
+use nw3\config\Config as Conf;
+use \PDO as PDO;
+use \PDOException as PDOException;
 /**
  * db connection management
  *
@@ -9,13 +14,16 @@ class Db {
 	private $proc;
 	private $explosive;
 
+	/**
+	 * Create connection
+	 * @param bool[=null] $explosive_override pass to override the config value
+	 */
 	function __construct($explosive_override = null) {
-		require '../../../config/config.php';
-		$user = Config::$db['username'];
-		$pass = Config::$db['password'];
-		$db = Config::$db['database'];
-		$host = Config::$db['host'];
-		$port = Config::$db['port'];
+		$user = Conf::$db['username'];
+		$pass = Conf::$db['password'];
+		$db = Conf::$db['database'];
+		$host = Conf::$db['host'];
+		$port = Conf::$db['port'];
 
 		$flags = array(
 			PDO::ATTR_PERSISTENT => true,
@@ -32,7 +40,20 @@ class Db {
 		}
 
 		$this->explosive = ($explosive_override === null) ?
-			Config::$db['explosive'] : $explosive_override;
+			Conf::$db['explosive'] : $explosive_override;
+	}
+
+	/**
+	 *
+	 * @param string $table name of db table
+	 * @param string $conditions raw sql conditions - where, order by, group by etc.
+	 * @param array $cols[=null] If present, an array of the field names to select, else all fields (*).
+	 */
+	function select($table, $conditions, $cols = null) {
+		$cols = ($cols === null) ? '*' : implode(',', (array)$cols);
+		$q = "SELECT $cols FROM $table $conditions";
+		echo $q;
+		return $this->db->query($q);
 	}
 
 	/*
@@ -50,7 +71,7 @@ class Db {
 				$this->proc->execute($values);
 				return true;
 			} catch(PDOException $e) {
-				echo time() .": ". $e->getMessage() ."<br />";
+				echo $values[0] .": ". $e->getMessage() ."<br />";
 				return false;
 			}
 		}

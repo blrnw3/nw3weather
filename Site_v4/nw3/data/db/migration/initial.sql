@@ -1,5 +1,5 @@
 -- Daily variables (daily summary data as processed daily from the core live variables for a 24hr period) --
-CREATE TABLE IF NOT EXISTS `vars_day` (
+CREATE TABLE IF NOT EXISTS `daily_vars` (
   `day` date NOT NULL,
 
   `tmin` decimal(3,1) DEFAULT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `vars_day` (
   `hchrmin` tinyint(2) DEFAULT NULL,
   `hchrmax` tinyint(2) DEFAULT NULL,
   `w10max` decimal(3,1) unsigned DEFAULT NULL,
-  `afhrs` decimal(3,1) unsigned DEFAULT NULL,
+  `afhrs` float unsigned DEFAULT NULL,
   `fmin` decimal(3,1) DEFAULT NULL,
   `fmax` decimal(3,1) DEFAULT NULL,
   `fmean` decimal(3,1) DEFAULT NULL,
@@ -45,13 +45,37 @@ CREATE TABLE IF NOT EXISTS `vars_day` (
   `cloud` varchar(7) DEFAULT NULL,
   `snow` varchar(3) DEFAULT NULL,
   `lysnw` decimal(3,1) unsigned DEFAULT NULL,
-  `hail` enum('0','1','2','3') DEFAULT NULL,
+  `hail` tinyint(1) DEFAULT NULL,
   `thunder` tinyint(1) unsigned DEFAULT NULL,
-  `fog` enum('no','ns','yes') DEFAULT NULL,
+  `fog` tinyint(1) DEFAULT NULL,
   `comms` varchar(250) DEFAULT NULL,
   `extra` varchar(500) DEFAULT NULL,
   `issues` varchar(500) DEFAULT NULL,
   `away` tinyint(1) DEFAULT NULL,
+  `t_tmin` time DEFAULT NULL,
+  `t_tmax` time DEFAULT NULL,
+  `t_hmax` time DEFAULT NULL,
+  `t_hmin` time DEFAULT NULL,
+  `t_pmax` time DEFAULT NULL,
+  `t_pmin` time DEFAULT NULL,
+  `t_wmax` time DEFAULT NULL,
+  `t_gust` time DEFAULT NULL,
+  `t_hrmax` time DEFAULT NULL,
+  `t_10max` time DEFAULT NULL,
+  `t_ratemax` time DEFAULT NULL,
+  `t_dmax` time DEFAULT NULL,
+  `t_dmin` time DEFAULT NULL,
+  `t_t24max` time DEFAULT NULL,
+  `t_t24min` time DEFAULT NULL,
+  `t_tchrmax` time DEFAULT NULL,
+  `t_tchrmin` time DEFAULT NULL,
+  `t_tc10max` time DEFAULT NULL,
+  `t_tc10min` time DEFAULT NULL,
+  `t_hchrmax` time DEFAULT NULL,
+  `t_hchrmin` time DEFAULT NULL,
+  `t_w10max` time DEFAULT NULL,
+  `t_fmax` time DEFAULT NULL,
+  `t_fmin` time DEFAULT NULL,
 
   PRIMARY KEY (`day`),
   KEY `tmin` (`tmin`)
@@ -69,5 +93,3 @@ CREATE TABLE IF NOT EXISTS `vars_live` (
   `wdir` smallint(3) unsigned DEFAULT NULL,
   PRIMARY KEY (`t`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-

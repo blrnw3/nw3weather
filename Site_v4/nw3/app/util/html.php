@@ -22,13 +22,23 @@ class UtilHtml {
 	 static function tr_() {
 		 echo '</tr>';
 	 }
-	 
+
 	 static function table() {
 		 echo '<table>';
 	 }
 	 static function table_() {
 		 echo '</table>';
 	 }
+
+	 static function print_m($var) {
+		echo '<pre>';
+		var_dump($var);
+		echo '</pre>';
+	}
+
+	static function out($str) {
+		echo $str . '<br />';
+	}
 }
 
 ?>
