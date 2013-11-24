@@ -266,6 +266,15 @@ if($tstamp == '0621' && $dday == 1) {
 	}
 }
 
+//check that datamod was done
+if($tstamp == '1637') {
+	$datamod_last = filemtime(ROOT."dat" . $yr_yest . ".csv");
+	if(time() - $datamod_last > 36000) {
+		$last_done = date('H:i d M Y', $datamod_last);
+		mail("alerts@nw3weather.co.uk","Datamod not done","Alert! Not done since $last_done. Act NOW!", "From: server");
+	}
+}
+
 ///////END OF SCRIPT////////END OF SCRIPT///////////////////////////////////////////////////////////################
 $p_time = microtime(get_as_float) - $t_start;
 file_put_contents( ROOT."Logs/cronExecuted.txt", myround($p_time) );
