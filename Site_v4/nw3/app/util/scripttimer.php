@@ -1,4 +1,5 @@
 <?php
+namespace nw3\app\util;
 /**
  * Deals with timing of script execution
  *
@@ -9,28 +10,27 @@ class ScriptTimer {
 	private $end;
 
 	function __construct() {
-		$this->start = 0;
-		$this->end = 0;
+		$this->start();
 	}
 
-	function start() {
+	private function start() {
 		$this->start = microtime(true);
 	}
 
 	function stop() {
-		$this->end = microtime(true);
+		$this->end = microtime(true) + 0.05;
 	}
 
 	function executionTime() {
-		return $this->prettify( $this->end - $this->start );
+		return Maths::round( $this->end - $this->start, 3 );
 	}
 
-	function runtime() {
+	function current_runtime() {
 		return $this->prettify( microtime(true) - $this->start );
 	}
 
 	private function prettify($val) {
-		return "Script running for ". round($val, 3) ."s";
+		return "Script running for ". Maths::round($val, 3) ."s";
 	}
 
 }

@@ -1,7 +1,7 @@
 <?php
 namespace nw3\app\core;
 
-use nw3\config\Config as Conf;
+use Config as Conf;
 use \PDO as PDO;
 use \PDOException as PDOException;
 /**

@@ -1,15 +1,15 @@
 <?php
-
+namespace nw3\config;
 /**
  * Description of location
  *
  * @author Ben LR
  */
 
-class location {
-	public static $lat = 51.556;
-	public static $lng = -0.154;
-	public static $zenith = 90.2;
+class Location {
+	const LAT = 51.556;
+	const LNG = -0.154;
+	const ZENITH = 90.2;
 }
 
 ?>
