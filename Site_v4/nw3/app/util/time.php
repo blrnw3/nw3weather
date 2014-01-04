@@ -7,6 +7,10 @@ namespace nw3\app\util;
  */
 class Time {
 
+	static function stamp($unix) {
+		return date('H:i', $unix);
+	}
+
 	static function time_av($times) {
 		for($i = 0; $i < count($times); $i++) {
 			if(!strpos($times[$i], '*')) {

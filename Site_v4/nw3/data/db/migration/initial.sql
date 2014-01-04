@@ -1,6 +1,6 @@
 -- Daily variables (daily summary data as processed daily from the core live variables for a 24hr period) --
-CREATE TABLE IF NOT EXISTS `daily_vars` (
-  `day` date NOT NULL,
+CREATE TABLE IF NOT EXISTS `daily` (
+  `d` date NOT NULL,
 
   `tmin` decimal(3,1) DEFAULT NULL,
   `tmax` decimal(3,1) DEFAULT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS `daily_vars` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- 'Live' variables (once-per-minute sensor readings) --
-CREATE TABLE IF NOT EXISTS `vars_live` (
+CREATE TABLE IF NOT EXISTS `live` (
   `t` datetime NOT NULL,
   `rain` decimal(4,1) unsigned DEFAULT NULL,
   `humi` tinyint(2) unsigned DEFAULT NULL,

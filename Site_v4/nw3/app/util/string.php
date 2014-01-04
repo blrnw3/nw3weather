@@ -18,12 +18,12 @@ class String {
 	}
 
 	/**
-	 * Pads a value with a leading 0 if it is between 0 and 9 (inclusive)
+	 * Pads an integer value with a leading 0 if it is between 0 and 9 (inclusive)
 	 * @param number $tag
 	 * @return string potentially-padded val
 	 */
 	static function zerolead($tag) {
-		$tag = intval($tag);
+		$tag = (int)$tag;
 		if($tag < 10 && $tag >= 0) { $tag = '0'.$tag; }
 		return $tag;
 	}
@@ -35,7 +35,7 @@ class String {
 	 * @return bool
 	 */
 	static function isBlank($val) {
-		return (strlen($val) === 0 || $val === '-');
+		return (strlen($val) === 0) || ($val === '-');
 	}
 	/**
 	 * Tests for a blank string/value. NB: '-' also counts as empty.

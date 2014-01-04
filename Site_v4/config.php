@@ -1,17 +1,20 @@
 <?php
 /**
  * Core install-dependent configuration
- *
+ * The settings in here are for the development environment,
+ * the live release config file is obviously private for security reasons
  * @author Ben LR
  */
 class Config {
 
-	const ROOT = '/home/nwweathe/public_html/';
-	const IMG_ROOT = '/static-images/';
-	const EXEC_PATH = '/usr/local/bin/php -q /home/nwweathe/public_html/';
+	/** * PHP root */
+	const ROOT = '/Site_v4/';
+	/** * URL root */
+	const HTML_ROOT = '/Site_v4/';
+	const EXEC_PATH = '/usr/local/bin/php -q /home/dev';
 
 	/** Path to the live data text file */
-	const LIVE_DATA_PATH = '/home/nwweathe/public_html/clientraw.txt';
+	const LIVE_DATA_PATH = 'something_or_other';
 
 //	public static $rareTags = ROOT.'rareTags.php';
 

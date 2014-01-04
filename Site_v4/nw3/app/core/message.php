@@ -2,6 +2,7 @@
 namespace nw3\app\core;
 
 use nw3\config\Admin;
+use nw3\app\core\Session;
 
 /**
  * For showing messages on the UI (flash and site status)
@@ -15,31 +16,30 @@ class Message {
 		}
 
 		//Bad browser warning
-		if(preg_match("/.*MSIE [5|6|7].*/", $browser)) {
-			showStatusDiv('You are using a browser ('.$browser.') that is not compatible with nw3weather. Browse at your peril!
+		if(preg_match("/.*MSIE [5|6|7].*/", Session::$browser)) {
+			showStatusDiv('You are using a browser ('.Session::$browser.') that is not compatible with nw3weather. Browse at your peril!
 				Also, <a href="http://www.updatebrowser.net/">consider upgrading</a>.');
 			log_events("BadBrowser.txt");
 		}
 		//echo $browser;
 
 		//Start old data warnings
-		$message = "A local hardware fault has been detected and is preventing data updates -
-			the site administrator has been notified and will investigate ASAP.";
-		$message2 = 'Planned system maintenance is taking place - updates will resume shortly';
+
 
 		$diff = sysWDtimes();
 		echo "<!-- WDAge: $diff -->";
 
-		$planned = false; //Change to true if maintenance planned
-		if($planned) { showStatusDiv($message2); }
+		if(Admin::MAINTENANCE_PLANNED) {
+			showStatusDiv(Admin::MAINTENANCE_MESSAGE);
+		}
 
-		if(!$planned && $diff > 900) { // 15mins downtime before alert message is triggered
-			showStatusDiv( $message .' &nbsp;
+		if(!Admin::MAINTENANCE_PLANNED && $diff > 900) { // 15mins downtime before alert message is triggered
+			showStatusDiv( Admin::FAULT_MESSAGE .' &nbsp;
 			   System time: '. date('d/m/y, H:i T', $timestampWD) .
 			   '; &nbsp; Server time: '. date('d/m/y, H:i T') .
 			   '<br />Problem Age: '. round($diff/60) .' mins ('. round($diff/3600). ' hours)'
 			);
-			$mail5 = true;
+//			$mail5 = true;
 		}
 
 	}

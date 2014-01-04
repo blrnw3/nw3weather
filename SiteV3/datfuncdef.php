@@ -446,8 +446,6 @@ function dailyData($procfil = 'today') {
 			$wind10[$i] = $w10 / 10;
 			$rn10[$i] = $dat[10][$i] - $dat[10][$i-10];
 			$t10[$i] = $dat[6][$i] - $dat[6][$i-10];
-		} else {
-			$wind10[$i] = $w10 / ($i+1);
 		}
 //		$w60 += $dat[3][$i]/60;
 //		$wind60[$i] = $w60;

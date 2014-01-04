@@ -1,6 +1,8 @@
 <?php
 namespace nw3\app\util;
 
+use nw3\config\Station;
+
 /**
  *
  * @author Ben LR
@@ -16,19 +18,21 @@ class Date {
 	 //number of leap years since 2009
 	const num_leap_yrs = 1;
 
+	public static $is_dark;
+
 	/**
 	 * Loads up the global define with some useful constants
 	 */
 	public static function initialise() {
 		//When testing, it could be useful to change this
-		$now = time();
+		$now = time() - 86400 * 90;
 		define('D_now', $now);
 
 		//Define (globally) some of the most useful date-based pseudo-constants
 		define('D_monthname', date('F', $now));
 		define('D_date', date('d M Y', $now));
 		define('D_time', date('H:i', $now));
-		define('D_dst', date("I", $now) ? "BST" : "GMT");
+		define('D_dst', date('i', $now) ? 'BST' : 'GMT');
 
 		define('D_hour', date('H', $now));
 		define('D_day', date('j', $now));
@@ -37,11 +41,18 @@ class Date {
 		define('D_doy', date('z', $now));
 		define('D_dim', date('t', $now));
 
-		$lat = \nw3\config\Location::LAT;
-		$lng = \nw3\config\Location::LNG;
-		$zenith = \nw3\config\Location::ZENITH;
-		define('D_sunrise', date_sunrise($now, SUNFUNCS_RET_STRING, $lat, $lng, $zenith));
-		define('D_sunset', date_sunset($now, SUNFUNCS_RET_STRING, $lat, $lng, $zenith));
+		define('D_datestamp', date('Ymd', $now));
+		define('D_timestamp', date('Hi', $now));
+
+		$lat = Station::LAT;
+		$lng = Station::LNG;
+		$zenith = Station::ZENITH;
+
+		$sunrise = date_sunrise($now, SUNFUNCS_RET_TIMESTAMP, $lat, $lng, $zenith);
+		$sunset = date_sunset($now, SUNFUNCS_RET_TIMESTAMP, $lat, $lng, $zenith);
+		define('D_sunrise', $sunrise);
+		define('D_sunset', $sunset);
+		self::$is_dark = ($now < $sunrise || $now > $sunset);
 
 		$yest = self::mkdate(false, D_day-1);
 		define( 'D_yest_day', date('j', $yest) );

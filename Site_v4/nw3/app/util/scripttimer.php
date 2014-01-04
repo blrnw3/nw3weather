@@ -18,11 +18,14 @@ class ScriptTimer {
 	}
 
 	function stop() {
-		$this->end = microtime(true) + 0.05;
+		$this->end = microtime(true) + 0.001;
 	}
 
 	function executionTime() {
 		return Maths::round( $this->end - $this->start, 3 );
+	}
+	function executionTimeMs() {
+		return round( ($this->end - $this->start) * 1000 ) . ' ms';
 	}
 
 	function current_runtime() {

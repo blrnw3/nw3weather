@@ -11,7 +11,11 @@ class Html {
 	const disableHTML = 'disabled="disabled"';
 	const selectHTML = 'selected="selected"';
 
-	 static function echoln($str) {
+	static function href($path) {
+		echo \Config::HTML_ROOT . $path .'/';
+	}
+
+	static function echoln($str) {
 		 echo $str + "<br />";
 	 }
 
@@ -104,12 +108,18 @@ class Html {
 	 * @return void echoes the well-formed xhtml
 	 */
 	static function img($src, $alt, $margin, $title = null, $width = null, $height = null, $anchor = null, $extras = null) {
-		$dims = ($width === null) ? '' : " width='$width' height='$height' ";
+		$wid = ($width === null) ? '' : " width='$width' ";
+		$hei = ($height === null) ? '' : " height='$height' ";
 		$tit = ($title === null) ? '' : " title='$title' ";
 		$mores = ($extras === null) ? '' : $extras;
-		$imgString = "<img src='$src' style='margin:{$margin}em;' alt='$alt' $dims $tit $mores />";
+		$imgString = "<img src='". ASSET_PATH ."img/$src' style='margin:{$margin}em;' alt='$alt' $wid $hei $tit $mores />";
 
-		echo ($anchor === null) ? $imgString : "<a href='$src' title='$anchor'>$imgString</a>";
+		echo ($anchor === null) ? $imgString : "<a href='". ASSET_PATH ."img/$src' title='$anchor'>$imgString</a>";
+	}
+
+	static function a($path, $content, $_title=null) {
+		$title = ($_title === null) ? '' : " title='$_title' ";
+		echo "<a href='". ASSET_PATH ."doc/$path' $title>$content</a>" ;
 	}
 
 	/**

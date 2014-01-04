@@ -23,20 +23,18 @@
 
 <h1>Webcam</h1>
 
-<h2>Variable passing test: <?php echo $this->test_passed_var; ?></h2>
-
 <h3>Latest Skycam Image</h3>
 
 
 <p>The camera is a Logitech C300 and is looking NE over Hampstead Heath (<a href="about#location" title="About page">see map</a>).</p>
-<img name="refresh" src="<?php echo $camImg; ?>" title="Latest skycam" width="640" height="480" alt="skycam" />
-
-<noscript>JavaScript is required for the automatic updates</noscript>
+<img name="refresh" src="http://192.168.1.66/jpgwebcam.jpg" title="Latest skycam" width="640" height="480" alt="skycam" />
 
 <p>The image is updated automatically every minute, day and night, operating with a delay of about 70s.
 <br />
-<?php if($time < $sunrise || $time > $sunset): ?>
-	<h3>Latest daylight webcam image</h3><img src="/sunsetcam.jpg" alt="Latest sunsetcam" width="640" height="480" /><br /><br />
+<?php if($this->dark): ?>
+	<h3>Latest daylight webcam image</h3>
+	<img src="/sunsetcam.jpg" alt="Latest sunsetcam" width="640" height="480" />
+	<br /><br />
 <?php endif; ?>
 
 A <a href="webcam/skycam" title="Contains skycam only">self-contained version</a> is also available.
@@ -46,7 +44,7 @@ A <a href="webcam/skycam" title="Contains skycam only">self-contained version</a
 
 <h3>Latest Groundcam Image</h3>
 <p>The camera is a Microsoft Lifecam VX-2000 and is looking NNE over Hampstead Heath (see <a href="wx8.php#location" title="About page">map</a>).</p>
-<img src="/currgcam.jpg" alt="Latest Groundcam" width="512" height="384" />
+<img src="http://192.168.1.66/jpggroundcam.jpg" alt="Latest Groundcam" width="512" height="384" />
 <br />
 <p>The image updates every 5 minutes, 24 hours a day.</p>
 
@@ -57,7 +55,7 @@ A <a href="webcam/skycam" title="Contains skycam only">self-contained version</a
 Two are available: a higher quality, slower video of the last hour, created hourly at 5 minutes past the hour;
 <br /> or a sped-up one for the entire day, updated every 10 minutes.
 
-<p><b>NB:</b> There is also a higher quality video of the all-day timelapse, created nightly at 22:05 <?php echo $dst; ?>.
+<p><b>NB:</b> There is also a higher quality video of the all-day timelapse, created nightly at 22:05 <?php echo D_dst; ?>.
 The latest version is available for download
 <a href="/<?php echo $this->dayvid_base; ?>dayvideo.wmv" title="Most recent full-day extended HQ timelapse">here</a>
 </p>

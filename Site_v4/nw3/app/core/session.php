@@ -3,13 +3,17 @@ namespace nw3\app\core;
 
 use nw3\app\util\String;
 use nw3\app\util\Http;
+use nw3\config\Station;
 
 /**
  * Session and Cookie handling
  */
 class Session {
 
-	private static $expTime = 1000000; // cookie lifespan - 100 days
+	/** * 100 days */
+	const EXPIRY_SHORT = 8640000;
+	/** * 10,000 days */
+	const EXPIRY_LONG = 100000000000;
 
 	static $browser;
 	static $is_bot;
@@ -25,14 +29,14 @@ class Session {
 
 		if (!isset($_SESSION)) {
 			session_start();
-			if (count($_SESSION['count']) == 0) {
+			if (count($_SESSION['count']) === 0) {
 				$_SESSION['count'] = array();
 			}
 		}
 
 
 		//Me setting getter/saver (stops analytics and provides more debugging)
-		if($_SERVER['REMOTE_ADDR'] === '217.155.197.157') {
+		if($_SERVER['REMOTE_ADDR'] === Station::IP) {
 			$me = true;
 		} else {
 			if (isset($_GET['blr'])) {
@@ -57,8 +61,8 @@ class Session {
 	}
 
 	static function cookify($name, $value, $long = false) {
-		$expiry = $long ? self::$expTime * 10 : self::$expTime;
-		setcookie($name, $value, $expiry);
+		$expiry = $long ? self::EXPIRY_LONG : self::EXPIRY_SHORT;
+		setcookie($name, $value, D_now + $expiry);
 	}
 
 	private static function bot_check() {

@@ -1,5 +1,5 @@
 <?php
-namespace data;
+namespace nw3\data;
 
 /**
  * Read-only store of climate / Long-term average (LTA) data

@@ -53,7 +53,7 @@ class Db {
 		$cols = ($cols === null) ? '*' : implode(',', (array)$cols);
 		$q = "SELECT $cols FROM $table $conditions";
 		echo $q;
-		return $this->db->query($q);
+		return $this->db->query($q)->fetchAll(PDO::FETCH_ASSOC);
 	}
 
 	/*

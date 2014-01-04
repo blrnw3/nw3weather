@@ -1,14 +1,12 @@
 <?php
-use nw3\app\core;
+use nw3\app\core\Loader;
 
-### ini settings ###
 date_default_timezone_set('Europe/London');
 
-### autoload ###
 spl_autoload_extensions(".php");
 spl_autoload_register();
 
-$loader = new core\Loader();
+$loader = new Loader();
 $loader->load();
 
 ?>
