@@ -29,6 +29,7 @@
 
 <?php require('site_status.php'); ?>
 <?php require $root.'RainTags.php'; ?>
+<?php require $root.'Rain2Tags.php'; ?>
 
 <h1>Detailed Rainfall Data</h1>
 
@@ -44,7 +45,7 @@ $rn24 = $HR24['trendRn'][0];
 $rnxx = $HR24['trendRn'];
 $values = array($rain, $rn24 - $rnxx['10m'], $rn24 - $rnxx[1], $rn24 - $rnxx[3], $rn24 - $rnxx[6], $rn24,
 	$HR24['misc']['rnduration'] .' hrs', $HR24['misc']['rnrate'], $HR24['misc']['wethrs'].' hrs',  '---', $HR24['misc']['rnlast'],
-	$yestrn, $rainweek, $rain31, $rain365, conv($monthrn, 2).$monthrnF, conv($yearrn, 2).$yearrnF, conv($seasonrn, 2).$seasonrnF, '---',
+	$yestrn, $rtotals[0]['7'], $rtotals[0]['31'], $rain365, conv($monthrn, 2).$monthrnF, conv($yearrn, 2).$yearrnF, conv($seasonrn, 2).$seasonrnF, '---',
 	$drywetdays, $raindays_monthF, $raindays_yearF, $day_rain_last_year, $raintodmonthago, $raintodayearago);
 //$order = array(2,1,0,3,4,5,6,7,8);
 $conv = array(2,2,2,2,2,2,false,2.1,false,false,false,2,2,2,2,false,false,false,false,8,false,false,2,2,2);
