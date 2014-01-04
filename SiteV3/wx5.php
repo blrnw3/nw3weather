@@ -59,7 +59,7 @@ $file = 5;
 				</script>
 				<script type="text/javascript" src="http://www.metoffice.gov.uk/public/pws/components/yoursite/loader.js"></script>
 			</td>
-			<td width="35%" align="center"><img src="http://m.meteox.co.uk/images.aspx?jaar=-3&amp;voor=&amp;soort=loop3uur256&amp;c=uk&amp;n" alt="radar" width="300" height="300" title="Latest Rainfall Radar Loop for NW Europe" /></td>
+			<td width="35%" align="center"><img src="http://www.meteox.co.uk/images.aspx?jaar=-3&amp;soort=loop1uur" alt="radar" width="300" height="300" title="Latest Rainfall Radar Loop for NW Europe" /></td>
 		</tr>
 		<tr>
 			<td align="center"><i>Forecast produced using the latest <a href="http://www.metoffice.gov.uk/research/modelling-systems" title="UKMO Modelling Overview">Met Office</a> model output</i></td>
