@@ -3,7 +3,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?php 
+<?php
 	$file = 96; ?>
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -28,7 +28,25 @@
 	<h1>Site Blog and Weather Station news/updates</h1>
 
 	<table width="850">
+	<tr><td>
+		<h2>Source code release and latest website development plans</h2>
+		<p>
+			All source code is now <a href="https://github.com/blrnw3/nw3weather">available on GitHub</a>, organised by site version. <br />
+			The latest website upgrade is underway (site v.4), and the beginnings of the new code base are available there, too.
+		</p>
+		<p>
+			This next iteration of nw3weather will initially involve entirely back-end upgrades, of the data model and major refactoring of the source code.
+			Following the completion of this upgrade in approx. mid-2014, further features will be worked on and test releases to the live site will be
+			performed before a full live release in 2015, probably.<br />
+			I have now moved to <a href="https://www.pivotaltracker.com/s/projects/943352">using PivotalTracker</a> as a project management tool for nw3weather development.
+			This enables easy management of bugs, features and chores throughout the development process, and this is the best place for nw3weather users to
+			follow the latest goings on.
+		</p>
 
+		<p>P.S. I will be performing some minor weather station maintenance and upgrades in the spring;
+			detailed information will be posted when this is ready to be undertaken.</p>
+		<span style="color:gray;font-style:italic">Posted: 4th Jan 2014</span><br />
+	</td></tr>
 	<tr><td>
 		<h2>Site update - version 3 released</h2>
 		<p>

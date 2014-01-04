@@ -3,15 +3,14 @@
 		<p class="sideBarTitle">Navigation</p>
 		<ul>
 <?php
-$lastPost = mkdate(5,22,2013); //MUST KEEP UPDATED - latest blog post
+$lastPost = mkdate(1,4,2014); //MUST KEEP UPDATED - latest blog post
 $lastAlbum = mkdate(8,11,2013); //MUST KEEP UPDATED - latest album upload
 
 $newLength = (3 * 3600 * 24);
-$supEnd = '" style="color:#382">new</sup>';
 $blog = 'Blog'. ( ((time() - $lastPost < $newLength)) ?
-	' <sup title="Last post: '. date('jS M Y', $lastPost) . $supEnd : '' );
+	' <sup title="Last post: '. date('jS M Y', $lastPost) . '" style="color:#382">new post</sup>' : '' );
 $photos = 'Photos'. ( ((time() - $lastAlbum < $newLength)) ?
-	' <sup title="Last upload: '. date('jS M Y', $lastAlbum) . $supEnd : '' );
+	' <sup title="Last upload: '. date('jS M Y', $lastAlbum) . '" style="color:#382">new album</sup>' : '' );
 
 $itemsM = array('Home', 'Webcam', 'Graphs', 'Data Summary', 'Forecast', 'Astronomy', $photos, 'About');
 $itemsD = array('Rain', 'Wind', 'Temperature', 'Humidity', 'Charts', 'Climate');
