@@ -98,25 +98,25 @@ class Html {
 	 * Produces an html img, with optional surrounding anchor<br />
 	 * Null-pass enabled.
 	 * @param string $src required
-	 * @param string $alt required
-	 * @param float $margin (in em) required
-	 * @param string $title [=null]
-	 * @param int $width [=null]
-	 * @param int $height [=null]
-	 * @param string $anchor title of anchor [=null]
-	 * @param string $extras any other attributes [=null]
+	 * @param string $title [=null] doubles-up as alt
+	 * @param string $class [=null] class name(s)
+	 * @param string $extras [=null] any other attributes
 	 * @return void echoes the well-formed xhtml
 	 */
-	static function img($src, $alt, $margin, $title = null, $width = null, $height = null, $anchor = null, $extras = null) {
-		$wid = ($width === null) ? '' : " width='$width' ";
-		$hei = ($height === null) ? '' : " height='$height' ";
-		$tit = ($title === null) ? '' : " title='$title' ";
+	static function img($src, $title = null, $class = null, $extras = null) {
+		$_alt = ($title === null) ? 'image' : $title;
+		$_title = ($title === null) ? '' : " title='$title' ";
+		$_class = ($title === null) ? '' : " class='$class' ";
 		$mores = ($extras === null) ? '' : $extras;
-		$imgString = "<img src='". ASSET_PATH ."img/$src' style='margin:{$margin}em;' alt='$alt' $wid $hei $tit $mores />";
-
-		echo ($anchor === null) ? $imgString : "<a href='". ASSET_PATH ."img/$src' title='$anchor'>$imgString</a>";
+		echo "<img src='". ASSET_PATH ."img/$src' alt='$_alt' $_class $_title $mores />";
 	}
 
+	/**
+	 * For anchors to internal documents only (e.g. xls)
+	 * @param type $path
+	 * @param type $content
+	 * @param type $_title
+	 */
 	static function a($path, $content, $_title=null) {
 		$title = ($_title === null) ? '' : " title='$_title' ";
 		echo "<a href='". ASSET_PATH ."doc/$path' $title>$content</a>" ;

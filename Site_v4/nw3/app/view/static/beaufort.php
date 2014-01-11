@@ -1,4 +1,7 @@
-<?php use \nw3\app\model\Variable; ?>
+<?php
+use nw3\app\model\Variable;
+use nw3\data\Beaufort;
+?>
 <h1>Beaufort Scale</h1>
 
 <table cellpadding="5" width="98%" class="table1">
@@ -9,12 +12,12 @@
 	</tr>
 	<?php for($level = 0; $level <= 12; $level++): ?>
 		<tr class="row<?php echo (($level % 2 === 0) ? 'light' : 'dark') ?>">
-			<td class="td4"><?php echo $level; ?><br /><?php echo $this->bft->word[$level]; ?></td>
+			<td class="td4"><?php echo $level; ?><br /><?php echo Beaufort::$word[$level]; ?></td>
 			<td class="td4">
-				<?php echo Variable::conv($this->bft->scale[$level], Variable::Wind, false, false, -1) .' - '.
-					Variable::conv($this->bft->scale[$level + 1], Variable::Wind, true, false, -1); ?>
+				<?php echo Variable::conv(Beaufort::$scale[$level], Variable::Wind, false, false, -1) .' - '.
+					Variable::conv(Beaufort::$scale[$level + 1], Variable::Wind, true, false, -1); ?>
 			</td>
-			<td class="td4"><?php echo $this->bft->descrip[$level]; ?></td>
+			<td class="td4"><?php echo Beaufort::$descrip[$level]; ?></td>
 		</tr>
 	<?php endfor; ?>
 </table>

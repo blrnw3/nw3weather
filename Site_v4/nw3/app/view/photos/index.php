@@ -14,7 +14,7 @@ use nw3\app\helper\Photos;
 		<?php endif; ?>
 		<td align="center">
 			<a href="./<?php echo $i; ?>" title="View full album">
-				<?php Html::img(Photos::cover_image($i), 'preview photo', 0, null, 200, 150, null, "border='1'") ?>
+				<?php Html::img(Photos::cover_image($i), 'album cover', 'album_cover') ?>
 			</a>
 			<br />
 			<b><?php echo $this->albums[$i]['title'] ?></b>

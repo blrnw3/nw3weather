@@ -17,6 +17,10 @@ class String {
 		return strpos($search, $find) !== false;
 	}
 
+	static function starts_with($search, $find) {
+		return strpos($search, $find) === 0;
+	}
+
 	/**
 	 * Pads an integer value with a leading 0 if it is between 0 and 9 (inclusive)
 	 * @param number $tag
@@ -30,20 +34,20 @@ class String {
 
 
 	/**
-	 * Tests for a blank string/value. NB: '-' also counts as empty.
+	 * Tests for a blank string/value.
 	 * @param mixed $val
 	 * @return bool
 	 */
 	static function isBlank($val) {
-		return (strlen($val) === 0) || ($val === '-');
+		return strlen($val) === 0;
 	}
 	/**
-	 * Tests for a blank string/value. NB: '-' also counts as empty.
+	 * Tests for a blank string/value.
 	 * @param mixed $val
 	 * @return bool
 	 */
 	static function isNotBlank($val) {
-		return !isBlank($val);
+		return strlen($val) > 0;
 	}
 
 	/**

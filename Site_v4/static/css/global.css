@@ -332,8 +332,15 @@ select {
 	border: 2px solid rgb(175,175,175);
 	border-spacing: 0px;
 	margin: 2px;
+	color: black;
+	background-color: rgb(233,232,225);
 }
-
+.table1 tbody tr:nth-child(2n) {
+	background-color: white;
+}
+.table1 tbody tr:hover {
+	background-color: #BBA8B2;
+}
 .td14 {
 	border: solid 1px #D8CEF6;
 	border-spacing: 1px;
@@ -472,13 +479,12 @@ select {
 }
 
 .aboutTbl {
-	width: 35%;
 	margin: 0.7em;
 }
 
 .aboutTbl td {
 	text-align: center;
-	padding: 0.3em;
+	padding: 0.3em 0.8em;
 	border: solid 1px #CAB99D;
 	border-spacing: 1px;
 }
@@ -489,6 +495,11 @@ select {
 }
 
 /* PHOTO ALBUMS */
+.album_cover {
+	width: 200px;
+	height: 150px;
+	border: 1px solid #152;
+}
 #slideshow_control button {
 	display: inline-block;
 }
@@ -503,4 +514,31 @@ select {
 }
 .mini_photo {
 	width: 220px;
+}
+
+.about_photo {
+	margin: 0.2em;
+	width: 420px;
+}
+.about_photo_solo {
+	margin: 0.8em;
+	width: 840px;
+}
+
+#contact_form {
+	width: 600px;
+}
+
+.loading {
+	background-image: url('../img/loader.gif');
+	background-repeat: no-repeat;
+}
+
+input[type=submit] {
+	padding: 0.3em;
+	margin: 0.1em;
+}
+
+#email_address {
+	color: blue;
 }

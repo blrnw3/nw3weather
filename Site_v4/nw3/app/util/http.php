@@ -99,6 +99,15 @@ class Http {
 		header($protocol . ' ' . $code . ' ' . $text);
 	}
 
+	static function redirect($url) {
+		self::response_code(301);
+		header('Location: ' . $url);
+	}
+
+	static function json() {
+		header('Content-Type: application/json');
+	}
+
 }
 
 ?>

@@ -23,7 +23,7 @@ class Sidebar {
 
 			$new = $item['new'];
 			if($new && D_now - $new['last'] < Admin::LENGTH_NEWNESS) {
-				$name .= ' <sup title="Last '. $new['name'] .': '. date('jS M Y'. $new['last']) . '" style="color:#382">new</sup>';
+				$name .= ' <sup title="Last '. $new['name'] .': '. date('jS M Y'. $new['last']) . '" style="color:#382">new post/album</sup>';
 			}
 
 			$class = $active ? ' class="curr"' : '';

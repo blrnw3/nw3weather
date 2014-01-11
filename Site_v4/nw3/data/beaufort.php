@@ -1,5 +1,5 @@
 <?php
-namespace nw3\app\model;
+namespace nw3\data;
 
 /**
  *
@@ -7,13 +7,13 @@ namespace nw3\app\model;
  */
 class Beaufort {
 
-	public $scale = array(0,1,3,7,12,17,24,30,38,46,54,63,73,99);
+	public static $scale = array(0,1,3,7,12,17,24,30,38,46,54,63,73,99);
 
-	public $word = array('Calm', 'Light air', 'Light breeze', 'Gentle breeze', 'Moderate breeze',
+	public static $word = array('Calm', 'Light air', 'Light breeze', 'Gentle breeze', 'Moderate breeze',
 					'Fresh breeze', 'Strong breeze', 'Near gale', 'Gale',
 					'Severe gale', 'Storm', 'Violent storm', 'Hurricane');
 
-	public $descrip = array(
+	public static $descrip = array(
 		'Calm. Smoke rises vertically.',
 		'Smoke drift indicates wind direction and wind vanes cease moving.',
 		'Wind felt on exposed skin. Leaves rustle and wind vanes begin to move.',

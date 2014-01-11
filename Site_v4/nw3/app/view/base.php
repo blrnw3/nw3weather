@@ -58,16 +58,15 @@ use nw3\app\util\Html;
 					<div class="leftSideBar">
 						<p class="sideBarTitle">Navigation</p>
 						<ul>
-							<?php $sidebar->group('main'); ?>
-
-							<?php $sidebar->subheading("Detailed Data", "38610B"); ?>
-							<?php $sidebar->group('detail'); ?>
-
-							<?php $sidebar->subheading("Historical", "0B614B"); ?>
-							<?php $sidebar->group('historical'); ?>
-
-							<?php $sidebar->subheading("Other", "5B9D4B"); ?>
-							<?php $sidebar->group('other'); ?>
+						<?php
+							$sidebar->group('main');
+							$sidebar->subheading("Detailed Data", "38610B");
+							$sidebar->group('detail');
+							$sidebar->subheading("Historical", "0B614B");
+							$sidebar->group('historical');
+							$sidebar->subheading("Other", "5B9D4B");
+							$sidebar->group('other');
+						?>
 						</ul>
 						<p class="sideBarTitle">Site Options</p>
 					</div>
@@ -83,7 +82,7 @@ use nw3\app\util\Html;
 				<div id="footer">
 					<div id="footer-links">
 						<a href="#header">Top</a> |
-						<a href="contact.php" title="E-mail me">Contact</a> |
+						<a href="<?php Html::href('contact'); ?>" title="nw3weather contact page">Contact</a> |
 						<a href="http://nw3weather.co.uk" title="Browse to homepage">Home</a>
 					</div>
 					<div id="copyright">

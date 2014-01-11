@@ -24,8 +24,8 @@ class Date {
 	 * Loads up the global define with some useful constants
 	 */
 	public static function initialise() {
-		//When testing, it could be useful to change this
-		$now = time() - 86400 * 90;
+		$debug_offset = 86400 * 100; //When testing, it could be useful to change this
+		$now = time() - $debug_offset;
 		define('D_now', $now);
 
 		//Define (globally) some of the most useful date-based pseudo-constants

@@ -6,7 +6,7 @@
 	A full <a href="<?php echo Html::href('about'); ?>#Forecasting" title="Found on the about page">discussion</a> of this can be read for further interest. </p>
 
 <p>
-	<a href="/CP_Solutions/WxApp/?desktop">View Live Ranked weather data for Europe</a>
+	<a href="http://wxapp.nw3weather.co.uk/Webview/?desktop">View Live Ranked weather data for Europe</a>
 </p>
 
 <table cellpadding="5" border="0" width="99%" align="center">

@@ -7,6 +7,12 @@ namespace nw3\config;
  */
 
 class Admin {
+	/** * Spits out useful debug info in case of errors */
+	const DEBUG = true;
+
+	/** * Name of the Controller to use by default, i.e. for the Site root */
+	const HOME_ROOT = 'home';
+
 	const STATUS_MESSAGE = 'Site version 4 coming soon!';
 	const SHOW_MESSAGE = false;
 
@@ -20,6 +26,11 @@ class Admin {
 
 	/** Length in days, during which to consider a blog post/album upload to be new */
 	const LENGTH_NEWNESS = 3;
+
+	/** Email addy for contact */
+	const EMAIL_CONTACT = 'blr@nw3weather.co.uk';
+	/** Email addy for alerts */
+	const EMAIL_ALERT = 'alerts@nw3weather.co.uk';
 
 	static $sidebar = array(
 		'main' => array(

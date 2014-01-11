@@ -7,8 +7,6 @@ namespace nw3\app\util;
  */
 class Maths {
 
-	const PHP_INT_MIN = -92233720;
-
 	/**
 	 * Rounds a value to a <em>fixed</em> number of dp
 	 * @param number $val val to round

@@ -1,3 +1,5 @@
+<?php use nw3\app\util\Html; ?>
+
 <h1>nw3weather on the web</h1>
 
 <table cellpadding="10"><tr><td style="font-weight:bold; font-size:110%">
@@ -10,7 +12,7 @@
 		</td>
 		<td style="font-weight:bold; font-size:110%">
 			<a href="http://wow.metoffice.gov.uk/latestobservationservlet?siteID=3329071" title="Link to my UKMO WOW Site">UK Met Office WOW page<br />
-				<img src="<?php echo ASSET_PATH; ?>WOWbanner.png" alt="WOW banner" /> </a>
+				<?php Html::img('WOWbanner.png'); ?> </a>
 		</td>
 </tr></table>
 

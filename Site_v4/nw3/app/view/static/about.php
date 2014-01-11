@@ -1,5 +1,10 @@
-<?php use nw3\config\Station; ?>
-<?php use nw3\app\util\Html as H; ?>
+<?php
+use nw3\config\Station;
+use nw3\app\util\Html;
+use nw3\app\helper;
+use nw3\data\Traffic;
+?>
+
 <h1>About nw3weather</h1>
 
 <h2>Weather Station</h2>
@@ -57,13 +62,11 @@ The station comprises several sensors:
 	<li>A self-tipping rain gauge modified to a resolution of 0.3mm, which is attached to the roof of the Stevenson Screen</li>
 	<li>A barometer integrated into the receiving unit (indoors).</li>
 </ul>
-<?php
-	H::img("P1010070.JPG", "Thermo/Hygro and Rain Gauge", 0.2, "Thermo/Hygro in radiation shield, Rain Gauge on top", 430, 338, "Enlarge");
-	H::img("P1010074.JPG", "Wind Sensors", 0.2, "Anemometer &amp; Wind Vane on top of pole", 394, 338, "Enlarge");
-	echo '<p>All the sensors are automatic and send data wirelessly to the receiving unit every 14-60s.</p>';
-	H::img("PICT2516.JPG", "Thermo/Hygro clos-up", 0.2, "Thermo/Hygro close-up inside radiation shield", 420, 315, 'dqwd');
-	H::img("P1010076.JPG", "Wind Sensors close-up", 0.2, "Wind Sensors close-up", 420, 315, "Enlarge");
-?>
+<?php Html::img("P1010070.JPG", "Thermo/Hygro in radiation shield, Rain Gauge on top", 'about_photo'); ?>
+<?php Html::img("P1010074.JPG", "Anemometer &amp; Wind Vane on top of pole", 'about_photo'); ?>
+<p>All the sensors are automatic and send data wirelessly to the receiving unit every 14-60s.</p>
+<?php Html::img("PICT2516.JPG", "Thermo/Hygro close-up inside radiation shield", 'about_photo'); ?>
+<?php Html::img("P1010076.JPG", "Wind Sensors close-up", 'about_photo'); ?>
 <p>
 	Additionally, there are two webcams used to monitor sky and ground conditions, which along with traditional techniques I use
 	to collect data for extra weather variables - sun hours, cloud cover, wet hours, snowfall, lying snow, fog, hail, and thunder(storms).
@@ -116,7 +119,7 @@ The station comprises several sensors:
 <h3>Technical</h3>
 <p>
 	The process involved in converting readings from the sensors to the data viewable on this website can be summarised thus: <br />
-	<?php echo H::img('Sensors_to_WWW.jpg', "Data flow chart", 0.8, "Click for full-size image", 820, null, true) ?>
+	<?php echo Html::img('Sensors_to_WWW.jpg', "Data flow chart", 'about_photo_solo') ?>
 	<br /> Each sensor wireless sends data to the base station, which transmits it to my home PC (a dedicated low-power machine running Windows 7).
 	Weather Display software renders and uploads this data via
 	<abbr title="file transfer protocol">FTP</abbr> to a web server -
@@ -128,8 +131,8 @@ The station comprises several sensors:
 	<a href='https://en.wikipedia.org/wiki/Serialisation'>PHP-serialised</a> (short-term), and PHP variable-exported.
 </p>
 <!--<ul>
-	<li><?php H::a('dat2012.csv', 'Sample csv', 'Daily data from 2012') ?></li>
-	<li><?php H::a('sample.xhtml', 'Sample script', 'Source-code for monthly data tables webpage') ?></li>
+	<li><?php Html::a('dat2012.csv', 'Sample csv', 'Daily data from 2012') ?></li>
+	<li><?php Html::a('sample.xhtml', 'Sample script', 'Source-code for monthly data tables webpage') ?></li>
 </ul>-->
 
 <h3>History</h3>
@@ -157,9 +160,17 @@ All old site versions are still available to view, but are no longer maintained 
 	a rubbish (but free) web server. I only set it up so I could view my data away from home.
 </p>
 
+<p>
+	Spreadsheet-based data collection and analysis was done between March 2008 and mid-2012.
+	At first, before nw3weather came into existence, this served as the only weather data repository,
+	but over time the web-based system took over due to its greater flexibility, power, reach, and automation.
+	Samples of the <?php Html::a('DailyData2011.xlsx', 'daily', 'Daily data 2011 spreadsheet'); ?> and
+	<?php Html::a('MonthlyData2011.xlsx', 'monthly', 'Monthly data 2011 apreadsheet'); ?> spreadsheets for 2011 are provided for interest.
+</p>
+
 <h3>Site Traffic</h3>
 These figures are approximations based on my site logs, and are for interest only.
-<table class="table1 aboutTbl">
+<!--<table class="table1 aboutTbl">
 	<thead>
 		<tr class="table-head">
 			<td class="td12" style="padding: 0.5em" colspan="2">Nw3weather Site Traffic History</td>
@@ -169,7 +180,7 @@ These figures are approximations based on my site logs, and are for interest onl
 			<td>Median Daily Visits</td>
 		</tr>
 	</thead>
-	<tfoot> <!-- Yes, it is meant to go here! -->
+	<tfoot>  Yes, it is meant to go here!
 		<tr>
 			<td>Jun 2012 - Current</td>
 			<td>~150</td>
@@ -193,40 +204,50 @@ These figures are approximations based on my site logs, and are for interest onl
 			<td>~100</td>
 		</tr>
 	</tbody>
-</table>
+</table>-->
 
+<?php
+$traffic = new helper\Traffic();
+$traffic->prepare_annual_data_table();
+?>
 <table class="table1 aboutTbl">
 	<thead>
 		<tr class="table-head">
-			<td class="td12" style="padding: 0.5em" colspan="2">Nw3weather Annual Traffic</td>
+			<td class="td12" style="padding: 0.5em" colspan="6">Nw3weather Annual Traffic</td>
 		</tr>
 		<tr class="table-top">
 			<td>Year</td>
 			<td>Total Visits</td>
+			<td>Mean</td>
+			<td>Median</td>
+			<td>Max</td>
+			<td>Min</td>
 		</tr>
 	</thead>
 	<tfoot> <!-- Yes, it is meant to go here! -->
 		<tr>
 			<td>Total</td>
-			<td>~85,000+</td>
+			<td><?php echo number_format($traffic->annual_summary['sum']) ?></td>
+			<td><?php echo $traffic->annual_summary['mean'] ?></td>
+			<td></td>
+			<td><?php echo $traffic->annual_summary['max'] ?></td>
+			<td><?php echo $traffic->annual_summary['min'] ?></td>
 		</tr>
 	</tfoot>
 	<tbody>
-		<tr class="rowdark">
-			<td>2011</td>
-			<td>~12,000</td>
+		<?php foreach (Traffic::$annual as $year => $data): ?>
+		<tr>
+			<td><?php echo $year ?></td>
+			<td><?php echo number_format($data['sum']) ?></td>
+			<td><?php echo $data['mean'] ?></td>
+			<td><?php echo $data['median'] ?></td>
+			<td><?php echo $data['max'] ?> (<?php echo $data['max_date'] ?>)</td>
+			<td><?php echo $data['min'] ?> (<?php echo $data['min_date'] ?>)</td>
 		</tr>
-		<tr class="rowlight">
-			<td>2012</td>
-			<td>~48,000</td>
-		</tr>
-		<tr class="rowdark">
-			<td>2013</td>
-			<td>~25,000+</td>
-		</tr>
+		<?php endforeach; ?>
 	</tbody>
 </table>
-<p>Additionally, it is found that, as expected, traffic is higher on days of precipitation - particularly snowfall, which can drive traffic up by more than 500% -
+<p>Additionally, it is found that, as expected, traffic is higher on days of precipitation - particularly snowfall, which can drive traffic up by more than 500%;
 	record site traffic was ~1500 visits on <a href='/wxhistday.php?year=2013&amp;month=1&amp;day=18' title='daily weather breakdown'>18th Jan 2013</a>.
 </p>
 
@@ -297,7 +318,7 @@ These figures are approximations based on my site logs, and are for interest onl
 
 <p>
 	I am a weather fanatic with a particular interest in data analysis,
-	and have been since around 2007 when I first started to collect data (in Excel) from a very basic weather station I had.
+	and have been since around 2007 when I first started to collect data (using spreadsheets) from a very basic weather station I had.
 	I enjoy any weather which is interesting from a data point-of-view - whether that be extreme cold, heat, snow or dullness -
 	though I always appreciate convective events (storms, hail and heavy showers) - rare though these are in London.
 </p>

@@ -23,21 +23,9 @@
 
 <h1>Webcam</h1>
 
-<h3>Latest Skycam Image</h3>
+<?php $this->viewette('skycam') ?>
 
-
-<p>The camera is a Logitech C300 and is looking NE over Hampstead Heath (<a href="about#location" title="About page">see map</a>).</p>
-<img name="refresh" src="http://192.168.1.66/jpgwebcam.jpg" title="Latest skycam" width="640" height="480" alt="skycam" />
-
-<p>The image is updated automatically every minute, day and night, operating with a delay of about 70s.
-<br />
-<?php if($this->dark): ?>
-	<h3>Latest daylight webcam image</h3>
-	<img src="/sunsetcam.jpg" alt="Latest sunsetcam" width="640" height="480" />
-	<br /><br />
-<?php endif; ?>
-
-A <a href="webcam/skycam" title="Contains skycam only">self-contained version</a> is also available.
+A <a href="skycam" title="Contains skycam only">self-contained version</a> is also available.
 </p>
 
 <hr />

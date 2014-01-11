@@ -16,8 +16,9 @@ use nw3\app\util\Html;
 		This next iteration of nw3weather will initially involve entirely back-end upgrades, of the data model and major refactoring of the source code.
 		Following the completion of this upgrade in approx. mid-2014, further features will be worked on and test releases to the live site will be
 		performed before a full live release in 2015, probably.<br />
-		I have now moved to <a href="https://www.pivotaltracker.com/s/projects/943352">using PivotalTracker</a> as a project management tool for nw3weather development.
-		This enables easy management of bugs, features and chores throughout the development process, and this is the best place to for nw3weather users to
+		I have now moved to <a href="https://www.pivotaltracker.com/s/projects/943352">using PivotalTracker</a>
+		as a project management tool for nw3weather development.
+		This enables easy management of bugs, features and chores throughout the development process, and this is the best place for nw3weather users to
 		follow the latest goings on.
 	</p>
 
@@ -38,7 +39,7 @@ use nw3\app\util\Html;
 			<li>Data control - almost all processing of images and raw data is now done on the server (rather than local PC);
 				this makes it much easier to correct glitches, add features, and reduce inconsistencies and errors</li>
 			<li>Rankings - It's now possible to view ranked data in a number of places</li>
-			<li>Javascript - This is increasingly being used to improve usability, but I'm aware that a lot more needs to be done in this area.</li>
+			<li>Javascript - This is increasingly  being used to improve usability, but I'm aware that a lot more needs to be done in this area.</li>
 		</ul>
 	<p>
 		On account of these fairly significant changes, the loss of a few of the site v2 features, and given that I no longer have any interest in supporting
@@ -51,13 +52,13 @@ use nw3\app\util\Html;
 	</p>
 	<p>
 		Finally, be aware that site v3 uses new values for the long-term-average rainfall to reflect recent analysis
-		(see post from 7th Jan 2012 below and the <a href="/Rainfall-comparison.xls" title="Analysis of rainfall at NW3 and nearby sites">updated xls</a>).
+		(see post from 7th Jan 2012 below and the <a href="<?php echo ASSET_PATH; ?>doc/Rainfall-comparison.xls" title="Analysis of rainfall at NW3 and nearby sites">updated xls</a>).
 		Updated values are to be found on the <a href="<?php Html::href('climate'); ?>">new climate page</a>.
 		The rest of the climate averages will be updated for the start of <del>2014</del> <ins>site v.4 (see above)</ins>
 		to reflect the newly available 1981-2010 standard averaging period.
 	</p>
 	<p>I really hope you all like the changes I've made, and thank you for visiting nw3weather.</p>
-	<?php Html::img('newmain.jpg', 'sitev3 banner', 0, 'New site banner') ?>
+	<?php Html::img('newmain.jpg', 'New site banner') ?>
 	<br /><br />
 	<span style="color:gray;font-style:italic">Posted: 22nd May 2013</span><br />
 </td></tr>
@@ -132,7 +133,7 @@ use nw3\app\util\Html;
 	Periods of downtime are easily discerned from the graphs, which show either 'flatline' (wind data) or clear evidence of interpolation (temp, hum data).
 	Yesterday's (15z-23z) is a prime example:
 	</p>
-	<img alt="graph" src="/2012/stitchedmaingraph_20120107.png" title="Daily weather graph for 7th Jan 2012 showing evidence of data reconstruction" />
+	<?php Html::img('graph_data_loss.png', 'Daily weather graph for 7th Jan 2012 showing evidence of data reconstruction'); ?>
 	NB: The <a href="<?php Html::href('graphs'); ?>">graph page</a> can be used to check for recent downtime; old graphs are archived <a href="<?php Html::href('graphs/archive'); ?>">here</a>.
 	<br />
 	<span style="color:gray;font-style:italic">Posted: 8th Jan 2012</span><br />
@@ -146,7 +147,8 @@ use nw3\app\util\Html;
 	As of December 2011, early results from comparing the data from the two rain gauges suggested a correction of +5% was needed on the automatic one, which was implemented for the start of 2012.
 	Further data will be collected in 2012, with a final correction to be decided on for the start of 2013.</p><p>
 	In January 2012, I made a full comparison of rainfall data collected here versus figures from the Whitestone Pond station, as well as a few others around London.
-	The results are available as a <a href="/Rainfall-adjustments.gif" title="View results as an image">.gif</a> and as the original <a href="/Rainfall-comparison.xls" title="View results as an Excel file">.xls</a> file.
+	The results are available as <a href="<?php echo ASSET_PATH; ?>img/Rainfall-adjustments_2011.gif">an image</a>
+	and as the original <?php Html::a('Rainfall-adjustments_2011.xls', 'spreadsheet') ?>.
 	Averaged over the available timeframe, closest agreement was with the MetO station at RAF Northolt, 15km away but at a similar elevation.
 	After adjusting for the +5% correction suggested by manual data collection, the figures recorded here are still some 15% lower than those from Whitestone Pond.
 	However, the agreement of my figures with Northolt's suggest that this is possibly down to elevation difference (55m at NW3weather versus 140m at WS Pond),
@@ -154,14 +156,16 @@ use nw3\app\util\Html;
 	<br />Regardless of the cause, the essential conclusion is that the long-term rainfall averages I derived from the WS Pond station are incorrect, and need to be adjusted downwards.
 	I plan to implement these changes for the start of 2013 so that I have time to adjust other figures (such as temperature) as well, should it be necessary.<br />
 	</p>
-	<img alt="auto gauge" src="/static-images/auto-gauge.JPG" title="Automatic rain gauge" /> <img alt="manual gauge" src="/static-images/manual-gauge.JPG" title="Manual rain gauge" /><br />
+	<?php Html::img('auto-gauge.JPG', 'Automatic rain gauge') ?>
+	<?php Html::img('manual-gauge.JPG', 'Manual rain gauge') ?>
+	<br />
 	<span style="color:gray;font-style:italic">Posted: 7th Jan 2012</span><br />
 </td></tr>
 
 <tr><td><h2>Site News - two new pages, more in development</h2>
 	<p>Welcome to the NW3weather blog! This is the first of two new pages for the New Year.
-	The second is a logical addition to the historical reports, <a href="/wxhistyear.php">annual weather summaries</a>, to complete the set which started with only daily and monthly reports.
-	A summary section has been added to the <a href="/wxhistmonth.php#summary">monthly weather summaries</a>, though this is not yet finalised.
+	The second is a logical addition to the historical reports, <a href="<?php Html::href('reports/year'); ?>">annual weather summaries</a>, to complete the set which started with only daily and monthly reports.
+	A summary section has been added to the <a href="<?php Html::href('reports/month'); ?>">monthly weather summaries</a>, though this is not yet finalised.
 	Furthermore, the daily weather reports page is in need of a complete overhaul to bring it in line with the style of the others, but I've put that on hold for now.<br />
 	Development of more pages with historical data and records is underway, but the next update will not come before July 2012, when I will have time to continue with site development.
 	</p>

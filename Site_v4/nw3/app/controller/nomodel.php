@@ -15,17 +15,25 @@ class Nomodel extends core\Controller {
 		'about' => 'About',
 		'forecast' => 'Forecast',
 		'blog' => 'Blog | News',
+		'beaufort' => 'Beaufort Scale'
 	);
 
 	public function __construct($path) {
 		parent::__construct($path);
-		$this->build($path, self::$paths[$path]);
+		$this->build(self::$paths[$path], 'static', $path);
+	}
+
+	public function load() {
 		$this->render();
+	}
+
+	public function index() {
 	}
 
 	static function path_exists($path) {
 		return array_key_exists($path, self::$paths);
 	}
+
 }
 
 ?>

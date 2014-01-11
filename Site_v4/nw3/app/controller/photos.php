@@ -13,18 +13,24 @@ use nw3\data\Albums;
 class Photos extends core\Controller {
 
 	public function __construct($path) {
-		parent::__construct(__CLASS__);
-		$albnum = String::isBlank($path[0]) ? false : (int)$path[0];
+		parent::__construct(__CLASS__, $path);
+	}
 
-		if($albnum === false) {
-			$this->albums = Albums::$data;
-			$this->build('photos', 'My Photos');
-		} else {
-			$this->album = Albums::$data[$albnum];
-			$this->album_path = ASSET_PATH .'img/photos/'. $this->album['ref'];
-			$this->build('album', $this->album['title'] .' - Photos', true);
-		}
+	public function subpath($albnum) {
+		$this->album = Albums::$data[$albnum];
+		$this->album_path = ASSET_PATH .'img/photos/'. $this->album['ref'];
+		$this->build($this->album['title'] .' - Photos', null, 'album');
+		$this->render();
+	}
 
+	public function validate_arg($arg) {
+		$albnum = is_numeric($arg) ? (int)$arg : -1;
+		return array_key_exists($albnum, Albums::$data);
+	}
+
+	public function index() {
+		$this->albums = Albums::$data;
+		$this->build('My Photos');
 		$this->render();
 	}
 }
