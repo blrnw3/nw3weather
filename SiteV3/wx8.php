@@ -300,7 +300,7 @@ $file = 8;
 		<tfoot> <!-- Yes, it is meant to go here! -->
 			<tr>
 				<td>Total</td>
-				<td>~85,000+</td>
+				<td>&gt;125,000</td>
 			</tr>
 		</tfoot>
 		<tbody>
@@ -314,12 +314,12 @@ $file = 8;
 			</tr>
 			<tr class="rowdark">
 				<td>2013</td>
-				<td>~25,000+</td>
+				<td>~63,000</td>
 			</tr>
 		</tbody>
 	</table>
 	<p>Additionally, it is found that, as expected, traffic is higher on days of precipitation - particularly snowfall, which can drive traffic up by more than 500% -
-		record site traffic was ~1500 visits on <a href='/wxhistday.php?year=2013&amp;month=1&amp;day=18' title='daily weather breakdown'>18th Jan 2013</a>.
+		record site traffic was over 1500 visits on <a href='/wxhistday.php?year=2013&amp;month=1&amp;day=18' title='daily weather breakdown'>18th Jan 2013</a>.
 	</p>
 
 	<h2>Acknowledgements</h2>
@@ -395,7 +395,7 @@ $file = 8;
 	</p>
 	<p>
 		My background is in Physics and Computer Science, both of which I was largely motivated to study by my love of the weather.<br />
-		I currently live and study in London.
+		I currently live and work in London.
 	</p>
 
 </div>

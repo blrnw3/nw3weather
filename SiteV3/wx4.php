@@ -173,8 +173,10 @@ for($r = 0; $r < count($values); $r++) {
 table_end();
 ?>
 <p>
-	Bracketed values refer to departure from the relevant long-term climate average. <br />
-	'Days of' require greater than 0.1 of the quantity (rain in mm or sun hrs).
+	Bracketed values refer to departure from the relevant long-term climate average; note well that the month and year figures are adjusted for the current date,
+	i.e. compared to the expected conditions for the month/year to-date, rather than the full period.  <br />
+	'Days of' require greater than 0.1 of the quantity (rain in mm or sun hrs). <br />
+	Sunshine figures are not available for the current day so all periods are upto yesterday, rather than today as for the other variables.
 </p>
 
 <hr />
