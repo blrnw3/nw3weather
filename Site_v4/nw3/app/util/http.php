@@ -108,6 +108,10 @@ class Http {
 		header('Content-Type: application/json');
 	}
 
+	static function text() {
+		header('Content-Type: text/plain');
+	}
+
 }
 
 ?>

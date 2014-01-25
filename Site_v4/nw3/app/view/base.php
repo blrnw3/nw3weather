@@ -1,5 +1,7 @@
 <?php
 use nw3\app\util\Html;
+use nw3\app\core\Units;
+use nw3\app\core\Session;
 ?>
 
 <!--<!DOCTYPE html>
@@ -50,26 +52,41 @@ use nw3\app\util\Html;
 								nw3 weather, Hampstead London England UK
 							</h4>
 						<?php endif; ?>
-						<span style="text-align:right"><?php echo $nw3_time; ?></span>
+						<span style="text-align:right"><?php echo D_date .', '. D_time .' '. D_dst; ?></span>
 					</div>
 				</div>
 
-				<div id="side-bar">
-					<div class="leftSideBar">
-						<p class="sideBarTitle">Navigation</p>
-						<ul>
-						<?php
-							$sidebar->group('main');
-							$sidebar->subheading("Detailed Data", "38610B");
-							$sidebar->group('detail');
-							$sidebar->subheading("Historical", "0B614B");
-							$sidebar->group('historical');
-							$sidebar->subheading("Other", "5B9D4B");
-							$sidebar->group('other');
-						?>
-						</ul>
-						<p class="sideBarTitle">Site Options</p>
-					</div>
+				<div id="side-bar" class="leftSideBar">
+					<p class="sideBarTitle">Navigation</p>
+					<ul>
+					<?php
+						$sidebar->group('main');
+						$sidebar->subheading("Detailed Data", "38610B");
+						$sidebar->group('detail');
+						$sidebar->subheading("Historical", "0B614B");
+						$sidebar->group('historical');
+						$sidebar->subheading("Other", "5B9D4B");
+						$sidebar->group('other');
+					?>
+					</ul>
+					<p class="sideBarTitle">Site Options</p>
+					<table align="center">
+						<tr><td><b>Units</b></td></tr>
+						<tr><td>
+								<form method="get" name="SetUnits" action="">
+								<?php foreach (Units::$names as $k => $unit_type): ?>
+									<label>
+										<input name="unit" type="radio" value="<?php echo $unit_type ?>" onclick="this.form.submit();"
+											<?php if(Units::$type === $unit_type): ?>
+											   checked="checked"
+											<?php endif; ?>
+											><?php echo Units::$names_full[$k]; ?>
+										</input>
+										<br />
+								<?php endforeach; ?>
+								</form>
+						</td></tr>
+					</table>
 				</div>
 
 				<input id="constants-time" type="hidden" value="<?php echo D_now ?>" />
@@ -86,13 +103,14 @@ use nw3\app\util\Html;
 						<a href="http://nw3weather.co.uk" title="Browse to homepage">Home</a>
 					</div>
 					<div id="copyright">
-						&copy; 2010-<?php echo $current_year; ?>, BLR<span> | Site version 4</span>
+						&copy; 2010-<?php echo D_year; ?>, BLR<span> | Site version 4</span>
 					</div>
 					<div id="footer-message">
 						Caution: All data is recorded from an amateur-run personal weather station; accuracy and reliability may be poor.
 					</div>
 					<div id="script_details">
-						Script executed <abbr title="Session Cnt: <?php echo $session_page_count; ?>">in</abbr> <?php echo $script_load_time; ?>
+						<?php $this->timer->stop(); ?>
+						Script executed <abbr title="Session Cnt: <?php echo Session::page_count(); ?>">in</abbr> <?php echo $this->timer->executionTimeMs(); ?>
 					</div>
 				</div>
 			</div>

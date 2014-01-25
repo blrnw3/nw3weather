@@ -24,12 +24,13 @@ class Date {
 	 * Loads up the global define with some useful constants
 	 */
 	public static function initialise() {
-		$debug_offset = 86400 * 100; //When testing, it could be useful to change this
+		$debug_offset = 86400 * 99; //When testing, it could be useful to change this
 		$now = time() - $debug_offset;
 		define('D_now', $now);
 
 		//Define (globally) some of the most useful date-based pseudo-constants
 		define('D_monthname', date('F', $now));
+		define('D_monthshort', date('M', $now));
 		define('D_date', date('d M Y', $now));
 		define('D_time', date('H:i', $now));
 		define('D_dst', date('i', $now) ? 'BST' : 'GMT');
@@ -110,7 +111,7 @@ class Date {
 			if(!$year) { $year_new = $dyear; } else { $year_new = $year; }
 			if(!$month) { $month_new = $dmonth; } else { $month_new = $month; }
 			if(!$day) { $day_new = $dday; } else { $day_new = $day; }
-			$record = mkdate($month_new, $day_new, $year_new);
+			$record = self::mkdate($month_new, $day_new, $year_new);
 		}
 		if($debug) {
 			echo date(' H:i, d m Y ',$record), ' xxx ', date(' H:i, d m Y ',mktime(0,0,0)), '<br />';
@@ -127,7 +128,7 @@ class Date {
 			elseif(!$day) { return monthfull($month) . ' ' . $year_new; }
 			elseif(!$month) { return 'Day ' . $day_new . ', ' . $year_new; }
 			elseif(!$year) { return datefull($day_new) . ' ' . monthfull($month_new); }
-			else { return date($format, mkdate($month_new, $day_new,$year_new)); }
+			else { return date($format, self::mkdate($month_new, $day_new,$year_new)); }
 		}
 	}
 	/**
@@ -138,18 +139,15 @@ class Date {
 	 * @return type
 	 */
 	static function mkdate($month = false, $day = false, $year = false) {
-		if($year === false) { $year = $GLOBALS['dyear']; }
-		if($month === false) { $month = $GLOBALS['dmonth']; }
-		if($day === false) { $day = $GLOBALS['dday']; }
+		if($year === false) { $year = D_year; }
+		if($month === false) { $month = D_month; }
+		if($day === false) { $day = D_day; }
 
 		$time = mktime(0,0,0, $month, $day, $year);
-		if(!$time) {
-			error_log('bad mkdate call');
-		}
 		return $time;
 	}
 	static function mkday($day) {
-		return mktime(0,0,0, $GLOBALS['dmonth'], $day);
+		return mktime(0,0,0, D_month, $day);
 	}
 
 	/**
@@ -159,7 +157,7 @@ class Date {
 	 * @return int timestamp
 	 */
 	static function mkz($z, $y = false) {
-		if(!$y) { $y = $GLOBALS['dyear']; }
+		$y = $y || D_year;
 		return strtotime('Jan 1st '. (string)$y . ' + ' . (string)$z . ' days');
 	}
 
@@ -188,7 +186,7 @@ class Date {
 	 * @return int timestamp
 	 */
 	static function monthtotime($mon) {
-		return mkdate(1 + $mon, 1, 2009);
+		return self::mkdate(1 + $mon, 1, 2009);
 	}
 
 	/**
@@ -205,25 +203,33 @@ class Date {
 		$trueDay = $day - ($dim * ($year - 2009)) - $nly + 1; //offset now needed
 	//	$stuff = array($dmonth, $dyear, $lyNum, $nly, $dim, $year, $trueDay);
 	//	print_m($stuff);
-		return mkdate($dmonth, $trueDay, $year);
+		return self::mkdate($dmonth, $trueDay, $year);
+	}
+
+	/**
+	 * Get day in year (aka z) for given dmy
+	 * @param type $day
+	 * @param type $month
+	 * @param type $year
+	 * @return type
+	 */
+	static function get_z($day, $month, $year = 2009) {
+		return date('z', self::mkdate($month, $day, $year));
 	}
 
 	static function get_days_in_month($month, $year = 2009) {
-		return date('t',mkdate($month,2,$year));
+		return date('t',self::mkdate($month,2,$year));
 	}
 	static function get_seasondays($sea, $year = 2009) {
 		for($s2 = 0; $s2 < 3; $s2++) { $days += get_days_in_month($snums[$sea][$s2]+1,$year); }
 		return $days;
 	}
 	static function get_days_in_year($year) {
-		return date("z", mkdate(12,31,$year)) + 1;
+		return date("z", self::mkdate(12,31,$year)) + 1;
 	}
 
 	static function datefull($test) {
-		return date('jS', mkdate(1,$test));
-	}
-	static function monthfull($mn) {
-		return $GLOBALS['months3'][intval($mn)-1];
+		return date('jS', self::mkdate(1,$test));
 	}
 }
 

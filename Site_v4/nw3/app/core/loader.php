@@ -1,11 +1,9 @@
 <?php
 namespace nw3\app\core;
 
-use nw3\app\util\Date;
 use nw3\app\util\Http;
 use nw3\app\util\String;
 use nw3\app\core\Session;
-use nw3\app\core\Units;
 use nw3\app\controller\Nomodel;
 use nw3\config\Admin;
 
@@ -14,13 +12,6 @@ class Loader {
 	private $url_parts = null;
 
 	function load() {
-
-		Date::initialise();
-		Session::initialise();
-		Units::initialise();
-
-		define('ASSET_PATH', \Config::HTML_ROOT .'static/');
-
 		//Clear the query string to get the clean URL
 		$url = strtok($_SERVER['REQUEST_URI'], '?');
 

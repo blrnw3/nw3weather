@@ -1,2 +1,7 @@
 SiteV3_toPort/
 static/js/lib/
+nw3/lib/jpgraph/fonts/
+nw3/lib/jpgraph/lang/
+nw3/lib/jpgraph/*.dat
+nw3/lib/jpgraph/flag_mapping
+nw3/lib/jpgraph/error_log

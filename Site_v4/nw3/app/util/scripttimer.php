@@ -33,7 +33,7 @@ class ScriptTimer {
 	}
 
 	private function prettify($val) {
-		return "Script running for ". Maths::round($val, 3) ."s";
+		return "Script running for ". round($val * 1000) ."ms";
 	}
 
 }

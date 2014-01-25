@@ -1,0 +1,1 @@
+This folder is included in source control because I have modified some of the files slightly to suit my own purposes.

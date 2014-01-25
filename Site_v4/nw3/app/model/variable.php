@@ -1,7 +1,7 @@
 <?php
 namespace nw3\app\model;
 
-use \nw3\app\util\String;
+use nw3\app\util\String;
 use nw3\app\core\Units;
 
 /*
@@ -28,105 +28,347 @@ abstract class Variable {
 	 * A variable (daily, monthly etc.) can belong to a group and thus inherit
 	 * common properties such as units. Also enables view-based grouping
 	 * Description of properties is found as inline comments on first variable
-	 * summable: quantity
-	 * anomable: quantity has an anomaly
-	 * imperial_devisor: float
+	 * precision_increase_threshold: Increment precision for values between 0 and this
 	 * @var Variable_Properties
 	 */
 	public static $_ = array(
 		self::Temperature => array(
+			'name' => 'temperature', #unique identifier
 			'precision' => 1, #Number of decimal places to show
 			'summable' => false, #Can be summed
-			'anomable' => true, #Whether a corresponding climate variable exists (i.e. an anomaly can be computed
-			'name' => 'temperature', #unique identifier
-			'imperial_divisor' => 0.555556
+			'imperial_divisor' => 0.555556, #Conversion factor to imperial
+			'round_size' => 5 #For intelligent auto-scale of charts
 		),
 		self::Rain => array(
-			'summable' => true,
-			'anomable' => true,
 			'name' => 'rain',
-			'imperial_divisor' => 25.4
+			'precision' => 1,
+			'summable' => true,
+			'imperial_divisor' => 25.4,
+			'round_size' => 5
 		),
 		self::Pressure => array(
-			'summable' => false,
-			'anomable' => false,
 			'name' => 'pressure',
-			'imperial_divisor' => 33.864
-		),
-		self::Wind => array(
 			'precision' => 1,
 			'summable' => false,
-			'anomable' => true,
+			'imperial_divisor' => 33.864,
+			'round_size' => 10
+		),
+		self::Wind => array(
 			'name' => 'wind',
-			'imperial_divisor' => 1
+			'precision' => 1,
+			'summable' => false,
+			'imperial_divisor' => 1,
+			'round_size' => 5
 		),
 		self::Humidity => array(
+			'name' => 'humidity',
 			'precision' => 0,
 			'unit' => '%',
 			'summable' => false,
-			'anomable' => false,
-			'name' => 'humidity',
-			'imperial_divisor' => 1
+			'imperial_divisor' => 1,
+			'round_size' => 10
 		),
 		self::Snow => array(
+			'name' => 'snow',
+			'precision' => 0,
 			'precison_increase_threshold' => 1,
 			'summable' => true,
-			'anomable' => true,
-			'name' => 'snow',
 			'imperial_divisor' => 2.54
 		),
 		self::Distance => array(
 			'precision' => 0,
 			'summable' => false,
-			'anomable' => false,
-			'name' => 'rain_rate',
+			'name' => 'distance',
 			'imperial_divisor' => 0.3048
 		),
 		self::Days => array(
+			'name' => 'days',
 			'precision' => 0,
+			'precison_increase_threshold' => 1,
 			'unit' => 'days',
 			'summable' => true,
-			'anomable' => false,
-			'name' => 'days',
 			'imperial_divisor' => 1
 		),
 		self::Hours => array(
+			'name' => 'hours',
 			'precision' => 0,
 			'precison_increase_threshold' => 1,
 			'unit' => 'hrs',
 			'summable' => true,
-			'anomable' => false,
-			'name' => 'hours',
 			'imperial_divisor' => 1
 		),
 		self::RainRate => array(
-			'precison_decrease_threshold' => 5,
-			'summable' => false,
-			'anomable' => false,
 			'name' => 'rain_rate',
+			'precison_increase_threshold' => 5,
+			'summable' => false,
 			'imperial_divisor' => 25.4
 		),
 		self::Direction => array(
+			'name' => 'direction',
 			'precision' => 0,
 			'unit' => 'degrees',
 			'summable' => false,
-			'anomable' => false,
-			'name' => 'direction',
-			'imperial_divisor' => 1
+			'imperial_divisor' => 1,
+			'round_size' => 20
 		),
 		self::Area => array(
-			'summable' => true,
-			'anomable' => false,
 			'name' => 'area',
+			'summable' => true,
 			'imperial_divisor' => 1.262
 		),
 		self::AbsTemp => array(
-			'summable' => false,
-			'anomable' => false,
 			'name' => 'absolute_temperature',
-			'imperial_divisor' => 0.55556
+			'summable' => false,
+			'imperial_divisor' => 0.55556,
+			'round_size' => 5,
+			'precision' => 1
 		)
 	);
+
+	/**
+	 * Live variables (continuous observation)
+	 * Properties are inherited from core, but can be overriden
+	 * @var type
+	 */
+	public static $live = array(
+		'temp' => array(
+			'name' => 'Temperature',
+			'group' => self::Temperature,
+			'colour' => 'orange',
+			'minmax' => true //Has a sensible maximum and minimum
+		),
+		'humi' => array(
+			'name' => 'Humidity',
+			'group' => self::Humidity,
+			'colour' => 'darkgreen',
+			'minmax' => true
+		),
+		'pres' => array(
+			'name' => 'Pressure',
+			'group' => self::Pressure,
+			'colour' => 'darkred',
+			'minmax' => true
+		),
+		'rain' => array(
+			'name' => 'Rainfall',
+			'group' => self::Rain,
+			'colour' => 'blue'
+		),
+		'wind' => array(
+			'name' => 'Wind Speed',
+			'group' => self::Wind,
+			'colour' => 'darkblue',
+			'maxonly' => true
+		),
+		'gust' => array(
+			'name' => 'Wind Gust',
+			'group' => self::Wind,
+			'precision' => 0,
+			'colour' => 'palevioletred1',
+			'maxonly' => true
+		),
+		'wdir' => array(
+			'name' => 'Wind Direction',
+			'group' => self::Direction,
+			'colour' => 'red'
+		),
+		'dewp' => array(
+			'name' => 'Dew Point',
+			'group' => self::Temperature,
+			'anomable' => false,
+			'colour' => 'chartreuse',
+			'minmax' => true
+		),
+		'feel' => array(
+			'name' => 'Feels Like',
+			'group' => self::Temperature,
+			'anomable' => false,
+			'colour' => 'paleblue',
+			'minmax' => true
+		)
+	);
+
+	public static $daily = array(
+		'tmin' => array(
+			'description' => 'Minimum Temperature',
+			'group' => self::Temperature, #Inheritance of properties,
+			'category' => 'Temperature', #Practically, e.g. for use in drop-down grouping
+			'colour' => '#33f' #for graphs
+		),
+		'tmax' => array(
+			'description' => 'Maximum Temperature',
+			'group' => self::Temperature,
+			'category' => 'Temperature',
+			'colour' => 'orange'
+		),
+		'tmean' => array(
+			'description' => 'Mean Temperature',
+			'group' => self::Temperature,
+			'category' => 'Temperature',
+			'colour' => '#aae'
+		),
+
+		'hmin' => array(
+			'description' => 'Minimum Humidity',
+			'group' => self::Humidity,
+			'category' => 'Humidity',
+			'colour' => 'chartreuse'
+		),
+		'hmax' => array(
+			'description' => 'Maximum Humidity',
+			'group' => self::Humidity,
+			'category' => 'Humidity',
+			'colour' => 'darkolivegreen'
+		),
+		'hmean' => array(
+			'description' => 'Mean Humidity',
+			'group' => self::Humidity,
+			'category' => 'Humidity',
+			'colour' => 'chartreuse3'
+		),
+
+		'pmin' => array(
+			'description' => 'Minimum Pressure',
+			'group' => self::Pressure,
+			'colour' => 'darkorchid4'
+		),
+		'pmax' => array(
+			'description' => 'Maximum Pressure',
+			'group' => self::Pressure,
+			'colour' => 'orchid1'
+		),
+		'pmean' => array(
+			'description' => 'Mean Pressure',
+			'group' => self::Pressure,
+			'colour' => 'purple'
+		),
+
+		'wmean' => array(
+			'description' => 'Mean Wind Speed',
+			'group' => self::Wind,
+			'colour' => 'red'
+		),
+		'wmax' => array(
+			'description' => 'Maximum Wind Speed',
+			'group' => self::Wind,
+			'colour' => 'firebrick1'
+		),
+		'gust' => array(
+			'description' => 'Maximum Gust Speed',
+			'group' => self::Wind,
+			'colour' => 'firebrick2'
+		),
+		'wdir' => array(
+			'description' => 'Mean Wind Direction',
+			'group' => self::Wind,
+			'colour' => 'firebrick3'
+		),
+
+		'rain' => array(
+			'description' => 'Rainfall',
+			'group' => self::Rain,
+			'colour' => 'royalblue'
+		),
+		'hrmax' => array(
+			'description' => 'Maximum Hourly Rain',
+			'group' => self::Rain,
+			'colour' => 'royalblue1'
+		),
+		'10max' => array(
+			'description' => 'Maximum 10-min Rain',
+			'group' => self::Rain,
+			'colour' => 'royalblue2'
+		),
+		'rate' => array(
+			'description' => 'Maximum Rain Rate',
+			'group' => self::Rain,
+			'colour' => 'royalblue3'
+		),
+
+		'dmin' => array(
+			'description' => 'Minimum Dew Point',
+			'group' => self::Temperature,
+			'colour' => 'darkseagreen'
+		),
+		'dmax' => array(
+			'description' => 'Maximum Dew Point',
+			'group' => self::Temperature,
+			'colour' => 'darkslategray'
+		),
+		'dmean' => array(
+			'description' => 'Mean Dew Point',
+			'group' => self::Temperature,
+			'colour' => 'darkseagreen4'
+		),
+
+		't24min' => array(
+			'description' => '24hr Min Temperature (00-00)',
+			'group' => self::Temperature,
+			'colour' => 'darkseagreen4'
+		),
+
+		'trange' => array(
+			'description' => '24hr Temperature Range (09-09)',
+			'group' => self::AbsTemp,
+			'colour' => 'green'
+		),
+
+		'sunhr' => array(
+			'description' => 'Sun Hours',
+			'group' => self::Hours,
+			'colour' => '#ff3'
+		),
+		'wethr' => array(
+			'description' => 'Wet Hours',
+			'group' => self::Hours,
+			'colour' => 'aqua'
+		),
+
+		'rdays' => array(
+			'description' => 'Days of Rainfall',
+			'group' => self::Days,
+			'colour' => '#57d'
+		),
+		'days_frost' => array(
+			'description' => 'Days of AirFrost',
+			'group' => self::Days,
+			'colour' => '#33f'
+		),
+		'days_storm' => array(
+			'description' => 'Days of Thunder',
+			'group' => self::Days,
+			'colour' => '#ee5'
+		),
+		'days_snow' => array(
+			'description' => 'Days of Lying Snow',
+			'group' => self::Days,
+			'colour' => '#4ad'
+		),
+		'days_snowfall' => array(
+			'description' => 'Days of Falling Snow',
+			'group' => self::Days,
+			'colour' => '#5cf'
+		),
+		'sunmax' => array(
+			'description' => 'Maximum Possible Sunshine',
+			'group' => self::Hours,
+			'colour' => '#883'
+		),
+
+	);
+
+	public static function initialise() {
+		//Do the inheritance (selective merge)
+		foreach (self::$daily as $var_name => $var) {
+			$group = self::$_[$var['group']];
+			foreach ($group as $group_property_name => $group_property) {
+				if(!key_exists($group_property_name, $var)) {
+					self::$daily[$var_name][$group_property_name] = $group_property;
+				}
+			}
+		}
+	}
+
 
 	/**
 	* Convert from UK units to US or EU, and neaten-up <br />
@@ -149,6 +391,9 @@ abstract class Variable {
 		} elseif(String::isBlank($val) ) {
 			return '';
 		}
+		if(!key_exists($type, self::$_)) {
+			return "WARNING! '$type' is not a valid type";
+		}
 		$var = self::$_[$type];
 
 		//Prettifier preparation
@@ -158,10 +403,10 @@ abstract class Variable {
 		$precision = $var['precision'] + $dpa;
 
 		//Special case handling
-		if(array_key_exists('precison_increase_threshold', $var) && $value < $var['precison_increase_threshold'] && $value > 0) {
+		if(key_exists('precison_increase_threshold', $var)
+			&& ($value < $var['precison_increase_threshold'])
+			&& ($value > 0)) {
 			$precision++;
-		} elseif(array_key_exists('precison_decrease_threshold', $var) && $value > $var['precison_decrease_threshold']) {
-			$precision--;
 		}
 		if($type === self::Days && $value === 1) {
 			$unit = 'day';
@@ -181,6 +426,24 @@ abstract class Variable {
 		return sprintf("%$strret", $value).$unit;
 	}
 
+	static function get_class($var_name) {
+		if(key_exists($var_name, self::$daily)) {
+			$var = self::$daily[$var_name];
+			return $var_name .' g_'. self::$_[$var['group']]['name'];
+		} else {
+			return 'unknown_var';
+		}
+	}
+
+
+	/** Graph data must be indexed from 0 and clean, but converted */
+	public static function clean_data($data, $type) {
+		$values = array();
+		foreach ($data as $val) {
+			$values[] = (float) self::conv($val, self::$daily[$type]['group'], false, false, 1);
+		}
+		return $values;
+	}
 
 	/**
 	 * Computes the appropriate feels-like temperature for given input
@@ -217,168 +480,6 @@ abstract class Variable {
 	}
 
 
-	public static $live = array(
-		'temp' => array(
-			'name' => 'Temperature',
-			'group' => 'Temperature',
-			'round' => 1,
-			'minmax' => true //Has a sensible maximum and minimum
-		),
-		'humi' => array(
-			'name' => 'Humidity',
-			'round' => 0,
-			'minmax' => true
-		),
-		'pres' => array(
-			'name' => 'Pressure',
-			'round' => 0,
-			'minmax' => true
-		),
-		'rain' => array(
-			'name' => 'Rainfall',
-			'round' => 1
-		),
-		'wind' => array(
-			'name' => 'Wind Speed',
-			'round' => 1,
-			'maxonly' => true
-		),
-		'gust' => array(
-			'name' => 'Wind Gust',
-			'round' => 1,
-			'maxonly' => true
-		),
-		'wdir' => array(
-			'name' => 'Wind Direction',
-			'round' => 0
-		),
-		'dewp' => array(
-			'name' => 'Dew Point',
-			'round' => 1,
-			'minmax' => true
-		),
-		'feel' => array(
-			'name' => 'Feels Like',
-			'round' => 0,
-			'minmax' => true
-		)
-	);
-
-
-	public static $daily = array(
-		'tmin' => array(
-			'description' => 'Minimum Temperature',
-			'group' => self::Temperature,
-			'colour' => '#FFD750' #for graphs
-		),
-		'tmax' => array(
-			'description' => 'Maximum Temperature',
-			'group' => self::Temperature,
-			'colour' => 'orange'
-		),
-		'tmean' => array(
-			'description' => 'Mean Temperature',
-			'group' => self::Temperature,
-			'colour' => 'tan3'
-		),
-
-		'hmin' => array(
-			'description' => 'Minimum Humidity',
-			'group' => self::Humidity,
-			'colour' => 'chartreuse'
-		),
-		'hmax' => array(
-			'description' => 'Maximum Humidity',
-			'group' => 'humidity',
-			'colour' => 'darkolivegreen'
-		),
-		'hmean' => array(
-			'description' => 'Mean Humidity',
-			'group' => 'humidity',
-			'colour' => 'chartreuse3'
-		),
-
-		'pmin' => array(
-			'description' => 'Minimum Pressure',
-			'group' => 'pressure',
-			'colour' => 'darkorchid4'
-		),
-		'pmax' => array(
-			'description' => 'Maximum Pressure',
-			'group' => 'pressure',
-			'colour' => 'orchid1'
-		),
-		'pmean' => array(
-			'description' => 'Mean Pressure',
-			'group' => 'pressure',
-			'colour' => 'purple'
-		),
-
-		'wmean' => array(
-			'description' => 'Mean Wind Speed',
-			'group' => 'wind',
-			'colour' => 'red'
-		),
-		'wmax' => array(
-			'description' => 'Maximum Wind Speed',
-			'group' => 'wind',
-			'colour' => 'firebrick1'
-		),
-		'gust' => array(
-			'description' => 'Maximum Gust Speed',
-			'group' => 'wind',
-			'colour' => 'firebrick2'
-		),
-		'wdir' => array(
-			'description' => 'Mean Wind Direction',
-			'group' => 'wind',
-			'colour' => 'firebrick3'
-		),
-
-		'rain' => array(
-			'description' => 'Rainfall',
-			'group' => 'rain',
-			'colour' => 'royalblue'
-		),
-		'hrmax' => array(
-			'description' => 'Maximum Hourly Rain',
-			'group' => 'rain',
-			'colour' => 'royalblue1'
-		),
-		'10max' => array(
-			'description' => 'Maximum 10-min Rain',
-			'group' => 'rain',
-			'colour' => 'royalblue2'
-		),
-		'rate' => array(
-			'description' => 'Maximum Rain Rate',
-			'group' => 'rain',
-			'colour' => 'royalblue3'
-		),
-
-		'dmin' => array(
-			'description' => 'Minimum Dew Point',
-			'group' => 'dew',
-			'colour' => 'darkseagreen'
-		),
-		'dmax' => array(
-			'description' => 'Maximum Dew Point',
-			'group' => 'dew',
-			'colour' => 'darkslategray'
-		),
-		'dmean' => array(
-			'description' => 'Mean Dew Point',
-			'group' => 'dew',
-			'colour' => 'darkseagreen4'
-		),
-
-		't24min' => array(
-			'description' => '24hr Min Temperature (00-00)',
-			'group' => 'temperature',
-			'colour' => 'darkseagreen4'
-		),
-
-	);
 
 	static function assign_units($units) {
 		foreach ($units as $var => $unit) {
@@ -390,7 +491,6 @@ abstract class Variable {
 			self::$_[$var]['precision'] = $precision;
 		}
 	}
-
 
 }
 ?>

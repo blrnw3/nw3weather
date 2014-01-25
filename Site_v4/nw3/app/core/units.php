@@ -9,6 +9,9 @@ use nw3\app\model\Variable;
  */
 class Units {
 
+	public static $names = array('UK', 'EU', 'US');
+	public static $names_full = array('UK', 'Metric', 'Imperial');
+
 	static $degs = 'degrees';
 	static $humi = '%';
 	static $temp;
@@ -24,16 +27,17 @@ class Units {
 	static $is_us = false;
 	static $is_uk = false;
 
+	static $type;
+
 	/**
 	 * Assigns the core units based on session/cookie/default (in that order)
 	 */
 	static function initialise() {
-		$valid_types = array('US', 'EU', 'UK');
 		//Unit setting getter/saver
-		if (isset($_GET['unit']) && in_array($_GET['unit'], $valid_types)) {
+		if (isset($_GET['unit']) && in_array($_GET['unit'], self::$names)) {
 			call_user_func('self::assign_'. $_GET['unit']);
 			Session::cookify('unit', $_GET['unit']);
-		} elseif (isset($_COOKIE['unit']) && in_array($_COOKIE['unit'], $valid_types)) {
+		} elseif (isset($_COOKIE['unit']) && in_array($_COOKIE['unit'], self::$names)) {
 			call_user_func('self::assign_'. $_COOKIE['unit']);
 		} else { //No cookies or GET - use default (UK) units
 			self::assign_UK();
@@ -58,7 +62,9 @@ class Units {
 		self::$snow = 'in';
 		self::$temp = 'F';
 		self::$wind = 'mph';
+
 		self::$is_us = true;
+		self::$type = 'US';
 	}
 	private static function assign_EU() {
 		self::$area = 'gm<sup>-3</sup>';
@@ -68,7 +74,9 @@ class Units {
 		self::$snow = 'cm';
 		self::$temp = 'C';
 		self::$wind = 'kph';
+
 		self::$is_eu = true;
+		self::$type = 'EU';
 	}
 	private static function assign_UK() {
 		self::$area = 'gm<sup>-3</sup>';
@@ -78,12 +86,15 @@ class Units {
 		self::$snow = 'cm';
 		self::$temp = 'C';
 		self::$wind = 'mph';
+
 		self::$is_uk = true;
+		self::$type = 'UK';
 	}
 
 	private static function assign_to_variables() {
 		$units = array(
 			Variable::Temperature => self::$temp,
+			Variable::AbsTemp => self::$temp,
 			Variable::Rain => self::$rain,
 			Variable::RainRate => self::$rate,
 			Variable::Pressure => self::$pres,

@@ -3,8 +3,11 @@
 namespace nw3\app\core;
 
 use nw3\app\util as u;
-use nw3\app\core\Session;
+use nw3\app\util\Date;
 use nw3\app\helper as h;
+use nw3\app\core\Units;
+use nw3\app\core\Session;
+use nw3\app\model\Variable;
 
 abstract class Controller {
 
@@ -38,6 +41,13 @@ abstract class Controller {
 		$this->controller_name = str_replace('nw3\app\controller\\', '', strtolower($class_name));
 		$this->timer = new u\ScriptTimer();
 		$this->path = $path;
+
+		Session::initialise();
+		Date::initialise();
+		Units::initialise();
+		Variable::initialise();
+
+		define('ASSET_PATH', \Config::HTML_ROOT .'static/');
 	}
 
 	public function __set($key, $val) {
@@ -78,18 +88,17 @@ abstract class Controller {
 	protected function render() {
 		$include_analytics = false;
 		$show_sneaky_nw3_header = true;
-
-		$nw3_time = D_date .', '. D_time .' '. D_dst;
-		$current_year = D_year;
-
-		$this->timer->stop();
-
-		$script_load_time = $this->timer->executionTimeMs();
-		$session_page_count = Session::page_count();
-
 		$sidebar = new h\Sidebar($this->controller_name, $this->page !== 'index');
 
 		require __DIR__ . '/../view/base.php';
+	}
+
+	/**
+	 * Outputs raw output from a view
+	 */
+	protected function raw($file) {
+		u\Http::text();
+		require __DIR__ . "/../view/$this->controller_name/$file.php";
 	}
 
 	/**
@@ -99,6 +108,15 @@ abstract class Controller {
 	protected function json($data) {
 		u\Http::json();
 		echo json_encode($data);
+	}
+
+	/**
+	 * Loads a jpgraph view
+	 * @param string $file name of view file
+	 */
+	protected function jpgraph($file) {
+		$this->jpgraph_root = __DIR__ .'/../../lib/jpgraph/';
+		require __DIR__ . "/../view/$this->controller_name/$file.php";
 	}
 
 	/**
