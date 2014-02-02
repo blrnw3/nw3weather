@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS `daily` (
   `wdir` smallint(3) unsigned DEFAULT NULL,
   `rain` decimal(4,1) unsigned DEFAULT NULL,
   `hrmax` decimal(3,1) unsigned DEFAULT NULL,
-  `10max` decimal(3,1) unsigned DEFAULT NULL,
+  `r10max` decimal(3,1) unsigned DEFAULT NULL,
   `ratemax` decimal(4,1) unsigned DEFAULT NULL,
   `dmin` decimal(3,1) DEFAULT NULL,
   `dmax` decimal(3,1) DEFAULT NULL,

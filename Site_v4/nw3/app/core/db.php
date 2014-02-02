@@ -10,6 +10,9 @@ use \PDOException as PDOException;
  * @author Ben LR
  */
 class Db {
+
+	const DATE_FORMAT = 'Y-m-d';
+
 	private $db;
 	private $proc;
 	private $explosive;
@@ -52,7 +55,6 @@ class Db {
 	function select($table, $conditions, $cols = null) {
 		$cols = ($cols === null) ? '*' : implode(',', (array)$cols);
 		$q = "SELECT $cols FROM $table $conditions";
-		echo $q;
 		return $this->db->query($q)->fetchAll(PDO::FETCH_ASSOC);
 	}
 

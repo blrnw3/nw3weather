@@ -218,9 +218,6 @@ class Day {
 //		$timesMin['nightTomoz'] = Time::stamp(($nightmint1T + $nightmint2T) / 2);
 		$maxs['day'] = $daymax1;
 
-		$w10max = max($wind10);
-		$timesMax['w10m'] = $this->time_from_extremum($w10max, $wind10);
-		$maxs['w10m'] = $w10max;
 
 		if (is_array($rn60)) {
 			$maxs['rnhr'] = max($rn60);
@@ -239,10 +236,15 @@ class Day {
 			$mins['hchangehr'] = -1 * $hchhr;
 		}
 		if (is_array($t10)) {
+			$w10max = max($wind10);
+			$timesMax['w10m'] = $this->time_from_extremum($w10max, $wind10);
+			$maxs['w10m'] = $w10max;
+
 			$maxs['rn10'] = max($rn10);
 			if ($maxs['rn10'] > 0) {
 				$timesMax['rn10'] = $this->time_from_extremum($maxs['rn10'], $rn10);
 			}
+			
 			$t10min = min($t10);
 			$timesMin['tchange10'] = $this->time_from_extremum($t10min, $t10);
 			$mins['tchange10'] = -1 * $t10min;

@@ -233,15 +233,6 @@ select {
 	 padding: 0.25em;
 }
 
-#main a.arrow {
-	text-decoration: none;
-	color: #b87;
-	font-size: 130%;
-}
-#main a.arrow:hover {
-	color: #f33;
-}
-
 .tblfoot {
 	font-weight: bold;
 	background-color: #BDB;
@@ -544,292 +535,203 @@ input[type=submit] {
     Author     : Ben LR
     Description: CSS file for summary and detailed historical reports
 */
-.labels {
-	background-color: #666666;
-	color: #cccccc;
-	border: 1px solid #222222;
-	text-align: center;
-	padding: 2px;
-	font-size: 110%;
+table.data_report {
+	width: 99.5%;
 }
-
-.invalid {
-	background-color: #a6abad;
-	color: #a6abad;
-	border: 1px solid #6C8288;
+table.data_report thead td {
+	width: 7.9%;
 }
-
-.test {
-	font-size: 120%;
-	color: green;
-	font-weight: bold;
+table.data_report thead td:first-child {
+	width: 5.2%;
+	border-left: none;
 }
-
-.large {
-	font-size: 120%;
+table.data_report tbody tr {
+	height: 1.7em;
 }
-
-.rep {
-	font-size: 130%;
-	color: #8904B1;
-	font-weight: bold;
+table.data_report td {
+	border-top: none;
+	border-right: none;
+	border-color: rgb(108, 130, 136);
 }
-
-
-.labels2 {
-	background-color: #666666;
-	color: #cccccc;
-	border: 1px solid #222222;
-	text-align: center;
-	font-size: 110%;
-	padding: 2px;
-	border-left: 2px solid #2A0A1B;
+table.data_report td.day {
+	border-left: none;
+	border-bottom: inherit;
 }
-
-.tableheading {
-	background-color: #A587A4;
-	color: black;
-	border: 1px solid #222222;
-	text-align: center;
-	padding: 2px;
-	font-size: 150%;
-	font-weight: bold;
+table.data_report td.noday {
+	background-color: #ddd;
+	border-bottom: none;
 }
-
-.title {
-	color: #B43104;
-	text-align: center;
-	padding: 2px;
-	font-size: 170%;
-	font-weight: bold;
-}
-
-.reportttl {
-	color: black;
-	background-color: #DBEBEE;
-	text-align: center;
-	font-weight: bold;
-	font-size: 110%;
-}
-
-.reportttl2 {
-	border: 1px solid #222222;
-	border-top: 4px ridge black;
-}
-
-.reportday {
+table.data_report td.notyetday {
 	background-color: #ccc;
-	border: 1px solid #6C8288;
-	text-align: center;
-	padding: 2px;
+}
+table.data_report td.null {
+	background-color: #a1a7a9;
 }
 
-.raintr { background-color: #CECEF6; }
-
-.reportday2 {
-	border: 1px solid #6C8288;
-	text-align: center;
-	padding: 2px;
-	background-color: #A4A4A4;
-	border-right: 2px solid #2A0A1B;
+table.data_report.summary {
+	margin-top: 1em;
+}
+table.data_report.summary tbody td {
+	border-bottom: 2px solid #eee;
+}
+table.data_report.summary tbody tr {
+	height: 2.3em;
 }
 
-.getreportdtbxfloat {
-	float: right;
-	padding: 0px 5px 0px 5px;
-	border: 1px ridge #6C8288;
-	background-color: #666666;
-	color: #FFFFFF;
+#data_report_header {
+	padding: 1em;
 }
-
-.getreportdtbx {
-	font-size: 100%;
+#data_report_header form {
+}
+#data_report_header form label {
+	padding: 0 0.4em 0 2em;
+	font-size: 125%;
 	font-weight: bold;
-	padding: 0px;
-	text-align: center;
 }
-
-.dev {
-	padding: 5px 0px 10px 0px;
-	font-size: 75%;
+#data_report_header form label > input {
+	padding: 0 0 0 0.2em;
 }
-
-.separator {
-	background-color: #ffffff;
+#data_report_header form .variable {
+	color: green;
 }
-
-
-.yeartotals {
-	border: 1px solid #222222;
-	text-align: center;
-	background-color: #CCFFbb;
-	font-weight: bold;
-	font-size: 99%;
+#data_report_header form .year {
+	color: #8904B1;
 }
-
-.noday {
-	background-color: #DEDEDE;
-	background-repeat: repeat-x;
+#data_report_header .arrow {
+	display: inline-block;
+	cursor: pointer;
+	color: #777;
+	font-size: 150%;
 }
-
-.button {
-	font-family: arial, verdana, ms sans serif;
-	font-weight: bold;
-	font-size: 9px;
-	width: 65px;
-	height: 38px;
-	vertical-align: middle;
-	padding: 0px;
-
+#data_report_header .arrow:hover {
+	color: #aaa;
 }
-
-.infotext {
-	background-color: #ccffff;
-	font-weight: bold;
-	border: 1px solid #666666;
+#data_report_header form > div {
+	display: inline;
 }
 
 
 /* AUTO-GENERATED */
-.tmin {color: #33f;}
-.tmax {color: orange;}
-.tmean {color: #aae;}
-.hmin {color: chartreuse;}
-.hmax {color: darkolivegreen;}
-.hmean {color: chartreuse3;}
-.pmin {color: darkorchid4;}
-.pmax {color: orchid1;}
-.pmean {color: purple;}
-.wmean {color: red;}
-.wmax {color: firebrick1;}
-.gust {color: firebrick2;}
-.wdir {color: firebrick3;}
-.rain {color: royalblue;}
-.hrmax {color: royalblue1;}
-.tenmax {color: royalblue2;}
-.rate {color: royalblue3;}
-.dmin {color: darkseagreen;}
-.dmax {color: darkslategray;}
-.dmean {color: darkseagreen4;}
-.t24min {color: darkseagreen4;}
-.trange {color: green;}
-.sunhr {color: #ff3;}
-.wethr {color: aqua;}
-.rdays {color: #57d;}
-.days_frost {color: #33f;}
-.days_storm {color: #ee5;}
-.days_snow {color: #4ad;}
-.days_snowfall {color: #5cf;}
-.sunmax{ color:#883;}
-.leveltemp_0 { background-color: #0000cc; color: white; border: 1px solid #6C8288;}
-.leveltemp_1 { background-color: #035CB5; color: white; border: 1px solid #6C8288;}
-.leveltemp_2 { background-color: #10AFE4; border: 1px solid #6C8288;}
-.leveltemp_3 { background-color: #00FFC4; border: 1px solid #6C8288;}
-.leveltemp_4 { background-color: #07EA57; border: 1px solid #6C8288;}
-.leveltemp_5 { background-color: #C8FB11; border: 1px solid #6C8288;}
-.leveltemp_6 { background-color: #FFDE00; border: 1px solid #6C8288;}
-.leveltemp_7 { background-color: #FF9933; border: 1px solid #6C8288;}
-.leveltemp_8 { background-color: #F65A17; color: white; border: 1px solid #6C8288;}
-.leveltemp_9 { background-color: #DA103C; color: white; border: 1px solid #6C8288;}
-.levelhumi_0 { background-color: #F3E2A9; border: 1px solid #6C8288;}
-.levelhumi_1 { background-color: #F7D358; border: 1px solid #6C8288;}
-.levelhumi_2 { background-color: #FFBF00; border: 1px solid #6C8288;}
-.levelhumi_3 { background-color: #D7DF01; border: 1px solid #6C8288;}
-.levelhumi_4 { background-color: #A5DF00; border: 1px solid #6C8288;}
-.levelhumi_5 { background-color: #74DF00; border: 1px solid #6C8288;}
-.levelhumi_6 { background-color: #31B404; border: 1px solid #6C8288;}
-.levelhumi_7 { background-color: #329511; border: 1px solid #6C8288;}
-.levelhumi_8 { background-color: #0B6121; color: #C4C9C2; border: 1px solid #6C8288;}
-.levelpress_0 { background-color: #0000cc; color: white; border: 1px solid #6C8288;}
-.levelpress_1 { background-color: #035CB5; color: white; border: 1px solid #6C8288;}
-.levelpress_2 { background-color: #10AFE4; border: 1px solid #6C8288;}
-.levelpress_3 { background-color: #00FFC4; border: 1px solid #6C8288;}
-.levelpress_4 { background-color: #07EA57; border: 1px solid #6C8288;}
-.levelpress_5 { background-color: #C8FB11; border: 1px solid #6C8288;}
-.levelpress_6 { background-color: #FFDE00; border: 1px solid #6C8288;}
-.levelpress_7 { background-color: #FF9933; border: 1px solid #6C8288;}
-.levelpress_8 { background-color: #F65A17; color: white; border: 1px solid #6C8288;}
-.levelpress_9 { background-color: #DA103C; color: white; border: 1px solid #6C8288;}
-.levelwind_0 { background-color: #D9FDFC; border: 1px solid #6C8288;}
-.levelwind_1 { background-color: #B1FFFF; border: 1px solid #6C8288;}
-.levelwind_2 { background-color: #66FF94; border: 1px solid #6C8288;}
-.levelwind_3 { background-color: #99FF00; border: 1px solid #6C8288;}
-.levelwind_4 { background-color: #99CC00; border: 1px solid #6C8288;}
-.levelwind_5 { background-color: #CCCC00; border: 1px solid #6C8288;}
-.levelwind_6 { background-color: #FFCC00; border: 1px solid #6C8288;}
-.levelwind_7 { background-color: #FF9900; border: 1px solid #6C8288;}
-.levelwind_8 { background-color: #FF6600; border: 1px solid #6C8288;}
-.levelwind_9 { background-color: #FF0000; color: #C4C9C2; border: 1px solid #6C8288;}
-.leveldegr_0 { background-color: #F6CECE; border: 1px solid #6C8288;}
-.leveldegr_1 { background-color: #F6E3CE; border: 1px solid #6C8288;}
-.leveldegr_2 { background-color: #F5F6CE; border: 1px solid #6C8288;}
-.leveldegr_3 { background-color: #E3F6CE; border: 1px solid #6C8288;}
-.leveldegr_4 { background-color: #CEF6D8; border: 1px solid #6C8288;}
-.leveldegr_5 { background-color: #CED8F6; border: 1px solid #6C8288;}
-.leveldegr_6 { background-color: #CEB3FA; border: 1px solid #6C8288;}
-.leveldegr_7 { background-color: #F6CEE3; border: 1px solid #6C8288;}
-.levelrain_0 { background-color: #94939A; border: 1px solid #6C8288;}
-.levelrain_1 { background-color: #918AA7; border: 1px solid #6C8288;}
-.levelrain_2 { background-color: #CCFFFF; border: 1px solid #6C8288;}
-.levelrain_3 { background-color: #99FFCC; border: 1px solid #6C8288;}
-.levelrain_4 { background-color: #9EDFFD; border: 1px solid #6C8288;}
-.levelrain_5 { background-color: #9AACFF; border: 1px solid #6C8288;}
-.levelrain_6 { background-color: #7980FF; border: 1px solid #6C8288;}
-.levelrain_7 { background-color: #3F48F9; color: white; border: 1px solid #6C8288;}
-.levelrain_8 { background-color: #010EFE; color: white; border: 1px solid #6C8288;}
-.levelrain_9 { background-color: #050EAB; color: white; border: 1px solid #6C8288;}
-.levelrain_10 { background-color: #050D97; color: white; border: 1px solid #6C8288;}
-.levelrain_11 { background-color: #0B0B3B; color: white; border: 1px solid #6C8288;}
-.levelrtmax_0 { background-color: #94939A; border: 1px solid #6C8288;}
-.levelrtmax_1 { background-color: #918AA7; border: 1px solid #6C8288;}
-.levelrtmax_2 { background-color: #CCFFFF; border: 1px solid #6C8288;}
-.levelrtmax_3 { background-color: #99FFCC; border: 1px solid #6C8288;}
-.levelrtmax_4 { background-color: #9EDFFD; border: 1px solid #6C8288;}
-.levelrtmax_5 { background-color: #9AACFF; border: 1px solid #6C8288;}
-.levelrtmax_6 { background-color: #7980FF; border: 1px solid #6C8288;}
-.levelrtmax_7 { background-color: #3F48F9; color: white; border: 1px solid #6C8288;}
-.levelrtmax_8 { background-color: #010EFE; color: white; border: 1px solid #6C8288;}
-.levelrtmax_9 { background-color: #050EAB; color: white; border: 1px solid #6C8288;}
-.levelrtmax_10 { background-color: #050D97; color: white; border: 1px solid #6C8288;}
-.levelrtmax_11 { background-color: #0B0B3B; color: white; border: 1px solid #6C8288;}
-.leveltchg_0 { background-color: #0000cc; color: white; border: 1px solid #6C8288;}
-.leveltchg_1 { background-color: #035CB5; color: white; border: 1px solid #6C8288;}
-.leveltchg_2 { background-color: #10AFE4; border: 1px solid #6C8288;}
-.leveltchg_3 { background-color: #00FFC4; border: 1px solid #6C8288;}
-.leveltchg_4 { background-color: #07EA57; border: 1px solid #6C8288;}
-.leveltchg_5 { background-color: #C8FB11; border: 1px solid #6C8288;}
-.leveltchg_6 { background-color: #FFDE00; border: 1px solid #6C8288;}
-.leveltchg_7 { background-color: #FF9933; border: 1px solid #6C8288;}
-.leveltchg_8 { background-color: #F65A17; color: white; border: 1px solid #6C8288;}
-.leveltchg_9 { background-color: #DA103C; color: white; border: 1px solid #6C8288;}
-.levelhchg_0 { background-color: #F3E2A9; border: 1px solid #6C8288;}
-.levelhchg_1 { background-color: #F7D358; border: 1px solid #6C8288;}
-.levelhchg_2 { background-color: #FFBF00; border: 1px solid #6C8288;}
-.levelhchg_3 { background-color: #D7DF01; border: 1px solid #6C8288;}
-.levelhchg_4 { background-color: #A5DF00; border: 1px solid #6C8288;}
-.levelhchg_5 { background-color: #74DF00; border: 1px solid #6C8288;}
-.levelhchg_6 { background-color: #31B404; border: 1px solid #6C8288;}
-.levelhchg_7 { background-color: #329511; border: 1px solid #6C8288;}
-.levelhchg_8 { background-color: #0B6121; color: #C4C9C2; border: 1px solid #6C8288;}
-.levelprng_0 { background-color: #0000cc; color: white; border: 1px solid #6C8288;}
-.levelprng_1 { background-color: #035CB5; color: white; border: 1px solid #6C8288;}
-.levelprng_2 { background-color: #10AFE4; border: 1px solid #6C8288;}
-.levelprng_3 { background-color: #00FFC4; border: 1px solid #6C8288;}
-.levelprng_4 { background-color: #07EA57; border: 1px solid #6C8288;}
-.levelprng_5 { background-color: #C8FB11; border: 1px solid #6C8288;}
-.levelprng_6 { background-color: #FFDE00; border: 1px solid #6C8288;}
-.levelprng_7 { background-color: #FF9933; border: 1px solid #6C8288;}
-.levelprng_8 { background-color: #F65A17; color: white; border: 1px solid #6C8288;}
-.levelprng_9 { background-color: #DA103C; color: white; border: 1px solid #6C8288;}
-.leveldhrs_0 { background-color: #888; border: 1px solid #6C8288;}
-.leveldhrs_1 { background-color: #F5E2A9; border: 1px solid #6C8288;}
-.leveldhrs_2 { background-color: #F1D787; border: 1px solid #6C8288;}
-.leveldhrs_3 { background-color: #F2C181; border: 1px solid #6C8288;}
-.leveldhrs_4 { background-color: #F4B462; border: 1px solid #6C8288;}
-.leveldhrs_5 { background-color: #E9A245; border: 1px solid #6C8288;}
-.leveldhrs_6 { background-color: #F2A86B; border: 1px solid #6C8288;}
-.leveldhrs_7 { background-color: #EE9348; border: 1px solid #6C8288;}
-.leveldhrs_8 { background-color: #DC7B2B; border: 1px solid #6C8288;}
-.leveldhrs_9 { background-color: #EB8965; border: 1px solid #6C8288;}
-.leveldhrs_10 { background-color: #E46B3F; color: white; border: 1px solid #6C8288;}
-.leveldhrs_11 { background-color: #D85A3A; color: white; border: 1px solid #6C8288;}
+.tmin {color:#33f}
+.tmax {color:orange}
+.tmean {color:#aae}
+.hmin {color:chartreuse}
+.hmax {color:darkolivegreen}
+.hmean {color:#283}
+.pmin {color:#fab}
+.pmax {color:#e9a}
+.pmean {color:purple}
+.wmean {color:red}
+.wmax {color:#f33}
+.gust {color:#f44}
+.wdir {color:#f77}
+.rain {color:royalblue}
+.hrmax {color:#55e}
+.r10max {color:#77e}
+.rate {color:#99f}
+.dmin {color:darkseagreen}
+.dmax {color:darkslategray}
+.dmean {color:#2a3}
+.t24min {color:#227}
+.trange {color:green}
+.sunhr {color:#ff3}
+.wethr {color:aqua}
+.rdays {color:#57d}
+.days_frost {color:#33f}
+.days_storm {color:#ee5}
+.days_snow {color:#4ad}
+.days_snowfall {color:#5cf}
+.sunmax {color:#883}
+.temperature_level_0 {background-color:#00c;color:#fff}
+.temperature_level_1 {background-color:#035cb5;color:#fff}
+.temperature_level_2 {background-color:#10afe4}
+.temperature_level_3 {background-color:#00ffc4}
+.temperature_level_4 {background-color:#07ea57}
+.temperature_level_5 {background-color:#c8fb11}
+.temperature_level_6 {background-color:#fd0}
+.temperature_level_7 {background-color:#f93}
+.temperature_level_8 {background-color:#f65a17;color:#fff}
+.temperature_level_9 {background-color:#da103c;color:#fff}
+.rain_level_0 {background-color:#94939a}
+.rain_level_1 {background-color:#918aa7}
+.rain_level_2 {background-color:#cff}
+.rain_level_3 {background-color:#9fc}
+.rain_level_4 {background-color:#9edffd}
+.rain_level_5 {background-color:#9aacff}
+.rain_level_6 {background-color:#7980ff}
+.rain_level_7 {background-color:#3f48f9;color:#fff}
+.rain_level_8 {background-color:#010efe;color:#fff}
+.rain_level_9 {background-color:#050eab;color:#fff}
+.rain_level_10 {background-color:#050d97;color:#fff}
+.rain_level_11 {background-color:#0b0b3b;color:#fff}
+.pressure_level_0 {background-color:#11c;color:#fff}
+.pressure_level_1 {background-color:#05b;color:#fff}
+.pressure_level_2 {background-color:#1ad}
+.pressure_level_3 {background-color:#0ec}
+.pressure_level_4 {background-color:#1e5}
+.pressure_level_5 {background-color:#cf1}
+.pressure_level_6 {background-color:#fe0}
+.pressure_level_7 {background-color:#fa4}
+.pressure_level_8 {background-color:#f62;color:#fff}
+.pressure_level_9 {background-color:#d14;color:#fff}
+.wind_level_0 {background-color:#d9fdfc}
+.wind_level_1 {background-color:#aff}
+.wind_level_2 {background-color:#6f9}
+.wind_level_3 {background-color:#9f0}
+.wind_level_4 {background-color:#9c0}
+.wind_level_5 {background-color:#cc0}
+.wind_level_6 {background-color:#fc0}
+.wind_level_7 {background-color:#f90}
+.wind_level_8 {background-color:#f60}
+.wind_level_9 {background-color:#f00;color:#fff}
+.humidity_level_0 {background-color:#f3e2a9}
+.humidity_level_1 {background-color:#f7d358}
+.humidity_level_2 {background-color:#fb0}
+.humidity_level_3 {background-color:#d7df01}
+.humidity_level_4 {background-color:#a5df00}
+.humidity_level_5 {background-color:#74df00}
+.humidity_level_6 {background-color:#31b404}
+.humidity_level_7 {background-color:#329511}
+.humidity_level_8 {background-color:#0b6121;color:#C4C9C2}
+.hours_level_0 {background-color:#888}
+.hours_level_1 {background-color:#f5e2a9}
+.hours_level_2 {background-color:#f1d787}
+.hours_level_3 {background-color:#f2c181}
+.hours_level_4 {background-color:#f4b462}
+.hours_level_5 {background-color:#e9a245}
+.hours_level_6 {background-color:#f2a86b}
+.hours_level_7 {background-color:#ee9348}
+.hours_level_8 {background-color:#dc7b2b}
+.hours_level_9 {background-color:#eb8965}
+.hours_level_10 {background-color:#e46b3f;color:#fff}
+.hours_level_11 {background-color:#d85a3a;color:#fff}
+.rain_rate_level_0 {background-color:#94939a}
+.rain_rate_level_1 {background-color:#918aa7}
+.rain_rate_level_2 {background-color:#cff}
+.rain_rate_level_3 {background-color:#99ffcc}
+.rain_rate_level_4 {background-color:#9edffd}
+.rain_rate_level_5 {background-color:#9aacff}
+.rain_rate_level_6 {background-color:#7980ff}
+.rain_rate_level_7 {background-color:#3f48f9;color:#fff}
+.rain_rate_level_8 {background-color:#010efe;color:#fff}
+.rain_rate_level_9 {background-color:#050eab;color:#fff}
+.rain_rate_level_10 {background-color:#050d97;color:#fff}
+.rain_rate_level_11 {background-color:#0b0b3b;color:#fff}
+.direction_level_0 {background-color:#f6cece}
+.direction_level_1 {background-color:#f6e3ce}
+.direction_level_2 {background-color:#f5f6ce}
+.direction_level_3 {background-color:#e3f6ce}
+.direction_level_4 {background-color:#cef6d8}
+.direction_level_5 {background-color:#ced8f6}
+.direction_level_6 {background-color:#ceb3fa}
+.direction_level_7 {background-color:#f6cee3}
+.absolute_temperature_level_0 {background-color:#00c;color:#fff}
+.absolute_temperature_level_1 {background-color:#035cb5;color:#fff}
+.absolute_temperature_level_2 {background-color:#10afe4}
+.absolute_temperature_level_3 {background-color:#00ffc4}
+.absolute_temperature_level_4 {background-color:#07ea57}
+.absolute_temperature_level_5 {background-color:#c8fb11}
+.absolute_temperature_level_6 {background-color:#fd0}
+.absolute_temperature_level_7 {background-color:#f93}
+.absolute_temperature_level_8 {background-color:#f65a17;color:#fff}
+.absolute_temperature_level_9 {background-color:#da103c;color:#fff}

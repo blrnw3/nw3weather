@@ -75,20 +75,35 @@ class Maths {
 	 * @return mixed array on success, empty string on receiving non-array input or an array of all blanks
 	 */
 	static function mean($array, $cnt = false) {
-		if(!is_array($array)) {
-			return '';
-		}
+		if(!is_array($array))
+			return null;
 
 		$validCnt = 0;
 		foreach ($array as $value) {
-			if(!isBlank($value)) {
+			if($value !== null)
 				$validCnt++;
-			}
 		}
 
 		$finalCnt = $cnt ? $cnt : $validCnt;
 
-		return ($validCnt > 0) ? array_sum($array)/$finalCnt : '';
+		return ($validCnt > 0) ? array_sum($array)/$finalCnt : null;
+	}
+
+	/**
+	 * Counts non-null values
+	 * @param type $array
+	 * @return null
+	 */
+	static function count($array) {
+		if(!is_array($array))
+			return null;
+
+		$validCnt = 0;
+		foreach ($array as $value) {
+			if($value !== null)
+				$validCnt++;
+		}
+		return ($validCnt > 0) ? $validCnt : null;
 	}
 
 
@@ -135,46 +150,45 @@ class Maths {
 		return $arr[ floor( count($arr) / 2 ) ];
 	}
 
-	static function max($arr, $debug = false) {
-		$max = -1 * PHP_INT_MAX;
-		if(!is_array($arr)) return null;
+	static function max($arr) {
+		$max = INT_MIN;
+		if(!is_array($arr))
+			return null;
 
 		foreach($arr as $val) {
-			if(!isBlank($val)) {
-				$val = floatval($val);
-				if($val > $max) { $max = $val; }
-			} else {
-				//echo "<br />empty string in array ";
-				//$badarr = true;
+			if($val !== null) {
+				$val = (float)$val;
+				if($val > $max)
+					$max = $val;
 			}
 		}
-	//	if($badarr && $debug) {
-	//		print_r($arr);
-	//		debug_print_backtrace();
-	//	}
-		if($max == -1 * PHP_INT_MAX) return null;
+		if($max === INT_MIN)
+			return null;
 		return $max;
 	}
-	static function min($arr, $debug = false) {
-		$min = PHP_INT_MAX;
-		if(!is_array($arr)) return null;
+	static function min($arr) {
+		$min = INT_MAX;
+		if(!is_array($arr))
+			return null;
 
 		foreach($arr as $val) {
-			if(!isBlank($val)) {
-				$val = floatval($val);
-				if($val < $min) { $min = $val; }
+			if($val !== null) {
+				$val = (float)$val;
+				if($val < $min)
+					$min = $val;
 			}
 		}
-		if($min == PHP_INT_MAX) return null;
+		if($min === INT_MAX)
+			return null;
 		return $min;
 	}
 
-	static function sum_cond($arr, $isGreater, $limit, $isMean = false) {
+	static function count_cond($arr, $isGreater, $limit, $isMean = false) {
 		$cnt = $blanks = 0;
 
 		if($isGreater) {
 			foreach($arr as $val) {
-				if( !isBlank($val) ) {
+				if( $val !== null ) {
 					if($val > $limit) {
 						$cnt++;
 					}
@@ -184,7 +198,7 @@ class Maths {
 			}
 		} else {
 			foreach($arr as $val) {
-				if( !isBlank($val) ) {
+				if( $val !== null ) {
 					if($val < $limit) {
 						$cnt++;
 					}
@@ -194,7 +208,7 @@ class Maths {
 			}
 		}
 
-		if($blanks == count($arr))
+		if($blanks === count($arr))
 			return null;
 
 		if($isMean) { return mean($arr, $cnt); }

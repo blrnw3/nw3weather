@@ -43,10 +43,12 @@ A <a href="skycam" title="Contains skycam only">self-contained version</a> is al
 Two are available: a higher quality, slower video of the last hour, created hourly at 5 minutes past the hour;
 <br /> or a sped-up one for the entire day, updated every 10 minutes.
 
+<?php if(isset($this->dayvid)): ?>
 <p><b>NB:</b> There is also a higher quality video of the all-day timelapse, created nightly at 22:05 <?php echo D_dst; ?>.
 The latest version is available for download
-<a href="/<?php echo $this->dayvid_base; ?>dayvideo.wmv" title="Most recent full-day extended HQ timelapse">here</a>
+<a href="/<?php echo $this->dayvid; ?>" title="Most recent full-day extended HQ timelapse">here</a>
 </p>
+<?php endif; ?>
 
 <table border="0" cellpadding="10">
 	<tr>

@@ -7,9 +7,9 @@ namespace nw3\app\util;
  */
 class Html {
 
-	const checkHTML = 'checked="checked"';
-	const disableHTML = 'disabled="disabled"';
-	const selectHTML = 'selected="selected"';
+	const check = ' checked="checked"';
+	const disable = ' disabled="disabled"';
+	const select = ' selected="selected"';
 
 	static function href($path) {
 		echo \Config::HTML_ROOT . $path .'/';
@@ -163,21 +163,6 @@ class Html {
 			}
 		}
 		echo '</select>';
-	}
-
-	/**
-	 * Makes a button to cycle through a drop down
-	 * @param bool $dir decrease index (false) or increase (true)
-	 * @param string $href button link
-	 * @param string $title link tooltip
-	 */
-	static function dropdownCycle($dir, $href, $title, $disabled = false) {
-		$lg = $dir ? 9654 : 9664;
-		echo '<a class="arrow" href="'.PAGE_NAME. '?'. $href .'" title="'. $title .'">
-			&#'. $lg .';
-			</a>
-		';
-				//<button style="color:#6f6; background-color:#bbd;" title="'. $title .'">&'. $lg .'t;</button>
 	}
 }
 

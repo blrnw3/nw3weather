@@ -67,7 +67,7 @@ use nw3\app\model\Variable;
 		<tr<?php if($m === D_monthshort): ?> class="current"<?php endif; ?>>
 			<td><?php echo $m ?></td>
 			<?php foreach ($data as $lta_name => $ltas): ?>
-				<?php $val = Variable::conv($ltas['monthly'][$m], $ltas['group'], false, false, $ltas['dpa']) ?>
+				<?php $val = Variable::conv($ltas['monthly'][$m], $ltas['id'], false, false, $ltas['dpa']) ?>
 				<td class="<?php echo Variable::get_class($lta_name) ?>"><?php echo $val ?></td>
 			<?php endforeach; ?>
 			<td><?php echo $climate->sun_with_maxsun_comparison('monthly', $m) ?></td>
@@ -82,7 +82,7 @@ use nw3\app\model\Variable;
 		<tr<?php if($season === D_seasonname): ?> class="current"<?php endif; ?>>
 			<td><?php echo $season ?></td>
 			<?php foreach ($data as $lta_name => $ltas): ?>
-				<?php $val = Variable::conv($ltas['seasonal'][$season], $ltas['group'], false, false, $ltas['dpa']) ?>
+				<?php $val = Variable::conv($ltas['seasonal'][$season], $ltas['id'], false, false, $ltas['dpa']) ?>
 				<td class="<?php echo Variable::get_class($lta_name) ?>"><?php echo $val ?></td>
 			<?php endforeach; ?>
 			<td><?php echo $climate->sun_with_maxsun_comparison('seasonal', $season) ?></td>
@@ -96,7 +96,7 @@ use nw3\app\model\Variable;
 	<tr>
 		<td>Sum</td>
 		<?php foreach ($data as $lta_name => $ltas): ?>
-			<?php $val = (Variable::$daily[$lta_name]['summable']) ? Variable::conv($ltas['annual']['sum'], $ltas['group'], false, false, $ltas['dpa']) : '&nbsp;' ?>
+			<?php $val = (Variable::$daily[$lta_name]['summable']) ? Variable::conv($ltas['annual']['sum'], $ltas['id'], false, false, $ltas['dpa']) : '&nbsp;' ?>
 			<td class="<?php echo Variable::get_class($lta_name) ?>"><?php echo $val ?></td>
 		<?php endforeach; ?>
 		<td><?php echo $climate->sun_with_maxsun_comparison('annual', 'sum') ?></td>
@@ -104,7 +104,7 @@ use nw3\app\model\Variable;
 	<tr>
 		<td>Annual</td>
 		<?php foreach ($data as $lta_name => $ltas): ?>
-			<?php $val = Variable::conv($ltas['annual']['mean'], $ltas['group'], false, false, $ltas['dpa']) ?>
+			<?php $val = Variable::conv($ltas['annual']['mean'], $ltas['id'], false, false, $ltas['dpa']) ?>
 			<td class="<?php echo Variable::get_class($lta_name) ?>"><?php echo $val ?></td>
 		<?php endforeach; ?>
 		<td><?php echo $climate->sun_with_maxsun_comparison('annual', 'mean') ?></td>

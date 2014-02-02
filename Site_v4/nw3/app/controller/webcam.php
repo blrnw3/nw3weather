@@ -18,7 +18,14 @@ class Webcam extends core\Controller {
 	}
 
 	public function index() {
-		$this->dayvid_base = (D_hour > 21) ? D_datestamp : date("Ymd", Date::mkdate(D_month, D_yest_day));
+		$vid_extension = 'dayvideo.wmv';
+		$vid_today = D_datestamp. $vid_extension;
+		$vid_yest = date("Ymd", Date::mkdate(D_month,D_day-1,D_year)). $vid_extension;
+		if(file_exists($vid_today)) {
+			$this->dayvid = $vid_today;
+		} elseif(file_exists($vid_yest)) {
+			$this->dayvid = $vid_yest;
+		}
 		$this->build('Webcam');
 		$this->render();
 	}

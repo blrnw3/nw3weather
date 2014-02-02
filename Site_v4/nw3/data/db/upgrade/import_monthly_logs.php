@@ -17,7 +17,7 @@ function import($year) {
 
 	$db = new Db(false);
 	$var_names = array('day', 't24min', 't24max', 't24mean', 'hmin', 'hmax', 'hmean', 'pmin', 'pmax', 'pmean', 'wmean', 'wmax', 'gust', 'wdir',
-		'rain', 'hrmax', '10max', 'ratemax', 'dmin', 'dmax', 'dmean', 'tmin', 'tmax',
+		'rain', 'hrmax', 'r10max', 'ratemax', 'dmin', 'dmax', 'dmean', 'tmin', 'tmax',
 		'tc10max', 'tchrmax', 'hchrmax', 'tc10min', 'tchrmin', 'hchrmin', 'w10max', 'fmin', 'fmax', 'fmean', 'afhrs',
 		'sunhr', 'wethr', 'cloud', 'snow', 'lysnw', 'hail', 'thunder', 'fog', 'comms', 'extra', 'issues', 'away',
 		't_t24min', 't_t24max', 't_hmax', 't_hmin', 't_pmax', 't_pmin', 't_wmax', 't_gust', 't_hrmax', 't_10max', 't_ratemax', 't_dmax', 't_dmin',

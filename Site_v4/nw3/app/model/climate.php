@@ -56,7 +56,7 @@ class Climate {
 			$var_info = Variable::$daily[$var];
 			$daily[$var] = array(
 				'values' => $data,
-				'group' => $var_info['group'],
+				'id' => $var_info['id'],
 				'dpa' => (($var === 'sunmax') ? 1 : 0)
 			);
 		}
@@ -72,7 +72,7 @@ class Climate {
 				'monthly' => $this->monthly[$var],
 				'seasonal' => $this->seasonal[$var],
 				'annual' => $this->annual[$var],
-				'group' => $var_info['group'],
+				'id' => $var_info['id'],
 				'dpa' => (($var === 'rain') ? -1 : 0)
 			);
 		}
@@ -118,6 +118,28 @@ class Climate {
 			$timestamps[] = mktime(0,0,0, 1,1+$i,2008); //leap year needed
 		}
 		return $timestamps;
+	}
+
+	public static function anom_monthly($value, $var, $month, $cumul=false) {
+		if($value === null) {
+			return null;
+		}
+		if($cumul) {
+			$lta = array_sum(array_slice(data\Climate::$LTA[$var['id']], 0, $month));
+			if(!$var['summable']) {
+				$lta /= $month;
+			}
+		} else {
+			$lta = data\Climate::$LTA[$var['id']][$month-1];
+		}
+		if($var['summable']) {
+			return round($value / $lta * 100) .'%';
+		} else {
+			if($var['group'] === Variable::Temperature) {
+				$var['id'] = 'trange'; //Hack to get proper Farenheit conversions
+			}
+			return Variable::conv($value-$lta, $var['id'], false, true);
+		}
 	}
 }
 ?>

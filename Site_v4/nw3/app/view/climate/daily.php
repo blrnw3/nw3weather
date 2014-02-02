@@ -53,7 +53,7 @@ use nw3\app\model\Variable;
 		<td><?php echo $d ?></td>
 
 		<?php foreach ($daily as $lta_name => $ltas): ?>
-			<?php $val = Variable::conv($ltas['values'][$doy], $ltas['group'], false, false, $ltas['dpa']) ?>
+			<?php $val = Variable::conv($ltas['values'][$doy], $ltas['id'], false, false, $ltas['dpa']) ?>
 			<td class="<?php echo Variable::get_class($lta_name) ?>"><?php echo $val ?></td>
 		<?php endforeach; ?>
 		</tr>

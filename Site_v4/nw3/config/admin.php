@@ -32,6 +32,8 @@ class Admin {
 	/** Email addy for alerts */
 	const EMAIL_ALERT = 'alerts@nw3weather.co.uk';
 
+	const FIRST_YEAR_REPORTS = 2009;
+
 	static $sidebar = array(
 		'main' => array(
 			'Home' => array(
@@ -100,7 +102,7 @@ class Admin {
 		'historical' => array(
 			'Data Tables' => array(
 				'title' => 'Tables of monthly and daily data by type',
-				'map' => 'data_tables'
+				'map' => 'datareport'
 			),
 			'Rankings' => array(
 				'title' => 'Daily and monthly ranked data by type',

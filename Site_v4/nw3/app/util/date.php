@@ -11,6 +11,7 @@ class Date {
 
 	static $months = array('Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
 	static $months3 = array('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
+	static $monthsn = array(1,2,3,4,5,6,7,8,9,10,11,12);
 
 	static $seasons = array('Winter', 'Spring', 'Summer', 'Autumn');
 	static $season_month_nums = array(array(0,1,11), array(2,3,4), array(5,6,7), array(8,9,10));
@@ -24,7 +25,7 @@ class Date {
 	 * Loads up the global define with some useful constants
 	 */
 	public static function initialise() {
-		$debug_offset = 86400 * 99; //When testing, it could be useful to change this
+		$debug_offset = 86400 * 280; //When testing, it could be useful to change this
 		$now = time() - $debug_offset;
 		define('D_now', $now);
 
@@ -34,13 +35,14 @@ class Date {
 		define('D_date', date('d M Y', $now));
 		define('D_time', date('H:i', $now));
 		define('D_dst', date('i', $now) ? 'BST' : 'GMT');
+		define('D_is_dst', date('i', $now));
 
 		define('D_hour', date('H', $now));
-		define('D_day', date('j', $now));
-		define('D_month', date('n', $now));
-		define('D_year', date('Y', $now));
-		define('D_doy', date('z', $now));
-		define('D_dim', date('t', $now));
+		define('D_day', (int)date('j', $now));
+		define('D_month', (int)date('n', $now));
+		define('D_year', (int)date('Y', $now));
+		define('D_doy', (int)date('z', $now));
+		define('D_dim', (int)date('t', $now));
 
 		define('D_datestamp', date('Ymd', $now));
 		define('D_timestamp', date('Hi', $now));
@@ -49,17 +51,17 @@ class Date {
 		$lng = Station::LNG;
 		$zenith = Station::ZENITH;
 
-		$sunrise = date_sunrise($now, SUNFUNCS_RET_TIMESTAMP, $lat, $lng, $zenith);
-		$sunset = date_sunset($now, SUNFUNCS_RET_TIMESTAMP, $lat, $lng, $zenith);
+		$sunrise = date_sunrise($now, SUNFUNCS_RET_TIMESTAMP, $lat, $lng, $zenith, D_is_dst);
+		$sunset = date_sunset($now, SUNFUNCS_RET_TIMESTAMP, $lat, $lng, $zenith, D_is_dst);
 		define('D_sunrise', $sunrise);
 		define('D_sunset', $sunset);
 		self::$is_dark = ($now < $sunrise || $now > $sunset);
 
-		$yest = self::mkdate(false, D_day-1);
-		define( 'D_yest_day', date('j', $yest) );
-		define( 'D_yest_month', date('n', $yest) );
-		define( 'D_yest_year', date('Y', $yest) );
-		define( 'D_yest_doy', date('z', $yest) );
+		$yest = self::mkday(D_day-1);
+		define( 'D_yest_day', (int)date('j', $yest) );
+		define( 'D_yest_month', (int)date('n', $yest) );
+		define( 'D_yest_year', (int)date('Y', $yest) );
+		define( 'D_yest_doy', (int)date('z', $yest) );
 
 
 		//Determine current season
@@ -218,7 +220,7 @@ class Date {
 	}
 
 	static function get_days_in_month($month, $year = 2009) {
-		return date('t',self::mkdate($month,2,$year));
+		return (int)date('t',self::mkdate($month,2,$year));
 	}
 	static function get_seasondays($sea, $year = 2009) {
 		for($s2 = 0; $s2 < 3; $s2++) { $days += get_days_in_month($snums[$sea][$s2]+1,$year); }
