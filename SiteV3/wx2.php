@@ -90,11 +90,21 @@ Two are available: a higher quality, slower video of the last hour, created hour
 <br /> or a sped-up one for the entire day, updated every 10 minutes.
 
 <p><b>NB:</b> There is also a higher quality video of the all-day timelapse, created nightly at 22:05 <?php echo $dst; ?>.
-The latest version is available for download
-<a href="/
-<?php if($dhr > 21) { echo $dyear,$dmonth,$dday; }
-		else {	echo date("Ymd", mkdate($dmonth,$day_yest)); }
-?>dayvideo.wmv" title="Most recent full-day extended HQ timelapse">here</a>
+<?php 
+$vid = false;
+$vid_today = $dyear.$dmonth.$dday. 'dayvideo.wmv';
+$vid_yest = date("Ymd", mkdate($dmonth,$dday-1,$dyear)). 'dayvideo.wmv';
+if(file_exists($vid_today)) {
+	$vid = $vid_today;
+} elseif(file_exists($vid_yest)) {
+	$vid = $vid_yest;
+}
+if($vid !== false) {
+	echo "The latest version is available for download <a href='/$vid' title='Most recent full-day extended HQ timelapse'>here</a>.";
+} else {
+	echo 'Unfortunately this is not currently available.';
+}
+?>
 </p>
 
 <table border="0" cellpadding="10">

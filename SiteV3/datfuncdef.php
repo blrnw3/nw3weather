@@ -487,10 +487,6 @@ function dailyData($procfil = 'today') {
 
 	$maxs['wind'] = max($dat[3]); $timesMax['wind'] = timeFromMM($maxs['wind'], $dat[3], $custhr, $custmin);
 	$maxs['gust'] = max($dat[4]); $timesMax['gust'] = timeFromMM($maxs['gust'], $dat[4], $custhr, $custmin);
-	$w10max = max($wind10); $timesMax['w10m'] = timeFromMM($w10max, $wind10, $custhr, $custmin);
-	$maxs['w10m'] = round($w10max, 1);
-//	$wind60maxraw = max($wind60); $wind60maxt = timeFromMM($wind60maxraw, $wind60, $custhr, $custmin);
-//	$wind60max = round($wind60maxraw, 1);
 
 	$minFeel = min($feels); $timesMin['feel'] = timeFromMM($minFeel, $feels, $custhr, $custmin);
 	$maxFeel = max($feels); $timesMax['feel'] = timeFromMM($maxFeel, $feels, $custhr, $custmin);
@@ -508,6 +504,8 @@ function dailyData($procfil = 'today') {
 
 	}
 	if(is_array($t10)) {
+		$w10max = max($wind10); $timesMax['w10m'] = timeFromMM($w10max, $wind10, $custhr, $custmin);
+		$maxs['w10m'] = round($w10max, 1);
 		$maxs['rn10'] = max($rn10); if($maxs['rn10'] > 0.2) { $timesMax['rn10'] = timeFromMM($maxs['rn10'], $rn10, $custhr, $custmin); }
 		$t10min = min($t10); $timesMin['tchange10'] = timeFromMM($t10min, $t10, $custhr, $custmin);
 		$mins['tchange10'] = -1 * $t10min;

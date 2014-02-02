@@ -20,7 +20,7 @@ if($auto && $metaRefreshable && !$is_bot) {
 		if($reftime < 10) { $reftime = 30; }
 		echo '<meta http-equiv="refresh" content="', $reftime, '" />';
 	} else {
-		log_events("autoRefeshLimitReached", $_SESSION['count'][$file] .'file: '. $file);
+		//log_events("autoRefeshLimitReached", $_SESSION['count'][$file] .'file: '. $file);
 	}
 }
 ?>

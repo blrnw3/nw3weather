@@ -9,8 +9,8 @@ include $rareTags;
 $file = 6;
 
 $zenithTwi = 96;
-$twilightAM = date_sunrise(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenithTwi);
-$twilightPM = date_sunset(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenithTwi);
+$twilightAM = date_sunrise(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenithTwi, date('I'));
+$twilightPM = date_sunset(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenithTwi, date('I'));
 ?>
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">

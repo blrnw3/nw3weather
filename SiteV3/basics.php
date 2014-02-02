@@ -31,8 +31,8 @@ $lyNum = 1; //number of leap years since 2009
 $lat = 51.556;
 $lng = -0.154;
 $zenith = 90.2;
-$sunrise = date_sunrise(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenith);
-$sunset = date_sunset(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenith);
+$sunrise = date_sunrise(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenith, date('I'));
+$sunset = date_sunset(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenith, date('I'));
 
 $yr_yest = date('Y',mktime(0,0,0,date('n'),date('j')-1, date('Y')));
 $mon_yest = date('n',mktime(0,0,0,date('n'),date('j')-1, date('Y')));
