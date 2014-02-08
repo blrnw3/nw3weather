@@ -25,7 +25,7 @@ class Date {
 	 * Loads up the global define with some useful constants
 	 */
 	public static function initialise() {
-		$debug_offset = 86400 * 280; //When testing, it could be useful to change this
+		$debug_offset = 86400 * 0; //When testing, it could be useful to change this
 		$now = time() - $debug_offset;
 		define('D_now', $now);
 
@@ -47,17 +47,13 @@ class Date {
 		define('D_datestamp', date('Ymd', $now));
 		define('D_timestamp', date('Hi', $now));
 
-		$lat = Station::LAT;
-		$lng = Station::LNG;
-		$zenith = Station::ZENITH;
-
-		$sunrise = date_sunrise($now, SUNFUNCS_RET_TIMESTAMP, $lat, $lng, $zenith, D_is_dst);
-		$sunset = date_sunset($now, SUNFUNCS_RET_TIMESTAMP, $lat, $lng, $zenith, D_is_dst);
+		list($sunrise, $sunset) = self::get_rise_set();
 		define('D_sunrise', $sunrise);
 		define('D_sunset', $sunset);
 		self::$is_dark = ($now < $sunrise || $now > $sunset);
 
 		$yest = self::mkday(D_day-1);
+		define( 'D_yest', $yest);
 		define( 'D_yest_day', (int)date('j', $yest) );
 		define( 'D_yest_month', (int)date('n', $yest) );
 		define( 'D_yest_year', (int)date('Y', $yest) );
@@ -232,6 +228,24 @@ class Date {
 
 	static function datefull($test) {
 		return date('jS', self::mkdate(1,$test));
+	}
+
+	/**
+	 * Sunrise and set times for a specfied offset from the config zenith
+	 * @param float $zenith_offset [=0]
+	 * @param int $datetime [=null] calculation point
+	 * @return array 0=>sunrise, 1=>sunset
+	 */
+	static function get_rise_set($zenith_offset = 0, $datetime = null) {
+		$lat = Station::LAT;
+		$lng = Station::LNG;
+		$zenith = Station::ZENITH + $zenith_offset;
+		$datetime = ($datetime === null) ? D_now : $datetime;
+		return array(
+			date_sunrise($datetime, SUNFUNCS_RET_TIMESTAMP, $lat, $lng, $zenith, D_is_dst),
+			date_sunset($datetime, SUNFUNCS_RET_TIMESTAMP, $lat, $lng, $zenith, D_is_dst)
+		);
+
 	}
 }
 

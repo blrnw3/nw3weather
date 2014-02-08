@@ -15,7 +15,8 @@ class Nomodel extends core\Controller {
 		'about' => 'About',
 		'forecast' => 'Forecast',
 		'blog' => 'Blog | News',
-		'beaufort' => 'Beaufort Scale'
+		'beaufort' => 'Beaufort Scale',
+		'astronomy' => 'Sun and Moon'
 	);
 
 	public function __construct($path) {

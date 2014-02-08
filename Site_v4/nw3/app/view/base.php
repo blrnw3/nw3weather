@@ -28,6 +28,7 @@ use nw3\app\core\Session;
 
 	<body>
 		<div id="background">
+			<div id="background_header"></div>
 			<div id="page">
 				<div id="header">
 					<table align="center" width="100%" cellpadding="0" cellspacing="0"><tr>
@@ -91,7 +92,7 @@ use nw3\app\core\Session;
 
 				<input id="constants-time" type="hidden" value="<?php echo D_now ?>" />
 
-				<div id="main">
+				<div id="main" class="page_<?php echo $this->controller_name ?> subpage_<?php echo $this->page ?>">
 					<?php require $this->view; ?>
 				</div>
 				<div id="main_base"></div>

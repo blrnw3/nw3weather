@@ -225,6 +225,16 @@ class Maths {
 		return ($int < 0) ? ($cnt + $int) : ($int % $cnt);
 	}
 
+	static function find_nearest($val, $arr, $up = false) {
+		for($i = 0; $i < count($arr); $i++) {
+			$near[$i] = $val - $arr[$i];
+			if($up) { if($near[$i] > 0) { $near[$i] = -99; } }
+			else { $near[$i] = abs($near[$i]); }
+		}
+		if($up) { $nearest = array_search( max($near), $near ); }
+		else { $nearest = array_search( min($near), $near ); }
+		return $arr[$nearest];
+	}
 
 
 }

@@ -15,10 +15,6 @@ class Html {
 		echo \Config::HTML_ROOT . $path .'/';
 	}
 
-	static function echoln($str) {
-		 echo $str + "<br />";
-	 }
-
 	 static function tr_() {
 		 echo '</tr>';
 	 }

@@ -21,15 +21,6 @@ class Time {
 		$meanTime = mean($mktimes);
 		return ($meanTime === '') ? 'n/a' : date(' H:i ', $meanTime);
 	}
-	static function decimal_timefix($dec) {
-		$hr = floor($dec*24);
-		return zerolead($hr) . ':' . round(($dec*24-$hr)*60);
-	}
-	static function timeformat($time) {
-		if(strpos($time, ':')) { return date('H:i', strtotime($time)); }
-		else { return ''; }
-	}
-
 
 
 	/**
@@ -53,6 +44,41 @@ class Time {
 		}
 
 		return $ago;
+	}
+
+	static function pretty_duration($secs, $show_sign = null) {
+
+		$sign = '';
+		if($secs < 0) {
+			$sign = '-';
+			$secs = -$secs;
+		} elseif($show_sign) {
+			$sign = '+';
+		}
+
+		if($secs < 60) {
+			return $sign. $secs .'s';
+		}
+
+		$mins = floor($secs / 60);
+		$seconds = $secs % 60;
+		if($mins < 60) {
+			return "$sign{$mins}m {$seconds}s";
+		}
+
+		$hrs = floor($mins / 60);
+		$minutes = $mins % 60;
+		if($hrs < 48) {
+			return "$sign{$hrs}h {$minutes}m";
+		}
+
+		$dys = floor($hrs / 24);
+		$hours = $hrs % 24;
+		if($dys < 100) {
+			return "$sign{$dys}d {$hours}h";
+		}
+
+		return $sign.'bloody ages';
 	}
 }
 

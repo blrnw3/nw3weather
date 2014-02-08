@@ -8,6 +8,12 @@
 	background-repeat:no-repeat;
 	background-position:center top;
 }
+#background_header {
+	height: 120px;
+	background-color: #1A661A;
+	position: absolute;
+	width: 100%;
+}
 #page {
 	margin: 0px auto;
 	color: black;
@@ -15,6 +21,7 @@
 	padding: 0;
 	width: 1012px;
 	border: 1px solid #0B6121;
+	position: relative;
 }
 
 body {
@@ -166,6 +173,10 @@ html > body {
 	min-height: 800px;
 }
 
+.centred {
+	text-align: center;
+}
+
 #main a {
 	color: #0B610B;
 	background-color: transparent;
@@ -250,6 +261,13 @@ thead {
 	font-size: 110%;
 }
 
+caption {
+	background-color: #BDCDF7;
+	font-weight: bold;
+	font-size: 120%;
+	text-align: center;
+	padding: 5px;
+}
 .table-head {
 	background-color: #BDCDF7;
 	font-weight: bold;
@@ -296,11 +314,11 @@ table tbody tr.current, #current_month .month_multispan {
 }
 
 table {
-	border: 2px solid rgb(175,175,175);
-	border-spacing: 0px;
 	margin: 2px;
 	color: black;
 	background-color: rgb(233,232,225);
+	border-spacing: 0px;
+	border-collapse: collapse;
 }
 tbody tr {
 	background-color: #eee;
@@ -527,7 +545,34 @@ input[type=submit] {
 	margin: 1em;
 }
 
-
+#astro_header {
+	background-color: #000;
+	color: #fefdf4;
+	margin: 10px 5px 40px 5px;
+	padding-bottom: 10px;
+}
+#astro_header .moon_phase {
+	width: 87px;
+	height: 75px;
+}
+#astro_header .key_detail {
+	display: inline-block;
+	width: 47%;
+}
+#astro_header .moon_phase_stages > div {
+	display: inline-block;
+	width: 24.5%;
+}
+#astro_header .moon_phase_stages {
+	padding-top: 2em;
+}
+.page_astronomy table {
+	width: 600px;
+	margin: 2em auto 0 auto;
+}
+.page_astronomy table td {
+	border-color: #98b;
+}
 
 /*
     Document   : valcolstyle
@@ -543,23 +588,17 @@ table.data_report thead td {
 }
 table.data_report thead td:first-child {
 	width: 5.2%;
-	border-left: none;
 }
 table.data_report tbody tr {
 	height: 1.7em;
 }
 table.data_report td {
-	border-top: none;
-	border-right: none;
 	border-color: rgb(108, 130, 136);
 }
 table.data_report td.day {
-	border-left: none;
-	border-bottom: inherit;
 }
 table.data_report td.noday {
 	background-color: #ddd;
-	border-bottom: none;
 }
 table.data_report td.notyetday {
 	background-color: #ccc;
