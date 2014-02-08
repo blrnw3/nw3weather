@@ -8,7 +8,7 @@ include($root.'functions.php');
 
 $dtype = $_GET['type'];
 $test_type = $types_all[$dtype];
-if(!$test_type) {
+if($test_type === null) {
 	$dtype = 'rain';
 }
 
