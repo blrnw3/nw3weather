@@ -307,7 +307,7 @@ function monthlyReport($repMonth, $repYear) {
 		$annualsumCum += $rainav[$m-1];
 	}
 	$rainYr = $rainYrImd;
-	$rainYrAnom =  percent($rainYrImd - $annualsumCum, $annualsumCum, 0, false, false);//, 0, false, true);
+	$rainYrAnom =  signify(percent($rainYrImd - $annualsumCum, $annualsumCum, 0, false, false));//, 0, false, true);
 
 	$sunAv = $manualRawM[0]['sum'];
 	$sunAnomImd = percent($manualRawM[0]['sum'] - $sunav[$repMonth-1], $sunav[$repMonth-1], 0, false, false);

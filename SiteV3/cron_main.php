@@ -275,6 +275,15 @@ if($tstamp == '1637') {
 	}
 }
 
+if($tstamp == '2348') {
+	$path = ROOT.'Logs/siteV3Access.txt';
+	if(file_exists($path)) {
+		$path_new = ROOT.'Logs/old/siteV3Access_to'. date('dMY') .'.txt';
+		copy($path, $path_new);
+		unlink($path);
+	}
+}
+
 ///////END OF SCRIPT////////END OF SCRIPT///////////////////////////////////////////////////////////################
 $p_time = microtime(get_as_float) - $t_start;
 file_put_contents( ROOT."Logs/cronExecuted.txt", myround($p_time) );

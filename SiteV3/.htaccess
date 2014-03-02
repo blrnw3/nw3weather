@@ -14,6 +14,7 @@ deny from 198.13.122.5
 deny from 212.36.51.106
 deny from 217.159.204.122
 deny from 94.23.233.204
+deny from 46.32.250.86
 #Ukraine - spammer
 deny from 91.200.14
 #Turkey - spammer
