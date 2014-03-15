@@ -1,11 +1,14 @@
 <?php
-
-use nw3\app\core\Db;
-use nw3\app\model\Day;
+namespace nw3\cron;
 
 
-$day = new Day(new Db());
-$day->data();
+class Main implements \nw3\app\core\Cron {
+
+	public function execute() {
+		echo 'lol';
+	}
+
+}
 
 
 ?>

@@ -23,6 +23,10 @@ class Home extends core\Controller {
 		$this->render();
 	}
 
+	public function index() {
+		
+	}
+
 }
 
 ?>

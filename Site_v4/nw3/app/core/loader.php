@@ -55,9 +55,7 @@ class Loader {
 
 		//Attempt to load method for given sub_path
 		$sub_path1 = $sub_paths[0];
-		if($sub_path1 === null) {
-			//No trailing slash on controller; redirect 301
-		} elseif(String::isBlank($sub_path1)) {
+		if(String::isBlank($sub_path1)) {
 			$this->clean_url($url, $this->get_good_url($base_index));
 			$concrete_controller->index();
 		} elseif(in_array($sub_path1, get_class_methods($controller_class)) //only returns public methods

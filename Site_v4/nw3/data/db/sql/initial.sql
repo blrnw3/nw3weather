@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS `daily` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- 'Live' variables (once-per-minute sensor readings) --
-CREATE TABLE IF NOT EXISTS `live` (
+CREATE TABLE IF NOT EXISTS `live_old` (
   `t` datetime NOT NULL,
   `rain` decimal(4,1) unsigned DEFAULT NULL,
   `humi` tinyint(2) unsigned DEFAULT NULL,
@@ -90,6 +90,20 @@ CREATE TABLE IF NOT EXISTS `live` (
   `wind` decimal(3,1) unsigned DEFAULT NULL,
   `gust` decimal(3,1) unsigned DEFAULT NULL,
   `temp` decimal(3,1) DEFAULT NULL,
+  `wdir` smallint(3) unsigned DEFAULT NULL,
+  PRIMARY KEY (`t`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+-- Alternative to live, in testing--
+CREATE TABLE IF NOT EXISTS `live` (
+  `t` datetime NOT NULL,
+  `rain` float unsigned DEFAULT NULL,
+  `humi` tinyint(2) unsigned DEFAULT NULL,
+  `pres` smallint(4) unsigned DEFAULT NULL,
+  `wind` float unsigned DEFAULT NULL,
+  `gust` float unsigned DEFAULT NULL,
+  `temp` float DEFAULT NULL,
   `wdir` smallint(3) unsigned DEFAULT NULL,
   PRIMARY KEY (`t`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

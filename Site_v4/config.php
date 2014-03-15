@@ -14,7 +14,7 @@ class Config {
 	const EXEC_PATH = '/usr/local/bin/php -q /home/dev';
 
 	/** Path to the live data text file */
-	const LIVE_DATA_PATH = 'something_or_other';
+	const LIVE_DATA_PATH = 'D:\tempC\Documents\craw_temp.txt';
 
 //	public static $rareTags = ROOT.'rareTags.php';
 

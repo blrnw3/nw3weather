@@ -76,19 +76,19 @@ class Admin {
 		'detail' => array(
 			'Rain' => array(
 				'title' => 'Detailed Rain Data',
-				'map' => 'rain'
+				'map' => 'datadetail/rain'
 			),
 			'Temperature' => array(
 				'title' => 'Detailed Temperature Data',
-				'map' => 'temperature'
+				'map' => 'datadetail/temperature'
 			),
 			'Wind' => array(
 				'title' => 'Detailed Wind Data',
-				'map' => 'wind'
+				'map' => 'datadetail/wind'
 			),
 			'Humidity' => array(
 				'title' => 'Detailed Rain Data',
-				'map' => 'humidity'
+				'map' => 'datadetail/humidity'
 			),
 			'Charts' => array(
 				'title' => '31-day and 12-month Data Charts',

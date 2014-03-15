@@ -1,7 +1,8 @@
 <?php
 use nw3\app\core\Loader;
 
-date_default_timezone_set('Europe/London');
+// Removes DST-based headaches
+date_default_timezone_set('UTC');
 
 //For completeness and brevity
 /** * Smallest integer */

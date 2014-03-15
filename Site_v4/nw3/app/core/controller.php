@@ -7,17 +7,20 @@ use nw3\app\util\Date;
 use nw3\app\helper as h;
 use nw3\app\core\Units;
 use nw3\app\core\Session;
+use nw3\app\core\Logger;
+use nw3\app\core\Servicecontainer;
 use nw3\app\model\Variable;
 
 abstract class Controller {
 
 	public $controller_name;
+	public $services;
+	protected $timer;
 	private $path;
 	private $page;
 	private $view_base;
 	private $view;
 	private $title;
-	private $timer;
 	private $vars = array();
 
 	//Custom concrete public methods
@@ -41,6 +44,9 @@ abstract class Controller {
 		$this->controller_name = str_replace('nw3\app\controller\\', '', strtolower($class_name));
 		$this->timer = new u\ScriptTimer();
 		$this->path = $path;
+
+//		$this->services = new Servicecontainer();
+//		$this->services->get('logger')->test();
 
 		Session::initialise();
 		Date::initialise();
@@ -91,6 +97,7 @@ abstract class Controller {
 		$sidebar = new h\Sidebar($this->controller_name, $this->page !== 'index');
 
 		require __DIR__ . '/../view/base.php';
+		$this->flush_logs(true);
 	}
 
 	/**
@@ -108,6 +115,7 @@ abstract class Controller {
 	protected function json($data) {
 		u\Http::json();
 		echo json_encode($data);
+		$this->flush_logs();
 	}
 
 	/**
@@ -117,6 +125,7 @@ abstract class Controller {
 	protected function jpgraph($file) {
 		$this->jpgraph_root = __DIR__ .'/../../lib/jpgraph/';
 		require __DIR__ . "/../view/$this->controller_name/$file.php";
+		$this->flush_logs();
 	}
 
 	/**
@@ -135,6 +144,9 @@ abstract class Controller {
 		require $this->view_base . "_$name.php";
 	}
 
+	private function flush_logs($is_http) {
+		Logger::g()->flush($is_http);
+	}
 
 	private function get_name_of_calling_method() {
 		$callers = debug_backtrace();

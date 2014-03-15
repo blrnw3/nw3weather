@@ -50,8 +50,8 @@ abstract class Variable {
 			'round_size' => 5,
 			'thresholds_day' => array(0.1,0.2,0.6, 1,2,5, 10,15,20, 25,40),
 			'thresholds_month' => array(0.1,1,10, 15,25,35, 50,75,100, 125,150),
-			'threshold_colours' => array('94939a','918aa7','cff', '9fc','9edffd','9aacff', '7980ff','3f48f9','010efe', '050eab','050d97','0b0b3b'),
-			'threshold_txtcolours' => array(false,false,false, false,false,false, false,'fff','fff', 'fff','fff','fff')
+			'threshold_colours' => array('94939a','9D91C5','cff', '9fc','9edffd','9aacff', '7980ff','3f48f9','010efe', '050eab','050d97','0b0b3b'),
+			'threshold_txtcolours' => array(false,false,false, false,false,false, false,'ddd','eee', 'fff','fff','fff')
 		),
 		self::Pressure => array(
 			'name' => 'pressure',
@@ -71,7 +71,7 @@ abstract class Variable {
 			'round_size' => 5,
 			'thresholds_day' => array(1,2,4, 7,10,15, 20,30,40),
 			'threshold_colours' => array('d9fdfc','aff','6f9', '9f0','9c0','cc0', 'fc0','f90','f60', 'f00'),
-			'threshold_txtcolours' => array(false,false,false, false,false,false, false,false,false, 'fff')
+			'threshold_txtcolours' => array(false,false,false, false,false,false, false,false,'fff', 'fff')
 		),
 		self::Humidity => array(
 			'name' => 'humidity',
@@ -299,6 +299,7 @@ abstract class Variable {
 		'gust' => array(
 			'description' => 'Maximum Gust Speed',
 			'group' => self::Wind,
+			'precision' => 0,
 			'category' => 'Wind',
 			'colour' => '#f44'
 		),
@@ -451,20 +452,24 @@ abstract class Variable {
 	* @return string of the converted value
 	*/
 	static function conv($val, $type, $show_unit = true, $show_sign = false, $dpa = 0, $abs = false) {
-		//Bad value checking
+		//Bad value checking and special cases
 		if($type === self::None) {
 			return $val;
 		} elseif( is_null($val) ) {
 			return null;
-		}
-		if(!key_exists($type, self::$daily)) {
-			return "WARNING! '$type' is not a valid type";
-		}
-		//Special cases
-		if($type === 'wdir') {
+		} elseif($type === 'wdir') {
 			return self::degname((int)$val);
 		}
-		$var = self::$daily[$type];
+
+		if(key_exists($type, self::$_)) {
+			$var = self::$_[$type];
+		}
+		elseif(key_exists($type, self::$daily)) {
+			$var = self::$daily[$type];
+		}
+		else {
+			return "WARNING! '$type' is not a valid type";
+		}
 
 		//Prettifier preparation
 		$value = $abs ? abs((float)$val) : (float)$val;
@@ -478,7 +483,7 @@ abstract class Variable {
 			&& ($value > 0)) {
 			$precision++;
 		}
-		if($var['group'] === self::Days && $value === 1) {
+		if(($type === self::Days || $var['group'] === self::Days) && $value === 1) {
 			$unit = 'day';
 		}
 
@@ -491,8 +496,7 @@ abstract class Variable {
 		}
 
 		//Format
-		$dpf = round($precision);
-		$strret = $sign.'.'. $dpf.'f';
+		$strret = $sign.'.'. $precision.'f';
 		return sprintf("%$strret", $value).$unit;
 	}
 

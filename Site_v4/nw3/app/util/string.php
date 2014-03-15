@@ -28,8 +28,7 @@ class String {
 	 */
 	static function zerolead($tag) {
 		$tag = (int)$tag;
-		if($tag < 10 && $tag >= 0) { $tag = '0'.$tag; }
-		return $tag;
+		return ($tag < 10 && $tag >= 0) ? '0'.$tag : $tag;
 	}
 
 
@@ -56,9 +55,9 @@ class String {
 	 * @param int $length
 	 * @return string
 	 */
-	static function str_subpad($string, $length) {
-		$padding = (strlen($string) > $length) ? "...  " : " ";
-		return substr( str_pad($string, $length), 0, $length - strlen($padding) ) . $padding;
+	static function fixed_length($string, $length) {
+		$padding = (strlen($string) > $length) ? '...' : '';
+		return substr( str_pad($string, $length), 0, $length - strlen($padding) ) . $padding .' ';
 	}
 
 	/**
