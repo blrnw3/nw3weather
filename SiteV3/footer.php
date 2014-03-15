@@ -45,6 +45,9 @@ if(!$me && !$is_bot) {
 	$unitLand = $imperial ? 'US' : ($metric ? 'EU' : 'UK');
 	log_events("siteV3Access.txt", $phpload .' '. $unitLand .' '. makeBool($auto));
 }
+if(spam_hack_request()) {
+	log_events("spam_hack_requests.txt", $phpload);
+}
 // Mail/logging alerts
 $wcimg = $root.date("Y/Ymd", mkday($dday-1,$dyear)).'dailywebcam.jpg';
 if( !file_exists($wcimg) && date('H') < 3 ) {
@@ -62,5 +65,21 @@ if($mailBufferCount > 0) {
 	foreach($mailBuffer as $email) {
 		server_mail($email['file'], $email['content']);
 	}
+}
+
+function spam_hack_request() {
+	//Empty user-agent string
+	$no_uas = (strlen($_SERVER['HTTP_USER_AGENT']) === 0);
+	if($no_uas) {
+		return true;
+	}
+	//Hacky request
+	$bad_words = array('register', 'login', 'editor', 'admin', 'session', 'forum', 'board', 'join', 'config');
+	foreach($bad_words as $badword) {
+		if(strpos($_SERVER['REQUEST_URI'], $badword) !== false) {
+			return true;
+		}
+	}
+	return false;
 }
 ?>

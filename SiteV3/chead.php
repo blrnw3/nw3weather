@@ -2,12 +2,14 @@
 //Bot dealings
 $browser = $_SERVER['HTTP_USER_AGENT'];
 $find_bot = array('bot', 'crawl', 'wise', 'search', 'validator', 'lipperhey', 'spider', 'http', 'java', 'www');
+
 for($i = 0; $i < count($find_bot); $i++) {
 	if( strpos( strtolower($browser), $find_bot[$i] ) !== false ) {
 		$is_bot = true;
 		break;
 	}
 }
+$is_bot |= (strlen($browser) === 0);
 if(strpos($browser, 'Ezooms') !== false) die('bad bot');
 
 //Session track and update dealings

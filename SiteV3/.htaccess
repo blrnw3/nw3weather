@@ -12,9 +12,19 @@ deny from 188.143.232
 deny from 192.114.71.13
 deny from 198.13.122.5
 deny from 212.36.51.106
+deny from 162.144.55.39
+deny from 5.9.152.10
+deny from 46.32.227.62
+deny from 91.232.96.2
+deny from 216.244.85.26
 deny from 217.159.204.122
+deny from 188.92.75.82
 deny from 94.23.233.204
 deny from 46.32.250.86
+deny from 5.9.145.107
+#USA - spammer
+deny from 216.151.130
+deny from 216.151.137
 #Ukraine - spammer
 deny from 91.200.14
 #Turkey - spammer
@@ -22,6 +32,7 @@ deny from 213.238.175
 #China - hacker
 deny from 36.248
 deny from 222.77
+deny from 59.58.154
 #India - spammer
 deny from 182.64
 #Ezooms bot
