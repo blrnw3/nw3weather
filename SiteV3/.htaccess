@@ -22,9 +22,15 @@ deny from 188.92.75.82
 deny from 94.23.233.204
 deny from 46.32.250.86
 deny from 5.9.145.107
+deny from 41.207.19.98
+deny from 190.211.242.190
 #USA - spammer
 deny from 216.151.130
 deny from 216.151.137
+deny from 216.246.124.38
+#Russia - spammer
+deny from 195.19.104.8
+deny from 92.53.98.90
 #Ukraine - spammer
 deny from 91.200.14
 #Turkey - spammer
