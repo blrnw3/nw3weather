@@ -480,7 +480,7 @@ function serialiseCSVm() {
 }
 
 function getSunHrs() {
-	$fileSun = urlToArray("http://www.weatheronline.co.uk/weather/maps/current?CONT=ukuk&TYP=sonne&ART=tabelle&DATE=".mktime(-12), 7);
+	$fileSun = urlToArray("http://www.weatheronline.co.uk/weather/maps/current?CONT=ukuk&TYP=sonne&ART=tabelle", 7);
 	if(!$fileSun) return "0";
 	$len = count($fileSun);
 	$sunHrs = 0;
