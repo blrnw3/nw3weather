@@ -52,7 +52,7 @@ $vars3a[4] = $HR24['misc']['maxhrgst']; $vars3a[5] = $HR24['misc']['rnrate'];
 $vars3b[4] = bft($wind); $vars3b[5] = $HR24['trendRn'][0] - $HR24['trendRn']['10m'];
 
 $arrowThreshs = array( array(0.3, 0.8), array(2,8), array(0.4, 0.9), array(1, 2), array(1, 3), array(0.1, 1) );
-$arrowTimes = array( array(15, 30), array(15, 45), array(15, 30), array(60, 120), array(60, 120), array(30, 60) );
+$arrowTimes = array( array(15, 30), array(15, 45), array(15, 30), array(60, 120), array(60, 120), array(20, 45) );
 
 $extras2 = array('Max Speed', 'Max Gust', 'Max Rate', 'Max Hourly');
 $extras3 = array('Max Hr Gust', '<a href="BeaufortScale.php" title="Beaufort Scale Terms">Bft</a>', 'Rate', 'Last 10 mins');

@@ -395,7 +395,7 @@ function displayMonthlyReport($mon, $yr) {
 			<br />The absolute low was <b>$tempLo</b>, and the highest <b>$tempHi</b>.
 		</dd>
 		<dt class='rain'>Rainfall</dt>
-		<dd>Came in $rainComparator the long-term average, at <b>$rainAv</b> ($rainAnom%) across <b>$rainCnt</b> days of <abbr title='&gt;0.25mm'>recordable rain</abbr>.
+		<dd>Came in $rainComparator the long-term average, at <b>$rainAv</b> ($rainAnom%) across <b>$rainCnt</b> days of <abbr title='&ge;0.2mm'>recordable rain</abbr>.
 			The most rainfall recorded in a single day (starting at midnight) was <b>$rainHi</b>.
 			The cumulative annual total for $repYear now stands at <b>$rainYr</b> ($rainYrAnom%) from <b>$rainYrCnt</b> rain days.
 		</dd>

@@ -28,7 +28,7 @@ if($auto && $metaRefreshable && !$is_bot) {
 ?>
 
 <meta name="keywords" content="weather, london, nw3, data, records, statistics, weather station" />
-<meta http-equiv="content-type" content="application/xhtml+xml; charset=ISO-8859-1" />
+<meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
 <meta http-equiv="content-language" content="en-GB" />	<?php if(isset($_GET['mob'])) { echo '<!--'; $skip_css = true; }
 if($needValcolStyle) { echo '
 					<link rel="stylesheet" type="text/css" href="/valcolstyle.css" media="screen" title="screen" />'; } ?>

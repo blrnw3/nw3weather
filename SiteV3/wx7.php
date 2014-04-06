@@ -36,6 +36,33 @@ for ($i = count($mains)-1; $i >= 0; $i--) {
 table_end();
 ?>
 
+<h2 id="wx-albums">Weather Station Albums</h2>
+<?php
+table('', null, 5, true, 5);
+
+$cnt = 0;
+for ($i = count($wx_mains)-1; $i >= 0; $i--) {
+	if($cnt % 4 === 0) {
+		echo '<tr valign="top" align="center">';
+	}
+	echo '<td align="center">
+			<a href="wx_albgen.php?albnum='. ($i+1) .'" title="Click to view full album">
+				<img src="/photos/'. $wx_refs[$i] .'/'. $wx_mains[$i] .'s.jpg" alt="preview photo" width="200" height="150" border="1" />
+			</a>
+			<br />
+			<b>'.$wx_titles[$i].'</b>
+			<br />
+		</td>';
+	if($cnt % 4 === 3 || $i === 0) {
+		tr_end();
+	}
+	$cnt++;
+}
+
+table_end();
+?>
+
+
 <p align="center"> <i>&copy; Ben Lee-Rodgers</i></p>
 
 <br />

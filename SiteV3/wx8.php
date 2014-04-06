@@ -133,7 +133,7 @@ $file = 8;
 	<ul>
 		<li>A combined thermometer/hygrometer housed in a home-built Stevenson Screen (a radiation shield)</li>
 		<li>A combined anemometer &amp; wind vane, located atop a 6m pole attached to the chimney of the house</li>
-		<li>A self-tipping rain gauge modified to a resolution of 0.3mm, which is attached to the roof of the Stevenson Screen</li>
+		<li>A self-tipping rain gauge modified to a resolution of 0.2mm, which is attached to the roof of the Stevenson Screen</li>
 		<li>A barometer integrated into the receiving unit (indoors).</li>
 	</ul>
 	<?php
@@ -143,6 +143,8 @@ $file = 8;
 		img("/static-images/PICT2516.JPG", "Thermo/Hygro clos-up", 0.2, "Thermo/Hygro close-up inside radiation shield", 420, 315, 'dqwd');
 		img("/static-images/P1010076.JPG", "Wind Sensors close-up", 0.2, "Wind Sensors close-up", 420, 315, "Enlarge");
 	?>
+	<p><a href="./wx7.php#wx-albums">Weather station albums</a> are also available,
+		with more complete and detailed pictures of past and present setups.</p>
 <!--		<a href='/static-images/P1010070.JPG' title='Enlarge'>
 			<img src='/static-images/P1010070.JPG' alt='Thermo/Hygro and Rain Gauge' width='430' height='338' title='Thermo/Hygro in radiation shield, Rain Gauge on top'   />
 		</a>
@@ -187,7 +189,9 @@ $file = 8;
 			The walls are double louvred hardwood, the roof is double insulated plywood with a cavity for air flow, and
 			the whole thing is painted in white gloss. Maintenance is carried out twice a year, mainly to keep the paint glossy for maximal radiation reflection.</li>
 		<li type="disc">The combined wind sensor unit was mounted on a 6.1m aluminium-alloy aerial pole in August 2009.</li>
-		<li type="disc">A manual rain gauge was installed on 4th September 2011 - this is for the verification and calibration of the automatic gauge data. </li>
+		<li type="disc">A manual rain gauge <a href="./news.php#post-20120107" title="Details in blog post">was installed</a> on 4th September 2011 - this is for the verification and calibration of the automatic gauge data. </li>
+		<li type="disc">The automatic rain gauge was <a href="./news.php#post-20140330" title="Full details in blog post">further modified</a> on 30th March 2014 to a new resolution of 0.18 mm. </li>
+		<li type="disc">The base and roof of the radiation shield <a href="./news.php#post-20140330" title="Full details in blog post">were replaced</a> on 30th March 2014 owing to decay of the originals. </li>
 	</ul>
 
 
@@ -374,9 +378,11 @@ $file = 8;
 	<p>
 		The rain gauge works by water falling through a meshed funnel and tipping an internal bucket.
 		The mesh serves to filter out grit and leaves, but also means snow gets trapped until it melts or is blown away by the wind.
-		The equipment is sensitive to 0.3mm of rain - so an hour's worth of drizzle may not register,
+		The equipment is sensitive to approx. 0.2mm of rain - so an hour's worth of light drizzle or a brief shower may not register,
 		though I will manually record the day as having had a trace of rainfall (seen as 0.1mm).
 	</p>
+	<img src="/photos/wxstn/gauge_decon.jpg" title="Deconstructed view of rain gauge - funnel and internals atop the station roof" />
+	<img src="/photos/wxstn/gauge_internals.jpg" title="Internal view of the gauge, showing tipping bucket" />
 	<p>
 		Consequently, I measure snowfall by a combination of snow depth (1cm of snow approx. corresponds to 1mm of liquid precipitation)
 		and high-resolution radar which can pick up all types of precipitation. To my knowledge, this is also how the Met Office do it.
@@ -394,8 +400,8 @@ $file = 8;
 		though I always appreciate convective events (storms, hail and heavy showers) - rare though these are in London.
 	</p>
 	<p>
-		My background is in Physics and Computer Science, both of which I was largely motivated to study by my love of the weather.<br />
-		I currently live and work in London.
+		My academic background is in Physics and Computer Science, both of which I was largely motivated to study by my love of the weather.<br />
+		I currently live and work in London. Weather remains just a hobby.
 	</p>
 
 </div>

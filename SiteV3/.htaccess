@@ -33,6 +33,7 @@ deny from 195.19.104.8
 deny from 92.53.98.90
 #Ukraine - spammer
 deny from 91.200.14
+deny from 46.118.158
 #Turkey - spammer
 deny from 213.238.175
 #China - hacker

@@ -62,7 +62,8 @@
 			<img src="/photos/newwx_body.jpg"></img><img src="/photos/newwx_full.jpg"></img>
 			<img src="/photos/newwx_top.jpg"></img><img src="/photos/newwx_bot.jpg"></img>
 		</p>
-		<p>A full photo album will follow in the next week or so, when I have touched-up the old paintwork.</p>
+		<p>A <a href="./wx_albgen.php?albnum=4">full photo album</a> has now been published,
+			but I still need to touch-up the old paintwork before declaring the project complete.</p>
 		<span style="color:gray;font-style:italic">Posted: 30th Mar 2014</span><br />
 	</td></tr>
 	<tr><td>
@@ -196,7 +197,7 @@
 		<span style="color:gray;font-style:italic">Posted: 8th Jan 2012</span><br />
 	</td></tr>
 
-	<tr><td><a name='rainfall'></a>
+	<tr id="post-20120107"><td><a name='rainfall'></a>
 		<h2>Rainfall Figures - adjustments to correct possible under-reading</h2>
 		<p>Early in 2011 I suspected that the electronic rain gauge may be under-reading, so I decided to set up a manual rain gauge that could be used to check the performance of the automatic one.
 		Suspicion arose due to conflicting figures with an "official" Met Office-standard weather station at Whitestone Pond, about 2km away.
