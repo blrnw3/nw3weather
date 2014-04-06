@@ -192,8 +192,9 @@ if($nw3Raining) { //Rained in past hour
 			break;
 		}
 	}
-	$lastrnThresh = $isShower ? 20 : 35;
-	if((int) substr($HR24['misc']['rnlast'], 0, 2) > $lastrnThresh && strpos($HR24['misc']['rnlast'], 'mins')) {
+	$lastrnThresh = $isShower ? 12 : 20;
+	$rn_ago = (time() - strtotime($HR24['misc']['prevRn']));
+	if($rn_ago > ($lastrnThresh * 60)) {
 		$intensity = 'Recent';
 	}
 	$weather = $intensity .' '. $rnType;

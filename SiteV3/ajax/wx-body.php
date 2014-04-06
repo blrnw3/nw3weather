@@ -51,7 +51,7 @@ $vars2b[4] = $NOW['max']['gust']; $vars2b[5] = $NOW['max']['rnhr'];
 $vars3a[4] = $HR24['misc']['maxhrgst']; $vars3a[5] = $HR24['misc']['rnrate'];
 $vars3b[4] = bft($wind); $vars3b[5] = $HR24['trendRn'][0] - $HR24['trendRn']['10m'];
 
-$arrowThreshs = array( array(0.3, 0.8), array(2,8), array(0.4, 0.9), array(1, 2), array(1, 3), array(0.2, 1) );
+$arrowThreshs = array( array(0.3, 0.8), array(2,8), array(0.4, 0.9), array(1, 2), array(1, 3), array(0.1, 1) );
 $arrowTimes = array( array(15, 30), array(15, 45), array(15, 30), array(60, 120), array(60, 120), array(30, 60) );
 
 $extras2 = array('Max Speed', 'Max Gust', 'Max Rate', 'Max Hourly');
@@ -61,7 +61,7 @@ $extras4 = array( degname($HR24['mean']['wdir']) . " ({$HR24['mean']['wdir']}&de
 for($i = 0; $i < count($measures); $i++) {
 	$cond = ($i < 4);
 	$arrow = ($i !== 4 && !($i === 5 && $rain == 0)) ?
-		arrow($var1Names[$i], $arrowTimes[$i][0], $arrowTimes[$i][0], $arrowThreshs[$i][0], $arrowThreshs[$i][1]) : '';
+		arrow($var1Names[$i], $arrowTimes[$i][0], $arrowTimes[$i][1], $arrowThreshs[$i][0], $arrowThreshs[$i][1]) : '';
 	$t1 = $cond ? ' at '. $NOW['timeMax'][$var1Names[$i]] : '';
 	$t2 = $cond ? ' at '. $NOW['timeMin'][$var1Names[$i]] : '';
 

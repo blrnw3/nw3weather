@@ -28,6 +28,43 @@
 	<h1>Site Blog and Weather Station news/updates</h1>
 
 	<table width="850">
+	<tr id="post-20140330"><td>
+		<h2>Weather station maintenance / minor upgrade</h2>
+		<p>
+			After almost five years of constant weathering, the radiation shield for the thermo/hygro sensor
+			was showing serious signs of decay. To remedy this, the base and roof have both been replaced; the body
+			itself seems to be in reasonable enough condition to survive another few winters at least, but has been
+			thoroughly cleaned to maintain its reflective gloss. The rain gauge has also been cleaned out, having built
+			up a considerable layer of moss and dead insects within its internals.
+		</p>
+		<p>
+			In addition to this maintenance, I have replaced the rain gauge collection funnel with another of
+			a larger diameter (25 cm, up from 19.5 cm), thus increasing the gauge's resolution from approx. 0.30 mm to 0.18 mm.
+			The consequences of this change are:
+			<ul>
+				<li>A little under 0.2 mm of rain needs to fall to trigger a 'rain day', rather than 0.3 mm</li>
+				<li>Rain rate is more accurate during heavy rain/showers</li>
+				<li>Brief showers are more likely to be detected</li>
+				<li>Quicker response in reporting rain after it starts to fall.</li>
+			</ul>
+		</p>
+		<p>
+		So, good news all around. However, the sensors themselves are showing signs of wear and will probably need replacing
+		next year. Or perhaps I'll replace the entire weather station with a newer and better model.
+		Either way, more weather hardware upgrades to come in 2015 (along with the website upgrades)!
+		</p>
+		<p>
+			<h3>Before:</h3>
+			<img src="/photos/oldwx_body.jpg"></img><img src="/photos/oldwx_base.jpg"></img>
+			<img src="/photos/oldwx_roof.jpg"></img><img src="/photos/oldwx_funnel.jpg"></img>
+			
+			<h3>After:</h3>
+			<img src="/photos/newwx_body.jpg"></img><img src="/photos/newwx_full.jpg"></img>
+			<img src="/photos/newwx_top.jpg"></img><img src="/photos/newwx_bot.jpg"></img>
+		</p>
+		<p>A full photo album will follow in the next week or so, when I have touched-up the old paintwork.</p>
+		<span style="color:gray;font-style:italic">Posted: 30th Mar 2014</span><br />
+	</td></tr>
 	<tr><td>
 		<h2>Source code release and latest website development plans</h2>
 		<p>
