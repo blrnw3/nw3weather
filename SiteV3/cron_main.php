@@ -91,7 +91,7 @@ file_put_contents( ROOT.'serialised_datNow.txt', serialize($newNOW) );
 file_put_contents( ROOT.'serialised_datHr24.txt', serialize( dailyData( date('Ymd') ) ) );
 
 //datm append
-if($tstamp == '0715') { // Earliest I'd ever reasonably get up, and time enough for sun hrs to be published
+if($tstamp == '0749') { // Earliest I'd ever reasonably get up, and time enough for sun hrs to be published
 	$sunhrs = getSunHrs();
 	$wethrs = file_get_contents(ROOT."wethrs.txt");
 	$listm = array($sunhrs,$wethrs,'u','','','','','','blr','','','','\n');
@@ -490,6 +490,12 @@ function getSunHrs() {
 			break;
 		}
 	}
+	//Store the raw file for debugging
+	$hand = fopen(ROOT.'sunhrs_raw.htm', 'w');
+	foreach($fileSun as $line) {
+		fwrite($hand, $line);
+	}
+	fclose($hand);
 	quick_log("sunHrs.txt", $i ." / ". $len);
 	return "$sunHrs";
 }
