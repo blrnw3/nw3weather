@@ -4,7 +4,7 @@
 		<ul>
 <?php
 $lastPost = mkdate(3,30,2014); //MUST KEEP UPDATED - latest blog post
-$lastAlbum = mkdate(6,4,2014); //MUST KEEP UPDATED - latest album upload
+$lastAlbum = mkdate(4,12,2014); //MUST KEEP UPDATED - latest album upload
 
 $newLength = (3 * 3600 * 24);
 $blog = 'Blog'. ( ((time() - $lastPost < $newLength)) ?

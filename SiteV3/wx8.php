@@ -137,11 +137,11 @@ $file = 8;
 		<li>A barometer integrated into the receiving unit (indoors).</li>
 	</ul>
 	<?php
-		img("/static-images/P1010070.JPG", "Thermo/Hygro and Rain Gauge", 0.2, "Thermo/Hygro in radiation shield, Rain Gauge on top", 430, 338, "Enlarge");
-		img("/static-images/P1010074.JPG", "Wind Sensors", 0.2, "Anemometer &amp; Wind Vane on top of pole", 394, 338, "Enlarge");
+		img("/photos/wxstn/box.jpg", "Thermo/Hygro and Rain Gauge", 0.2, "Thermo/Hygro in radiation shield, Rain Gauge on top", 430, 338);
+		img("/static-images/P1010074.JPG", "Wind Sensors", 0.2, "Anemometer &amp; Wind Vane on top of pole", 394, 338);
 		echo '<p>All the sensors are automatic and send data wirelessly to the receiving unit every 14-60s.</p>';
-		img("/static-images/PICT2516.JPG", "Thermo/Hygro clos-up", 0.2, "Thermo/Hygro close-up inside radiation shield", 420, 315, 'dqwd');
-		img("/static-images/P1010076.JPG", "Wind Sensors close-up", 0.2, "Wind Sensors close-up", 420, 315, "Enlarge");
+		img("/static-images/PICT2516.JPG", "Thermo/Hygro close-up", 0.2, "Thermo/Hygro close-up inside radiation shield", 420, 315);
+		img("/static-images/P1010076.JPG", "Wind Sensors close-up", 0.2, "Wind Sensors close-up", 420, 315);
 	?>
 	<p><a href="./wx7.php#wx-albums">Weather station albums</a> are also available,
 		with more complete and detailed pictures of past and present setups.</p>

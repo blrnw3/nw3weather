@@ -56,16 +56,16 @@ $wx_titles = array(
 	'Relocation, nw3 2010',
 	'Ageing, 2010-2013',
 	'Refurbish, March 2014',
-//	'Current Setup, April 2014'
+	'Current Setup, April 2014'
 );
 $wx_refs = array(
 	'wx_initial',
 	'wx_reloc',
 	'wx_decay',
 	'wx_refurb',
-//	'wx_current'
+	'wx_current'
 );
 $wx_mains = array(
-	1,1,5, 2
+	1,1,5, 2, 1
 );
 ?>

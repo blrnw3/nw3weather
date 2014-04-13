@@ -42,6 +42,9 @@ table('', null, 5, true, 5);
 
 $cnt = 0;
 for ($i = count($wx_mains)-1; $i >= 0; $i--) {
+	if($i === 2 && !$me) {
+		continue; // Skip the 'ageing' album
+	}
 	if($cnt % 4 === 0) {
 		echo '<tr valign="top" align="center">';
 	}

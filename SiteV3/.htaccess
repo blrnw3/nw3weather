@@ -24,6 +24,8 @@ deny from 46.32.250.86
 deny from 5.9.145.107
 deny from 41.207.19.98
 deny from 190.211.242.190
+#Korea - scraper
+deny from 14.63.229.34
 #USA - spammer
 deny from 216.151.130
 deny from 216.151.137
@@ -34,6 +36,7 @@ deny from 92.53.98.90
 #Ukraine - spammer
 deny from 91.200.14
 deny from 46.118.158
+deny from 159.224.160
 #Turkey - spammer
 deny from 213.238.175
 #China - hacker
@@ -42,11 +45,16 @@ deny from 222.77
 deny from 59.58.154
 #India - spammer
 deny from 182.64
+deny from 180.179.171.194
 #Ezooms bot
 deny from 208.115.113.86
 deny from 208.115.111.70
 #Vietnam - spammer
 deny from 113.190
+#Israel Spammer
+deny from 62.219.8.235
+#France - spammer
+deny from 188.165.243.45
 
 #RewriteCond %{HTTP_HOST} ^www\.nw3weather\.co\.uk [NC]
 #RewriteRule ^(.*)$ http://nw3weather.co.uk/$1 [L,R=301]
