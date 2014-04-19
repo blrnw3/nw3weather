@@ -139,19 +139,11 @@ if($tstamp == '0000') {
 	copy(ROOT."stitchedmaingraph.png", $target_st .''. $target_en);
 	copy(ROOT."stitchedmaingraph_small.png", $target_st .'small_'. $target_en);
 
-	// WU view count
-	$filwu = urlToArray('http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=ILONDONL9');
-	if($filwu !== false) {
-		for ($i = 650; $i < 1950; $i++) {
-			if(strpos($filwu[$i],"Viewed") > 0) {
-				$wuvul = explode(" ", $filwu[$i]);
-				break;
-			}
-		}
-		$wuvu = $wuvul[3];
-	} else {
-		$wuvu = 'timeout';
-	}
+}
+
+// WU view count
+if($tstamp == '2358') {
+	$wuvu = get_wuvu_cnt();
 	quick_log('WU_counts', $wuvu);
 }
 
@@ -498,6 +490,25 @@ function getSunHrs() {
 	fclose($hand);
 	quick_log("sunHrs.txt", $i ." / ". $len);
 	return "$sunHrs";
+}
+
+function get_wuvu_cnt() {
+	$filwu = urlToArray('http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=ILONDONL9');
+	if($filwu !== false) {
+		$limit = count($filwu);
+		for ($i = 8000; $i < $limit; $i++) {
+			if(strpos($filwu[$i], "view_count") > 0) {
+				$wuvul = $filwu[$i];
+				break;
+			}
+		}
+		if($wuvul) {
+			return (int)preg_replace('/\D/', '', $wuvul);
+		} else {
+			return 'not found';
+		}
+	}
+	return 'timeout';
 }
 
 /**

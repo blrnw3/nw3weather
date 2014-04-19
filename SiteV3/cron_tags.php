@@ -1,4 +1,5 @@
 <?php
+ini_set("memory_limit","128M");
 
 $allDataNeeded = true;
 $root = '/home/nwweathe/public_html/';
@@ -997,7 +998,7 @@ $daysTminyearL0C = ' . var_export($daysTminyearL0C, true) . ';
 $last24houravtemp = ' . var_export($detailData[6], true) . ';
 $tranks = ' . var_export($detailData[7], true) . ';
 ';
-
+unset($detailData);
 file_put_contents($root . "TemperatureTags.php", "<?php $viewable $outputTp ?>");
 
 
@@ -1014,6 +1015,8 @@ $hdatSS = ' . var_export($detailDataH[4], true) . ';
 $last24houravhum = ' . var_export($detailDataH[6], true) . ';
 $hranks = ' . var_export($detailDataH[7], true) . ';
 ';
+unset($detailDataH);
+
 $outputDp = '
 $ddatToday = ' . var_export($detailDataD[0], true) . ';
 $ddatYest = ' . var_export($detailDataD[1], true) . ';
@@ -1023,7 +1026,7 @@ $ddatSS = ' . var_export($detailDataD[4], true) . ';
 $last24houravdew = ' . var_export($detailDataD[6], true) . ';
 $dranks = ' . var_export($detailDataD[7], true) . ';
 ';
-
+unset($detailDataD);
 file_put_contents($root . "HumidityTags.php", "<?php $viewable $outputRh $outputDp ?>");
 
 
@@ -1040,7 +1043,7 @@ if(date('i') == '05' || isset($_GET['BLRdebugTags'])) {
 	$last24houravbaro = ' . var_export($detailDataP[6], true) . ';
 	$pranks = ' . var_export($detailDataP[7], true) . ';
 	';
-
+	unset($detailDataP);
 	file_put_contents($root . "PressureTags.php", "<?php $viewable $outputPr ?>");
 
 #######################  FEELS-LIKE  ######################################################
@@ -1055,7 +1058,7 @@ if(date('i') == '05' || isset($_GET['BLRdebugTags'])) {
 	$last24houravfeel = ' . var_export($detailDataF[6], true) . ';
 	$franks = ' . var_export($detailDataF[7], true) . ';
 	';
-
+	unset($detailDataF);
 	file_put_contents($root . "FeelTags.php", "<?php $viewable $outputFe ?>");
 }
 
@@ -1072,7 +1075,7 @@ $wdatSSanom = ' . var_export($detailDataW[5], true) . ';
 $last24houravwind = ' . var_export($detailDataW[6], true) . ';
 $wranks = ' . var_export($detailDataW[7], true) . ';
 ';
-
+unset($detailDataW);
 file_put_contents($root . "WindTags.php", "<?php $viewable $outputWd ?>");
 
 
@@ -1090,7 +1093,7 @@ $rtotals = ' . var_export($detailDataR[8], true) . ';
 $rdaysof = ' . var_export($detailDataR[9], true) . ';
 $rtotAnoms = ' . var_export($detailDataR[10], true) . ';
 ';
-
+unset($detailDataR);
 file_put_contents($root . "Rain2Tags.php", "<?php $viewable $outputRn2 ?>");
 
 #######################  Sunshine  ######################################################
@@ -1106,7 +1109,7 @@ if($argc > 1 || isset($_GET['BLRdebugTags'])) {
 	$sdaysof = ' . var_export($detailDataS[9], true) . ';
 	$stotAnoms = ' . var_export($detailDataS[10], true) . ';
 	';
-
+	unset($detailDataS);
 	file_put_contents($root . "SunTags.php", "<?php $viewable $outputSn ?>");
 
 }

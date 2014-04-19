@@ -65,17 +65,15 @@ echo '<a href="datLiner.php?year=', $nexty, '&amp;month=', $nextm, '&amp;day=', 
 
 <?php
 //echo $mproc,$dproc.$yproc;
-$custom = customdata( date('Ymd', mkdate($mproc,$dproc,$yproc)) );
+$custom = dailyData( date('Ymd', mkdate($mproc,$dproc,$yproc)) );
 
-echo '<h2>dat'.$yproc.'.csv at line ' . ( (int)date('z', $sproc) + 2 ) . '</h2>
-	<p>'. implode(',', $custom[0]) . ',1000,0</p>';
-
-echo '<h2>datt'.$yproc.'.csv at line ' . ( (int)date('z', $sproc) + 2 ) . '</h2>
-	<p>'. implode(',', $custom[1]) . ',,0</p>';
-
-// echo '$rn10max, $rn60max, $wind10max, $wind10maxt, $wind60max, $wind60maxt, $t10min, $t10max, $t10mint, $t10maxt,
-				// $tchangehrmax, $tchangehrmaxt, $hchangehrmax, $hchangehrmaxt, $tchangehrmin, $tchangehrmint, $hchangehrmin, $hchangehrmint, $rn10maxt,
-				// $nmint, $daymaxt, $avminTime, $avmaxTime, $mins, $maxs, $means, $rnend, $dat, $rn60maxt, $maxgust, $maxgustt, $ttmax, $rrmax, $rrmaxt';
+//array("min" => $mins, "max" => $maxs, "mean" => $means, "timeMin" => $timesMin, "timeMax" => $timesMax,
+				// "trend" => $trends, "trendRn" => $rnCums, "changeHr" => $hrChanges, "changeDay" => $hr24Changes,
+				// "misc" => array("frosthrs" => $frosthrs, "rnrate" => $currRate, "rnduration" => $rnDuration,
+								// "rnlast" => $lastRnFull, "wethrs" => $wethrs, "maxhrgst" => $maxhrgst, "cnt" => $end,
+								// "prevRn" => date('r', $prevRn), "prevRnOld" => date('r', $prevRnOld)
+							// )
+			// );
 print_m($custom);
 
 ?>
