@@ -13,6 +13,13 @@ class Db {
 
 	const DATE_FORMAT = 'Y-m-d';
 
+	# Funcs
+	const COUNT = 'COUNT';
+	const SUM = 'SUM';
+	const AVG = 'AVG';
+	const MAX = 'MAX';
+	const MIN = 'MIN';
+
 	private $db;
 	private $proc;
 	private $explosive;
@@ -56,6 +63,24 @@ class Db {
 		$cols = ($cols === null) ? '*' : implode(',', (array)$cols);
 		$q = "SELECT $cols FROM $table $conditions";
 		return $this->db->query($q)->fetchAll(PDO::FETCH_ASSOC);
+	}
+
+
+	/* Utilities for (MY)SQL fragments */
+	static function dt($timestamp) {
+		return "FROM_UNIXTIME($timestamp)";
+	}
+	static function where($x) {
+		return "WHERE $x";
+	}
+	static function btwn($a, $b) {
+		return "BETWEEN ($a AND $b)";
+	}
+	static function and_($a, $b) {
+		return "($a AND $b)";
+	}
+	static function or_($a, $b) {
+		return "($a OR $b)";
 	}
 
 	/*

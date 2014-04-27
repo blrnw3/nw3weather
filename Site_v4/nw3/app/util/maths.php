@@ -183,7 +183,7 @@ class Maths {
 		return $min;
 	}
 
-	static function count_cond($arr, $isGreater, $limit, $isMean = false) {
+	static function count_cond(&$arr, $isGreater, $limit, $isMean = false) {
 		$cnt = $blanks = 0;
 
 		if($isGreater) {
@@ -236,6 +236,12 @@ class Maths {
 		return $arr[$nearest];
 	}
 
+	static function sumif(&$arr, $fn_filter) {
+		$sum = 0;
+		foreach ($arr as $val) {
+			$sum += $fn_filter($val);
+		}
+	}
 
 }
 
