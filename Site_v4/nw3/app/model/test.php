@@ -9,7 +9,7 @@ use nw3\app\core\Db;
  * @author Ben LR
  */
 class Test {
-	private static $table = 'daily_vars';
+	private static $table = 'daily';
 
 	private $lil;
 

@@ -1,7 +1,6 @@
 -- Daily variables (daily summary data as processed daily from the core live variables for a 24hr period) --
 CREATE TABLE IF NOT EXISTS `daily` (
   `d` date NOT NULL,
-
   `tmin` decimal(3,1) DEFAULT NULL,
   `tmax` decimal(3,1) DEFAULT NULL,
   `tmean` decimal(4,2) DEFAULT NULL,
@@ -34,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `daily` (
   `w10max` decimal(3,1) unsigned DEFAULT NULL,
   `afhrs` float unsigned DEFAULT NULL,
   `fmin` tinyint(2) DEFAULT NULL,
-  `fmax` dtinyint(2) DEFAULT NULL,
+  `fmax` tinyint(2) DEFAULT NULL,
   `fmean` decimal(3,1) DEFAULT NULL,
   `trange` decimal(3,1) unsigned DEFAULT NULL,
   `hrange` tinyint(2) unsigned DEFAULT NULL,
@@ -77,7 +76,7 @@ CREATE TABLE IF NOT EXISTS `daily` (
   `t_fmax` time DEFAULT NULL,
   `t_fmin` time DEFAULT NULL,
 
-  PRIMARY KEY (`day`),
+  PRIMARY KEY (`d`),
   KEY `tmin` (`tmin`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

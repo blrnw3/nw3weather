@@ -14,7 +14,7 @@ class Webcam extends core\Controller {
 	public function __construct() {
 		parent::__construct(__CLASS__);
 		$this->dark = Date::$is_dark;
-		$this->skycam_url = 'http://192.168.1.66/jpgwebcam.jpg';
+		$this->skycam_url = 'http://192.168.1.68/jpgwebcam.jpg';
 	}
 
 	public function index() {

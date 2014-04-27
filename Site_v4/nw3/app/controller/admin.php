@@ -49,6 +49,10 @@ class Admin extends core\Controller {
 		} elseif($_GET['script'] === 'wd') {
 			$wd_parser = new migrate\Wdlogstodaily($_GET['start_date'], $_GET['end_date']);
 			$wd_parser->parse();
+		} elseif($_GET['script'] === 'monthly') {
+			$migration = new migrate\Importmonthlylogs();
+			$yr = (int)$_GET['year'];
+			$migration->import($yr);
 		} else {
 			die('Not a valid script');
 		}

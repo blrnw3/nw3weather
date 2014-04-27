@@ -80,9 +80,9 @@ class Datareport extends Report {
 			$d2 = "{$this->year}-12-31";
 		}
 
-		$select = "DAYOFMONTH(day) as d, MONTH(day) as m, {$this->var['id']} as var";
-		$where = "WHERE day BETWEEN '$d1' AND '$d2'";
-		$data = $db->select('daily_vars', $where, $select);
+		$select = "DAYOFMONTH(d) as d, MONTH(d) as m, {$this->var['id']} as var";
+		$where = "WHERE d BETWEEN '$d1' AND '$d2'";
+		$data = $db->select('daily', $where, $select);
 
 		$daily = array();
 		foreach ($data as $val) {
@@ -115,8 +115,9 @@ class Datareport extends Report {
 			}
 
 			$show_cumul = ($cumul_count > 0) && !$this->rolling12;
-			if($show_cumul)
+			if($show_cumul) {
 				$this->data['monthly_cumul'][$m] = $this->var['summable'] ? $cumul : $cumul / $cumul_count;
+			}
 
 			if($this->var['anomable']) {
 				$this->data['monthly_anom'][$m] = Climate::anom_monthly($this->data['monthly_mean'][$m], $this->var, $m);

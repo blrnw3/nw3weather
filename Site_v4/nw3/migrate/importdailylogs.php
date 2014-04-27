@@ -7,7 +7,7 @@ use nw3\app\util\Maths;
 
 class Importdailylogs {
 
-	const PATH = 'D:\Archive\Weather\CurrentWebsiteBackup\DailyLogs\\';
+	const PATH = 'C:\Users\Ben\Documents\Weather\Backup\CurrentWebsiteBackup\DailyLogs\\';
 
 	const DUPLICATE_SEARCH_DISTANCE = 3; //How far to search for a missing value from a duplicate when trying to resolve the missing
 	const TIME_GAP_WARNING_THRESHOLD = 7; //Above this requires interpolation rather than padding
@@ -45,7 +45,7 @@ class Importdailylogs {
 
 			$file_path = self::PATH. $dt->format('Ymd'). 'log.txt';
 			if(!file_exists($file_path)) {
-				echo ". Skipping - does not exist". $dt->format("jS M Y");
+				echo ". Skipping - does not exist". $dt->format("jS M Y") . "<br />";
 				continue;
 			}
 			echo "<br />";
@@ -97,6 +97,12 @@ class Importdailylogs {
 					echo "WARN! Bad rain value $rain detected at $utc_datetime. Forcing to 0<br />";
 					$rain = 0;
 				}
+				# Handle special migration of rain values when the reset time was 21z
+				# Breaks if there was a rain tip at midnight, or no midnight value present,
+				#  but this has been manually checked.
+				if(($local_hour + $local_minute == 0) && ($dt->getTimestamp() < mktime(0,0,0, 4, 10, 2009))) {
+					$rain = 0;
+				}
 				$prev_rn = $raw_live_vals[10];
 
 				$lives[0] = $utc_datetime;
@@ -111,7 +117,7 @@ class Importdailylogs {
 				$db->execute($lives);
 
 				if($oct_switch) {
-					$dst_over = ($local_time === '01:59'); //Relies on this entry being present!
+					$dst_over = ($local_hour == 1 && $local_minute == 59); //Relies on this entry being present!
 				}
 			}
 			unset($live_vals_handle, $raw_live_vals);

@@ -14,7 +14,7 @@ class Config {
 	const EXEC_PATH = '/usr/local/bin/php -q /home/dev';
 
 	/** Path to the live data text file */
-	const LIVE_DATA_PATH = 'D:\tempC\Documents\craw_temp.txt';
+	const LIVE_DATA_PATH = 'C:\Users\Ben\Documents\Archive\craw_temp.txt';
 
 //	public static $rareTags = ROOT.'rareTags.php';
 
@@ -28,7 +28,7 @@ class Config {
 		'database' => 'nw3wx_4',
 		'host' => '127.0.0.1',
 		'port' => '3306',
-		//When true, errors are not caught so script execution terminate
+		//When true, errors are not caught so script execution terminates
 		//and the error message (with stack trace) is shown.
 		//Good for use in dev/test stage.
 		'explosive' => true

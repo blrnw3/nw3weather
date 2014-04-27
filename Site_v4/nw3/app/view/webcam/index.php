@@ -32,7 +32,7 @@ A <a href="skycam" title="Contains skycam only">self-contained version</a> is al
 
 <h3>Latest Groundcam Image</h3>
 <p>The camera is a Microsoft Lifecam VX-2000 and is looking NNE over Hampstead Heath (see <a href="wx8.php#location" title="About page">map</a>).</p>
-<img src="http://192.168.1.66/jpggroundcam.jpg" alt="Latest Groundcam" width="512" height="384" />
+<img src="/jpggroundcam.jpg" alt="Latest Groundcam" width="512" height="384" />
 <br />
 <p>The image updates every 5 minutes, 24 hours a day.</p>
 
