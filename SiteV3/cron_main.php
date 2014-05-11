@@ -389,6 +389,9 @@ function logneatenandrepair() {
  */
 function serialiseCSV($csv, $today = true) {
 	global $dyear, $dmonth, $dday, $siteRoot, $newNOW;
+
+	$data = array();
+
 	for($year = 2008; $year <= $dyear; $year++) {
 		$yrfil = $siteRoot.$csv.$year.'.csv';
 		if(file_exists($yrfil)) {
@@ -446,7 +449,10 @@ function serialiseCSV($csv, $today = true) {
 }
 
 function serialiseCSVm() {
+	$data = array();
+
 	$DATA = unserialize(file_get_contents(ROOT . 'serialised_dat.txt'));
+
 	for($year = 2009; $year <= date('Y'); $year++) {
 		$yrfil = ROOT.'datm'.$year.'.csv';
 		if(file_exists($yrfil)) {

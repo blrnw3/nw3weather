@@ -498,6 +498,7 @@ $maxrainratehr = $NOW['max']['rate'];
 $maxrainratetime = $NOW['timeMax']['rate'];
 
 $outputRn = '
+$rnallcount = \'' . $rainallCnt . '\';
 $yestrn = \'' . $yestrn . '\';
 $rainweek = \'' . $rainweek . '\';
 $rndays_week = \'' . $rndays_week . '\';
@@ -976,7 +977,7 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 	$datYest = array($tdatyest, $tdatyestdate, $tdatyestanom);
 
 	return array($datToday, $datYest, $tdat, $tdatMM, $tdatSS, $tdatSSanom, $avLast24, //6
-		$ranks, $totals, $daysof, $totalsAnoms); //10
+		$ranks, $totals, $daysof, $totalsAnoms, $datallCnt); //11
 }
 
 $detailData = getDetailedData(0);
@@ -997,6 +998,7 @@ $daysTminL0C = ' . var_export($daysTminL0C, true) . ';
 $daysTminyearL0C = ' . var_export($daysTminyearL0C, true) . ';
 $last24houravtemp = ' . var_export($detailData[6], true) . ';
 $tranks = ' . var_export($detailData[7], true) . ';
+$tcountall = ' . var_export($detailData[11], true) . ';
 ';
 unset($detailData);
 file_put_contents($root . "TemperatureTags.php", "<?php $viewable $outputTp ?>");
@@ -1014,6 +1016,7 @@ $hdatMM = ' . var_export($detailDataH[3], true) . ';
 $hdatSS = ' . var_export($detailDataH[4], true) . ';
 $last24houravhum = ' . var_export($detailDataH[6], true) . ';
 $hranks = ' . var_export($detailDataH[7], true) . ';
+$hcountall = ' . var_export($detailDataH[11], true) . ';
 ';
 unset($detailDataH);
 
@@ -1025,6 +1028,7 @@ $ddatMM = ' . var_export($detailDataD[3], true) . ';
 $ddatSS = ' . var_export($detailDataD[4], true) . ';
 $last24houravdew = ' . var_export($detailDataD[6], true) . ';
 $dranks = ' . var_export($detailDataD[7], true) . ';
+$dcountall = ' . var_export($detailDataD[11], true) . ';
 ';
 unset($detailDataD);
 file_put_contents($root . "HumidityTags.php", "<?php $viewable $outputRh $outputDp ?>");
@@ -1042,6 +1046,7 @@ if(date('i') == '05' || isset($_GET['BLRdebugTags'])) {
 	$pdatSS = ' . var_export($detailDataP[4], true) . ';
 	$last24houravbaro = ' . var_export($detailDataP[6], true) . ';
 	$pranks = ' . var_export($detailDataP[7], true) . ';
+	$pcountall = ' . var_export($detailDataP[11], true) . ';
 	';
 	unset($detailDataP);
 	file_put_contents($root . "PressureTags.php", "<?php $viewable $outputPr ?>");
@@ -1057,6 +1062,7 @@ if(date('i') == '05' || isset($_GET['BLRdebugTags'])) {
 	$fdatSS = ' . var_export($detailDataF[4], true) . ';
 	$last24houravfeel = ' . var_export($detailDataF[6], true) . ';
 	$franks = ' . var_export($detailDataF[7], true) . ';
+	$fcountall = ' . var_export($detailDataF[11], true) . ';
 	';
 	unset($detailDataF);
 	file_put_contents($root . "FeelTags.php", "<?php $viewable $outputFe ?>");
@@ -1074,6 +1080,7 @@ $wdatSS = ' . var_export($detailDataW[4], true) . ';
 $wdatSSanom = ' . var_export($detailDataW[5], true) . ';
 $last24houravwind = ' . var_export($detailDataW[6], true) . ';
 $wranks = ' . var_export($detailDataW[7], true) . ';
+$wcountall = ' . var_export($detailDataW[11], true) . ';
 ';
 unset($detailDataW);
 file_put_contents($root . "WindTags.php", "<?php $viewable $outputWd ?>");
@@ -1092,6 +1099,7 @@ $rranks = ' . var_export($detailDataR[7], true) . ';
 $rtotals = ' . var_export($detailDataR[8], true) . ';
 $rdaysof = ' . var_export($detailDataR[9], true) . ';
 $rtotAnoms = ' . var_export($detailDataR[10], true) . ';
+$rcountall = ' . var_export($detailDataR[11], true) . ';
 ';
 unset($detailDataR);
 file_put_contents($root . "Rain2Tags.php", "<?php $viewable $outputRn2 ?>");
@@ -1108,6 +1116,7 @@ if($argc > 1 || isset($_GET['BLRdebugTags'])) {
 	$stotals = ' . var_export($detailDataS[8], true) . ';
 	$sdaysof = ' . var_export($detailDataS[9], true) . ';
 	$stotAnoms = ' . var_export($detailDataS[10], true) . ';
+	$scountall = ' . var_export($detailDataS[11], true) . ';
 	';
 	unset($detailDataS);
 	file_put_contents($root . "SunTags.php", "<?php $viewable $outputSn ?>");

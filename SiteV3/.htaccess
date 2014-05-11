@@ -43,7 +43,14 @@ deny from 213.238.175
 deny from 36.248
 deny from 222.77
 deny from 59.58.154
+deny from 123.89.188.40
+deny from 110.209.186.145
+deny from 221.172.207.84
+deny from 111.151.149.119
+deny from 113.87.254.229
+deny from 175.42.95.147
 #India - spammer
+deny from 182.69.0.184
 deny from 182.64
 deny from 180.179.171.194
 #Ezooms bot

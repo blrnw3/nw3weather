@@ -276,7 +276,7 @@ for($i = 0; $i < 4; $i++) {
 <p><b>Note 1:</b> Rain records began in February 2009<br />
 <b>Note 2:</b> The minimum recordable rain (the rain gauge resolution) is <?php if($unitT == 'C') { echo '0.2 mm'; } else { echo '0.01 in'; } ?><br />
 <b>Note 3:</b> Figures in brackets refer to departure from <a href="wxaverages.php" title="Long-term NW3 climate averages">average conditions</a><br />
-<b>Note 4:</b> Rain rate records are manually checked, and changed if necessary, due to occasional issues with the software. Initial high readings may well be corrected at a later date.<br />
+<b>Note 4:</b> Rain rate records are manually checked, and changed if necessary, due to occasional lag in data transmission. Initial high readings may well be corrected at a later date.<br />
 </p>
 
 <p><a href="wxdataday.php?vartype=rain" title="<?php echo $year; ?>daily rain totals"><b>View daily totals for the past year</b></a></p>
