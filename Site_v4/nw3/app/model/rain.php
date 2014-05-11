@@ -58,45 +58,26 @@ class Rain extends \Detail {
 	}
 
 	function totals() {
-		$data = array(
-			self::RECORD => array('val' => $this->select('', Db::SUM)),
-			self::YESTERDAY => array('val' => $this->filter_date('= '.$this->yest, Db::SUM)),
-			self::NOWMON => array('val' => $this->filter_date('>= '.$this->mon_st, Db::SUM)),
-			self::NOWYR => array('val' => $this->filter_date('>= '.$this->yr_st, Db::SUM)),
-			self::NOWSEAS => array('val' => $this->filter_date('>= '.$this->seas_st, Db::SUM)),
-			self::DAY_MON_AGO => array('val' => $this->filter_date('= '.$this->mon_ago, Db::SUM)),
-			self::DAY_YR_AGO => array('val' => $this->filter_date('= '.$this->yr_ago, Db::SUM)),
-			self::CUM_MON_AGO => array('val' => $this->filter_date(Db::btwn($this->mon_ago_st, $this->mon_ago), Db::SUM)),
-			self::CUM_YR_AGO => array('val' => $this->filter_date(Db::btwn($this->yr_ago_st, $this->yr_ago), Db::SUM)),
-		);
-		$data[self::RECORD]['anom'] = $data[self::RECORD]['val'] / 1; # TODO
-		$data[self::NOWMON]['anom'] = $data[self::NOWMON]['val'] / 1; # TODO
-		$data[self::NOWYR]['anom'] = $data[self::NOWYR]['val'] / 1; # TODO
-		$data[self::CUM_MON_AGO]['anom'] = $data[self::CUM_MON_AGO]['val'] / 1; # TODO
-		$data[self::CUM_YR_AGO]['anom'] = $data[self::CUM_YR_AGO]['val'] / 1; # TODO
-		# Period tots
-		foreach(self::$periods as $period) {
-			$data[$period] = $this->total_past_n_days($period);
+		$data = array();
+		foreach ($this->all_periods as $period) {
+			$data[$period] = array(
+				'val' => $this->period_sum($period),
+			);
+		}
+		foreach ($this->all_multiday_periods as $period) {
+			$data[$period]['anom'] = $this->period_sum_amom($period);
 		}
 		return $data;
 	}
 
 	function days() {
-		$data = array(
-			self::RECORD => array('val' => $this->filter_value($this->wet_filter, Db::COUNT)),
-			self::NOWMON => array('val' => $this->filter_dt_val('>= '.$this->mon_st, $this->wet_filter, Db::COUNT)),
-			self::NOWYR => array('val' => $this->filter_dt_val('>= '.$this->yr_st, $this->wet_filter, Db::COUNT)),
-			self::CUM_MON_AGO => array('val' => $this->filter_dt_val(Db::btwn($this->mon_ago_st, $this->mon_ago), $this->wet_filter, Db::COUNT)),
-			self::CUM_YR_AGO => array('val' => $this->filter_dt_val(Db::btwn($this->yr_ago_st, $this->yr_ago), $this->wet_filter, Db::COUNT)),
-		);
-		$data[self::RECORD]['prop'] = $data[self::RECORD]['val'] / $this->num_records;
-		$data[self::NOWMON]['prop'] = $data[self::NOWMON]['val'] / D_day;
-		$data[self::NOWYR]['prop'] = $data[self::NOWYR]['val'] / (D_doy + 1);
-		$data[self::CUM_MON_AGO]['prop'] = $data[self::CUM_MON_AGO]['val'] / D_day;
-		$data[self::CUM_YR_AGO]['prop'] = $data[self::CUM_YR_AGO]['val'] / (D_doy + 1);
-		# Period tots
-		foreach(self::$periods as $period) {
-			$data[$period] = $this->count_past_n_days($period);
+		$data = array();
+		foreach ($this->all_multiday_periods as $period) {
+			$cnt = $this->period_count($period, $this->wet_filter);
+			$data[$period] = array(
+				'val' => $cnt,
+				'prop' => $cnt / $this->period_lengths[$period]
+			);
 		}
 		return $data;
 	}
@@ -191,20 +172,6 @@ class Rain extends \Detail {
 		$this->get_longest_spell_for_period($all_spells, function($spell) {
 			return date('Yn', $spell['dt'] - $spell['val'] * Date::secs_DAY / 2) == ((string)D_year + (string)D_month);
 		});
-	}
-
-	private function total_past_n_days($n) {
-		return array(
-			'val' => $this->filter_date('> '.Date::mkday(D_day-$n), Db::SUM),
-			'anom' => 'TODO'
-		);
-	}
-	private function count_past_n_days($n) {
-		$cnt = $this->filter_dt_val('> '.Date::mkday(D_day-$n), $this->wet_filter, Db::COUNT);
-		return array(
-			'val' => $cnt,
-			'prop' => $cnt / $n
-		);
 	}
 
 	private function extreme_n_days($n, &$rainall) {

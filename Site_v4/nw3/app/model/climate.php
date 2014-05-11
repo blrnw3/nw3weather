@@ -53,11 +53,14 @@ class Climate {
 	public function daily_ltas() {
 		$daily = array();
 		foreach ($this->daily as $var => $data) {
+			if($var === 'wethr' || $var === 'rain' || $var === 'wmean') {
+				continue;
+			}
 			$var_info = Variable::$daily[$var];
 			$daily[$var] = array(
 				'values' => $data,
 				'id' => $var_info['id'],
-				'dpa' => (($var === 'sunmax') ? 1 : 0)
+				'dpa' => (($var === 'sunmax' || $var === 'sunhr') ? 1 : 0)
 			);
 		}
 		return $daily;
@@ -114,8 +117,8 @@ class Climate {
 
 	public static function get_timestamps_annual() {
 		$timestamps = array();
-		for($i = 0; $i < 366; $i++) {
-			$timestamps[] = mktime(0,0,0, 1,1+$i,2008); //leap year needed
+		for($i = 0; $i < 365; $i++) {
+			$timestamps[] = mktime(0,0,0, 1,1+$i,2009); //leap year avoid
 		}
 		return $timestamps;
 	}

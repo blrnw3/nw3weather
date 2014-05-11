@@ -190,22 +190,6 @@ class Date {
 		return self::mkdate(1 + $mon, 1, 2009);
 	}
 
-	/**
-	 * Converts an offset from 1st [curr_month] 2009 to a timestamp, where the offset is an index of
-	 * an array of all days for [curr_month] in the history.
-	 * @param int $day offset in days
-	 * @return int timestamp
-	 */
-	static function daytotimeCM($day) {
-		global $dmonth, $dyear, $lyNum;
-		$nly = ($dmonth == 2 && $day > 111) ? $lyNum : 0; //leap-yr fix (111 is num days from 01 feb 2009 to 28 feb 2012)
-		$dim = get_days_in_month($dmonth); //non-leap year
-		$year = 2009 + floor(($day - $nly) / $dim); //$day starts from 0 so no offset needed
-		$trueDay = $day - ($dim * ($year - 2009)) - $nly + 1; //offset now needed
-	//	$stuff = array($dmonth, $dyear, $lyNum, $nly, $dim, $year, $trueDay);
-	//	print_m($stuff);
-		return self::mkdate($dmonth, $trueDay, $year);
-	}
 
 	/**
 	 * Get day in year (aka z) for given dmy

@@ -52,7 +52,11 @@ class Admin extends core\Controller {
 		} elseif($_GET['script'] === 'monthly') {
 			$migration = new migrate\Importmonthlylogs();
 			$yr = (int)$_GET['year'];
-			$migration->import($yr);
+			if($_GET['type'] === 'upto') {
+				$migration->import_upto($yr);
+			} else {
+				$migration->import($yr);
+			}
 		} else {
 			die('Not a valid script');
 		}

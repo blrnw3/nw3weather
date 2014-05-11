@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS `daily` (
   `d` date NOT NULL,
   `tmin` decimal(3,1) DEFAULT NULL,
   `tmax` decimal(3,1) DEFAULT NULL,
-  `tmean` decimal(4,2) DEFAULT NULL,
+--   `tmean` decimal(4,2) DEFAULT NULL,
   `hmin` tinyint(2) unsigned DEFAULT NULL,
   `hmax` tinyint(2) unsigned DEFAULT NULL,
   `hmean` decimal(3,1) unsigned DEFAULT NULL,
@@ -35,22 +35,27 @@ CREATE TABLE IF NOT EXISTS `daily` (
   `fmin` tinyint(2) DEFAULT NULL,
   `fmax` tinyint(2) DEFAULT NULL,
   `fmean` decimal(3,1) DEFAULT NULL,
-  `trange` decimal(3,1) unsigned DEFAULT NULL,
-  `hrange` tinyint(2) unsigned DEFAULT NULL,
-  `prange` tinyint(2) unsigned DEFAULT NULL,
-  `ratemean` decimal(3,1) unsigned DEFAULT NULL,
+
+--   `trange` decimal(3,1) unsigned DEFAULT NULL,
+--   `hrange` tinyint(2) unsigned DEFAULT NULL,
+--   `prange` tinyint(2) unsigned DEFAULT NULL,
+--   `ratemean` decimal(3,1) unsigned DEFAULT NULL,
+
+-- Manual obs --
   `sunhr` decimal(3,1) unsigned DEFAULT NULL,
   `wethr` decimal(3,1) unsigned DEFAULT NULL,
   `cloud` varchar(7) DEFAULT NULL,
-  `snow` varchar(3) DEFAULT NULL,
+  `snow` decimal(4,1) unsigned DEFAULT NULL,
   `lysnw` decimal(3,1) unsigned DEFAULT NULL,
-  `hail` tinyint(1) DEFAULT NULL,
-  `thunder` tinyint(1) unsigned DEFAULT NULL,
-  `fog` tinyint(1) DEFAULT NULL,
+  `hail` tinyint DEFAULT NULL,
+  `thunder` tinyint DEFAULT NULL,
+  `fog` tinyint DEFAULT NULL,
   `comms` varchar(250) DEFAULT NULL,
   `extra` varchar(500) DEFAULT NULL,
   `issues` varchar(500) DEFAULT NULL,
-  `away` tinyint(1) DEFAULT NULL,
+  `away` boolean DEFAULT NULL,
+
+-- Times --
   `t_tmin` time DEFAULT NULL,
   `t_tmax` time DEFAULT NULL,
   `t_hmax` time DEFAULT NULL,
@@ -76,8 +81,15 @@ CREATE TABLE IF NOT EXISTS `daily` (
   `t_fmax` time DEFAULT NULL,
   `t_fmin` time DEFAULT NULL,
 
-  PRIMARY KEY (`d`),
-  KEY `tmin` (`tmin`)
+-- Anomalies --
+  `a_tmin` decimal(3,1) DEFAULT NULL,
+  `a_tmax` decimal(3,1) DEFAULT NULL,
+  `a_wmean` decimal(4,2) DEFAULT NULL,
+  `a_rain` decimal(4,1) DEFAULT NULL,
+  `a_sunhr` decimal(3,1) DEFAULT NULL,
+  `a_wethr` decimal(3,1) DEFAULT NULL,
+
+  PRIMARY KEY (`d`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- 'Live' variables (once-per-minute sensor readings) --
@@ -106,3 +118,50 @@ CREATE TABLE IF NOT EXISTS `live` (
   `wdir` smallint(3) unsigned DEFAULT NULL,
   PRIMARY KEY (`t`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+-- Daily anom --
+CREATE TABLE IF NOT EXISTS `anom_daily` (
+  `d` date NOT NULL,
+  `tmin` decimal(3,1) DEFAULT NULL,
+  `tmax` decimal(3,1) DEFAULT NULL,
+--   `tmean` decimal(4,2) DEFAULT NULL,
+  `wmean` float unsigned DEFAULT NULL,
+  `rain` float unsigned DEFAULT NULL,
+--   `trange` decimal(3,1) unsigned DEFAULT NULL,
+  `sunhr` decimal(3,1) unsigned DEFAULT NULL,
+  `wethr` float unsigned DEFAULT NULL,
+  `hail` float unsigned DEFAULT NULL,
+  `thunder` float unsigned DEFAULT NULL,
+  `fog` float unsigned DEFAULT NULL,
+--   `rdays` float unsigned DEFAULT NULL,
+
+  PRIMARY KEY (`d`)
+) ENGINE=InnoDB DEFAULT CHARSET = utf8;
+
+
+-- Monthly anom --
+CREATE TABLE IF NOT EXISTS `anom_monthly` (
+  `m` date NOT NULL, -- TODO datatype for months
+  `tmin` decimal(3,1) DEFAULT NULL,
+  `tmax` decimal(3,1) DEFAULT NULL,
+  `tmean` decimal(4,2) DEFAULT NULL,
+  `wmean` decimal(3,1) DEFAULT NULL,
+  `rain` decimal(4,1) unsigned DEFAULT NULL,
+  `trange` decimal(3,1) unsigned DEFAULT NULL,
+  `sunhr` int unsigned DEFAULT NULL,
+  `wethr` int unsigned DEFAULT NULL,
+  `hail` tinyint(2) unsigned DEFAULT NULL,
+  `thunder` tinyint(2) unsigned DEFAULT NULL,
+  `fog` tinyint(2) unsigned DEFAULT NULL,
+
+  `sunmax` int unsigned DEFAULT NULL,
+
+  `rdays` int unsigned DEFAULT NULL,
+  `days_frost` decimal(2,1) unsigned DEFAULT NULL,
+  `days_storm` decimal(2,1) unsigned DEFAULT NULL,
+  `days_snow` decimal(2,1) unsigned DEFAULT NULL,
+  `days_snowfall` decimal(2,1) unsigned DEFAULT NULL,
+
+  PRIMARY KEY (`m`)
+) ENGINE=InnoDB DEFAULT CHARACTER SET=utf8;

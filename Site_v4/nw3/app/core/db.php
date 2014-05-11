@@ -54,33 +54,78 @@ class Db {
 	}
 
 	/**
-	 *
+	 * Issue select query to DB
 	 * @param string $table name of db table
 	 * @param string $conditions raw sql conditions - where, order by, group by etc.
-	 * @param array $cols[=null] If present, an array of the field names to select, else all fields (*).
+	 * @param array $cols [=null] If present, an array of the field names to select, else all fields (*).
+	 * @return array rows, as associative arrays
 	 */
-	function select($table, $conditions, $cols = null) {
+	function select($table, $conditions, $cols=null) {
 		$cols = ($cols === null) ? '*' : implode(',', (array)$cols);
 		$q = "SELECT $cols FROM $table $conditions";
 		return $this->db->query($q)->fetchAll(PDO::FETCH_ASSOC);
 	}
 
+	/**
+	 * Issue update command to DB.
+	 * @param string $table table name
+	 * @param array $update key-value pairs of cols/vals to update
+	 * @param string $conds 'where' conditions
+	 * @return int number of rows affected
+	 */
+	function update($table, $update, $conds=null) {
+		$where = ($conds === null) ? "" : " WHERE $conds";
+
+		$set_items = array();
+		foreach ($update as $key => &$value) {
+			$val = is_string($value) ? "$value" : $value;
+			$set_items[] = "$key=$val";
+		}
+		$set = implode(',', $set_items);
+
+		$q = "UPDATE $table SET $set $where";
+		$this->db->exec($q);
+	}
 
 	/* Utilities for (MY)SQL fragments */
 	static function dt($timestamp) {
 		return "FROM_UNIXTIME($timestamp)";
 	}
 	static function where($x) {
-		return "WHERE $x";
+		return ($x === null) ? "" : "WHERE $x";
 	}
 	static function btwn($a, $b) {
 		return "BETWEEN ($a AND $b)";
 	}
-	static function and_($a, $b) {
-		return "($a AND $b)";
+	static function and_($conds) {
+		$conds = array_filter((array)$conds);
+		switch (count($conds)) {
+			case 0:
+				return null;
+			case 1:
+				return $conds[0];
+			default:
+				$all = implode(' AND ', $conds);
+				return "($all)";
+		}
 	}
 	static function or_($a, $b) {
 		return "($a OR $b)";
+	}
+	static function sum($a) {
+		return "SUM($a)";
+	}
+	static function count($a) {
+		return "COUNT($a)";
+	}
+	static function avg($a) {
+		return "AVG($a)";
+	}
+	static function min($a) {
+		return "MIN($a)";
+	}
+	static function max($a) {
+		return "MAX($a)";
 	}
 
 	/*

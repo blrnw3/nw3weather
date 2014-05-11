@@ -111,7 +111,7 @@ use nw3\app\model\Variable;
 	</tr>
 </table>
 
-<p>A day-by-day progression of the temperature averages can be found <a href="./daily" title="Daily long-term average temperatures">here</a>.</p>
+<p>A day-by-day progression of the temperature and sun averages can be found <a href="./daily" title="Daily long-term average temperatures and sunshine hours">here</a>.</p>
 
 <img class="climate_graph" src="./graph?types=tmin,tmax" alt="climgraph1" />
 <img class="climate_graph" src="./graph?types=tmean,trange" alt="climgraph2" />

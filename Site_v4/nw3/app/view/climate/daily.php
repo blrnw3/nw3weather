@@ -22,14 +22,15 @@ use nw3\app\model\Variable;
 	<thead>
 		<tr>
 			<td rowspan="2" colspan="2" width="15%">Date</td>
-			<td colspan="4" width="72%">Temperature / &deg;<?php echo Units::$temp; ?></td>
+			<td colspan="4" width="60%">Temperature / &deg;<?php echo Units::$temp; ?></td>
+			<td rowspan="2" width="12%">Sun Hrs</td>
 			<td rowspan="2" width="13%">Max <br />Sun Hrs</td>
 		</tr>
 			<tr>
-			<td width="18%">Min</td>
-			<td width="18%">Max</td>
-			<td width="18%">Mean</td>
-			<td width="18%">Range</td>
+			<td width="15%">Min</td>
+			<td width="15%">Max</td>
+			<td width="15%">Mean</td>
+			<td width="15%">Range</td>
 		</tr>
 	</thead>
 	<tbody>
@@ -63,7 +64,9 @@ use nw3\app\model\Variable;
 	</tbody>
 </table>
 
+<p>
 <a name="graph"></a>
 <img src="./graphyear?types=tmin,tmax" alt="graph year 1" />
 <img src="./graphyear?types=tmean,trange" alt="graph year 2" />
-<img src="./graphyear?types=sunmax,lol" alt="graph year 3" />
+<img src="./graphyear?types=sunmax,sunhr,lol" alt="graph year 3" />
+</p>
