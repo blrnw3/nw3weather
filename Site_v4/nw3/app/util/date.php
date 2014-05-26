@@ -28,7 +28,7 @@ class Date {
 	 * Loads up the global define with some useful constants
 	 */
 	public static function initialise() {
-		$debug_offset = 86400 * 0; //When testing, it could be useful to change this
+		$debug_offset = self::secs_DAY * 199; //When testing, it could be useful to change this
 		$now = time() - $debug_offset;
 		define('D_now', $now);
 
@@ -55,7 +55,7 @@ class Date {
 		define('D_sunset', $sunset);
 		self::$is_dark = ($now < $sunrise || $now > $sunset);
 
-		$yest = self::mkday(D_day-1);
+		$yest = $now - self::secs_DAY;
 		define( 'D_yest', $yest);
 		define( 'D_yest_day', (int)date('j', $yest) );
 		define( 'D_yest_month', (int)date('n', $yest) );
@@ -210,7 +210,7 @@ class Date {
 		return $days;
 	}
 	static function get_days_in_year($year) {
-		return date("z", self::mkdate(12,31,$year)) + 1;
+		return date('z', self::mkdate(12,31,$year)) + 1;
 	}
 
 	static function datefull($test) {
@@ -238,6 +238,11 @@ class Date {
 	static function get_current_season_start_month() {
 		return self::$season_month_nums[D_season-1][0];
 	}
+
+	static function get_current_season_days_elapsed() {
+		return date('z', (D_now - self::mkdate(self::get_current_season_start_month(), 1)));
+	}
+
 }
 
 ?>

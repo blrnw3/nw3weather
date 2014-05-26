@@ -30,7 +30,7 @@ class Sidebar {
 			echo "<li$class>";
 
 			if (!($active && !$this->subfile)) { //need link
-				echo '<a href="'. \Config::HTML_ROOT . $item['map']. '/" title="'. $item['title']. '">'. $name. '</a>
+				echo '<a href="'. \Config::HTML_ROOT . $item['map']. '" title="'. $item['title']. '">'. $name. '</a>
 					';
 			} else {
 				echo $name;

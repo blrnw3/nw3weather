@@ -81,8 +81,8 @@ class Datareport extends Report {
 		}
 
 		$select = "DAYOFMONTH(d) as d, MONTH(d) as m, {$this->var['id']} as var";
-		$where = "WHERE d BETWEEN '$d1' AND '$d2'";
-		$data = $db->select('daily', $where, $select);
+		$where = Db::where(Db::btwn($d1, $d2, 'd'));
+		$data = $db->select('daily', $select, $where);
 
 		$daily = array();
 		foreach ($data as $val) {

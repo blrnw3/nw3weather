@@ -26,14 +26,14 @@ class Climate extends core\Controller {
 	}
 
 	public function graph() {
-		$climate = new model\Climate();
+		$climate = new model\Climate(true);
 		$types = explode(',', $_GET['types']);
 		$this->data = $climate->monthly_graph($types);
 
 		$this->jpgraph('graph');
 	}
 	public function graphyear() {
-		$climate = new model\Climate();
+		$climate = new model\Climate(true);
 		$types = explode(',', $_GET['types']);
 		$this->data = $climate->annual_graph($types);
 

@@ -11,8 +11,8 @@ use nw3\app\util\Date;
  */
 class Webcam extends core\Controller {
 
-	public function __construct() {
-		parent::__construct(__CLASS__);
+	public function __construct($url_args) {
+		parent::__construct(__CLASS__, $url_args);
 		$this->dark = Date::$is_dark;
 		$this->skycam_url = 'http://192.168.1.68/jpgwebcam.jpg';
 	}
@@ -31,6 +31,7 @@ class Webcam extends core\Controller {
 	}
 
 	public function skycam() {
+		$this->check_correct_subpath_length();
 		$this->build('Skycam - Webcam');
 		$this->render();
 	}

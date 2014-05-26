@@ -57,7 +57,7 @@ use nw3\app\model\Variable;
 			<td width="7%">Falling</td>
 		</tr>
 	</thead>
-	<?php $climate = new Climate();
+	<?php $climate = new Climate(true);
 		$data = $climate->summary();
 		$maxsun = array_pop($data);
 		$sun = array_pop($data);

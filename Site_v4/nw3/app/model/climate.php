@@ -9,7 +9,7 @@ use nw3\app\util\Maths;
 /*
  * For the specific climate pages, as well as site-wide access for anomaly generation
  */
-class Climate {
+class Climate extends \nw3\app\core\Singleton {
 
 	public $daily = array();
 	public $monthly = array();
@@ -21,7 +21,18 @@ class Climate {
 
 	public static $order_daily = array('tmin', 'tmax', 'tmean', 'trange', 'sunmax');
 
-	public function __construct() {
+	public function __construct($load=false) {
+		if($load) {
+			$this->load();
+		}
+	}
+
+	function load() {
+		//Lazy load
+		if($this->daily) {
+			return;
+		}
+
 		$daily = data\Climate::$LTA_daily;
 		$monthly = data\Climate::$LTA;
 
@@ -34,7 +45,7 @@ class Climate {
 					$this->seasonal[$var_name][$season] += $var[$month];
 				}
 				if(!Variable::$daily[$var_name]['summable']) {
-					$this->seasonal[$var_name][$season] /= 3;
+					$this->seasonal[$var_name][$season] /= 3.0;
 				}
 			}
 			//Annual
@@ -42,7 +53,7 @@ class Climate {
 				'sum' => array_sum($var),
 				'range' => max($var) - min($var)
 			);
-			$this->annual[$var_name]['mean'] = round($this->annual[$var_name]['sum'] / 12, 1);
+			$this->annual[$var_name]['mean'] = round($this->annual[$var_name]['sum'] / 12.0, 1);
 
 			//Better keys
 			$this->monthly[$var_name] = array_combine(Date::$months3, $var);

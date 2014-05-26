@@ -9,19 +9,26 @@ use nw3\config\Admin;
 
 class Loader {
 
+	private $base_index;
 	private $url_parts = null;
+
+	function __construct() {
+		$this->base_index = \Config::$install['directory_nesting_level'] + 1;
+	}
 
 	function load() {
 		//Clear the query string to get the clean URL
 		$url = strtok($_SERVER['REQUEST_URI'], '?');
 
+		$this->redirect_inner_multi_slashes($url);
+
 		//Segment the URL
 		$this->url_parts = explode('/', $url);
+		$url_args = $this->url_args();
 
 		//Get the base path
-		$base_index = \Config::$install['directory_nesting_level'] + 1;
-		$sub_paths = array_slice($this->url_parts, $base_index+1);
-		$base_controller = $this->url_parts[$base_index];
+		$sub_paths = $url_args['args'];
+		$base_controller = $this->url_parts[$this->base_index];
 
 		if(String::isBlank($base_controller)) {
 			$base_controller = Admin::HOME_ROOT;
@@ -32,10 +39,9 @@ class Loader {
 		try {
 			class_exists($controller_class);
 		} catch (\LogicException $e) {
-			//Check for existence of static path($base_controller, $sub_paths[0], $base_index+1);
+			//Check for existence of static path($base_controller, $sub_paths[0], $this->base_index+1);
 			if(Nomodel::path_exists($base_controller)) {
 				$static_controller = new Nomodel($base_controller);
-				$this->clean_url($url, $this->get_good_url($base_index));
 				$static_controller->load();
 				Session::increment($base_controller);
 				die();
@@ -51,41 +57,36 @@ class Loader {
 		}
 		Session::increment($base_controller);
 		//Instantiate the valid concrete controller
-		$concrete_controller = $controller->newInstance($sub_paths);
+		$concrete_controller = $controller->newInstance($url_args);
 
 		//Attempt to load method for given sub_path
 		$sub_path1 = $sub_paths[0];
 		if(String::isBlank($sub_path1)) {
-			$this->clean_url($url, $this->get_good_url($base_index));
 			$concrete_controller->index();
 		} elseif(in_array($sub_path1, get_class_methods($controller_class)) //only returns public methods
 				&& !in_array($sub_path1, $concrete_controller->invalid_urls)
 				&& !String::starts_with($sub_path1, '__')) {
-			$this->clean_url($url, $this->get_good_url($base_index, 2, false));
+			// Named subpath with corresponding controller method
 			$concrete_controller->{$sub_path1}();
 		} elseif($concrete_controller->validate_arg($sub_path1)) {
-			$this->clean_url($url, $this->get_good_url($base_index, 2, false));
+			//Special subpaths (e.g. numeric album nums)
 			$concrete_controller->subpath($sub_path1);
 		} else {
 			$this->no_method($sub_path1, $concrete_controller->controller_name);
 		}
 	}
 
-	private function get_good_url($base_index, $nesting = 1, $trailing_slash = true) {
-		$trail = $trailing_slash ? '/' : '';
-		return implode('/', array_slice($this->url_parts, 0, $base_index + $nesting)) . $trail;
-	}
-
-	private function clean_url($url, $ideal_url) {
-		if($url !== $ideal_url) { //probably multiple trailing slashes (at least)
-			Http::redirect($ideal_url);
-			die();
-		}
-	}
-
 	private function no_controller($extra) {
+		$this->do_404("No such path '$extra' exists");
+	}
+	private function no_method($method_name, $controller_name) {
+		$this->do_404(
+			"No such method or argument '$method_name' exists for this path ($controller_name)"
+		);
+	}
+	private function do_404($msg) {
 		Http::response_code(404);
-		echo "No such path '$extra' exists<br />";
+		echo $msg . '<br />Trace:';
 		if($this->url_parts !== null) {
 			var_dump ($this->url_parts);
 		}
@@ -95,11 +96,20 @@ class Loader {
 		die();
 	}
 
-	private function no_method($method_name, $controller_name) {
-		Http::response_code(404);
-		echo "No such method or argument '$method_name' exists for this path ($controller_name)<br />Trace:";
-		var_dump ($this->url_parts);
-		die();
+	private function url_args() {
+		$split_point = $this->base_index + 1;
+		return array(
+			'base' => array_slice($this->url_parts, 0, $split_point),
+			'args' => array_slice($this->url_parts, $split_point),
+			'qs' => $_SERVER['QUERY_STRING']
+		);
+	}
+
+	private function redirect_inner_multi_slashes($url) {
+		$ideal = preg_replace('%//+%', '/', $url);
+		if($ideal !== $url) {
+			Http::redirect($ideal);
+		}
 	}
 }
 

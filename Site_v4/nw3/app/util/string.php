@@ -31,7 +31,6 @@ class String {
 		return ($tag < 10 && $tag >= 0) ? '0'.$tag : $tag;
 	}
 
-
 	/**
 	 * Tests for a blank string/value.
 	 * @param mixed $val

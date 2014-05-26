@@ -35,7 +35,7 @@ use nw3\app\model\Variable;
 	</thead>
 	<tbody>
 
-<?php $climate = new Climate();
+<?php $climate = new Climate(true);
 	$daily = $climate->daily_ltas();
 ?>
 <?php for($m = 1; $m <= 12; $m++): ?>

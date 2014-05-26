@@ -34,6 +34,20 @@ class Html {
 	}
 
 	/**
+	 * Make tooltip
+	 * TODO: do this properly
+	 * @param type $title
+	 * @param type $value
+	 * @param type $show
+	 * @return string
+	 */
+	static function tip($title, $value, $show = false) {
+		$tag = '<acronym style="border-bottom'; if($show) { $tag .= ': 1px dotted'; } else { $tag .= '-width: 0'; }
+		$tag .= '" title="' . $title. '">'. $value. '</acronym>';
+		return $tag;
+	}
+
+	/**
 	 * makes an opening html table tag. Null-pass enabled.
 	 * @param string $class [= table1]
 	 * @param string $width [=99%]

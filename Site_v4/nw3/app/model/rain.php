@@ -35,16 +35,10 @@ class Rain extends \Detail {
 
 	private $wet_filter;
 
-	function __construct($db) {
-		parent::__construct($db, 'rain');
+	function __construct() {
+		parent::__construct('rain');
 
 		$this->wet_filter = '> '.self::MAX_DRY_QUANTITY;
-	}
-
-	function current_latest() {
-		$data = array();
-
-		return $data;
 	}
 
 	function spells() {
@@ -57,16 +51,37 @@ class Rain extends \Detail {
 		);
 	}
 
+	/**
+	 * If rained today, the number of days it has rained consecutively,
+	 * else the number of complete days since it last rained
+	 */
+	function curr_spell($rained_today) {
+//		$rained_today = ($this->live->rain > 0);
+		$cond = $rained_today ? '=' : '>';
+		$dt = date(Db::DATE_FORMAT, D_now);
+		xdebug_break();
+		return $this->db->select(self::TBL_DAILY,
+			"DATEDIFF('$dt', d) ",
+			"WHERE rain $cond 0"
+			. " ORDER BY d DESC"
+			. " LIMIT 1",
+			Db::SCALAR
+		);
+	}
+
 	function totals() {
 		$data = array();
 		foreach ($this->all_periods as $period) {
 			$data[$period] = array(
-				'val' => $this->period_sum($period),
+				'val' => $this->period_agg($period),
 			);
 		}
 		foreach ($this->all_multiday_periods as $period) {
-			$data[$period]['anom'] = $this->period_sum_amom($period);
+			$data[$period]['anom'] = $this->period_sum_anom($period);
 		}
+		$data[self::NOWMON]['anom_f'] = $this->get_period_end_anom($data, self::NOWMON);
+		$data[self::NOWYR]['anom_f'] = $this->get_period_end_anom($data, self::NOWYR);
+		$data[self::NOWSEAS]['anom_f'] = $this->get_period_end_anom($data, self::NOWSEAS);
 		return $data;
 	}
 
@@ -74,6 +89,7 @@ class Rain extends \Detail {
 		$data = array();
 		foreach ($this->all_multiday_periods as $period) {
 			$cnt = $this->period_count($period, $this->wet_filter);
+			xdebug_break();
 			$data[$period] = array(
 				'val' => $cnt,
 				'prop' => $cnt / $this->period_lengths[$period]
@@ -96,7 +112,7 @@ class Rain extends \Detail {
 		$rainall = $this->select();
 		$data = array();
 		foreach(self::$periods as $spell_len) {
-			$data[$spell_len] = $this->extreme_n_days($spell_len, &$rainall);
+			$data[$spell_len] = $this->extreme_n_days($spell_len, $rainall);
 		}
 		return $data;
 	}

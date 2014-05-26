@@ -7,25 +7,29 @@ use nw3\app\util\Time;
 use nw3\app\util\Date;
 use nw3\app\util\Html;
 use nw3\app\util\File;
+use nw3\app\util\ScriptTimer;
 use nw3\config\Station;
+use nw3\app\core\Db;
 
 /**
- *
+ * Daily stuff
  * @author Ben LR
  */
 class Day {
 
-	/** Length in minutes from before now over which to calculate 5-minutely trends */
+	/** Length in minutes from before now over which to calculate 5-minutely trends (only for LATEST) */
 	const TRNED_LEN = 120;
-	/** Length in minutes from before now over which to calculate hourly rain trends */
-	const TRNED_LEN_RN = 360;
 
 	const QUERY_COLS = '*, UNIX_TIMESTAMP(t) as unix';
 
-	protected $db;
+	const LATEST = 24;
 
-	function __construct(\nw3\app\core\Db $db) {
-		$this->db = $db;
+	protected $db;
+	private $timer;
+
+	function __construct() {
+		$this->db = Db::g();
+		$this->timer = new ScriptTimer();
 	}
 
 	/**
@@ -36,74 +40,76 @@ class Day {
 	 */
 	function summary($day = null) {
 		//some basic initialisation
-		$dat = $datt = $trends = $rnCums = $rncumArr = $mins = $maxs = $means
+		$dat = $datt = $trends = $trendshr = $rncumArr = $mins = $maxs = $means
 			= $timesMin = $timesMax = array();
 		$nightmin1 = $nightmin2 = $nightmin1T = $nightmin2T = INT_MAX;
 		$daymax1 = $daymax2 = INT_MIN;
 		$i = $rncum = $w10 = $frostMins = 0;
 		foreach (Variable::$live as $vname => $var) {
 			if ($var['minmax']) {
-				$datt[$vname]['max'] = $datt[$vname]['max2'] = Maths::PHP_INT_MIN;
+				$datt[$vname]['max'] = $datt[$vname]['max2'] = INT_MIN;
 				$datt[$vname]['min'] = $datt[$vname]['min2'] = INT_MAX;
 			}
 		}
 		$rate_thresh = Station::RAIN_TIP * 2 - 0.1;
 
+		$is_latest = ($day === self::LATEST);
 		//Get the data
-		if($day === 'latest') {
-			$start = date('Y-m-d H:i', D_now - 86400);
+		if($is_latest) {
+			$start = date('Y-m-d H:i', D_now - Date::secs_DAY + 60);
 			$end = date('Y-m-d H:i', D_now);
-			$start_previous = date('Y-m-d H:i', D_now - 86400);
-			$end_previous = date('Y-m-d H:i', D_now - 86400 - 3600);
+			$start_previous = date('Y-m-d H:i', D_now - Date::secs_DAY);
+			$end_previous = date('Y-m-d H:i', D_now - Date::secs_DAY - 3600);
 		} else {
-			$full_day = true;
-			$day = $day || D_now; //supply default
-			$start = date('Y-m-d', $day) .'00:00';
-			$end = date('Y-m-d', $day) .'23:59';
-			$start_previous = date('Y-m-d', $day - 86400) .'21:00';
-			$end_previous = date('Y-m-d', $day - 86400) .'23:59';
+			if(is_null($day)) {
+				$day = D_now; //supply default
+			}
+			$start = date('Y-m-d', $day) .' 00:00';
+			$end = date('Y-m-d', $day) .' 23:59';
+			$start_previous = date('Y-m-d', $day - Date::secs_DAY) .' 21:00';
+			$end_previous = date('Y-m-d', $day - Date::secs_DAY) .' 23:59';
 		}
-		$query = "WHERE t BETWEEN '$start' AND '$end'";
-		$query_prev = "WHERE t BETWEEN '$start_prev' AND '$end_previous'";
 		$lives = $this->get_live_data($start, $end);
-		//Get a bit more data for the night min and trends
-		$prevs = $this->get_live_data($start_prev, $end_prev);
+		// TODO Get a bit more data for the night min and trends # TODO
+//		$query_prev = "WHERE t BETWEEN '$start_prev' AND '$end_previous'";
+//		$prevs = $this->get_live_data($start_prev, $end_prev);
 
+		if(count($lives) === 0) {
+			return array('No data');
+		}
 
 		foreach ($lives as $live) {
 			$live['dewp'] = Variable::dewPoint($live['temp'], $live['humi']);
 			$live['feel'] = Variable::feelsLike($live['temp'], $live['wind'], $live['dewp']);
-			$t = $live['unix'];
-			$hour = date('H', $t);
+			$stamp = $live['unix'];
+			$t = round($stamp / 60); //Easy to seek by minute this way
+			$hour = date('H', $stamp);
 
 			//Setup for max/min and times-of for max-min vars
 			foreach (Variable::$live as $vname => $var) {
 				$live[$vname] = (float) $live[$vname];
-				$dat[$vname][round($t / 60)] = $live[$vname];
+				$dat[$vname][$t] = $live[$vname];
 				if ($var['minmax']) {
 					if ($live[$vname] >= $datt[$vname]['max']) {
 						$datt[$vname]['max'] = $live[$vname];
-						$datt[$vname]['timeLmax'] = $t;
+						$datt[$vname]['timeLmax'] = $stamp;
 					}
 					if ($live[$vname] <= $datt[$vname]['min']) {
 						$datt[$vname]['min'] = $live[$vname];
-						$datt[$vname]['timeLmin'] = $t;
+						$datt[$vname]['timeLmin'] = $stamp;
 					}
 					if ($live[$vname] > $datt[$vname]['max2']) {
 						$datt[$vname]['max2'] = $live[$vname];
-						$datt[$vname]['timeHmax'] = $t;
+						$datt[$vname]['timeHmax'] = $stamp;
 					}
 					if ($live[$vname] < $datt[$vname]['min2']) {
 						$datt[$vname]['min2'] = $live[$vname];
-						$datt[$vname]['timeHmin'] = $t;
+						$datt[$vname]['timeHmin'] = $stamp;
 					}
 				}
 			}
-
 			//cumulative rain
-			$rnChange = $dat['rain'][$t] - (($i > 0) ? $dat['rain'][$t - 1] : 0);
-			// account for reset-time crossover (cumulative rn resets to 0)
-			$rncum += ($rnChange > 0) ? $rnChange : 0;
+			$rncum += $live['rain'];
 			$rncumArr[$t] = $rncum;
 
 			//Frost hours
@@ -114,70 +120,76 @@ class Day {
 			if ($hour >= 9 && $hour < 21) {
 				if ($live['temp'] >= $daymax1) {
 					$daymax1 = $live['temp'];
-					$daymaxt1 = $t;
+					$daymaxt1 = $stamp;
 				}
 				if ($live['temp'] > $daymax2) {
 					$daymax2 = $live['temp'];
-					$daymaxt2 = $t;
+					$daymaxt2 = $stamp;
 				}
 			}
 			//Night Min
 			if ($hour < 9) {
 				if ($live['temp'] <= $nightmin1) {
 					$nightmin1 = $live['temp'];
-					$nightmint1 = $t;
+					$nightmint1 = $stamp;
 				}
 				if ($live['temp'] < $nightmin2) {
 					$nightmin2 = $live['temp'];
-					$nightmint2 = $t;
+					$nightmint2 = $stamp;
 				}
 			}
 			//Max rain rate
 			for ($r = 1; $r < 60; $r++) {
 				if ($i > $r) {
-					$rnr[$i] = $dat['rain'][$t] - $dat['rain'][$t - $r];
+					$rnr[$i] = $rncumArr[$t] - $rncumArr[$t - $r];
 					if ($rnr[$i] > $rate_thresh) {
 						$rr[$t] = ($r === 1) ? (60 * $rnr[$i]) : (round(60 / ($r - 1) * Station::RAIN_TIP, 1));
 						break;
 					}
 				}
 			}
-			$w10 += $dat['wind'][$i];
+			$w10 += $live['wind'];
 			//10-min trend extremes
 			if ($i >= 10) {
 				$w10 -= $dat['wind'][$t - 10];
 				$wind10[$t] = $w10 / 10;
-				$rn10[$t] = $dat['rain'][$t] - $dat['rain'][$t - 10];
+				$rn10[$t] = $rncumArr[$t] - $rncumArr[$t - 10];
 				$t10[$t] = $dat['temp'][$t] - $dat['temp'][$t - 10];
 			}
 			//hour trend extremes
 			if ($i >= 60) {
 				$tchangehr[$t] = $dat['temp'][$t] - $dat['temp'][$t - 60];
 				$hchangehr[$t] = $dat['humi'][$t] - $dat['humi'][$t - 60];
-				$rn60[$t] = $dat['rain'][$t] - $dat['rain'][$t - 60];
+				$rn60[$t] = $rncumArr[$t] - $rncumArr[$t - 60];
 			}
 			++$i;
 		}
 		//For clarity
 		$t_last = $t;
+		$t_first = $t_last - $i + 1;
 		$i_last = $i;
 		$rn_total = $rncum;
 
-		$t_first = $t_last - $i_last;
 
-		//Trends
-		if ($i_last > self::TRNED_LEN_RN) {
-			$rnCums['10m'] = $rncumArr[$t_last - 10];
-			for ($i = 0; $i <= self::TRNED_LEN_RN; $i += 60) { //last 1-6hrs rain
-				$rnCums[] = $rncumArr[$t_last - $i];
+		//Latest values
+		foreach (Variable::$live as $vname => $var) {
+			$trends[0][$vname] = ($vname === 'rain') ? $rncumArr[$t_last] : $dat[$vname][$t_last];
+		}
+		//Hr trends
+		for ($i = 59; $i <= $i_last; $i += 60) {
+			$dat_pos = $t_last - $i;
+			$hr = round($i / 60.0);
+			foreach (Variable::$live as $vname => $var) {
+				$trends[$hr.'h'][$vname] = ($vname === 'rain') ? $rncumArr[$dat_pos] : $dat[$vname][$dat_pos];
 			}
-
-			for ($i = 0; $i <= self::TRNED_LEN; $i += 5) {
+		}
+		//5-min trends
+		if($is_latest) {
+			for ($i = 5; $i <= self::TRNED_LEN; $i += 5) {
 				$dat_pos = $t_last - $i;
 				foreach (Variable::$live as $vname => $var) {
-					$trends[$i][$vname] = $dat[$vname][$dat_pos];
+					$trends[$i][$vname] = ($vname === 'rain') ? $rncumArr[$dat_pos] : $dat[$vname][$dat_pos];
 				}
-				$trends[$i]['rain'] = $rncumArr[$dat_pos];
 			}
 		}
 
@@ -193,10 +205,6 @@ class Day {
 				$timesMax[$vname] = $this->time_from_extremum($maxs[$vname], $dat[$vname]);
 			}
 			$means[$vname] = Maths::mean($dat[$vname]);
-			if ($i_last > 60) {
-				$hrChanges[$vname] = $dat[$vname][$t_last] - $dat[$vname][$t_last - 60];
-				$hr24Changes[$vname] = $dat[$vname][$t_last] - $dat[$vname][$t_first];
-			}
 		}
 
 		if ($daymax1 < -99) {
@@ -207,7 +215,6 @@ class Day {
 		$mins['night'] = $nightmin1;
 		$timesMin['night'] = $this->mean_time($nightmint1, $nightmint2);
 		$maxs['day'] = $daymax1;
-
 
 		if (is_array($rn60)) {
 			$maxs['rnhr'] = max($rn60);
@@ -247,18 +254,18 @@ class Day {
 			$maxs['rate'] = $maxs['rate'];
 		}
 
-		$means['w10m'] = mean($wind10);
+		$means['w10m'] = Maths::mean($wind10);
 		$means['wdir'] = $this->wdirMean($dat['wdir'], $dat['wind']);
 
 		$means['rain'] = $rn_total;
 		if ($rn_total == 0) {
 			$maxs['rnhr'] = $maxs['rn10'] = null;
 		}
-		$rnCums[0] = $rn_total;
-		$has_rained_in_past_hour = (($rnCums[0] - $rnCums[1]) != 0);
+		$trendshr[0]['rain'] = $rn_total;
+		$has_rained_in_past_hour = (($trendshr[0]['rain'] - $trendshr[1]['rain']) !== 0);
 
 		//rain duration
-		if ($rn_total > 0 && $has_rained_in_past_hour) {
+		if ($is_latest && $rn_total > 0 && $has_rained_in_past_hour) {
 			$duration = 0;
 			$lastTip = 1;
 			for ($i = 0; $i <= $i_last; $i++) {
@@ -296,7 +303,7 @@ class Day {
 		$wethrs = ceil($wetmins / 60);
 
 		//current rain rate guess (based on last rain tip - so inaccurate when tipped after long break -> revert to max rate
-		if ($has_rained_in_past_hour) {
+		if($is_latest && $has_rained_in_past_hour) {
 			$last = 60;
 			for ($i = 1; $i <= 60; $i++) {
 				if ($rncumArr[$t_last - $i] != $rn_total) {
@@ -311,30 +318,9 @@ class Day {
 			$currRate = 0;
 		}
 
-		if ($day === 'latest') {
-			//last rain
-			$prevRnOld = File::live_data("lastrn");
-			if ($rn_total > 0) {
-				//Only look at recent values, since this script is meant to be run every minute anyway,
-				// so in ideal conditions only really need to check most recent two rnCumArr values.
-				//Also, this fixes an awkward bug that presents itself 24hrs after rain, ie. in rnCumArr[0] territory,
-				// so it is best to avoid this
-				$limitRnLook = 300;
-				for ($i = 1; $i < $limitRnLook; $i++) {
-					if ($rncumArr[$t_last - $i] != $rn_total) {
-						$prevRn = $t_last - ($i * 60);
-						if ($prevRn != $prevRnOld) {
-							File::live_data("lastrn", $prevRn);
-						}
-						break;
-					}
-				}
-				if ($i === $limitRnLook) {
-					$prevRn = $prevRnOld;
-				}
-			} else {
-				$prevRn = $prevRnOld;
-			}
+		//Last rain
+		if($is_latest) {
+			$prevRn = $this->get_last_rain();
 		}
 
 		//maxhr gust
@@ -345,27 +331,39 @@ class Day {
 			}
 		}
 
-		$frosthrs = round($frostMins / 60, (int) ($frostMins < 10) + 1);
-		$rnDuration = roundToDp($duration / 60, 1);
+		$this->timer->stop();
 
-		return array('min' => $mins, 'max' => $maxs, 'mean' => $means, 'timeMin' => $timesMin, 'timeMax' => $timesMax,
-			'trend' => $trends, 'trendRn' => $rnCums, 'changeHr' => $hrChanges, 'changeDay' => $hr24Changes,
-			'misc' => array('frosthrs' => $frosthrs, 'rnrate' => $currRate, 'rnduration' => $rnDuration,
-				'rnlast' => $prevRn, 'wethrs' => $wethrs, 'maxhrgst' => $maxhrgst, 'cnt' => ($i_last + 1),
-				'prevRn' => date('r', $prevRn), 'prevRnOld' => date('r', $prevRnOld)
-			)
+		$data = array(
+			# Stat
+			'period' => "$start to $end",
+			'cnt' => $i_last,
+			'exectime' => $this->timer->executionTimeMs(),
+			# Singles
+			'frostduration' => $frostMins / 60.0,
+			'wethrs' => $wethrs,
+			'maxhrgst' => $maxhrgst,
+			# Arrays
+			'min' => $mins,
+			'max' => $maxs,
+			'mean' => $means,
+			'timeMin' => $timesMin,
+			'timeMax' => $timesMax,
 		);
+		if($is_latest) {
+			$data += array(
+				'rnrate' => $currRate,
+				'rnduration' => $duration / 60.0,
+				'rnlast' => $prevRn,
+				'trend' => $trends,
+			);
+		}
+		return $data;
 	}
-
-	function latest() {
-
-	}
-
 
 	/**
 	 * Good implementation of calculating the mean wind direction from an array of wdirs and speeds
-	 * @param array $wdir raw array
-	 * @param array $speed so calm times can be ignored
+	 * @param array $wdirs raw array
+	 * @param array $speeds so calm times can be ignored
 	 * @return int
 	 */
 	function wdirMean($wdirs, $speeds) {
@@ -411,25 +409,8 @@ class Day {
 		return $mean;
 	}
 
-	/**
-	 * TODO: move to View layer
-	 * @param type $last_rn
-	 * @return type
-	 */
-	private function last_rain_neat($last_rn) {
-		$diff = D_now - $last_rn;
-		$ago = Time::secsToReadable($diff);
-		$dateAgo = date('jS M', $last_rn);
-		if (date('Ymd') == date('Ymd', $last_rn)) {
-			$dateAgo = 'Today';
-		} elseif (date('Ymd', mkdate(date('n'), date('j') - 1)) == date('Ymd', $last_rn)) {
-			$dateAgo = 'Yesterday';
-		}
-		return Html::acronym(date('H:i ', $last_rn) . ' ' . $dateAgo, $ago . ' ago', true);
-	}
-
 	private function time_from_extremum($extremum, $arr) {
-		$time = array_search($extremum, $arr);
+		$time = array_search($extremum, $arr) * 60;
 		return Time::stamp($time);
 	}
 
@@ -440,7 +421,14 @@ class Day {
 
 	private function get_live_data($start_t, $end_t) {
 		$query = "WHERE t BETWEEN '$start_t' AND '$end_t'";
-		return $this->db->select('live', $query, self::QUERY_COLS);
+		return $this->db->select('live', self::QUERY_COLS, $query);
+	}
+
+	private function get_last_rain() {
+		$query = "WHERE rain > 0"
+			. " ORDER BY t DESC"
+			. " LIMIT 1";
+		return $this->db->select('live', Db::timestamp(), $query, Db::SCALAR);
 	}
 
 }

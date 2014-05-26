@@ -7,14 +7,13 @@
  */
 class Config {
 
+	/** * File root - absolute path of the project directory */
+	const ROOT = 'C:\Users\Ben\Documents\SiteDevelopment\Site_v4\\';
 	/** * PHP root */
-	const ROOT = '/Site_v4/';
+	const PHP_ROOT = '/Site_v4/';
 	/** * URL root */
 	const HTML_ROOT = '/Site_v4/';
 	const EXEC_PATH = '/usr/local/bin/php -q /home/dev';
-
-	/** Path to the live data text file */
-	const LIVE_DATA_PATH = 'C:\Users\Ben\Documents\Archive\craw_temp.txt';
 
 //	public static $rareTags = ROOT.'rareTags.php';
 

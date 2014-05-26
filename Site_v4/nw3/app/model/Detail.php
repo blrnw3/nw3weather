@@ -1,8 +1,10 @@
 <?php
 
 use nw3\app\model\Variable;
+use nw3\app\model\Store;
 use nw3\app\util\Date;
 use nw3\app\core\Db;
+use nw3\app\model\Climate;
 
 /**
  * Description of Detail
@@ -11,6 +13,7 @@ use nw3\app\core\Db;
  */
 class Detail {
 
+	const LIVE = 'live';
 	const TODAY = 'today';
 	const YESTERDAY = 'yest';
 	const NOWMON = 'mon';
@@ -43,26 +46,33 @@ class Detail {
 	protected $mon_ago_st;
 	protected $yr_ago_st;
 
+	protected $period_lengths;
 	protected $all_named_periods;
 	protected $all_multiday_named_periods;
 	protected $all_periods;
 	protected $all_multiday_periods;
 
-	protected $period_lengths;
-
 	protected $var;
-	private $db;
+	protected $db;
+	private $climate;
 	private $colname;
+	private $aggtype; //Sum or mean
+	private $summable;
 
-	function __construct(Db $db, $varname) {
-		$this->db = $db;
+	public $live;
+
+	function __construct($varname) {
+		$this->db = Db::g();
+		$this->climate = Climate::g();
 		$this->colname = $varname;
 		$this->var = Variable::$daily[$varname];
+		$this->summable = $this->var['summable'];
+		$this->aggtype = $this->var['summable'] ? Db::SUM : Db::AVG;
 
-		$this->num_records = $this->db->select(self::TBL_DAILY, '', Db::count($varname));
+		$this->num_records = $this->db->select(self::TBL_DAILY, Db::count($varname), '', Db::SCALAR);
 
 		# Useful db datetimes
-		$this->yest = D_yest;
+		$this->yest = Db::dt(D_yest);
 		$this->mon_st = $this->DbMkdate(false, 1);
 		$this->yr_st = $this->DbMkdate(1, 1);
 		$this->seas_st = $this->DbMkdate(Date::get_current_season_start_month(), 1);
@@ -91,7 +101,7 @@ class Detail {
 			self::CUM_MON_AGO, self::CUM_YR_AGO, self::DAY_MON_AGO, self::DAY_YR_AGO,
 			self::YESTERDAY, self::NOWMON, self::NOWSEAS, self::NOWYR, self::RECORD
 		);
-		$this->all_multiday_periods = array(
+		$this->all_multiday_named_periods = array(
 			self::CUM_MON_AGO, self::CUM_YR_AGO,
 			self::NOWMON, self::NOWSEAS, self::NOWYR, self::RECORD
 		);
@@ -102,6 +112,7 @@ class Detail {
 		$this->period_lengths = array(
 			self::RECORD => $this->num_records,
 			self::NOWMON => D_day,
+			self::NOWSEAS => Date::get_current_season_days_elapsed(),
 			self::NOWYR => D_doy + 1,
 			self::CUM_MON_AGO => D_day,
 			self::CUM_YR_AGO => D_doy + 1,
@@ -109,12 +120,13 @@ class Detail {
 		foreach (self::$periods as $n) {
 			$this->period_lengths[$n] = $n;
 		}
+		$this->live = Store::g();
 	}
 
 
 	protected function select($where='', $func=null) {
 		$col = is_null($func) ? array('d', $this->colname) : "$func($this->colname)";
-		return $this->db->select(self::TBL_DAILY, $where, $col);
+		return $this->db->select(self::TBL_DAILY, $col, $where);
 	}
 	protected function filter_value($condition, $func=null) {
 		$filter = Db::where("$this->colname $condition");
@@ -131,22 +143,23 @@ class Detail {
 	}
 
 	/**
-	 * Calculate sum over quantity for given period
+	 * Calculate sum/avg over quantity for given period
 	 * @param type $period Must be one of pre-defined set
 	 * @return float summation
 	 */
-	protected function period_sum($period) {
-		return $this->db->select(
-			self::TBL_DAILY,
+	protected function period_agg($period) {
+		return $this->db->select(self::TBL_DAILY,
+			Db::agg($this->colname, $this->aggtype),
 			Db::where($this->get_date_filter($period)),
-			Db::sum($this->colname)
+			Db::SCALAR
 		);
 	}
 
 	protected function period_sum_anom($period) {
 		return $this->db->select(self::TBL_DAILY,
+			Db::sum($this->colname) .'/'. Db::sum("$this->colname - a_$this->colname"),
 			Db::where($this->get_date_filter($period)),
-			Db::sum($this->colname) .'/'. Db::sum("$this->colname - a_$this->colname")
+			Db::SCALAR
 		);
 	}
 
@@ -160,9 +173,196 @@ class Detail {
 		$dt_filter = $this->get_date_filter($period);
 		$val_filter = ($filter === null) ? null : "$this->colname $filter";
 		return $this->db->select(self::TBL_DAILY,
-			Db::and_(array($dt_filter, $val_filter)),
-			Db::count($this->colname)
+			Db::count($this->colname),
+			Db::where( Db::and_(array($dt_filter, $val_filter)) ),
+			Db::SCALAR
 		);
+	}
+
+	/**
+	 * Min or Max annual mean/sum, excluding current year
+	 * @param boolean $is_high set true to get max, false to get min
+	 * @return array(int,float) year, val
+	 */
+	protected function extreme_year_agg($is_high) {
+		$dir = $is_high ? 'DESC' : 'ASC';
+		return $this->db->select(self::TBL_DAILY,
+			"YEAR(d) as y, ". Db::agg($this->colname, $this->aggtype) ." as val",
+			"  WHERE d < $this->yr_st"
+			." GROUP BY y"
+			." ORDER BY val $dir"
+			." LIMIT 1",
+			Db::SINGLE
+		);
+	}
+	/**
+	 * Min or Max annual count for values passing the given filter, excluding current year
+	 * @param boolean $is_high set true to get max, false to get min
+	 * @param string $filter count only values passing this filter
+	 * @return array(int,float) year, val
+	 */
+	protected function extreme_year_count($is_high, $filter) {
+		$dir = $is_high ? 'DESC' : 'ASC';
+		return $this->db->select(self::TBL_DAILY,
+			"YEAR(d) as y, COUNT($this->colname) as val",
+			"  WHERE d < $this->yr_st AND $filter"
+			." GROUP BY y"
+			." ORDER BY val $dir"
+			." LIMIT 1",
+			Db::SINGLE
+		);
+	}
+
+	/**
+	 * Min or Max monthly mean/sum for all months but the current one
+	 * @param boolean $is_high set true to get max, false to get min
+	 * @return array(int,int,float) year, month, val
+	 */
+	protected function extreme_month_agg($is_high) {
+		$dir = $is_high ? 'DESC' : 'ASC';
+		return $this->db->select(self::TBL_DAILY,
+			"YEAR(d) as y, MONTH(d) as m, ". Db::agg($this->colname, $this->aggtype) ." as val",
+			"  WHERE d < $this->mon_st"
+			." GROUP BY y, m"
+			." ORDER BY val $dir"
+			." LIMIT 1",
+			Db::SINGLE
+		);
+	}
+	/**
+	 * Min or Max monthly count for values passing the given filter, excluding current month
+	 * @param boolean $is_high set true to get max, false to get min
+	 * @param string $filter count only values passing this filter
+	 * @return array(int,float) year, val
+	 */
+	protected function extreme_month_count($is_high, $filter) {
+		$dir = $is_high ? 'DESC' : 'ASC';
+		return $this->db->select(self::TBL_DAILY,
+			"YEAR(d) as y, MONTH(d) as m, COUNT($this->colname) as val",
+			"  WHERE d < $this->mon_st AND $filter"
+			." GROUP BY y, m"
+			." ORDER BY val $dir"
+			." LIMIT 1",
+			Db::SINGLE
+		);
+	}
+
+	/**
+	 * Min or Max monthly mean/sum for all months this year, excluding the current one
+	 * @param boolean $is_high set true to get max, false to get min
+	 * @return array(int,float) month, val
+	 */
+	protected function extreme_nowyr_agg($is_high) {
+		$dir = $is_high ? 'DESC' : 'ASC';
+		return $this->db->select(self::TBL_DAILY,
+			"MONTH(d) as m, ". Db::agg($this->colname, $this->aggtype) ." as val",
+			"  WHERE d >= $this->yr_st AND d < $this->mon_st"
+			." GROUP BY m"
+			." ORDER BY val $dir"
+			." LIMIT 1",
+			Db::SINGLE
+		);
+	}
+	/**
+	 * Min or Max monthly count for all months this year, excluding the current one
+	 * @param boolean $is_high set true to get max, false to get min
+	 * @param string $filter count only values passing this filter
+	 * @return array(int,float) month, val
+	 */
+	protected function extreme_nowyr_count($is_high, $filter) {
+		$dir = $is_high ? 'DESC' : 'ASC';
+		return $this->db->select(self::TBL_DAILY,
+			"MONTH(d) AS m, COUNT($this->colname) as val",
+			"  WHERE d >= $this->yr_st AND d < $this->mon_st AND $filter"
+			." GROUP BY m"
+			." ORDER BY val $dir"
+			." LIMIT 1",
+			Db::SINGLE
+		);
+	}
+
+	protected function extreme_currmonth_agg($is_high) {
+		$dir = $is_high ? 'DESC' : 'ASC';
+		return $this->db->select(self::TBL_DAILY,
+			"YEAR(d) AS y, MONTH(d) as m, ". Db::agg($this->colname, $this->aggtype) ." AS val",
+			"  WHERE d < $this->mon_st"
+			." GROUP BY y, m"
+			." HAVING m = ". D_month
+			." ORDER BY val $dir"
+			." LIMIT 1",
+			Db::SINGLE
+		);
+	}
+	# TODO - same for count
+
+	protected function extremes($is_high, $num=1) {
+		$dir = $is_high ? 'MAX' : 'MIN';
+		return $this->db->select(self::TBL_DAILY,
+			"d, $dir($this->colname) AS val",
+			"WHERE d <= $this->yest"
+			." ORDER BY val $dir"
+			." LIMIT $num"
+		);
+	}
+	protected function extremes_nowyr($is_high, $num=1) {
+		$dir = $is_high ? 'MAX' : 'MIN';
+		return $this->db->select(self::TBL_DAILY,
+			"d, $dir($this->colname) AS val",
+			Db::where(Db::btwn($this->yr_st, $this->yest, 'd'))
+			." ORDER BY val $dir"
+			." LIMIT $num"
+		);
+	}
+	protected function extremes_nowmon($is_high, $num=1) {
+		$dir = $is_high ? 'MAX' : 'MIN';
+		return $this->db->select(self::TBL_DAILY,
+			"d, $dir($this->colname) AS val",
+			Db::where(Db::btwn($this->mon_st, $this->yest, 'd'))
+			." ORDER BY val $dir"
+			." LIMIT $num"
+		);
+	}
+	protected function extremes_currmon($is_high, $num=1) {
+		$dir = $is_high ? 'DESC' : 'ASC';
+		return $this->db->select(self::TBL_DAILY,
+			"d, $dir($this->colname) AS val",
+			Db::where(Db::and_(array("d <= $this->yest", "MONTH(d) = ".D_month)))
+			." ORDER BY val $dir"
+			." LIMIT $num"
+		);
+	}
+	protected function extremes_currday($is_high, $num=1) {
+		$dir = $is_high ? 'DESC' : 'ASC';
+		return $this->db->select(self::TBL_DAILY,
+			"d, $dir($this->colname) AS val",
+			Db::where(array("d <= $this->yest", "MONTH(d) = ".D_month, "DAY(d) = ".D_day))
+			." ORDER BY val $dir"
+			." LIMIT $num"
+		);
+	}
+
+	protected function day_extremes($is_high, $num=1) {
+		$dir = $is_high ? 'DESC' : 'ASC';
+		return $this->db->select(self::TBL_DAILY,
+			"d, $dir($this->colname) AS val",
+			''# TODO date_filter to genericise above 'extremes' functions
+			." ORDER BY val $dir"
+			." LIMIT $num"
+		);
+	}
+
+	protected function get_period_end_anom(&$data, $period) {
+		$this->climate->load();
+		if($period === self::NOWMON) {
+			$lta = $this->climate->monthly[$this->colname][D_monthshort];
+		} elseif($period === self::NOWYR) {
+			$lta = $this->climate->annual[$this->colname]['sum'];
+		} elseif($period === self::NOWSEAS) {
+			$lta = $this->climate->seasonal[$this->colname][D_seasonname];
+		} else {
+			throw new Exception("Invalid period $period specified");
+		}
+		return $this->summable ? $data[$period]['val'] / $lta : $data[$period]['val'] - $lta;
 	}
 
 	private function DbMkdate($m=false, $d=false, $y=false) {
@@ -171,8 +371,8 @@ class Detail {
 
 	protected function get_date_filter($period) {
 		# Numeric period
-		if(key_exists($period, self::$periods)) {
-			return 'd > '.Date::mkday(D_day - self::$periods[$period]);
+		if(in_array($period, self::$periods)) {
+			return 'd > '. $this->DbMkdate(false, D_day - $period);
 		}
 		# Named period
 		switch($period) {
@@ -181,9 +381,9 @@ class Detail {
 			case self::YESTERDAY:
 				return 'd = '. $this->yest;
 			case self::CUM_MON_AGO:
-				return 'd '. Db::btwn($this->mon_ago_st, $this->mon_ago);
+				return Db::btwn($this->mon_ago_st, $this->mon_ago, 'd');
 			case self::CUM_YR_AGO:
-				return 'd '. Db::btwn($this->yr_ago_st, $this->yr_ago);
+				return Db::btwn($this->yr_ago_st, $this->yr_ago, 'd');
 			case self::DAY_MON_AGO:
 				return 'd = '.$this->mon_ago;
 			case self::DAY_YR_AGO:

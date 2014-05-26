@@ -18,12 +18,16 @@ class File {
 	}
 
 	static function live_data($file, $write = null) {
-		$path = __DIR__.'/../../data/live/'. $file;
+		$path = self::live_path($file);
 		if($write !== null) {
 			file_put_contents($path, $write);
 		} else {
 			return file_get_contents($path);
 		}
+	}
+
+	static function live_path($filename) {
+		return __DIR__.'/../../data/live/'.$filename;
 	}
 
 

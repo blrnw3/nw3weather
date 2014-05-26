@@ -4,12 +4,15 @@ namespace nw3\app\core;
 use Config as Conf;
 use \PDO as PDO;
 use \PDOException as PDOException;
+use nw3\app\core\Singleton;
+use nw3\app\util\Html;
+use nw3\app\util\Date;
 /**
  * db connection management
  *
  * @author Ben LR
  */
-class Db {
+class Db extends Singleton {
 
 	const DATE_FORMAT = 'Y-m-d';
 
@@ -20,6 +23,10 @@ class Db {
 	const MAX = 'MAX';
 	const MIN = 'MIN';
 
+	# Return types
+	const SCALAR = 0;
+	const SINGLE = 1;
+
 	private $db;
 	private $proc;
 	private $explosive;
@@ -29,6 +36,7 @@ class Db {
 	 * @param bool[=null] $explosive_override pass to override the config value
 	 */
 	function __construct($explosive_override = null) {
+
 		$user = Conf::$db['username'];
 		$pass = Conf::$db['password'];
 		$db = Conf::$db['database'];
@@ -56,14 +64,26 @@ class Db {
 	/**
 	 * Issue select query to DB
 	 * @param string $table name of db table
-	 * @param string $conditions raw sql conditions - where, order by, group by etc.
 	 * @param array $cols [=null] If present, an array of the field names to select, else all fields (*).
+	 * @param string $conditions [=''] raw sql conditions - where, order by, group by etc.
 	 * @return array rows, as associative arrays
 	 */
-	function select($table, $conditions, $cols=null) {
+	function select($table, $cols=null, $conditions='', $type=null) {
 		$cols = ($cols === null) ? '*' : implode(',', (array)$cols);
 		$q = "SELECT $cols FROM $table $conditions";
-		return $this->db->query($q)->fetchAll(PDO::FETCH_ASSOC);
+//		$this->debug_query($q);
+		try {
+			if($type === self::SCALAR) {
+				return $this->db->query($q)->fetchColumn();
+			} elseif($type === self::SINGLE) {
+				return $this->db->query($q)->fetch(PDO::FETCH_ASSOC);
+			}
+			return $this->db->query($q)->fetchAll(PDO::FETCH_ASSOC);
+		} catch (PDOException $e) {
+			var_dump($q);
+			var_dump($e->getMessage());
+			throw new \Exception('Fatal Error.');
+		}
 	}
 
 	/**
@@ -87,15 +107,37 @@ class Db {
 		$this->db->exec($q);
 	}
 
+	private function debug_query($query) {
+		$trace = debug_backtrace(FALSE);
+		$entries = array();
+		$st_frame = 2;
+		$en_frame = 4;
+		$frame_cnt = min(array(count($trace), $en_frame));
+		for ($f = $st_frame; $f < $frame_cnt; $f++) {
+			$frame = &$trace[$f];
+			$file = substr($frame['file'], -15);
+			$class = str_replace('nw3\app\\', '',$frame['class']);
+			$func = $frame['function'];
+			$line = $frame['line'];
+
+			$entries[] = "$class:{$line}->$func";
+		}
+		Html::out($query .' -> '. implode(' > ', $entries));
+	}
+
 	/* Utilities for (MY)SQL fragments */
-	static function dt($timestamp) {
+	static function dt_stamp($timestamp) {
 		return "FROM_UNIXTIME($timestamp)";
+	}
+	static function dt($timestamp) {
+		$dt = date(self::DATE_FORMAT, $timestamp);
+		return "'$dt'";
 	}
 	static function where($x) {
 		return ($x === null) ? "" : "WHERE $x";
 	}
-	static function btwn($a, $b) {
-		return "BETWEEN ($a AND $b)";
+	static function btwn($a, $b, $col, $escape=false) {
+		return $escape ? "$col BETWEEN '$a' AND '$b'" : "$col BETWEEN $a AND $b";
 	}
 	static function and_($conds) {
 		$conds = array_filter((array)$conds);
@@ -121,11 +163,14 @@ class Db {
 	static function avg($a) {
 		return "AVG($a)";
 	}
+	static function agg($a, $type) {
+		return "$type($a)";
+	}
 	static function min($a) {
 		return "MIN($a)";
 	}
-	static function max($a) {
-		return "MAX($a)";
+	static function timestamp($col='t') {
+		return "UNIX_TIMESTAMP($col)";
 	}
 
 	/*

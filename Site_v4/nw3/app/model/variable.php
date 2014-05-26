@@ -1,8 +1,11 @@
 <?php
 namespace nw3\app\model;
 
-use nw3\app\util\String;
 use nw3\app\core\Units;
+use nw3\app\util\Time;
+use nw3\app\util\Html;
+use nw3\app\util\Date;
+use nw3\app\util\Maths;
 
 /*
  * Read-only, static, fixed properties of weather variables
@@ -10,19 +13,22 @@ use nw3\app\core\Units;
 abstract class Variable {
 
 	const None = 0;
-	const Temperature = 1;
-	const Rain = 2;
-	const Pressure = 3;
-	const Wind = 4;
-	const Humidity = 5;
-	const Snow = 6;
-	const Distance = 7;
-	const Days = 8;
-	const Hours = 9;
-	const Area = 10;
-	const AbsTemp = 11;
-	const RainRate = 12;
-	const Direction = 13;
+	const Temperature = 'temp';
+	const Rain = 'rain';
+	const Pressure = 'pres';
+	const Wind = 'wind';
+	const Humidity = 'humi';
+	const Snow = 'snow';
+	const Distance = 'dist';
+	const Days = 'days';
+	const Hours = 'hrs';
+	const Seconds = 'secs';
+	const Timestamp = 'unix';
+	const Laststamp = 'last'; //Timestamp for most recent event (e.g. last rain tip)
+	const Area = 'area';
+	const AbsTemp = 'abstemp';
+	const RainRate = 'rnrt';
+	const Direction = 'dir';
 
 	/**
 	 * A variable (daily, monthly etc.) can belong to a group and thus inherit
@@ -146,6 +152,10 @@ abstract class Variable {
 			'name' => 'area',
 			'summable' => true,
 			'imperial_divisor' => 1.262
+		),
+		self::Timestamp => array(
+			'name' => 'timestamp',
+			'imperial_divisor' => 1
 		),
 		self::AbsTemp => array(
 			'name' => 'absolute_temperature',
@@ -456,9 +466,13 @@ abstract class Variable {
 		if($type === self::None) {
 			return $val;
 		} elseif( is_null($val) ) {
-			return null;
+			return 'null';
 		} elseif($type === 'wdir') {
 			return self::degname((int)$val);
+		} elseif($type === self::Timestamp) {
+			return date('H:i d M', $val);
+		} elseif($type === self::Laststamp) {
+			return self::pretty_last_stamp($val);
 		}
 
 		if(key_exists($type, self::$_)) {
@@ -498,6 +512,31 @@ abstract class Variable {
 		//Format
 		$strret = $sign.'.'. $precision.'f';
 		return sprintf("%$strret", $value).$unit;
+	}
+
+	static function conv_anom($val, $type, $show_unit = true) {
+		//Bad value checking and special cases
+		if( is_null($val) ) {
+			return 'null';
+		}
+		if(key_exists($type, self::$_)) {
+			$var = self::$_[$type];
+		} elseif(key_exists($type, self::$daily)) {
+			$var = self::$daily[$type];
+		} else {
+			return "WARNING! '$type' is not a valid type";
+		}
+
+		if($var['summable']) {
+			$val *= 100;
+			$precision = ($val <= 0.5) ? 1 : 0;
+			$unit = $show_unit ? '%' : '';
+			return Maths::round($val, $precision) . $unit;
+		}
+		if($var['group'] === self::Temperature) {
+			$type = self::AbsTemp;
+		}
+		return self::conv($val, $type, $show_unit, true);
 	}
 
 	/**
@@ -544,13 +583,13 @@ abstract class Variable {
 			//http://en.wikipedia.org/wiki/Wind_chill#North_American_and_UK_wind_chill_index
 			$x = pow($v * 1.61, 0.16);
 			$windChill = 13.12 + $t * (0.6215 + 0.3965 * $x) - 11.37 * $x;
-			return $windChill;
+			$t = $windChill;
 		} elseif($d > 7) { // humidex is less than T for sub-7 Td
 			//http://en.wikipedia.org/wiki/Humidex
 			$humidex = $t + 0.5555 * (6.11 * pow(M_E, 5417.753*(0.003660858-1/($d+273.15))) - 10);
-			return $humidex;
+			$t = $humidex;
 		}
-		return $t;
+		return round($t, 1);
 	}
 
 	/**
@@ -563,7 +602,7 @@ abstract class Variable {
 	static function dewPoint($t, $h) {
 		//http://en.wikipedia.org/wiki/Dew_point
 		$gamma = (17.271*$t) / (237.7+$t) + log($h/100);
-		return (237.7*$gamma) / (17.271-$gamma);
+		return round((237.7*$gamma) / (17.271-$gamma), 1);
 	}
 
 
@@ -588,9 +627,25 @@ abstract class Variable {
 		return $types[$val];
 	}
 	static function degname($winddegree) {
-		$windlabels = array ("N","NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW","SW", "WSW", "W", "WNW", "NW", "NNW","N");
+		$windlabels = array ('N','NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S',
+			'SSW','SW', 'WSW', 'W', 'WNW', 'NW', 'NNW','N');
 		return $windlabels[ round($winddegree / 22.5, 0) ];
 	}
+
+	private static function pretty_last_stamp($last) {
+		$diff = D_now - $last;
+		$ago = Time::secsToReadable($diff);
+		$datestamp = date('Ymd', $last);
+		if (D_datestamp === $datestamp) {
+			$dateAgo = 'Today';
+		} elseif (date('Ymd', D_yest) === $datestamp) {
+			$dateAgo = 'Yesterday';
+		} else {
+			$dateAgo = date('jS M', $last);
+		}
+		return Html::tip(date('H:i ', $last) . ' ' . $dateAgo, $ago . ' ago', true);
+	}
+
 
 }
 ?>

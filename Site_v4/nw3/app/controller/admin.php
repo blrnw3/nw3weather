@@ -3,6 +3,8 @@ namespace nw3\app\controller;
 
 use nw3\app\core;
 use nw3\migrate;
+use nw3\app\util\String;
+use nw3\app\util\Http;
 
 /**
  * Admin tasks
@@ -24,7 +26,9 @@ class Admin extends core\Controller {
 	}
 
 	public function cron() {
-		$cron_class = 'nw3\cron\\'. $_GET['path'];
+		$this->check_correct_subpath_length(2);
+		$path = $this->url_args[1];
+		$cron_class = 'nw3\cron\\'. $path;
 		try {
 			class_exists($cron_class);
 			$abstract_cron = new \ReflectionClass($cron_class);
@@ -37,22 +41,27 @@ class Admin extends core\Controller {
 	}
 
 	public function migrate() {
-		if($_GET['script'] === 'daily') {
+		$script = $this->url_args[1];
+		if($script === 'daily') {
+			$this->check_correct_subpath_length(3);
+			$type = $this->url_args[2];
 			$migration = new migrate\Importdailylogs($_GET['start_date'], $_GET['end_date']);
-			if($_GET['type'] === 'migrate') {
+			if($type === 'migrate') {
 				$migration->migrate($this->timer);
-			} elseif($_GET['type'] === 'sanitise') {
+			} elseif($type === 'sanitise') {
 				$migration->sanitise_raw_logs();
 			} else {
 				$migration->validate_raw_logs();
 			}
-		} elseif($_GET['script'] === 'wd') {
+		} elseif($script === 'wd') {
+			$this->check_correct_subpath_length(2);
 			$wd_parser = new migrate\Wdlogstodaily($_GET['start_date'], $_GET['end_date']);
 			$wd_parser->parse();
-		} elseif($_GET['script'] === 'monthly') {
+		} elseif($script === 'monthly') {
+			$this->check_correct_subpath_length(3);
+			$yr = (int)$this->url_args[2];
 			$migration = new migrate\Importmonthlylogs();
-			$yr = (int)$_GET['year'];
-			if($_GET['type'] === 'upto') {
+			if($_GET['upto']) {
 				$migration->import_upto($yr);
 			} else {
 				$migration->import($yr);

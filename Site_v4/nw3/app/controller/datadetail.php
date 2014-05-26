@@ -11,9 +11,8 @@ use nw3\app\model\Current;
  */
 class Datadetail extends core\Controller {
 
-	public function __construct() {
-		parent::__construct(__CLASS__);
-		$this->live = new Current();
+	public function __construct($path) {
+		parent::__construct(__CLASS__, $path);
 	}
 
 	public function index() {

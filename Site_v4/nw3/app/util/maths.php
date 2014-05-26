@@ -10,7 +10,7 @@ class Maths {
 	/**
 	 * Rounds a value to a <em>fixed</em> number of dp
 	 * @param number $val val to round
-	 * @param int $dp[=1] precision
+	 * @param int $dp [=1] precision
 	 * @return string
 	 */
 	static function round($val, $dp = 1) {

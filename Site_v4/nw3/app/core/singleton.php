@@ -5,22 +5,22 @@ namespace nw3\app\core;
  * @author http://stackoverflow.com/questions/203336/creating-the-singleton-design-pattern-in-php5
  */
 class Singleton {
-	protected static $instance = null;
-	protected function __construct() {
-	}
-	protected function __clone() {
-	}
+   private static $instances = array();
+    protected function __construct() {}
+    protected function __clone() {}
+    public function __wakeup()
+    {
+        throw new Exception("Cannot unserialize singleton");
+    }
 
-	/**
-	 * Returns the one-and-only instance
-	 * @return type
-	 */
-	public static function g() {
-		if (!isset(static::$instance)) {
-			static::$instance = new static;
-		}
-		return static::$instance;
-	}
+    public static function g()
+    {
+        $cls = get_called_class(); // late-static-bound class name
+        if (!isset(self::$instances[$cls])) {
+            self::$instances[$cls] = new static;
+        }
+        return self::$instances[$cls];
+    }
 }
 
 ?>
