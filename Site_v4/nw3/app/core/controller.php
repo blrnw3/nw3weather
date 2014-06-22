@@ -147,7 +147,8 @@ abstract class Controller {
 	 * Loads a mini view (shared across other views), aka 'partial'
 	 * @param type $name file_name of the viewette (excluding leading underscore and extension)
 	 */
-	protected function viewette($name) {
+	protected function viewette($name, &$_data) {
+		$data = $_data;
 		require $this->view_base . "_$name.php";
 	}
 
@@ -169,7 +170,7 @@ abstract class Controller {
 		die();
 	}
 
-	private function flush_logs($is_http) {
+	private function flush_logs($is_http=true) {
 		Logger::g()->flush($is_http);
 	}
 

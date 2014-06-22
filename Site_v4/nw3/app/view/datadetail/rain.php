@@ -4,10 +4,7 @@ use nw3\app\helper\Detail as D;
 use nw3\app\model\Variable;
 
 $rain = new a\Rain();
-$cur_lat = $rain->current_latest();
-
-// Put a table break after these
-$cat_ends = array('rndur24', 'rnseas');
+$recent = $rain->recent_values();
 ?>
 
 <h1>Detailed Rainfall Data</h1>
@@ -21,26 +18,28 @@ $cat_ends = array('rndur24', 'rnseas');
 		</tr>
 	</thead>
 	<tbody>
-		<?php foreach ($cur_lat as $k => $val): ?>
+		<?php foreach ($rain->current_latest() as $k => $val): ?>
 		<tr>
 			<td><?php echo $val['descrip'] ?></td>
 			<td>
 				<?php echo Variable::conv($val['val'], $val['type']) ?>
-				<?php if(key_exists('anom', $val)): ?>
-					<?php if(key_exists('anom_f', $val)): ?>
-						(<?php echo D::of_final_exp($val) ?>)
-					<?php else: ?>
-						 (<?php echo Variable::conv_anom($val['anom'], $val['type']) ?>)
-					<?php endif; ?>
-				<?php endif; ?>
-				<?php if(key_exists('prop', $val)): ?>
-					[<?php echo round($val['prop'] * 100) ?>%]
-				<?php endif; ?>
 			</td>
-				<?php if(array_search($k, $cat_ends) !== false): ?>
-					</tr><tr><td colspan="2">---</td>
-				<?php endif; ?>
 		</tr>
 		<?php endforeach; ?>
 	</tbody>
+</table>
+
+<table>
+	<caption>Totals and Extremes for recent days</caption>
+	<?php $this->viewette('period_tbl', $rain->recent_values()) ?>
+</table>
+
+<table>
+	<caption>Totals and Extremes for recent periods</caption>
+	<?php $this->viewette('period_tbl', $rain->extremes_recent()) ?>
+</table>
+
+<table>
+	<caption>All-time Totals and Record Extremes <?php echo D::record_yr_range(); ?></caption>
+	<?php $this->viewette('period_tbl', $rain->extremes_record()) ?>
 </table>

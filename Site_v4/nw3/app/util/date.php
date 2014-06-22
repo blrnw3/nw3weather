@@ -28,8 +28,11 @@ class Date {
 	 * Loads up the global define with some useful constants
 	 */
 	public static function initialise() {
-		$debug_offset = self::secs_DAY * 199; //When testing, it could be useful to change this
-		$now = time() - $debug_offset;
+//		$debug_offset = self::secs_DAY * 218; //When testing, it could be useful to change this
+//		$now = time() - $debug_offset;
+		$debug_date = new \DateTime();
+		$debug_date->setDate(2013, 11, 9);
+		$now = $debug_date->getTimestamp();
 		define('D_now', $now);
 
 		//Define (globally) some of the most useful date-based pseudo-constants
@@ -204,10 +207,6 @@ class Date {
 
 	static function get_days_in_month($month, $year = 2009) {
 		return (int)date('t',self::mkdate($month,2,$year));
-	}
-	static function get_seasondays($sea, $year = 2009) {
-		for($s2 = 0; $s2 < 3; $s2++) { $days += get_days_in_month($snums[$sea][$s2]+1,$year); }
-		return $days;
 	}
 	static function get_days_in_year($year) {
 		return date('z', self::mkdate(12,31,$year)) + 1;

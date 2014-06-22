@@ -114,7 +114,7 @@ class Importdailylogs {
 				$lives[6] = $raw_live_vals[6];
 				$lives[7] = $raw_live_vals[5];
 
-				$db->execute($lives);
+				$db->execute_proc($lives);
 
 				if($oct_switch) {
 					$dst_over = ($local_hour == 1 && $local_minute == 59); //Relies on this entry being present!

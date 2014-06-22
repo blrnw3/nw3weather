@@ -32,6 +32,9 @@ class Html {
 	static function out($str) {
 		echo $str . '<br />';
 	}
+	static function raw($str) {
+		echo "<div class='query'>$str</div>";
+	}
 
 	/**
 	 * Make tooltip

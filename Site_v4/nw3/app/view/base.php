@@ -2,6 +2,7 @@
 use nw3\app\util\Html;
 use nw3\app\core\Units;
 use nw3\app\core\Session;
+use nw3\app\helper\Main;
 ?>
 
 <!--<!DOCTYPE html>
@@ -104,14 +105,16 @@ use nw3\app\core\Session;
 						<a href="http://nw3weather.co.uk" title="Browse to homepage">Home</a>
 					</div>
 					<div id="copyright">
-						&copy; 2010-<?php echo D_year; ?>, BLR<span> | Site version 4</span>
+						&copy; 2010-<?php echo D_year; ?>, BLR<span> | Version 4.0.0</span>
 					</div>
 					<div id="footer-message">
-						Caution: All data is recorded from an amateur-run personal weather station; accuracy and reliability may be poor.
+						Caution: All data is recorded from an amateur-run personal weather station;
+						accuracy and reliability <a href="<?php Html::href('about'); ?>#data" title="More about nw3's data">may be poor</a>.
 					</div>
 					<div id="script_details">
 						<?php $this->timer->stop(); ?>
 						Script executed <abbr title="Session Cnt: <?php echo Session::page_count(); ?>">in</abbr> <?php echo $this->timer->executionTimeMs(); ?>
+						| DB queries: <?php echo Main::db_stats(); ?>
 					</div>
 				</div>
 			</div>

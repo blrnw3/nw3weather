@@ -2,7 +2,7 @@
 namespace nw3\app\controller;
 
 use nw3\app\core;
-use nw3\app\model\Current;
+use nw3\app\model\Detail;
 
 /**
  * Data Detail (rain, temp, hum etc.)
@@ -13,6 +13,7 @@ class Datadetail extends core\Controller {
 
 	public function __construct($path) {
 		parent::__construct(__CLASS__, $path);
+		Detail::initialise();
 	}
 
 	public function index() {

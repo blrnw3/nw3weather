@@ -79,13 +79,11 @@ class Datareport extends Report {
 			$d1 = "{$this->year}-01-01";
 			$d2 = "{$this->year}-12-31";
 		}
-
-		$select = "DAYOFMONTH(d) as d, MONTH(d) as m, {$this->var['id']} as var";
-		$where = Db::where(Db::btwn($d1, $d2, 'd'));
-		$data = $db->select('daily', $select, $where);
+		$data = $db->query('DAYOFMONTH(d) as d', 'MONTH(d) as m', "{$this->var['id']} as var")
+			->filter(Db::btwn($d1, $d2, 'd', true));
 
 		$daily = array();
-		foreach ($data as $val) {
+		foreach ($data->all() as $val) {
 			$daily[$val['m']][$val['d']] = $val['var'];
 		}
 		$this->data['daily'] = $daily;

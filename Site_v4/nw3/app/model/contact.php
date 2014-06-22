@@ -3,6 +3,7 @@ namespace nw3\app\model;
 
 use nw3\config\Admin;
 use nw3\app\util\String;
+use nw3\app\core\Logger;
 
 /**
  * Contact form submission
@@ -30,8 +31,12 @@ class Contact {
 		if(strlen($comments) < 2) {
 			$error_message .= 'Comments must be at least 2 characters.<br />';
 		}
-		if(strtolower($spam_answer) !== 'rain') {
+		if(false && strtolower($spam_answer) !== 'rain') {
 			$error_message .= 'Spam prevention answer wrong! Hint: it falls from the sky in drops.';
+		}
+		if(strlen($spam_answer) > 0) {
+			//Probs a bot
+			Logger::g()->queue("spam", "Dodgy spam answer $spam_answer");
 		}
 
 		if(String::isNotBlank($error_message)) {

@@ -108,7 +108,7 @@ class Units {
 		$precision_adjust = self::$is_us ? 1 : 0;
 		$precisions = array(
 			Variable::Rain => 1 + $precision_adjust,
-			Variable::RainRate => 1 + $precision_adjust,
+			Variable::RainRate => 0 + $precision_adjust,
 			Variable::Pressure => 0 + ($precision_adjust * 2),
 			Variable::Snow => 0 + $precision_adjust,
 			Variable::Area => 2 + $precision_adjust

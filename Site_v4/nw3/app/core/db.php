@@ -5,14 +5,18 @@ use Config as Conf;
 use \PDO as PDO;
 use \PDOException as PDOException;
 use nw3\app\core\Singleton;
+use nw3\app\core\Query;
 use nw3\app\util\Html;
-use nw3\app\util\Date;
+use nw3\app\util\Maths;
 /**
  * db connection management
  *
  * @author Ben LR
  */
 class Db extends Singleton {
+
+	/** When true, output all query stats with the HTML response */
+	const DEBUG_PRINT = true;
 
 	const DATE_FORMAT = 'Y-m-d';
 
@@ -22,6 +26,8 @@ class Db extends Singleton {
 	const AVG = 'AVG';
 	const MAX = 'MAX';
 	const MIN = 'MIN';
+	const DESC = 'DESC';
+	const ASC = 'ASC';
 
 	# Return types
 	const SCALAR = 0;
@@ -29,7 +35,9 @@ class Db extends Singleton {
 
 	private $db;
 	private $proc;
-	private $explosive;
+	private $debug;
+	public $query_count = 0;
+	public $query_time = 0;
 
 	/**
 	 * Create connection
@@ -57,30 +65,34 @@ class Db extends Singleton {
 			die();
 		}
 
-		$this->explosive = ($explosive_override === null) ?
+		$this->debug = ($explosive_override === null) ?
 			Conf::$db['explosive'] : $explosive_override;
 	}
 
+	function query() {
+		return new Query(func_get_args());
+	}
+
 	/**
-	 * Issue select query to DB
-	 * @param string $table name of db table
-	 * @param array $cols [=null] If present, an array of the field names to select, else all fields (*).
-	 * @param string $conditions [=''] raw sql conditions - where, order by, group by etc.
-	 * @return array rows, as associative arrays
+	 * Executes a raw SQL statement
+	 * ALL raw external queries should come through here
+	 * @param string $statement raw SQL
+	 * @return PDOQuery the query object
 	 */
-	function select($table, $cols=null, $conditions='', $type=null) {
-		$cols = ($cols === null) ? '*' : implode(',', (array)$cols);
-		$q = "SELECT $cols FROM $table $conditions";
-//		$this->debug_query($q);
+	public function execute($statement) {
+		# TODO - log queries using debug_query
+		$this->query_count++;
 		try {
-			if($type === self::SCALAR) {
-				return $this->db->query($q)->fetchColumn();
-			} elseif($type === self::SINGLE) {
-				return $this->db->query($q)->fetch(PDO::FETCH_ASSOC);
+			$st = microtime(true);
+			$exec = $this->db->query($statement);
+			$query_time = microtime(true) - $st;
+			$this->query_time += $query_time;
+			if(self::DEBUG_PRINT && $this->debug) {
+				$this->debug_query($statement, $query_time);
 			}
-			return $this->db->query($q)->fetchAll(PDO::FETCH_ASSOC);
+			return $exec;
 		} catch (PDOException $e) {
-			var_dump($q);
+			var_dump($statement);
 			var_dump($e->getMessage());
 			throw new \Exception('Fatal Error.');
 		}
@@ -107,11 +119,12 @@ class Db extends Singleton {
 		$this->db->exec($q);
 	}
 
-	private function debug_query($query) {
+	private function debug_query($query, $query_time) {
+		$query_time = Maths::round($query_time * 1000, 1);
 		$trace = debug_backtrace(FALSE);
 		$entries = array();
-		$st_frame = 2;
-		$en_frame = 4;
+		$st_frame = 4;
+		$en_frame = 5;
 		$frame_cnt = min(array(count($trace), $en_frame));
 		for ($f = $st_frame; $f < $frame_cnt; $f++) {
 			$frame = &$trace[$f];
@@ -122,7 +135,7 @@ class Db extends Singleton {
 
 			$entries[] = "$class:{$line}->$func";
 		}
-		Html::out($query .' -> '. implode(' > ', $entries));
+		Html::raw($query_time .': '. $query .' -> '. implode(' > ', $entries));
 	}
 
 	/* Utilities for (MY)SQL fragments */
@@ -140,7 +153,7 @@ class Db extends Singleton {
 		return $escape ? "$col BETWEEN '$a' AND '$b'" : "$col BETWEEN $a AND $b";
 	}
 	static function and_($conds) {
-		$conds = array_filter((array)$conds);
+		$conds = array_merge(array_filter((array)$conds));
 		switch (count($conds)) {
 			case 0:
 				return null;
@@ -173,6 +186,17 @@ class Db extends Singleton {
 		return "UNIX_TIMESTAMP($col)";
 	}
 
+	static function as_($field, $alias) {
+		return array($field, $alias);
+	}
+
+	static function val($field) {
+		return "$field AS val";
+	}
+	static function time_field($field) {
+		return "DATE_FORMAT(t_$field, '%H:%i') AS t";
+	}
+
 	/*
 	 * CONVENIENCE WRAPPERS TO PDO CORE FUNCTIONS
 	 */
@@ -180,8 +204,8 @@ class Db extends Singleton {
 	function prepare($statement) {
 		$this->proc = $this->db->prepare($statement);
 	}
-	function execute($values) {
-		if($this->explosive) {
+	function execute_proc($values) {
+		if($this->debug) {
 			$this->proc->execute($values);
 		} else {
 			try {

@@ -144,10 +144,9 @@ class Importmonthlylogs {
 
 		foreach ($vars as $i => &$var) {
 			if(count($var) !== count($var_names)) {
-				xdebug_break();
 				var_dump($var);
 			} else {
-				$db->execute($var);
+				$db->execute_proc($var);
 			}
 		}
 

@@ -130,6 +130,7 @@ abstract class Variable {
 		),
 		self::RainRate => array(
 			'name' => 'rain_rate',
+			'precision' => 0,
 			'precison_increase_threshold' => 5,
 			'summable' => false,
 			'imperial_divisor' => 25.4,
@@ -252,7 +253,8 @@ abstract class Variable {
 			'group' => self::Temperature,
 			'category' => 'Temperature',
 			'anomable' => true,
-			'colour' => '#aae'
+			'colour' => '#aae',
+			'spread' => true, # Quantity is an average/sum, so has no point instance and therefore no time_of
 		),
 
 		'hmin' => array(
@@ -271,7 +273,8 @@ abstract class Variable {
 			'description' => 'Mean Humidity',
 			'group' => self::Humidity,
 			'category' => 'Humidity',
-			'colour' => '#283'
+			'colour' => '#283',
+			'spread' => true,
 		),
 
 		'pmin' => array(
@@ -290,7 +293,8 @@ abstract class Variable {
 			'description' => 'Mean Pressure',
 			'group' => self::Pressure,
 			'category' => 'Pressure',
-			'colour' => 'purple'
+			'colour' => 'purple',
+			'spread' => true,
 		),
 
 		'wmean' => array(
@@ -298,7 +302,8 @@ abstract class Variable {
 			'group' => self::Wind,
 			'category' => 'Wind',
 			'anomable' => true,
-			'colour' => 'red'
+			'colour' => 'red',
+			'spread' => true,
 		),
 		'wmax' => array(
 			'description' => 'Maximum Wind Speed',
@@ -318,7 +323,8 @@ abstract class Variable {
 			'group' => self::Direction,
 			'nosummary' => true,
 			'category' => 'Wind',
-			'colour' => '#f77'
+			'colour' => '#f77',
+			'spread' => true,
 		),
 
 		'rain' => array(
@@ -326,7 +332,8 @@ abstract class Variable {
 			'group' => self::Rain,
 			'category' => 'Rainfall',
 			'anomable' => true,
-			'colour' => 'royalblue'
+			'colour' => 'royalblue',
+			'spread' => true,
 		),
 		'hrmax' => array(
 			'description' => 'Maximum Hourly Rain',
@@ -347,8 +354,6 @@ abstract class Variable {
 			'group' => self::RainRate,
 			'category' => 'Rainfall',
 			'colour' => '#99f',
-			'precision' => 0,
-			'precison_increase_threshold' => 5
 		),
 
 		'dmin' => array(
@@ -367,7 +372,8 @@ abstract class Variable {
 			'description' => 'Mean Dew Point',
 			'group' => self::Temperature,
 			'category' => 'Dew Point',
-			'colour' => '#2a3'
+			'colour' => '#2a3',
+			'spread' => true,
 		),
 
 		't24min' => array(
@@ -382,7 +388,8 @@ abstract class Variable {
 			'group' => self::AbsTemp,
 			'category' => 'Other',
 			'anomable' => true,
-			'colour' => 'green'
+			'colour' => 'green',
+			'spread' => true,
 		),
 
 		'sunhr' => array(
@@ -390,14 +397,16 @@ abstract class Variable {
 			'group' => self::Hours,
 			'category' => 'Observation',
 			'anomable' => true,
-			'colour' => '#ff3'
+			'colour' => '#ff3',
+			'spread' => true,
 		),
 		'wethr' => array(
 			'description' => 'Wet Hours',
 			'group' => self::Hours,
 			'category' => 'Observation',
 			'anomable' => true,
-			'colour' => 'aqua'
+			'colour' => 'aqua',
+			'spread' => true,
 		),
 
 		'rdays' => array(

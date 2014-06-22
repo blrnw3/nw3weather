@@ -29,7 +29,9 @@ use nw3\app\util\Maths;
 /**
  * All rain stats n stuff
  */
-class Rain extends \Detail {
+class Rain extends Detail {
+
+	const AGG = 'total';
 
 	const MAX_DRY_QUANTITY = 0.1; // Allow up to (inclusive) this much rain to still count as a dry day
 
@@ -56,28 +58,22 @@ class Rain extends \Detail {
 	 * else the number of complete days since it last rained
 	 */
 	function curr_spell($rained_today) {
-//		$rained_today = ($this->live->rain > 0);
 		$cond = $rained_today ? '=' : '>';
 		$dt = date(Db::DATE_FORMAT, D_now);
-		xdebug_break();
-		return $this->db->select(self::TBL_DAILY,
-			"DATEDIFF('$dt', d) ",
-			"WHERE rain $cond 0"
-			. " ORDER BY d DESC"
-			. " LIMIT 1",
-			Db::SCALAR
-		);
+		return $this->db->query("DATEDIFF('$dt', d)")
+			->filter("rain $cond 0")
+			->extreme(Db::MAX, 'd')
+			->scalar()
+		;
 	}
 
 	function totals() {
 		$data = array();
-		foreach ($this->all_periods as $period) {
+		foreach (self::get_periods_multi() as $period => $v) {
 			$data[$period] = array(
 				'val' => $this->period_agg($period),
+				'anom' => $this->period_sum_anom($period)
 			);
-		}
-		foreach ($this->all_multiday_periods as $period) {
-			$data[$period]['anom'] = $this->period_sum_anom($period);
 		}
 		$data[self::NOWMON]['anom_f'] = $this->get_period_end_anom($data, self::NOWMON);
 		$data[self::NOWYR]['anom_f'] = $this->get_period_end_anom($data, self::NOWYR);
@@ -87,9 +83,8 @@ class Rain extends \Detail {
 
 	function days() {
 		$data = array();
-		foreach ($this->all_multiday_periods as $period) {
+		foreach (array_keys(self::get_periods_multi()) as $period) {
 			$cnt = $this->period_count($period, $this->wet_filter);
-			xdebug_break();
 			$data[$period] = array(
 				'val' => $cnt,
 				'prop' => $cnt / $this->period_lengths[$period]

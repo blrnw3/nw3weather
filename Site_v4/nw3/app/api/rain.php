@@ -2,6 +2,8 @@
 namespace nw3\app\api;
 
 use nw3\app\model\Rain as Rn;
+use nw3\app\model\Detail;
+use nw3\app\model\Store;
 use nw3\app\model\Variable as Vari;
 
 /**
@@ -10,20 +12,24 @@ use nw3\app\model\Variable as Vari;
 class Rain extends \nw3\app\core\Api {
 
 	private $rain;
+	private $ratemax, $r10max, $hrmax;
+	private $wettest, $ratest, $hrmaxest, $r10maxest;
 
 	function __construct() {
 		parent::__construct();
 		$this->rain = new Rn();
+		$this->ratemax = new Detail('ratemax');
+		$this->r10max = new Detail('r10max');
+		$this->hrmax = new Detail('hrmax');
+
+		$this->wettest = $this->rain->extremes();
+		$this->ratest = $this->ratemax->extremes();
+		$this->hrmaxest = $this->hrmax->extremes();
+		$this->r10maxest = $this->r10max->extremes();
 	}
 
-	/**
-	 * TODO: split out period tots and days into into own table
-	 * @return type
-	 */
 	function current_latest() {
-		$now = $this->rain->live;
-		$totals = $this->rain->totals();
-		$days = $this->rain->days();
+		$now = Store::g();
 
 		$data = array(
 			'rn' => array(
@@ -70,30 +76,8 @@ class Rain extends \nw3\app\core\Api {
 				'val' => $now->hr24->rnlast,
 				'type' => Vari::Laststamp
 			),
-			'rnyest' => array(
-				'descrip' => 'Yesterday\'s Rain',
-				'val' => $totals[Rn::YESTERDAY]['val'],
-			),
 		);
-
-		foreach (Rn::$periods as $n) {
-			$data["rn$n"] = array(
-				'descrip' => "Last $n day's Rain"
-			) + $totals[$n];
-		}
-
-		$data += array(
-			'rnmon' => array(
-				'descrip' => 'Month Rain',
-			) + $totals[Rn::NOWMON],
-			'rnyr' => array(
-				'descrip' => 'Annual Rain',
-			) + $totals[Rn::NOWYR],
-			'rnseas' => array(
-				'descrip' => D_seasonname.' Rain',
-			) + $totals[Rn::NOWSEAS],
-		);
-
+		// Spell
 		$currspell = $this->rain->curr_spell($now->rain > 0);
 		$currspell_type = ($now->rain > 0) ? 'Wet' : 'Dry';
 		$data += array(
@@ -103,40 +87,6 @@ class Rain extends \nw3\app\core\Api {
 				'type' => Vari::Days
 			)
 		);
-
-		$data += array(
-			'daysmon' => array(
-				'descrip' => 'Month Rain Days',
-				'type' => Vari::Days
-			) + $days[Rn::NOWMON],
-			'daysyr' => array(
-				'descrip' => 'Annual Rain Days',
-				'type' => Vari::Days
-			) + $days[Rn::NOWYR],
-			'daysseas' => array(
-				'descrip' => D_seasonname .' Rain Days',
-				'type' => Vari::Days
-			) + $days[Rn::NOWSEAS]
-		);
-		foreach (Rn::$periods as $n) {
-			$data["rn{$n}d"] = array(
-				'descrip' => "Last $n days Rain Days",
-				'type' => Vari::Days
-			) + $days[$n];
-		}
-
-		$data += array(
-			'rnyrago' => array(
-				'descrip' => 'Daily Rain Last Year',
-			) + $totals[Rn::DAY_YR_AGO],
-			'rtdmonago' => array(
-				'descrip' => 'Last Month Rain-to-date',
-			) + $totals[Rn::CUM_MON_AGO],
-			'rtdyrago' => array(
-				'descrip' => 'Last Year Rain-to-date',
-			) + $totals[Rn::CUM_YR_AGO],
-		);
-
 		//Default type
 		foreach ($data as &$dat) {
 			if(!key_exists('type', $dat)) {
@@ -144,6 +94,57 @@ class Rain extends \nw3\app\core\Api {
 			}
 		}
 		return $data;
+	}
+
+	function recent_values() {
+		$now = Store::g();
+		return array(
+			'rain' => $this->rain->values() + array(Rn::TODAY => array(
+				'val' => $now->rain
+			)),
+			'ratemax' => $this->ratemax->values() + array(Rn::TODAY => array(
+				'val' => $now->today->max['rate'],
+				'dt' => $now->today->timeMax['rate']
+			)),
+			'hrmax' => $this->hrmax->values() + array(Rn::TODAY => array(
+				'val' => $now->today->max['rnhr'],
+				'dt' => $now->today->timeMax['rnhr']
+			)),
+			'r10max' => $this->r10max->values() + array(Rn::TODAY => array(
+				'val' => $now->today->max['rn10'],
+				'dt' => $now->today->timeMax['rn10']
+			))
+		);
+	}
+
+
+	function extremes() {
+		return array(
+			'rain' => $this->rain->totals() + array(
+				'descrip' => 'Rainfall',
+				'type' => Vari::Rain
+			),
+			'rain_days' => $this->rain->days() + array(
+				'descrip' => 'Rain Days',
+				'type' => Vari::None
+			),
+			'wettest' => $wettest['max'] + array(
+				'descrip' => 'Wettest Day',
+				'type' => Vari::Rain
+			),
+			'ratemax' => $ratest['max'] + array(
+				'descrip' => 'Max Rain Rate',
+				'type' => Vari::RainRate
+			),
+			'hrmax' => $hrmaxest['max'] + array(
+				'descrip' => 'Max Hr Rn',
+				'type' => Vari::Rain
+			),
+			'r10max' => $r10maxest['max'] + array(
+				'descrip' => 'Max 10m Rn',
+				'type' => Vari::Rain
+			)
+		);
 	}
 }
 

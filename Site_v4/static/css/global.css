@@ -40,6 +40,11 @@ html > body {
 	font-size: 150%;
 }
 
+.query {
+	white-space: nowrap;
+	font-size: 90%;
+	font-family: monospace;
+}
 
 /******************Header***************************/
 #header {

@@ -25,7 +25,7 @@ I also welcome general feedback, bug reports, and feature suggestions for the ne
 			<td valign="top"> <label for="comments">Comments (required)</label> </td>
 			<td valign="top"> <textarea  name="comments" maxlength="3000" cols="40" rows="7"></textarea> </td>
 		</tr>
-		<tr>
+		<tr style='display: none'>
 			<td valign="top"> <label for="spam">Spam prevention<br />(required)</label> </td>
 			<td valign="top">What is a common form of liquid precipitation? <input type='text' name="spam" maxlength="4" size="4" /> </td>
 		</tr>
@@ -51,7 +51,7 @@ $(document).ready(function() {
 		$('#form_loading').addClass('loading');
 		$("#submit_response_message").html('');
 		$.ajax({
-			url: "submit",
+			url: "contact/submit",
 			type: "POST",
 			data: $("#contact_form").serializeArray(),
 			dataType: "json",

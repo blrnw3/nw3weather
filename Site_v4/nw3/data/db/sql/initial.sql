@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS `daily` (
   `t_wmax` time DEFAULT NULL,
   `t_gust` time DEFAULT NULL,
   `t_hrmax` time DEFAULT NULL,
-  `t_10max` time DEFAULT NULL,
+  `t_r10max` time DEFAULT NULL,
   `t_ratemax` time DEFAULT NULL,
   `t_dmax` time DEFAULT NULL,
   `t_dmin` time DEFAULT NULL,
