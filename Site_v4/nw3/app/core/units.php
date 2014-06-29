@@ -9,8 +9,8 @@ use nw3\app\model\Variable;
  */
 class Units {
 
-	public static $names = array('UK', 'EU', 'US');
-	public static $names_full = array('UK', 'Metric', 'Imperial');
+	public static $names = ['UK', 'EU', 'US'];
+	public static $names_full = ['UK', 'Metric', 'Imperial'];
 
 	static $degs = 'degrees';
 	static $humi = '%';
@@ -49,8 +49,8 @@ class Units {
 		self::assign_to_variables();
 
 		//For data tables and reports
-//		$std_units = array($unitT, $unitR, $unitW, $unitP, $unitH, $unitD, $unitRR, 'hrs', 'views', 'days', 'shorthand', $unitS);
-//		$conv_units = array('', ' &deg;' . $unitT, ' ' . $unitR, ' ' . $unitP, ' ' . $unitW, $unitH, ' ' . $unitS, ' ' . $unitL, ' day', ' hrs', ' ' . $unitA, ' degrees');
+//		$std_units = [$unitT, $unitR, $unitW, $unitP, $unitH, $unitD, $unitRR, 'hrs', 'views', 'days', 'shorthand', $unitS];
+//		$conv_units = ['', ' &deg;' . $unitT, ' ' . $unitR, ' ' . $unitP, ' ' . $unitW, $unitH, ' ' . $unitS, ' ' . $unitL, ' day', ' hrs', ' ' . $unitA, ' degrees'];
 
 	}
 
@@ -92,7 +92,7 @@ class Units {
 	}
 
 	private static function assign_to_variables() {
-		$units = array(
+		$units = [
 			Variable::Temperature => self::$temp,
 			Variable::AbsTemp => self::$temp,
 			Variable::Rain => self::$rain,
@@ -102,17 +102,17 @@ class Units {
 			Variable::Snow => self::$snow,
 			Variable::Distance => self::$distance,
 			Variable::Area => self::$area
-		);
+		];
 		Variable::assign_units($units);
 
 		$precision_adjust = self::$is_us ? 1 : 0;
-		$precisions = array(
+		$precisions = [
 			Variable::Rain => 1 + $precision_adjust,
 			Variable::RainRate => 0 + $precision_adjust,
 			Variable::Pressure => 0 + ($precision_adjust * 2),
 			Variable::Snow => 0 + $precision_adjust,
 			Variable::Area => 2 + $precision_adjust
-		);
+		];
 		Variable::assign_precisions($precisions);
 	}
 }

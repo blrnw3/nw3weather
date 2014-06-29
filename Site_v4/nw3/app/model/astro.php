@@ -13,7 +13,7 @@ use nw3\app\util\String;
  */
 class Astro {
 
-	private $vars = array();
+	private $vars = [];
 
 	function __construct() {
 		include __DIR__ .'/../../data/live/rare.php';
@@ -31,12 +31,12 @@ class Astro {
 			1 - ($illumination / 2);
 		$this->moon_img_num = round($age_fraction * 12);
 
-		$this->moon_phase_dates = array(
+		$this->moon_phase_dates = [
 			'first' => $firstquarter,
 			'full' => $fullmoon,
 			'last' => $lastquarter,
 			'new' => $nextnewmoon
-		);
+		];
 
 		$this->suntransit = substr($suntransit, 0, 5);
 

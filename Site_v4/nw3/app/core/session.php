@@ -30,7 +30,7 @@ class Session {
 		if (!isset($_SESSION)) {
 			session_start();
 			if (count($_SESSION['count']) === 0) {
-				$_SESSION['count'] = array();
+				$_SESSION['count'] = [];
 			}
 		}
 
@@ -66,7 +66,7 @@ class Session {
 	}
 
 	private static function bot_check() {
-		$bad_bots = array('Ezooms', 'java');
+		$bad_bots = ['Ezooms', 'java'];
 		for($i = 0; $i < count($bad_bots); $i++) {
 			if(String::contains( strtolower(self::$browser), $bad_bots[$i] )) {
 				Http::response_code(403);
@@ -74,7 +74,7 @@ class Session {
 			}
 		}
 
-		$ok_bots = array('bot', 'crawl', 'wise', 'search', 'validator', 'lipperhey', 'spider', 'http', 'www');
+		$ok_bots = ['bot', 'crawl', 'wise', 'search', 'validator', 'lipperhey', 'spider', 'http', 'www'];
 		for($i = 0; $i < count($ok_bots); $i++) {
 			if( String::contains( strtolower(self::$browser), $ok_bots[$i] )) {
 				self::$is_bot = true;

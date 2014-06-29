@@ -13,10 +13,10 @@ use nw3\app\core\Logger;
 class Contact {
 
 	static function validate($form) {
-		$response = array(
+		$response = [
 			'success' => true,
 			'message' => ''
-		);
+		];
 
 		$name = $form['name'];
 		$comments = $form['comments'];
@@ -66,7 +66,7 @@ class Contact {
 	}
 
 	private static function clean_string($string) {
-		$bad = array("content-type", "bcc:", "to:", "cc:", "href");
+		$bad = ["content-type", "bcc:", "to:", "cc:", "href"];
 		return str_replace($bad, "", $string);
 	}
 

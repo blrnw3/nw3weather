@@ -6,7 +6,7 @@ use nw3\app\model\Variable;
 <thead>
 	<tr>
 		<td>Measure</td>
-		<?php foreach (array_keys($data['rain']) as $p): ?>
+		<?php foreach (array_keys($data['rain']['data']) as $p): ?>
 			<td><?php echo mD::$periods[$p]['descrip'] ?></td>
 		<?php endforeach; ?>
 	</tr>
@@ -14,8 +14,8 @@ use nw3\app\model\Variable;
 <tbody>
 	<?php foreach($data as $k => $vals): ?>
 	<tr>
-		<td><?php echo $vals['descrip'] ? $vals['descrip'] : Variable::$daily[$k]['description']; ?></td>
-		<?php foreach ($vals as $p => $val): ?>
+		<td><?php echo $vals['descrip']; ?></td>
+		<?php foreach ($vals['data'] as $val): ?>
 		<td>
 			<?php echo Variable::conv($val['val'], $vals['type']) ?>
 			<?php if(key_exists('anom', $val)): ?>

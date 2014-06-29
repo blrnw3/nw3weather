@@ -46,16 +46,16 @@ class Importmonthlylogs {
 		$time_handle = file(self::PATH. 't'. $year. '.csv');
 		$extra_handle = file(self::PATH. 'm'. $year. '.csv');
 
-		$vars = array();
-		$anoms = array();
+		$vars = [];
+		$anoms = [];
 		foreach ($core_handle as $day => $core_vars) {
 			if($day === 0) {
 				continue;
 			}
-			$vars[$day] = array();
+			$vars[$day] = [];
 			$vars[$day][] = date( 'Y-m-d', mktime(0,0,0, 1, $day, $year) );
 
-			$anoms[$day] = array();
+			$anoms[$day] = [];
 			# 29th Feb same as 28th feb
 			$anom_day = ($year % 4 === 0 && $day >= 60) ? $day - 2: $day - 1;
 
@@ -110,7 +110,7 @@ class Importmonthlylogs {
 			}
 		}
 
-		$valids = array();
+		$valids = [];
 		foreach ($time_handle as $day => $time_vars) {
 			if($day === 0) {
 				//get valid columns (non-empty)

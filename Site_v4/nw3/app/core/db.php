@@ -16,7 +16,7 @@ use nw3\app\util\Maths;
 class Db extends Singleton {
 
 	/** When true, output all query stats with the HTML response */
-	const DEBUG_PRINT = true;
+	const DEBUG_PRINT = false;
 
 	const DATE_FORMAT = 'Y-m-d';
 
@@ -51,12 +51,11 @@ class Db extends Singleton {
 		$host = Conf::$db['host'];
 		$port = Conf::$db['port'];
 
-		$flags = array(
+		$flags = [
 			PDO::ATTR_PERSISTENT => true,
 			PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
 			PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-		);
-
+		];
 		try {
 			$this->db = new PDO("mysql:host={$host};port={$port};dbname={$db}", $user, $pass, $flags);
 			$this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -108,7 +107,7 @@ class Db extends Singleton {
 	function update($table, $update, $conds=null) {
 		$where = ($conds === null) ? "" : " WHERE $conds";
 
-		$set_items = array();
+		$set_items = [];
 		foreach ($update as $key => &$value) {
 			$val = is_string($value) ? "$value" : $value;
 			$set_items[] = "$key=$val";
@@ -122,10 +121,10 @@ class Db extends Singleton {
 	private function debug_query($query, $query_time) {
 		$query_time = Maths::round($query_time * 1000, 1);
 		$trace = debug_backtrace(FALSE);
-		$entries = array();
+		$entries = [];
 		$st_frame = 4;
 		$en_frame = 5;
-		$frame_cnt = min(array(count($trace), $en_frame));
+		$frame_cnt = min([count($trace), $en_frame]);
 		for ($f = $st_frame; $f < $frame_cnt; $f++) {
 			$frame = &$trace[$f];
 			$file = substr($frame['file'], -15);
@@ -187,7 +186,7 @@ class Db extends Singleton {
 	}
 
 	static function as_($field, $alias) {
-		return array($field, $alias);
+		return [$field, $alias];
 	}
 
 	static function val($field) {

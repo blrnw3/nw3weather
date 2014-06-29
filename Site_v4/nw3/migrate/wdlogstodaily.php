@@ -23,7 +23,7 @@ class Wdlogstodaily {
 	}
 
 	function parse() {
-		$lim = array(1,1,1, 1,2,0.4, 5,2,2, 9,15,400,2.5,2.5);
+		$lim = [1,1,1, 1,2,0.4, 5,2,2, 9,15,400,2.5,2.5];
 
 		foreach ($this->period as $dt) {
 			echo "Processing ". $dt->format("M Y");
@@ -37,7 +37,7 @@ class Wdlogstodaily {
 			echo "<br />";
 
 			$handle = file($file_path);
-			$raw_data = array();
+			$raw_data = [];
 			//Group data by day
 			foreach ($handle as $record) {
 				$vars = explode(',', $record);

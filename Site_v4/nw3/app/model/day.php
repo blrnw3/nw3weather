@@ -41,7 +41,7 @@ class Day {
 	function summary($day = null) {
 		//some basic initialisation
 		$dat = $datt = $trends = $trendshr = $rncumArr = $mins = $maxs = $means
-			= $timesMin = $timesMax = array();
+			= $timesMin = $timesMax = [];
 		$nightmin1 = $nightmin2 = $nightmin1T = $nightmin2T = INT_MAX;
 		$daymax1 = $daymax2 = INT_MIN;
 		$i = $rncum = $w10 = $frostMins = 0;
@@ -75,7 +75,7 @@ class Day {
 //		$prevs = $this->get_live_data($start_prev, $end_prev);
 
 		if(count($lives) === 0) {
-			return array('No data');
+			return ['No data'];
 		}
 
 		foreach ($lives as $live) {
@@ -333,7 +333,7 @@ class Day {
 
 		$this->timer->stop();
 
-		$data = array(
+		$data = [
 			# Stat
 			'period' => "$start to $end",
 			'cnt' => $i_last,
@@ -348,14 +348,14 @@ class Day {
 			'mean' => $means,
 			'timeMin' => $timesMin,
 			'timeMax' => $timesMax,
-		);
+		];
 		if($is_latest) {
-			$data += array(
+			$data += [
 				'rnrate' => $currRate,
 				'rnduration' => $duration / 60.0,
 				'rnlast' => $prevRn,
 				'trend' => $trends,
-			);
+			];
 		}
 		return $data;
 	}
@@ -370,7 +370,7 @@ class Day {
 		$bitifier = 36; //constant - the quantisation level to convert 360 degrees into a bittier signal
 		$calmThreshold = 1; //constant - values when the wind speed was below this are ignored
 
-		$freqs = array();
+		$freqs = [];
 		for($i = 0; $i <= 360/$bitifier; $i++) {
 			$freqs[$i] = 0;
 		}

@@ -5,8 +5,8 @@ var updateable = true;
 var timeServer;
 var timeWD;
 
-var wxvars = new Array();
-var wxvarsNew = new Array();
+var wxvars = new [];
+var wxvarsNew = new [];
 
 $(document).ready(function() {
 	timeWD = $("#WDtime").val();

@@ -14,9 +14,9 @@ class Query {
 
 	private $tbl;
 	private $cols ;
-	private $conds = array();
+	private $conds = [];
 	private $limit;
-	private $orders = array();
+	private $orders = [];
 	private $groups;
 	private $db;
 
@@ -34,7 +34,7 @@ class Query {
 
 	/**
 	 * Assign the fields to query on
-	 * @param type $fields An array of (field name or array(name, alias))
+	 * @param type $fields An array of (field name or [name, alias)]
 	 * @return \nw3\app\core\Query
 	 */
 	function fields($fields) {
@@ -58,7 +58,7 @@ class Query {
 	 * @return \nw3\app\core\Query
 	 */
 	function order($type, $col=null) {
-		$this->orders[] = array($col, $type);
+		$this->orders[] = [$col, $type];
 		return $this;
 	}
 
@@ -78,7 +78,7 @@ class Query {
 	}
 
 	function count() {
-		$this->cols = array(Db::count(count($this->cols) ? $this->col(0) : '*'));
+		$this->cols = [Db::count(count($this->cols) ? $this->col(0) : '*')];
 		return $this->select()->fetchColumn();
 	}
 

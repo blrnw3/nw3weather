@@ -13,7 +13,7 @@ class Logger extends Singleton {
 	private $mailBuffer; //used for delaying email sending
 	private $mailBufferCount = 0;
 
-	private $logBuffer = array();
+	private $logBuffer = [];
 	private $info;
 
 	function queue($filename, $message = '') {

@@ -8,7 +8,7 @@ use nw3\app\util\Maths;
 
 //class Rollingtotal {
 //	private $size;
-//	private $items = array();
+//	private $items = [];
 //	private $cnt = 0;
 //
 //	public $total = 0;
@@ -45,12 +45,12 @@ class Rain extends Detail {
 
 	function spells() {
 		$all_spells = $this->all_spells();
-		return array(
+		return [
 			self::RECORD => $this->record_spell($all_spells),
 			self::NOWYR => $this->longest_spell_nowyr($all_spells),
 			self::NOWMON => $this->longest_spell_nowmon($all_spells),
 			self::RECORD_M => $this->record_spell_currmon($all_spells),
-		);
+		];
 	}
 
 	/**
@@ -68,12 +68,12 @@ class Rain extends Detail {
 	}
 
 	function totals() {
-		$data = array();
-		foreach (self::get_periods_multi() as $period => $v) {
-			$data[$period] = array(
+		$data = [];
+		foreach (self::get_periods_multi() as $period) {
+			$data[$period] = [
 				'val' => $this->period_agg($period),
 				'anom' => $this->period_sum_anom($period)
-			);
+			];
 		}
 		$data[self::NOWMON]['anom_f'] = $this->get_period_end_anom($data, self::NOWMON);
 		$data[self::NOWYR]['anom_f'] = $this->get_period_end_anom($data, self::NOWYR);
@@ -82,21 +82,21 @@ class Rain extends Detail {
 	}
 
 	function days() {
-		$data = array();
-		foreach (array_keys(self::get_periods_multi()) as $period) {
+		$data = [];
+		foreach (self::get_periods_multi() as $period) {
 			$cnt = $this->period_count($period, $this->wet_filter);
-			$data[$period] = array(
+			$data[$period] = [
 				'val' => $cnt,
 				'prop' => $cnt / $this->period_lengths[$period]
-			);
+			];
 		}
 		return $data;
 	}
 
 	function counts() {
-		return array(
-			self::RECORD => array('val' => $this->num_records)
-		);
+		return [
+			self::RECORD => ['val' => $this->num_records]
+		];
 	}
 
 	/**
@@ -105,7 +105,7 @@ class Rain extends Detail {
 	 */
 	function extreme_spells() {
 		$rainall = $this->select();
-		$data = array();
+		$data = [];
 		foreach(self::$periods as $spell_len) {
 			$data[$spell_len] = $this->extreme_n_days($spell_len, $rainall);
 		}
@@ -115,8 +115,8 @@ class Rain extends Detail {
 	/** Get all wet and dry spells */
 	function all_spells() {
 		$drylen = $wetlen = 0;
-		$dryspells = array();
-		$wetspells = array();
+		$dryspells = [];
+		$wetspells = [];
 
 		$rainall = $this->select();
 
@@ -128,29 +128,29 @@ class Rain extends Detail {
 				$drylen++;
 				# End of wet spell
 				if($wetlen > 0) {
-					$wetspells[] = array('val' => $wetlen, 'dt' => $dt);
+					$wetspells[] = ['val' => $wetlen, 'dt' => $dt];
 					$wetlen = 0;
 				}
 			} else {
 				$wetlen++;
 				# End of dry spell
 				if($drylen > 0) {
-					$dryspells[] = array('val' => $drylen, 'dt' => $dt);
+					$dryspells[] = ['val' => $drylen, 'dt' => $dt];
 					$drylen = 0;
 				}
 			}
 		}
 		# Handle last day (ongoing spell)
 		if($drylen > 0) {
-			$dryspells[] = array('val' => $drylen, 'dt' => $dt);
+			$dryspells[] = ['val' => $drylen, 'dt' => $dt];
 		} else {
-			$wetspells[] = array('val' => $wetlen, 'dt' => $dt);
+			$wetspells[] = ['val' => $wetlen, 'dt' => $dt];
 		}
 
-		return array(
+		return [
 			'dry' => $dryspells,
 			'wet' => $wetspells
-		);
+		];
 	}
 
 	/**
@@ -207,10 +207,10 @@ class Rain extends Detail {
 			}
 			$i++;
 		}
-		return array(
-			'dry' => array('val' => $driest, 'dt' => $driest_end),
-			'wet' => array('val' => $wettest, 'dt' => $wettest_end)
-		);
+		return [
+			'dry' => ['val' => $driest, 'dt' => $driest_end],
+			'wet' => ['val' => $wettest, 'dt' => $wettest_end]
+		];
 	}
 
 	private function get_longest_spell_for_period($all_spells, $fn_is_in_period) {

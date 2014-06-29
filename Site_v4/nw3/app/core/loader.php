@@ -98,11 +98,11 @@ class Loader {
 
 	private function url_args() {
 		$split_point = $this->base_index + 1;
-		return array(
+		return [
 			'base' => array_slice($this->url_parts, 0, $split_point),
 			'args' => array_slice($this->url_parts, $split_point),
 			'qs' => $_SERVER['QUERY_STRING']
-		);
+		];
 	}
 
 	private function redirect_inner_multi_slashes($url) {

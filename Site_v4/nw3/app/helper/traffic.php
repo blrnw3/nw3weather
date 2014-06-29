@@ -9,12 +9,12 @@ use nw3\app\util\Maths;
  */
 class Traffic {
 
-	public $annual_summary = array(
+	public $annual_summary = [
 		'sum' => 0,
 		'mean' => 0,
 		'min' => INT_MAX,
 		'max' => INT_MIN,
-	);
+	];
 
 //		<tr class="rowdark">
 //			<td>2011</td>

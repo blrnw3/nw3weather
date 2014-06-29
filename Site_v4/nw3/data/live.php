@@ -31,8 +31,8 @@ class Live {
 
 			//Detect intensity based on current rain rate
 			//If only 0.3mm, no rate is available (i.e. 0), so give no intensity
-			$intensities = array('', 'Slight', 'Light', 'Moderate', 'Heavy', 'Very Heavy', 'Torrential');
-			$intensityThresholds = array(0.1, 0.5, 2, 8, 35, 60, 500);
+			$intensities = ['', 'Slight', 'Light', 'Moderate', 'Heavy', 'Very Heavy', 'Torrential'];
+			$intensityThresholds = [0.1, 0.5, 2, 8, 35, 60, 500];
 			for ($i = 0; $i < count($intensityThresholds); $i++) {
 				if($rnrt < $intensityThresholds[$i]) {
 					$intensity = $intensities[$i];
@@ -45,14 +45,14 @@ class Live {
 			}
 			$weather = $intensity .' '. $rnType;
 		} else { // check the METAR
-			$metarRaining = strContains($METAR, array('RA','DZ'));
-			$foggy = strContains($METAR, array('FG', 'BR'));
-			$snowing = strContains($METAR, array('SN','SG'));
+			$metarRaining = strContains($METAR, ['RA','DZ')];
+			$foggy = strContains($METAR, ['FG', 'BR')];
+			$snowing = strContains($METAR, ['SN','SG')];
 			$showery = strContains($METAR, 'SH');
 			$stormy = strContains($METAR, 'TS');
 
-			$METARactives = array($snowing, $metarRaining, $foggy, $stormy);
-			$METARdescrips = array('Snow', 'Rain', 'Mist/Fog', 'Thunderstorm');
+			$METARactives = [$snowing, $metarRaining, $foggy, $stormy];
+			$METARdescrips = ['Snow', 'Rain', 'Mist/Fog', 'Thunderstorm'];
 			foreach ($METARactives as $i => $wxMetar) {
 				if($wxMetar) {
 					$weather = $METARdescrips[$i];
@@ -71,9 +71,9 @@ class Live {
 
 		//cloud
 		$cloud = ($nw3Raining || $metarRaining || $foggy || $snowing) ? 'Cloudy' : 'Clear'; //default
-		$cumulonimbus = strContains($METAR, array('CB')) ? acronym('Cumulonimbus cloud', 'Cb cloud', true) ." observed" : "";
-		$METARcloudTypes = array('OVC', 'BKN', 'SCT', 'FEW', 'NSC');
-		$METARcloudDescrips = array('Overcast', 'Mostly cloudy', 'Partly cloudy', 'Mostly clear', 'Cloudy');
+		$cumulonimbus = strContains($METAR, ['CB')] ? acronym('Cumulonimbus cloud', 'Cb cloud', true) ." observed" : "";
+		$METARcloudTypes = ['OVC', 'BKN', 'SCT', 'FEW', 'NSC'];
+		$METARcloudDescrips = ['Overcast', 'Mostly cloudy', 'Partly cloudy', 'Mostly clear', 'Cloudy'];
 		foreach ($METARcloudTypes as $i => $cloudSrch) {
 			if(strContains($METAR, $cloudSrch)) {
 				$cloud = $METARcloudDescrips[$i];

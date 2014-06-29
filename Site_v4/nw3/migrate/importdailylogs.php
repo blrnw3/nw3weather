@@ -65,7 +65,7 @@ class Importdailylogs {
 			$live_vals_handle = file($file_path);
 			$prev_rn = 0;
 			foreach ($live_vals_handle as $live_vals) {
-				$lives = array();
+				$lives = [];
 				$raw_live_vals = explode(',', $live_vals);
 
 				//Attempt to get UTC datetime from ambiguous logs (no DST info stored)
@@ -134,18 +134,18 @@ class Importdailylogs {
 			'miss_dup_matches' => 0,
 			'miss_blanks' => 0
 		);
-		$result = array();
+		$result = [];
 		$period_count = 0;
 		foreach ($this->period as $dt) {
 			$period_count++;
 			$key = $dt->format('Y-m-d: ');
 			$result[$key] = array(
-				'error' => array(),
-				'warning' => array(),
+				'error' => [],
+				'warning' => [],
 				'miss_dup_match_count' => 0,
 				'miss_blank_count' => 0,
-				'miss' => array(),
-				'dup' => array(),
+				'miss' => [],
+				'dup' => [],
 			);
 			$res = &$result[$key];
 
@@ -175,8 +175,8 @@ class Importdailylogs {
 				}
 				unset($k, $v);
 			}
-			$octswitch_1am_raw = array();
-			$records = array_fill(0, 1440, array());
+			$octswitch_1am_raw = [];
+			$records = array_fill(0, 1440, []);
 
 			$expected_day = (int)$dt->format('j');
 			$expected_year = (int)$dt->format('Y');
@@ -439,8 +439,8 @@ class Importdailylogs {
 				echo "Skipping $file_name - does not exist<br />###<br />";
 				continue;
 			}
-			$speeds = array_fill(0, 1440, array());
-			$gusts = array_fill(0, 1440, array());
+			$speeds = array_fill(0, 1440, []);
+			$gusts = array_fill(0, 1440, []);
 
 			# Rip out the WD-based wind speeds and gusts
 			$wd_vals_handle = file($wd_path);
@@ -453,13 +453,13 @@ class Importdailylogs {
 				$gusts[$time][] = $raw_wd_vals[4];
 			}
 
-			$leg_spds = array();
-			$wd_spds = array();
-			$leg_gsts = array();
-			$wd_gsts = array();
+			$leg_spds = [];
+			$wd_spds = [];
+			$leg_gsts = [];
+			$wd_gsts = [];
 
 			# Match to the legacy wind vals
-			$ouput = array();
+			$ouput = [];
 			$legacy_vals_handle = file($legacy_path);
 			foreach ($legacy_vals_handle as $legacy_vals) {
 				$raw_vals = explode(',', $legacy_vals);
@@ -548,7 +548,7 @@ class Importdailylogs {
 //		echo "<br />";
 //
 //		$live_vals_handle1 = file($file_path1);
-//		$records = array_fill(0, 1440, array());
+//		$records = array_fill(0, 1440, []);
 //		foreach ($live_vals_handle1 as $live_vals1) {
 //			$raw_live_vals1 = explode(',', $live_vals1);
 //			array_map(function($v){round($v, 1);}, $raw_live_vals1);

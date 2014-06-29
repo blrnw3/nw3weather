@@ -7,7 +7,7 @@ namespace nw3\data;
  */
 class Beaufort {
 
-	public static $scale = array(0,1,3,7,12,17,24,30,38,46,54,63,73,99);
+	public static $scale = [0,1,3,7,12,17,24,30,38,46,54,63,73,99];
 
 	public static $word = array('Calm', 'Light air', 'Light breeze', 'Gentle breeze', 'Moderate breeze',
 					'Fresh breeze', 'Strong breeze', 'Near gale', 'Gale',

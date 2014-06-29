@@ -53,8 +53,8 @@ $graph->xgrid->Show();
 //$graph->xaxis->scale->SetDateFormat('d M');
 
 
-$lplots = array();
-$names = array();
+$lplots = [];
+$names = [];
 foreach ($this->data as $i => $var) {
 	$lplots[$i] = new LinePlot($var['values'], $x_labels);
 	$graph->Add($lplots[$i]);

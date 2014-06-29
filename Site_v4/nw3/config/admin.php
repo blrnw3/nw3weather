@@ -34,108 +34,108 @@ class Admin {
 
 	const FIRST_YEAR_REPORTS = 2009;
 
-	static $sidebar = array(
-		'main' => array(
-			'Home' => array(
+	static $sidebar = [
+		'main' => [
+			'Home' => [
 				'title' => 'Return to main page',
 				'map' => 'home'
-			),
-			'Webcam' => array(
+			],
+			'Webcam' => [
 				'title' => 'Live Webcam and Timelapses',
 				'map' => 'webcam'
-			),
-			'Graphs' => array(
+			],
+			'Graphs' => [
 				'title' => 'Latest Daily and Monthly Graphs &amp; Charts',
 				'map' => 'graphs'
-			),
-			'Data Summary' => array(
+			],
+			'Data Summary' => [
 				'title' => 'Extremes and Trends, and Averages',
 				'map' => 'data'
-			),
-			'Forecast' => array(
+			],
+			'Forecast' => [
 				'title' => 'Local Forecasts and Latest Maps',
 				'map' => 'forecast'
-			),
-			'Astronomy' => array(
+			],
+			'Astronomy' => [
 				'title' => 'Sun and Moon Data',
 				'map' => 'astronomy'
-			),
-			'Photos' => array(
+			],
+			'Photos' => [
 				'title' => 'My Weather Photography',
 				'map' => 'photos',
-				'new' => array(
+				'new' => [
 					'name' => 'Upload',
 					'last' => LAST_ALBUM_UPLOAD
-				)
-			),
-			'About' => array(
+				]
+			],
+			'About' => [
 				'title' => 'About the Weather Station and Website',
 				'map' => 'about'
-			)
-		),
-		'detail' => array(
-			'Rain' => array(
+			]
+		],
+		'detail' => [
+			'Rain' => [
 				'title' => 'Detailed Rain Data',
 				'map' => 'datadetail/rain'
-			),
-			'Temperature' => array(
+			],
+			'Temperature' => [
 				'title' => 'Detailed Temperature Data',
 				'map' => 'datadetail/temperature'
-			),
-			'Wind' => array(
+			],
+			'Wind' => [
 				'title' => 'Detailed Wind Data',
 				'map' => 'datadetail/wind'
-			),
-			'Humidity' => array(
+			],
+			'Humidity' => [
 				'title' => 'Detailed Rain Data',
 				'map' => 'datadetail/humidity'
-			),
-			'Charts' => array(
+			],
+			'Charts' => [
 				'title' => '31-day and 12-month Data Charts',
 				'map' => 'charts'
-			),
-			'Climate' => array(
+			],
+			'Climate' => [
 				'title' => 'Long-term Climate Averages for NW3',
 				'map' => 'climate'
-			)
-		),
-		'historical' => array(
-			'Data Tables' => array(
+			]
+		],
+		'historical' => [
+			'Data Tables' => [
 				'title' => 'Tables of monthly and daily data by type',
 				'map' => 'datareport'
-			),
-			'Rankings' => array(
+			],
+			'Rankings' => [
 				'title' => 'Daily and monthly ranked data by type',
 				'map' => 'ranking_tables'
-			),
-			'Reports' => array(
+			],
+			'Reports' => [
 				'title' => 'Weather Reports - daily and monthly',
 				'map' => 'reports'
-			),
-			'Graphs' => array(
+			],
+			'Graphs' => [
 				'title' => 'Customisable multi-variable line graphs',
 				'map' => 'custom_graphs'
-			)
-		),
-		'other' => array(
-			'Blog' => array(
+			]
+		],
+		'other' => [
+			'Blog' => [
 				'title' => 'Website and weather station blog and news',
 				'map' => 'blog',
-				'new' => array(
+				'new' => [
 					'name' => 'Post',
 					'last' => LAST_BLOG_POST
-				)
-			),
-			'System' => array(
+				]
+			],
+			'System' => [
 				'title' => 'System Status and Miscellaneous',
 				'map' => 'system'
-			),
-			'External' => array(
+			],
+			'External' => [
 				'title' => 'My Site on the Web and Useful Weather Links',
 				'map' => 'external'
-			)
-		)
-	);
+			]
+		]
+	];
 
 }
 

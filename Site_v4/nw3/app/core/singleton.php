@@ -5,7 +5,7 @@ namespace nw3\app\core;
  * @author http://stackoverflow.com/questions/203336/creating-the-singleton-design-pattern-in-php5
  */
 class Singleton {
-   private static $instances = array();
+   private static $instances = [];
     protected function __construct() {}
     protected function __clone() {}
     public function __wakeup() {

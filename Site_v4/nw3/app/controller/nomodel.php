@@ -10,14 +10,14 @@ use nw3\app\core;
  */
 class Nomodel extends core\Controller {
 
-	private static $paths = array(
+	private static $paths = [
 		'external' => 'External',
 		'about' => 'About',
 		'forecast' => 'Forecast',
 		'blog' => 'Blog | News',
 		'beaufort' => 'Beaufort Scale',
 		'astronomy' => 'Sun and Moon'
-	);
+	];
 
 	public function __construct($path) {
 		parent::__construct($path);

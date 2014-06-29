@@ -14,7 +14,7 @@ abstract class Report {
 	const BANDING_COUNTS = 2;
 	const BANDING_CUMULATIVE = 3;
 
-	public $categories = array();
+	public $categories = [];
 
 	function __construct() {
 		//Generate the categories
@@ -24,7 +24,7 @@ abstract class Report {
 				if(key_exists($cat, $this->categories)) {
 					$this->categories[$cat][] = $varname;
 				} else {
-					$this->categories[$cat] = array($varname);
+					$this->categories[$cat] = [$varname];
 				}
 			}
 		}

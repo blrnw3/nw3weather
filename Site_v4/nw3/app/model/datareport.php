@@ -20,10 +20,10 @@ class Datareport extends Report {
 	public $rolling12;
 	public $months;
 	public $dims;
-	public $data = array();
+	public $data = [];
 
 	private $class_prefix;
-	private $class_bands = array();
+	private $class_bands = [];
 
 	public function __construct($var_name, $year, $rolling12) {
 		parent::__construct();
@@ -36,22 +36,28 @@ class Datareport extends Report {
 		$this->get_data(new Db());
 
 		$this->class_prefix = $this->var['name'] .'_level_';
-		$this->class_bands['day'] = array('count' => count($this->var['thresholds_day']),
-			'bands' => $this->var['thresholds_day']);
+		$this->class_bands['day'] = [
+			'count' => count($this->var['thresholds_day']),
+			'bands' => $this->var['thresholds_day']
+		];
 		if($this->var['thresholds_month']) {
-			$this->class_bands['month'] = array('count' => count($this->var['thresholds_month']),
-				'bands' => $this->var['thresholds_month']);
+			$this->class_bands['month'] = [
+				'count' => count($this->var['thresholds_month']),
+				'bands' => $this->var['thresholds_month']
+			];
 		}
 		if($this->var['summable']) {
 			$day_thresholds = Variable::$_[Variable::Days]['thresholds_month'];
-			$this->class_bands['count'] = array('count' => count($day_thresholds),
-				'bands' => $day_thresholds);
+			$this->class_bands['count'] = [
+				'count' => count($day_thresholds),
+				'bands' => $day_thresholds
+			];
 		}
 
 	}
 
 	function get_months() {
-		$dims = array(); //Days in month
+		$dims = []; //Days in month
 		if(!$this->rolling12) {
 			$this->months = Date::$monthsn;
 			for($m = 1; $m <= 12; $m++) {
@@ -59,7 +65,7 @@ class Datareport extends Report {
 			}
 		} else {
 			//get the last rolling 12 months
-			$months = array();
+			$months = [];
 			for($m = 11; $m >= 0; $m--) {
 				$dt = Date::mkdate(D_month - $m, 1);
 				$month = (int)date('n', $dt);
@@ -82,7 +88,7 @@ class Datareport extends Report {
 		$data = $db->query('DAYOFMONTH(d) as d', 'MONTH(d) as m', "{$this->var['id']} as var")
 			->filter(Db::btwn($d1, $d2, 'd', true));
 
-		$daily = array();
+		$daily = [];
 		foreach ($data->all() as $val) {
 			$daily[$val['m']][$val['d']] = $val['var'];
 		}
@@ -92,7 +98,7 @@ class Datareport extends Report {
 			return;
 		}
 		$this->data['monthly_min'] = $this->data['monthly_max'] =
-			$this->data['monthly_mean'] = $this->data['monthly_count'] = array();
+			$this->data['monthly_mean'] = $this->data['monthly_count'] = [];
 		$cumul = $cumul_count = 0;
 
 		foreach ($daily as $m => $value) {

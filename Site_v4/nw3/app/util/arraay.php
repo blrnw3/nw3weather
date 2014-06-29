@@ -13,7 +13,7 @@ class arraay {
 	 * @return type
 	 */
 	static function dswap($arr) {
-		$new = array();
+		$new = [];
 		$keyj = array_keys($arr);
 		//print_r($keyj); echo '<br /><br />';
 		for($i = 0; $i < count($arr[$keyj[0]]); $i++) {

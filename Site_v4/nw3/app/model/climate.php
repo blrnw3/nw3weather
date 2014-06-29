@@ -11,15 +11,15 @@ use nw3\app\util\Maths;
  */
 class Climate extends \nw3\app\core\Singleton {
 
-	public $daily = array();
-	public $monthly = array();
-	public $seasonal = array();
-	public $annual = array();
+	public $daily = [];
+	public $monthly = [];
+	public $seasonal = [];
+	public $annual = [];
 
-	public static $order = array('tmin', 'tmax', 'tmean', 'trange', 'rain', 'rdays', 'wmean',
-			'days_frost', 'days_storm', 'days_snow', 'days_snowfall', 'wethr', 'sunhr', 'sunmax');
+	public static $order = ['tmin', 'tmax', 'tmean', 'trange', 'rain', 'rdays', 'wmean',
+			'days_frost', 'days_storm', 'days_snow', 'days_snowfall', 'wethr', 'sunhr', 'sunmax'];
 
-	public static $order_daily = array('tmin', 'tmax', 'tmean', 'trange', 'sunmax');
+	public static $order_daily = ['tmin', 'tmax', 'tmean', 'trange', 'sunmax'];
 
 	public function __construct($load=false) {
 		if($load) {
@@ -38,7 +38,7 @@ class Climate extends \nw3\app\core\Singleton {
 
 		foreach($monthly as $var_name => $var) {
 			//Seasonal
-			$this->seasonal[$var_name] = array();
+			$this->seasonal[$var_name] = [];
 			foreach(Date::$seasons as $snum => $season) {
 				$this->seasonal[$var_name][$season] = 0;
 				foreach(Date::$season_month_nums[$snum] as $month) {
@@ -49,10 +49,10 @@ class Climate extends \nw3\app\core\Singleton {
 				}
 			}
 			//Annual
-			$this->annual[$var_name] = array(
+			$this->annual[$var_name] = [
 				'sum' => array_sum($var),
 				'range' => max($var) - min($var)
-			);
+			];
 			$this->annual[$var_name]['mean'] = round($this->annual[$var_name]['sum'] / 12.0, 1);
 
 			//Better keys
@@ -62,33 +62,33 @@ class Climate extends \nw3\app\core\Singleton {
 	}
 
 	public function daily_ltas() {
-		$daily = array();
+		$daily = [];
 		foreach ($this->daily as $var => $data) {
 			if($var === 'wethr' || $var === 'rain' || $var === 'wmean') {
 				continue;
 			}
 			$var_info = Variable::$daily[$var];
-			$daily[$var] = array(
+			$daily[$var] = [
 				'values' => $data,
 				'id' => $var_info['id'],
 				'dpa' => (($var === 'sunmax' || $var === 'sunhr') ? 1 : 0)
-			);
+			];
 		}
 		return $daily;
 	}
 
 	public function summary() {
-		$data = array();
+		$data = [];
 
 		foreach (self::$order as $var) {
 			$var_info = Variable::$daily[$var];
-			$data[$var] = array(
+			$data[$var] = [
 				'monthly' => $this->monthly[$var],
 				'seasonal' => $this->seasonal[$var],
 				'annual' => $this->annual[$var],
 				'id' => $var_info['id'],
 				'dpa' => (($var === 'rain') ? -1 : 0)
-			);
+			];
 		}
 		return $data;
 	}
@@ -102,32 +102,32 @@ class Climate extends \nw3\app\core\Singleton {
 	}
 
 	public function monthly_graph($types) {
-		$data = array();
+		$data = [];
 		foreach ($types as $type) {
 			if(key_exists($type, $this->monthly)) {
-				$data[] = array(
+				$data[] = [
 					'values' => Variable::clean_data($this->monthly[$type], $type),
 					'group' => Variable::$daily[$type]
-				);
+				];
 			}
 		}
 		return $data;
 	}
 	public function annual_graph($types) {
-		$data = array();
+		$data = [];
 		foreach ($types as $type) {
 			if(key_exists($type, $this->daily)) {
-				$data[] = array(
+				$data[] = [
 					'values' => Variable::clean_data($this->daily[$type], $type),
 					'group' => Variable::$daily[$type]
-				);
+				];
 			}
 		}
 		return $data;
 	}
 
 	public static function get_timestamps_annual() {
-		$timestamps = array();
+		$timestamps = [];
 		for($i = 0; $i < 365; $i++) {
 			$timestamps[] = mktime(0,0,0, 1,1+$i,2009); //leap year avoid
 		}

@@ -20,14 +20,14 @@ abstract class Controller {
 	private $view_base;
 	private $view;
 	private $title;
-	private $vars = array();
+	private $vars = [];
 
 	protected $qs = null;
 	protected $url_args = null;
 	protected $base_url_parts = null;
 
 	//Custom concrete public methods
-	public $invalid_urls = array('subpath', 'validate_args');
+	public $invalid_urls = ['subpath', 'validate_args'];
 
 	/**
 	 * Default page
@@ -147,8 +147,7 @@ abstract class Controller {
 	 * Loads a mini view (shared across other views), aka 'partial'
 	 * @param type $name file_name of the viewette (excluding leading underscore and extension)
 	 */
-	protected function viewette($name, &$_data) {
-		$data = $_data;
+	protected function viewette($name, $data=null) {
 		require $this->view_base . "_$name.php";
 	}
 

@@ -13,7 +13,7 @@ class File {
 	 * @return array of each line, or false on failure
 	 */
 	static function urlToArray($url, $timeout = 5) {
-		$ctx = stream_context_create( array( 'http'=> array('timeout' => $timeout) ) );
+		$ctx = stream_context_create(['http'=> ['timeout' => $timeout]]);
 		return file($url, false, $ctx);
 	}
 

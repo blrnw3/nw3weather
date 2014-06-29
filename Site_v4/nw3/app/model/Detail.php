@@ -33,7 +33,7 @@ class Detail {
 
 	const TBL_DAILY = 'daily';
 
-	static $periodsn = array(7, 31, 365);
+	static $periodsn = [7, 31, 365];
 
 	public $num_records;
 
@@ -55,62 +55,62 @@ class Detail {
 	private $aggtype; //Sum or mean
 	private $summable;
 
-	public static $periods = array(
-		self::TODAY => array(
+	public static $periods = [
+		self::TODAY => [
 			'multi' => false,
 			'descrip' => 'Today'
-		),
-		self::YESTERDAY => array(
+		],
+		self::YESTERDAY => [
 			'multi' => false,
 			'descrip' => 'Yesterday'
-		),
-		self::NOWMON => array(
+		],
+		self::NOWMON => [
 			'multi' => true,
 			'descrip' => 'Month'
-		),
-		self::NOWYR => array(
+		],
+		self::NOWYR => [
 			'multi' => true,
 			's' => true,
 			'descrip' => 'Year'
-		),
-		self::NOWSEAS=> array(
+		],
+		self::NOWSEAS=> [
 			'multi' => true,
 			'descrip' => 'Season'
-		),
-		self::RECORD => array(
+		],
+		self::RECORD => [
 			'multi' => true,
 			'record' => true,
 			's' => true,
 			'descrip' => 'Overall'
-		),
-		self::RECORD_D => array(
+		],
+		self::RECORD_D => [
 			'multi' => true,
 			'record' => true,
 			'descrip' => 'This Date (day)'
-		),
-		self::RECORD_M => array(
+		],
+		self::RECORD_M => [
 			'multi' => true,
 			'record' => true,
 			's' => true,
 			'descrip' => 'This Date (month)'
-		),
-		self::CUM_MON_AGO => array(
+		],
+		self::CUM_MON_AGO => [
 			'multi' => true,
 			'descrip' => 'Cum Mon Ago'
-		),
-		self::CUM_YR_AGO => array(
+		],
+		self::CUM_YR_AGO => [
 			'multi' => true,
 			'descrip' => 'Cum Yr Ago'
-		),
-		self::DAY_MON_AGO => array(
+		],
+		self::DAY_MON_AGO => [
 			'multi' => false,
 			'descrip' => 'Day Mon Ago'
-		),
-		self::DAY_YR_AGO => array(
+		],
+		self::DAY_YR_AGO => [
 			'multi' => false,
 			'descrip' => 'Day Yr Ago'
-		),
-	);
+		],
+	];
 
 	const VAL = 'val'; # e.g. Tmin today, Rain yesterday
 	const HIGH = 'high'; # e.g. Highest Tmin this month, highest Rain this year
@@ -118,17 +118,17 @@ class Detail {
 	const AGG = 'agg'; # e.g. Mean Tmax this month, total Sun this year, Rain days last 31 days
 	const HIGH_M = 'high_m'; # e.g. Lowest Monthly_Mean(Tmin) this year, highest Month_sum(Rain) ever
 	const LOW_M = 'low_m';
-	public static $record_types = array(
+	public static $record_types = [
 
-	);
+	];
 
 	public static function initialise() {
 		foreach (self::$periodsn as $n) {
-			self::$periods[$n] = array(
+			self::$periods[$n] = [
 				'multi' => true,
 				'month_recs' => $n > 99,
 				'descrip' => "$n days"
-			);
+			];
 		}
 		self::$periods[self::RECORD_D]['descrip'] = date('jS M', D_now);
 		self::$periods[self::RECORD_M]['descrip'] = D_monthname;
@@ -174,7 +174,7 @@ class Detail {
 		$this->yr_ago_st = $this->DbMkdate(1, 1, D_year-1);
 
 		# Period lengths
-		$this->period_lengths = array(
+		$this->period_lengths = [
 			self::RECORD => $this->num_records,
 			self::NOWMON => D_day,
 			self::NOWSEAS => Date::get_current_season_days_elapsed(),
@@ -183,57 +183,57 @@ class Detail {
 			self::CUM_YR_AGO => D_doy + 1,
 			self::RECORD_D => $this->db->query($this->colname)->filter($this->get_date_filter(self::RECORD_D))->count(),
 			self::RECORD_M => $this->db->query($this->colname)->filter($this->get_date_filter(self::RECORD_M))->count()
-		);
+		];
 		foreach (self::$periodsn as $n) {
 			$this->period_lengths[$n] = $n;
 		}
 	}
 
 	public function values() {
-		$data = array();
-		foreach (array_keys(self::get_periods_single()) as $period) {
+		$data = [];
+		foreach (self::get_periods_single() as $period) {
 			$val = $this->period_extreme($period);
-			$data[$period] = array(
+			$data[$period] = [
 				'val' => $val['val'],
 				'dt' => $val['t']
-			);
+			];
 		}
 		return $data;
 	}
 
 	public function extremes() {
-		$data = array('max' => array(), 'min' => array());
-		foreach (array_keys(self::get_periods_multi()) as $period) {
+		$data = ['max' => [], 'min' => []];
+		foreach (self::get_periods_multi() as $period) {
 			$max = $this->period_extreme($period, Db::MAX);
-			$data['max'][$period] = array(
+			$data['max'][$period] = [
 				'val' => $max['val'],
 				'dt' => $max['d']
-			);
+			];
 			if($this->var['minmax']) {
 				$min = $this->period_extreme($period, Db::MIN);
-				$data['min'][$period] = array(
+				$data['min'][$period] = [
 					'val' => $min['val'],
 					'dt' => $min['d']
-				);
+				];
 			}
 		}
 		return $data;
 	}
 
 	public function extremes_month() {
-		$data = array('max' => array(), 'min' => array());
-		foreach (array_keys(self::get_periods_month_rec()) as $period) {
+		$data = ['max' => [], 'min' => []];
+		foreach (self::get_periods_month_rec() as $period) {
 			$max = $this->period_extreme_month($period, Db::MAX);
-			$data['max'][$period] = array(
+			$data['max'][$period] = [
 				'val' => $max['val'],
 				'dt' => $max['d']
-			);
+			];
 			if($this->var['minmax']) {
 				$min = $this->period_extreme_month($period, Db::MIN);
-				$data['min'][$period] = array(
+				$data['min'][$period] = [
 					'val' => $min['val'],
 					'dt' => $min['d']
-				);
+				];
 			}
 		}
 		return $data;
@@ -251,7 +251,7 @@ class Detail {
 	}
 
 	protected function period_extreme($period, $extrm_type=null) {
-		$fields = array(Db::as_($this->colname, 'val'));
+		$fields = [Db::as_($this->colname, 'val')];
 		$q = $this->db->query();
 		if(!$this->var['spread']) {
 			$fields[] = Db::time_field($this->colname);
@@ -288,7 +288,7 @@ class Detail {
 	/**
 	 * Min or Max monthly mean/sum for all months but the current one
 	 * @param boolean $is_high set true to get max, false to get min
-	 * @return array(int,int,float) year, month, val
+	 * @return [int,int,float] year, month, val
 	 */
 	protected function period_extreme_month($period, $extrm_type=null) {
 		$q = $this->db->query(Db::as_('YEAR(d)', 'y'), Db::as_('MONTH(d)', 'm'),
@@ -303,7 +303,7 @@ class Detail {
 	/**
 	 * Min or Max annual mean/sum, excluding current year
 	 * @param boolean $is_high set true to get max, false to get min
-	 * @return array(int,float) year, val
+	 * @return [int,float] year, val
 	 */
 	protected function extreme_year_agg($is_high) {
 		$dir = $is_high ? 'DESC' : 'ASC';
@@ -320,7 +320,7 @@ class Detail {
 	 * Min or Max annual count for values passing the given filter, excluding current year
 	 * @param boolean $is_high set true to get max, false to get min
 	 * @param string $filter count only values passing this filter
-	 * @return array(int,float) year, val
+	 * @return [int,float] year, val
 	 */
 	protected function extreme_year_count($is_high, $filter) {
 		$dir = $is_high ? 'DESC' : 'ASC';
@@ -361,24 +361,24 @@ class Detail {
 			." LIMIT $num"
 		);
 	}
-	protected function records_mon($is_high, $num=1) {
-		$dir = $is_high ? 'DESC' : 'ASC';
-		return $this->db->select(self::TBL_DAILY,
-			"d, $dir($this->colname) AS val",
-			Db::where(Db::and_(array("d <= $this->yest", "MONTH(d) = ".D_month)))
-			." ORDER BY val $dir"
-			." LIMIT $num"
-		);
-	}
-	protected function records_day($is_high, $num=1) {
-		$dir = $is_high ? 'DESC' : 'ASC';
-		return $this->db->select(self::TBL_DAILY,
-			"d, $dir($this->colname) AS val",
-			Db::where(array("d <= $this->yest", "MONTH(d) = ".D_month, "DAY(d) = ".D_day))
-			." ORDER BY val $dir"
-			." LIMIT $num"
-		);
-	}
+//	protected function records_mon($is_high, $num=1) {
+//		$dir = $is_high ? 'DESC' : 'ASC';
+//		return $this->db->select(self::TBL_DAILY,
+//			"d, $dir($this->colname) AS val",
+//			Db::where(Db::and_(["d <= $this->yest", "MONTH(d) = ".D_month))]
+//			." ORDER BY val $dir"
+//			." LIMIT $num"
+//		);
+//	}
+//	protected function records_day($is_high, $num=1) {
+//		$dir = $is_high ? 'DESC' : 'ASC';
+//		return $this->db->select(self::TBL_DAILY,
+//			"d, $dir($this->colname) AS val",
+//			Db::where(["d <= $this->yest", "MONTH(d) = ".D_month, "DAY(d) = ".D_day)]
+//			." ORDER BY val $dir"
+//			." LIMIT $num"
+//		);
+//	}
 
 	protected function day_extremes($is_high, $num=1) {
 		$dir = $is_high ? 'DESC' : 'ASC';

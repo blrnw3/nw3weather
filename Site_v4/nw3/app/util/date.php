@@ -12,12 +12,12 @@ class Date {
 	/** Number of seconds in a single day */
 	const secs_DAY = 86400;
 
-	static $months = array('Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
-	static $months3 = array('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
-	static $monthsn = array(1,2,3,4,5,6,7,8,9,10,11,12);
+	static $months = ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+	static $months3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+	static $monthsn = [1,2,3,4,5,6,7,8,9,10,11,12];
 
-	static $seasons = array('Winter', 'Spring', 'Summer', 'Autumn');
-	static $season_month_nums = array(array(1,2,12), array(3,4,5), array(6,7,8), array(9,10,11));
+	static $seasons = ['Winter', 'Spring', 'Summer', 'Autumn'];
+	static $season_month_nums = [[1,2,12], [3,4,5], [6,7,8], [9,10,11]];
 
 	 //number of leap years since 2009
 	const num_leap_yrs = 1;
@@ -227,10 +227,10 @@ class Date {
 		$lng = Station::LNG;
 		$zenith = Station::ZENITH + $zenith_offset;
 		$datetime = ($datetime === null) ? D_now : $datetime;
-		return array(
+		return [
 			date_sunrise($datetime, SUNFUNCS_RET_TIMESTAMP, $lat, $lng, $zenith, D_is_dst),
 			date_sunset($datetime, SUNFUNCS_RET_TIMESTAMP, $lat, $lng, $zenith, D_is_dst)
-		);
+		];
 	}
 
 	/** Returns month number (1-12) of the current season's starting month (Dec, Mar, Jun, or Sep) */

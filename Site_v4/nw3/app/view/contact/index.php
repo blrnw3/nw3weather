@@ -53,7 +53,7 @@ $(document).ready(function() {
 		$.ajax({
 			url: "contact/submit",
 			type: "POST",
-			data: $("#contact_form").serializeArray(),
+			data: $("#contact_form").serialize[],
 			dataType: "json",
 			cache: false,
 			success: function (data) {

@@ -5,6 +5,7 @@ use nw3\app\model\Variable;
 
 $rain = new a\Rain();
 $recent = $rain->recent_values();
+$extremes = $rain->extremes();
 ?>
 
 <h1>Detailed Rainfall Data</h1>
@@ -36,10 +37,10 @@ $recent = $rain->recent_values();
 
 <table>
 	<caption>Totals and Extremes for recent periods</caption>
-	<?php $this->viewette('period_tbl', $rain->extremes_recent()) ?>
+	<?php $this->viewette('period_tbl', $extremes) ?>
 </table>
 
 <table>
 	<caption>All-time Totals and Record Extremes <?php echo D::record_yr_range(); ?></caption>
-	<?php $this->viewette('period_tbl', $rain->extremes_record()) ?>
+	<?php // $this->viewette('period_tbl', $rain->extremes_record()) ?>
 </table>

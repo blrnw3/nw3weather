@@ -22,7 +22,7 @@ $graph->xaxis->SetTickLabels(Date::$months3);
 $graph->SetTickDensity(TICKD_SPARSE);
 
 
-$bplots = array();
+$bplots = [];
 foreach ($this->data as $i => $var) {
 	$bplots[] = new BarPlot($var['values']);
 	if($is_multi) {
@@ -32,7 +32,7 @@ foreach ($this->data as $i => $var) {
 //Must add to graph before setting colours
 $graph->Add(new GroupBarPlot($bplots));
 
-$names = array();
+$names = [];
 foreach ($this->data as $i => $var) {
 	$bplots[$i]->SetColor($var['group']['colour']);
 	$bplots[$i]->SetFillColor($var['group']['colour']);
