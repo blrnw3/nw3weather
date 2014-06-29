@@ -108,7 +108,7 @@ use nw3\app\helper\Main;
 						&copy; 2010-<?php echo D_year; ?>, BLR<span> | Version 4.0.0</span>
 					</div>
 					<div id="footer-message">
-						Caution: All data is recorded from an amateur-run personal weather station;
+						Caution: All data is recorded by an amateur-run personal weather station;
 						accuracy and reliability <a href="<?php Html::href('about'); ?>#data" title="More about nw3's data">may be poor</a>.
 					</div>
 					<div id="script_details">

@@ -2,11 +2,13 @@
 use nw3\app\model\Detail as mD;
 use nw3\app\helper\Detail as D;
 use nw3\app\model\Variable;
+
+$headings = array_keys($data[array_keys($data)[0]]['data']);
 ?>
 <thead>
 	<tr>
 		<td>Measure</td>
-		<?php foreach (array_keys($data['rain']['data']) as $p): ?>
+		<?php foreach ($headings as $p): ?>
 			<td><?php echo mD::$periods[$p]['descrip'] ?></td>
 		<?php endforeach; ?>
 	</tr>
@@ -15,8 +17,15 @@ use nw3\app\model\Variable;
 	<?php foreach($data as $k => $vals): ?>
 	<tr>
 		<td><?php echo $vals['descrip']; ?></td>
-		<?php foreach ($vals['data'] as $val): ?>
+		<?php foreach ($headings as $p): ?>
+			<?php $val = $vals['data'][$p]; ?>
 		<td>
+			<?php
+			if(is_null($val)) {
+				echo '-';
+				continue;
+			}
+			?>
 			<?php echo Variable::conv($val['val'], $vals['type']) ?>
 			<?php if(key_exists('anom', $val)): ?>
 				<br />
@@ -31,7 +40,7 @@ use nw3\app\model\Variable;
 			<?php endif; ?>
 			<br />
 			<?php if(key_exists('dt', $val)): ?>
-				<?php echo D::date($val['dt']) ?>
+				<?php echo D::date($val['dt'], $p, $vals['rec_type']) ?>
 			<?php endif; ?>
 		</td>
 		<?php endforeach; ?>

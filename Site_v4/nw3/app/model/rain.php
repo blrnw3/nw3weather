@@ -43,21 +43,21 @@ class Rain extends Detail {
 		$this->wet_filter = '> '.self::MAX_DRY_QUANTITY;
 	}
 
-	function spells() {
+	public function spells() {
 		$all_spells = $this->all_spells();
-		return [
-			self::RECORD => $this->record_spell($all_spells),
-			self::NOWYR => $this->longest_spell_nowyr($all_spells),
-			self::NOWMON => $this->longest_spell_nowmon($all_spells),
-			self::RECORD_M => $this->record_spell_currmon($all_spells),
-		];
+		$data = ['dry' => [], 'wet' => []];
+		foreach (self::get_periods('has_spell') as $period) {
+			$data['dry'][$period] = $this->get_longest_spell_for_period($all_spells['dry'], $this->get_spell_filter($period));
+			$data['wet'][$period] = $this->get_longest_spell_for_period($all_spells['wet'], $this->get_spell_filter($period));
+		}
+		return $data;
 	}
 
 	/**
 	 * If rained today, the number of days it has rained consecutively,
 	 * else the number of complete days since it last rained
 	 */
-	function curr_spell($rained_today) {
+	public function curr_spell($rained_today) {
 		$cond = $rained_today ? '=' : '>';
 		$dt = date(Db::DATE_FORMAT, D_now);
 		return $this->db->query("DATEDIFF('$dt', d)")
@@ -67,9 +67,9 @@ class Rain extends Detail {
 		;
 	}
 
-	function totals() {
+	public function totals() {
 		$data = [];
-		foreach (self::get_periods_multi() as $period) {
+		foreach (self::get_periods('multi') as $period) {
 			$data[$period] = [
 				'val' => $this->period_agg($period),
 				'anom' => $this->period_sum_anom($period)
@@ -81,9 +81,9 @@ class Rain extends Detail {
 		return $data;
 	}
 
-	function days() {
+	public function days() {
 		$data = [];
-		foreach (self::get_periods_multi() as $period) {
+		foreach (self::get_periods('multi') as $period) {
 			$cnt = $this->period_count($period, $this->wet_filter);
 			$data[$period] = [
 				'val' => $cnt,
@@ -93,17 +93,22 @@ class Rain extends Detail {
 		return $data;
 	}
 
-	function counts() {
-		return [
-			self::RECORD => ['val' => $this->num_records]
-		];
+	public function extreme_days_monthly() {
+		$data = ['max' => [], 'min' => []];
+		foreach (self::get_periods('month_recs') as $period) {
+			$cnt_max = $this->period_count_month_extreme($period, Db::MAX, $this->wet_filter);
+			$cnt_min = $this->period_count_month_extreme($period, Db::MIN, $this->wet_filter);
+			$data['max'][$period] = ['val' => $cnt_max['val'], 'dt' => $cnt_max['d']];
+			$data['min'][$period] = ['val' => $cnt_min['val'], 'dt' => $cnt_min['d']];
+		}
+		return $data;
 	}
 
 	/**
 	 * Wettest and driest spells (totals over fixed-length periods)
 	 * @param type $rainall
 	 */
-	function extreme_spells() {
+	public function extreme_spells() {
 		$rainall = $this->select();
 		$data = [];
 		foreach(self::$periods as $spell_len) {
@@ -118,11 +123,11 @@ class Rain extends Detail {
 		$dryspells = [];
 		$wetspells = [];
 
-		$rainall = $this->select();
+		$rainall = $this->db->query($this->colname, Db::timestamp('d'))->all();
 
 		foreach ($rainall as &$db_rain) {
 			$rain = $db_rain['rain'];
-			$dt = $db_rain['d'];
+			$dt = (int)$db_rain['dt'];
 
 			if ($rain <= self::MAX_DRY_QUANTITY) {
 				$drylen++;
@@ -154,35 +159,39 @@ class Rain extends Detail {
 	}
 
 	/**
-	 * Compute record longest spell
+	 * Filter function for longest wet and dry spells for given period
+	 * A spell counts if its midpoint falls within the period
 	 */
-	function record_spell(&$all_spells) {
-		return $this->get_longest_spell_for_period($all_spells, function($spell) {
-			return true;
-		});
-	}
-
-	/**
-	 * Compute longest wet and dry spells for all time, for the current month only
-	 * A spell counts if its midpoint falls within the current month
-	 */
-	function record_spell_currmon(&$all_spells) {
-		return $this->get_longest_spell_for_period($all_spells, function($spell) {
-			return date('n', $spell['dt'] - $spell['val'] * Date::secs_DAY / 2) == D_month;
-		});
-	}
-
-	/** Longest wet and dry spells for this year */
-	function longest_spell_nowyr(&$all_spells) {
-		$this->get_longest_spell_for_period($all_spells, function($spell) {
-			return date('Y', $spell['dt'] - $spell['val'] * Date::secs_DAY / 2) == D_year;
-		});
-	}
-	/** Longest wet and dry spells for this month */
-	function longest_spell_nowmon(&$all_spells) {
-		$this->get_longest_spell_for_period($all_spells, function($spell) {
-			return date('Yn', $spell['dt'] - $spell['val'] * Date::secs_DAY / 2) == ((string)D_year + (string)D_month);
-		});
+	private function get_spell_filter($period) {
+		if(in_array($period, self::$periodsn)) {
+			return function($spell) use (&$period) {
+				return ($spell['dt'] - $spell['val'] * Date::secs_DAY / 2) > Date::mkday(D_day - $period);
+			};
+		}
+		# Named period
+		switch($period) {
+			case self::RECORD:
+				return function($spell) {
+					return true;
+				};
+			case self::NOWMON:
+				return function($spell) {
+					return $spell['dt'] - $spell['val'] * Date::secs_DAY / 2 > Date::mkday(1);
+				};
+			case self::NOWYR:
+				return function($spell) {
+					return $spell['dt'] - $spell['val'] * Date::secs_DAY / 2 > Date::mkdate(1, 1);
+				};
+			case self::NOWSEAS:
+				return function($spell) {
+					return $spell['dt'] - $spell['val'] * Date::secs_DAY / 2 > Date::mkdate(Date::get_current_season_start_month(), 1);
+				};
+			case self::RECORD_M:
+				return function($spell) {
+					return date('Yn', $spell['dt'] - $spell['val'] * Date::secs_DAY / 2) == (D_year .''. D_month);
+				};
+		}
+		throw new \Exception("Invalid period '$period' specified");
 	}
 
 	private function extreme_n_days($n, &$rainall) {
@@ -213,7 +222,7 @@ class Rain extends Detail {
 		];
 	}
 
-	private function get_longest_spell_for_period($all_spells, $fn_is_in_period) {
+	private function get_longest_spell_for_period(&$all_spells, $fn_is_in_period) {
 		$max = 0;
 		foreach ($all_spells as $spell) {
 			if ($spell['val'] > $max && $fn_is_in_period($spell)) {

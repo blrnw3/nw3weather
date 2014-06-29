@@ -15,9 +15,6 @@ use nw3\app\util\Maths;
  */
 class Db extends Singleton {
 
-	/** When true, output all query stats with the HTML response */
-	const DEBUG_PRINT = false;
-
 	const DATE_FORMAT = 'Y-m-d';
 
 	# Funcs
@@ -76,9 +73,10 @@ class Db extends Singleton {
 	 * Executes a raw SQL statement
 	 * ALL raw external queries should come through here
 	 * @param string $statement raw SQL
+	 * @param boolean $force_debug Override config-level debug
 	 * @return PDOQuery the query object
 	 */
-	public function execute($statement) {
+	public function execute($statement, $force_debug=false) {
 		# TODO - log queries using debug_query
 		$this->query_count++;
 		try {
@@ -86,7 +84,7 @@ class Db extends Singleton {
 			$exec = $this->db->query($statement);
 			$query_time = microtime(true) - $st;
 			$this->query_time += $query_time;
-			if(self::DEBUG_PRINT && $this->debug) {
+			if($force_debug && $this->debug) {
 				$this->debug_query($statement, $query_time);
 			}
 			return $exec;
@@ -181,8 +179,9 @@ class Db extends Singleton {
 	static function min($a) {
 		return "MIN($a)";
 	}
-	static function timestamp($col='t') {
-		return "UNIX_TIMESTAMP($col)";
+	static function timestamp($col='t', $alias=true) {
+		$col = "UNIX_TIMESTAMP($col)";
+		return $alias ? self::as_($col, 'dt') : $col;
 	}
 
 	static function as_($field, $alias) {

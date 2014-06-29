@@ -151,7 +151,7 @@ class Date {
 		return $time;
 	}
 	static function mkday($day) {
-		return mktime(0,0,0, D_month, $day);
+		return mktime(0,0,0, D_month, $day, D_year);
 	}
 
 	/**

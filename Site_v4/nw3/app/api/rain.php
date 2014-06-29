@@ -13,7 +13,6 @@ class Rain extends \nw3\app\core\Api {
 
 	private $rain;
 	private $ratemax, $r10max, $hrmax;
-	private $wettest, $ratest, $hrmaxest, $r10maxest;
 
 	function __construct() {
 		parent::__construct();
@@ -21,11 +20,6 @@ class Rain extends \nw3\app\core\Api {
 		$this->ratemax = new Detail('ratemax');
 		$this->r10max = new Detail('r10max');
 		$this->hrmax = new Detail('hrmax');
-
-		$this->wettest = $this->rain->extremes()['max'];
-		$this->ratest = $this->ratemax->extremes()['max'];
-		$this->hrmaxest = $this->hrmax->extremes()['max'];
-		$this->r10maxest = $this->r10max->extremes()['max'];
 	}
 
 	function current_latest() {
@@ -99,21 +93,21 @@ class Rain extends \nw3\app\core\Api {
 	function recent_values() {
 		$now = Store::g();
 		$data = [
-			'rain' => $this->rain->values() + [Rn::TODAY => [
+			'rain' => [Rn::TODAY => [
 				'val' => $now->rain
-			]],
-			'ratemax' => $this->ratemax->values() + [Rn::TODAY => [
+			]] + $this->rain->values(),
+			'ratemax' => [Rn::TODAY => [
 				'val' => $now->today->max['rate'],
 				'dt' => $now->today->timeMax['rate']
-			]],
-			'hrmax' => $this->hrmax->values() + [Rn::TODAY => [
+			]] + $this->ratemax->values(),
+			'hrmax' => [Rn::TODAY => [
 				'val' => $now->today->max['rnhr'],
 				'dt' => $now->today->timeMax['rnhr']
-			]],
-			'r10max' => $this->r10max->values() + [Rn::TODAY => [
+			]] + $this->hrmax->values(),
+			'r10max' => [Rn::TODAY => [
 				'val' => $now->today->max['rn10'],
 				'dt' => $now->today->timeMax['rn10']
-			]]
+			]] + $this->r10max->values()
 		];
 		foreach($data as $k => &$dat) {
 			$dat = [
@@ -127,22 +121,16 @@ class Rain extends \nw3\app\core\Api {
 
 
 	function extremes() {
+		$spells = $this->rain->spells();
 		$data = [
 			'rain' => ['data' => $this->rain->totals()],
 			'rdays' => ['data' => $this->rain->days()],
-			'wettest' => ['data' => $this->wettest, 'type' => Vari::Rain, 'descrip' => 'Wettest Day']
-//			'ratemax' => $ratest['max'] + [
-//				'descrip' => 'Max Rain Rate',
-//				'type' => Vari::RainRate
-//			],
-//			'hrmax' => $hrmaxest['max'] + [
-//				'descrip' => 'Max Hr Rn',
-//				'type' => Vari::Rain
-//			],
-//			'r10max' => $r10maxest['max'] + [
-//				'descrip' => 'Max 10m Rn',
-//				'type' => Vari::Rain
-//			)
+			'wettest' => ['data' => $this->rain->extremes()['max'], 'type' => Vari::Rain, 'descrip' => 'Wettest Day'],
+			'ratemax' => ['data' => $this->ratemax->extremes()['max']],
+			'hrmax' => ['data' => $this->hrmax->extremes()['max']],
+			'r10max' => ['data' => $this->r10max->extremes()['max']],
+			'wet_spell' =>['data' => $spells['wet'], 'type' => Vari::Days, 'descrip' => 'Longest Wet Spell'],
+			'dry_spell' =>['data' => $spells['dry'], 'type' => Vari::Days, 'descrip' => 'Longest Dry Spell'],
 		];
 		foreach($data as $k => $dat) {
 			if(!key_exists('type', $dat)) {
@@ -152,9 +140,25 @@ class Rain extends \nw3\app\core\Api {
 				$data[$k]['descrip'] = Vari::$daily[$k]['description'];
 			}
 		}
-		xdebug_break();
+		return $data;
+	}
+
+	function extremes_month() {
+		$rn = $this->rain->extremes_month();
+		$rndays = $this->rain->extreme_days_monthly();
+		$data = [
+			'wettest' => ['data' => $rn['max'], 'type' => Vari::Rain, 'descrip' => 'Wettest'],
+			'driest' => ['data' => $rn['min'], 'type' => Vari::Rain, 'descrip' => 'Driest'],
+			'rdays_max' => ['data' => $rndays['max'], 'type' => Vari::Days, 'descrip' => 'Most Rn Days'],
+			'rdays_min' => ['data' => $rndays['min'], 'type' => Vari::Days, 'descrip' => 'Fewest Rn Days'],
+//			'ratemax' => ['data' => $this->ratemax->extremes_month()['max']],
+//			'hrmax' => ['data' => $this->hrmax->extremes()['max']],
+//			'r10max' => ['data' => $this->r10max->extremes_month()['max']],
+		];
+		foreach($data as $k => &$dat) {
+			$dat['rec_type'] = Rn::MONTHLY;
+		}
 		return $data;
 	}
 }
-
 ?>

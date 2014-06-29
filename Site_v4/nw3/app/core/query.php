@@ -13,17 +13,18 @@ class Query {
 	const DEFAULT_TBL = 'daily';
 
 	private $tbl;
-	private $cols ;
-	private $conds = [];
+	private $cols;
 	private $limit;
+	private $conds = [];
 	private $orders = [];
-	private $groups;
+	private $groups = [];
+	private $debug = false;
 	private $db;
 
 	function __construct($args) {
 		$this->db = Db::g();
 		$this->tbl = self::DEFAULT_TBL;
-		$this->fields($this->get_dynamic_args($args));
+		$this->fields($args);
 		return $this;
 	}
 
@@ -43,12 +44,13 @@ class Query {
 	}
 
 	function filter() {
-		$this->conds = $this->get_dynamic_args(func_get_args());
+		$this->conds = func_get_args();
 		return $this;
 	}
 
 	function group() {
-		$this->groups = $this->get_dynamic_args(func_get_args());
+		$this->groups = func_get_args();
+		return $this;
 	}
 
 	/**
@@ -90,13 +92,19 @@ class Query {
 		return $this->select()->fetchAll(\PDO::FETCH_ASSOC);
 	}
 
+	function debug() {
+		$this->debug = true;
+		return $this;
+	}
+
 	private function select() {
 		$conds = $this->get_conds();
 		$cols = $this->get_cols();
 		$order = $this->get_order();
+		$group = $this->get_group();
 		$limit = $this->get_limit();
-		$q = "SELECT $cols FROM $this->tbl $conds $order $limit";
-		return $this->db->execute($q);
+		$q = "SELECT $cols FROM $this->tbl $conds $group $order $limit";
+		return $this->db->execute($q, $this->debug);
 	}
 
 	private function get_conds() {
@@ -136,12 +144,10 @@ class Query {
 		return isset($this->limit) ? "LIMIT $this->limit" : '';
 	}
 
-	/**
-	 * Allows passing of multiple args, or first arg being an array of all args
-	 * @param array $args Args as given by func_get_args
-	 * @return array args as array
-	 */
-	private function get_dynamic_args($args) {
-		return is_array($args[0]) ? $args[0] : $args;
+	private function get_group() {
+		if (count($this->groups) === 0) {
+			return '';
+		}
+		return "GROUP BY ". implode(', ', $this->groups);
 	}
 }

@@ -29,10 +29,40 @@ abstract class Detail {
 		return "(2009 - $now_yr)";
 	}
 
-	static function date($dt_string) {
-		$dt = new \DateTime($dt_string);
-		# TODO - format based on period type
-		return $dt->format('d M Y');
+	static function date($dt_string, $period, $rec_type) {
+		// Time, no date format required
+		if(!mD::$periods[$period]['multi']) {
+			return $dt_string;
+		}
+		try {
+			$dt = new \DateTime($dt_string);
+		} catch (\Exception $ex) { // Probably an integer
+			$dt = \DateTime::createFromFormat('U', $dt_string);
+		}
+		$format = key_exists('format', mD::$periods[$period]) ? mD::$periods[$period]['format'] : 'jS M Y';
+		if($rec_type === mD::MONTHLY) {
+			$format = key_exists('mon_format', mD::$periods[$period]) ? mD::$periods[$period]['mon_format'] : 'M Y';
+		}
+		return $dt->format($format);
+	}
+
+	static function filter_data(&$data, $field, $cond) {
+		foreach ($data as &$dat) {
+			foreach ($dat['data'] as $p => $d) {
+				if(mD::$periods[$p][$field] == $cond) {
+					unset($dat['data'][$p]);
+				}
+			}
+		}
+		return $data;
+
+	}
+	static function filter_recent($data) {
+		return self::filter_data($data, 'record', true);
+	}
+
+	static function filter_records($data) {
+		return self::filter_data($data, 'record', false);
 	}
 
 //	static function headers($type) {
