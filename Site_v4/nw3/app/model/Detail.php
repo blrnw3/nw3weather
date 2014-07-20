@@ -4,7 +4,7 @@ namespace nw3\app\model;
 use nw3\app\model\Variable;
 use nw3\app\util\Date;
 use nw3\app\core\Db;
-use nw3\app\core\Query;
+use nw3\app\core\Alias;
 use nw3\app\model\Climate;
 
 /**
@@ -50,6 +50,13 @@ class Detail {
 	protected $yr_ago;
 	protected $mon_ago_st;
 	protected $yr_ago_st;
+	protected $yr_ago_mon_st;
+	protected $yr_ago_seas_st;
+
+	protected $query_count;
+	protected $query_agg;
+	protected $query_month;
+	protected $query_year;
 
 	protected $period_lengths;
 
@@ -96,6 +103,7 @@ class Detail {
 			'month_recs' => true,
 			'descrip' => 'Overall',
 			'has_spell' => true,
+			'ranknum' => 10,
 		],
 		self::RECORD_D => [
 			'multi' => true,
@@ -171,6 +179,7 @@ class Detail {
 		$this->num_records = $this->db->query($varname)->count();
 
 		# Useful db datetimes
+		$this->rec_st = "'2009-01-01'";
 		$this->yest = Db::dt(D_yest);
 		$this->mon_st = $this->DbMkdate(false, 1);
 		$this->yr_st = $this->DbMkdate(1, 1);
@@ -194,6 +203,21 @@ class Detail {
 
 		$this->mon_ago_st = $this->DbMkdate(D_month-1, 1);
 		$this->yr_ago_st = $this->DbMkdate(1, 1, D_year-1);
+		$this->yr_ago_mon_st = $this->DbMkdate(D_month, 1, D_year-1);
+		$this->yr_ago_seas_st = $this->DbMkdate(Date::get_current_season_start_month(), 1, D_year-1);
+
+		# Useful Query fragments
+		$this->query_count = new Alias(Db::count($this->colname));
+		$this->query_month = new Alias('MONTH(d)', 'm');
+		$this->query_year = new Alias('YEAR(d)', 'y');
+
+		$query_agg = new Alias(Db::agg($this->colname, $this->aggtype));
+		$query_anom_sum = Db::sum($this->colname) .'/'. Db::sum("$this->colname - a_$this->colname");
+		$query_anom_avg = Db::sum("$this->colname - a_$this->colname");
+		$this->query_agg = [$query_agg];
+		if($this->var['anomable']) {
+			$this->query_agg[] =  new Alias($this->summable ? $query_anom_sum : $query_anom_avg, 'anom');
+		}
 
 		# Period lengths
 		$this->period_lengths = [
@@ -241,7 +265,6 @@ class Detail {
 		}
 		return $data;
 	}
-
 	public function extremes_month() {
 		$data = ['max' => [], 'min' => []];
 		foreach (self::get_periods('month_recs') as $period) {
@@ -258,6 +281,104 @@ class Detail {
 		}
 		return $data;
 	}
+	public function extremes_year() {
+		$data = ['max' => [], 'min' => []];
+		$period = self::RECORD;
+		$max = $this->period_extreme_year(Db::MAX);
+		$data['max'][$period] = [
+			'val' => $max['val'],
+			'dt' => $max['y']
+		];
+		$min = $this->period_extreme_year(Db::MIN);
+		$data['min'][$period] = [
+			'val' => $min['val'],
+			'dt' => $min['y']
+		];
+		return $data;
+	}
+
+	public function rankings() {
+		$data = ['max' => [], 'min' => []];
+		$rank_num = self::$periods[self::RECORD]['ranknum'];
+		$max = $this->period_extreme(self::RECORD, Db::MAX, $rank_num);
+		foreach ($max as $val) {
+			$data['max'][] = [
+				'val' => $val['val'],
+				'dt' => $val['d']
+			];
+		}
+		if($this->var['minmax']) {
+			$min = $this->period_extreme(self::RECORD, Db::MIN, $rank_num);
+			foreach ($min as $val) {
+				$data['min'][] = [
+					'val' => $val['val'],
+					'dt' => $val['d']
+				];
+			}
+		}
+		return $data;
+	}
+	public function rankings_month() {
+		$data = ['max' => [], 'min' => []];
+		$rank_num = self::$periods[self::RECORD]['ranknum'];
+		$max = $this->period_extreme_month(self::RECORD, Db::MAX, $rank_num);
+		foreach ($max as $val) {
+			$data['max'][] = [
+				'val' => $val['val'],
+				'dt' => $val['d']
+			];
+		}
+		$min = $this->period_extreme_month(self::RECORD, Db::MIN, $rank_num);
+		foreach ($min as $val) {
+			$data['min'][] = [
+				'val' => $val['val'],
+				'dt' => $val['d']
+			];
+		}
+		return $data;
+	}
+
+	public function past_year_monthly_aggs() {
+		$q = $this->db->query('d', $this->query_agg)
+			->filter("d < $this->mon_st", "d >= $this->yr_ago_mon_st")
+			->group('YEAR(d), MONTH(d)')
+			->order(Db::ASC)
+		;
+		$all = $q->all();
+		$tot = array_reduce($all, function($all, $v){return $v['val'] + $all;}, 0);
+		$tot_anom = $tot / $this->climate->annual[$this->colname]['sum'];
+		return [
+			'periods' => $all,
+			'annual' => ['val' => $tot, 'anom' => $tot_anom]
+		];
+	}
+	public function past_year_seasonal_aggs() {
+		$q = $this->db->query('d', $this->query_agg, Db::SEASON_COL)
+			->filter("d < $this->seas_st", "d >= $this->yr_ago_seas_st")
+			->group('season')
+			->order(Db::ASC)
+		;
+		$all = $q->all();
+		$tot = array_reduce($all, function($all, $v){return $v['val'] + $all;}, 0);
+		$tot_anom = $tot / $this->climate->annual[$this->colname]['sum'];
+		return [
+			'periods' => $all,
+			'annual' => ['val' => $tot, 'anom' => $tot_anom]
+		];
+	}
+
+	public function extremes_ndays_db() {
+		$data = ['max' => [], 'min' => []];
+		foreach (self::$periodsn as $period) {
+			$data['max'][$period] = $this->extreme_nday_agg($period, Db::MAX);
+			$data['min'][$period] = $this->extreme_nday_agg($period, Db::MIN);
+		}
+		return $data;
+	}
+
+	public function record_24hr() {
+		return null;
+	}
 
 	/**
 	 * Calculate sum/avg over quantity for given period
@@ -265,30 +386,28 @@ class Detail {
 	 * @return float summation
 	 */
 	protected function period_agg($period) {
-		return $this->db->query(Db::agg($this->colname, $this->aggtype))
+		return $this->db->query($this->query_agg)
 			->filter($this->get_date_filter($period))
-			->scalar();
+			->one();
 	}
 
-	protected function period_extreme($period, $extrm_type=null) {
-		$fields = [Db::as_($this->colname, 'val')];
+	protected function period_extreme($period, $extrm_type=null, $num=1) {
+		$fields = [new Alias($this->colname, 'val')];
 		$q = $this->db->query();
-		if(!$this->var['spread']) {
+		if(!$this->var['spread'] && $num === 1) {
 			$fields[] = Db::time_field($this->colname);
 		}
 		if(self::$periods[$period]['multi']) {
 			$fields[] = 'd';
-			$q = $q->extreme($extrm_type);
+			if($num === 1) {
+				$q = $q->extreme($extrm_type);
+			}
 		}
 		$q = $q->fields($fields)->filter($this->get_date_filter($period));
-		return $q->one();
-	}
-
-	protected function period_sum_anom($period) {
-		return $this->db->query(Db::sum($this->colname) .'/'. Db::sum("$this->colname - a_$this->colname"))
-			->filter($this->get_date_filter($period))
-			->scalar()
-		;
+		if($num === 1) {
+			return $q->one();
+		}
+		return $q->limit($num)->order(($extrm_type === Db::MAX) ? Db::DESC : Db::ASC)->all();
 	}
 
 	/**
@@ -307,13 +426,21 @@ class Detail {
 
 	protected function period_count_month_extreme($period, $extrm_type, $filter=null) {
 		$val_filter = ($filter === null) ? null : "$this->colname $filter";
-		$q = $this->db->query(Db::as_(Db::count($this->colname), 'val'),
-			Db::as_('YEAR(d)', 'y'), Db::as_('MONTH(d)', 'm'), 'd')
+		$q = $this->db->query($this->query_count, $this->query_year, $this->query_month, 'd')
 			->filter($this->get_date_filter_month($period), $val_filter)
 			->group('y', 'm')
 			->extreme($extrm_type)
 			->one();
 		return $q;
+	}
+	protected function period_count_year_extreme($extrm_type, $filter=null) {
+		$val_filter = ($filter === null) ? null : "$this->colname $filter";
+		$q = $this->db->query($this->query_count, $this->query_year)
+			->filter('d < '.$this->yr_st, $val_filter)
+			->group('y')
+			->extreme($extrm_type)
+		;
+		return $q->one();
 	}
 
 	/**
@@ -321,14 +448,45 @@ class Detail {
 	 * @param boolean $is_high set true to get max, false to get min
 	 * @return [int,int,float] year, month, val
 	 */
-	protected function period_extreme_month($period, $extrm_type=null) {
-		$q = $this->db->query(Db::as_(Db::agg($this->colname, $this->aggtype), 'val'),
-			Db::as_('YEAR(d)', 'y'), Db::as_('MONTH(d)', 'm'), 'd')
+	protected function period_extreme_month($period, $extrm_type=null, $num=1) {
+		$q = $this->db->query($this->query_agg, $this->query_year, $this->query_month, 'd')
 			->filter($this->get_date_filter_month($period))
 			->group('y', 'm')
+		;
+		if($num === 1) {
+			return $q->extreme($extrm_type)->one();
+		}
+		return $q->order(($extrm_type === Db::MAX) ? Db::DESC : Db::ASC)->limit($num)->all();
+	}
+
+	/**
+	 * Min or Max monthly mean/sum for all years but the current one
+	 * @param boolean $is_high set true to get max, false to get min
+	 * @return [int,float] year, val
+	 */
+	protected function period_extreme_year($extrm_type=null, $num=1) {
+		$q = $this->db->query($this->query_agg, $this->query_year)
+			->filter('d < '. $this->yr_st)
+			->group('y')
+		;
+		if($num === 1) {
+			return $q->extreme($extrm_type)->one();
+		}
+		return $q->order(($extrm_type === Db::MAX) ? Db::DESC : Db::ASC)->limit($num)->all();
+	}
+
+	protected function extreme_nday_agg($n, $extrm_type=null) {
+		/*
+		 * SUPER expensive compared to evaluating in code (~200ms vs. ~5ms) but fine for debugging
+		 */
+		$n -= 1;
+		$q = $this->db->query(new Alias(Db::agg('b.'. $this->colname, $this->aggtype), 'val'), new Alias('daily.d', 'dt'))
+			->join('daily b', "datediff(daily.d, b.d) BETWEEN 0 AND $n")
+			->filter("daily.d > $this->rec_st + INTERVAL $n DAY")
+			->group('dt')
 			->extreme($extrm_type)
-			->one();
-		return $q;
+		;
+		return $q->one();
 	}
 
 	protected function get_period_end_anom(&$data, $period) {

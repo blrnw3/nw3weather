@@ -26,6 +26,8 @@ class Db extends Singleton {
 	const DESC = 'DESC';
 	const ASC = 'ASC';
 
+	const SEASON_COL = 'FLOOR((MONTH(d) % 12)/3) AS season';
+
 	# Return types
 	const SCALAR = 0;
 	const SINGLE = 1;
@@ -181,16 +183,9 @@ class Db extends Singleton {
 	}
 	static function timestamp($col='t', $alias=true) {
 		$col = "UNIX_TIMESTAMP($col)";
-		return $alias ? self::as_($col, 'dt') : $col;
+		return $alias ? new Alias($col, 'dt') : $col;
 	}
 
-	static function as_($field, $alias) {
-		return [$field, $alias];
-	}
-
-	static function val($field) {
-		return "$field AS val";
-	}
 	static function time_field($field) {
 		return "DATE_FORMAT(t_$field, '%H:%i') AS t";
 	}
@@ -215,7 +210,5 @@ class Db extends Singleton {
 			}
 		}
 	}
-
-
 }
 ?>

@@ -6,6 +6,10 @@ use nw3\app\model\Variable;
 $rain = new a\Rain();
 $recent = $rain->recent_values();
 $extremes = $rain->extremes();
+$ranks = $rain->ranks();
+$rec24hr = $rain->record_24hrs()['wettest'];
+$pastyr_monthly = $rain->past_yr_month_tots();
+$pastyr_seasonal = $rain->past_yr_season_tots();
 ?>
 
 <h1>Detailed Rainfall Data</h1>
@@ -49,3 +53,74 @@ $extremes = $rain->extremes();
 	<caption>Monthly Records and Extremes</caption>
 	<?php $this->viewette('period_tbl', $rain->extremes_month()) ?>
 </table>
+
+<table>
+	<caption>Annual Records and Extremes</caption>
+	<?php $this->viewette('period_tbl', $rain->extremes_year()) ?>
+</table>
+<table>
+	<caption> N-day Period Records and Extremes</caption>
+	<?php $this->viewette('period_tbl', $rain->extremes_nday()) ?>
+</table>
+
+<table>
+	<caption>24hr Records</caption>
+	<thead>
+		<tr>
+			<td><?php echo $rec24hr['descrip'] ?></td>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>
+				<?php echo Variable::conv($rec24hr['data']['val'], $rec24hr['type']) ?>
+				<br />
+				<?php echo D::date($rec24hr['data']['dt'], 'rec', $rec24hr['rec_type']) ?>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<table>
+	<caption>Rankings</caption>
+	<thead>
+		<tr>
+			<td>Rank</td>
+			<?php foreach ($ranks as $rank): ?>
+				<td><?php echo $rank['descrip']; ?></td>
+			<?php endforeach; ?>
+		</tr>
+	</thead>
+	<tbody>
+		<?php for ($i = 0; $i < count($ranks['rain']['data']); $i++): ?>
+		<tr>
+			<td><?php echo ($i+1) ?></td>
+			<?php foreach ($ranks as $rank): ?>
+			<td>
+				<?php echo Variable::conv($rank['data'][$i]['val'], $rank['type']) ?>
+				<br />
+				<?php echo D::date($rank['data'][$i]['dt'], 'rec', $rank['rec_type']) ?>
+			</td>
+			<?php endforeach; ?>
+		</tr>
+		<?php endfor; ?>
+	</tbody>
+</table>
+
+<table>
+	<caption>Rolling 12-months Monthly Totals</caption>
+	<?php $this->viewette('pastyr_tots_tbl', ['data' => $pastyr_monthly, 'format' => 'M Y', 'name' => 'Month']) ?>
+</table>
+<table>
+	<caption>Past Year Seasonal Totals</caption>
+	<?php $this->viewette('pastyr_tots_tbl', ['data' => $pastyr_seasonal, 'format' => false, 'name' => 'Season']) ?>
+</table>
+
+<p>
+	<b>Note 1:</b> Rain records began in February 2009<br />
+	<b>Note 2:</b> The minimum recordable rain (the rain gauge resolution) is 0.2 mm<br />
+	<b>Note 3:</b> Figures in brackets refer to departure from <a href="wxaverages.php" title="Long-term NW3 climate averages">average conditions</a><br />
+	<b>Note 4:</b> Rain rate records are manually checked, and changed if necessary,
+	due to occasional issues with the software. Initial high readings may well be corrected at a later date.<br />
+</p>
+

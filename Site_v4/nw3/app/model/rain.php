@@ -3,28 +3,7 @@ namespace nw3\app\model;
 
 use nw3\app\core\Db;
 use nw3\app\util\Date;
-use nw3\app\util\Time;
-use nw3\app\util\Maths;
-
-//class Rollingtotal {
-//	private $size;
-//	private $items = [];
-//	private $cnt = 0;
-//
-//	public $total = 0;
-//
-//	function __construct($size) {
-//		$this->size = $size;
-//	}
-//
-//	function add($value) {
-//		$this->items[$cnt] = $value;
-//		if($this->cnt > $this->size) {
-//
-//		}
-//		$this->total += $value;
-//	}
-//}
+use nw3\app\model\Store;
 
 /**
  * All rain stats n stuff
@@ -70,10 +49,7 @@ class Rain extends Detail {
 	public function totals() {
 		$data = [];
 		foreach (self::get_periods('multi') as $period) {
-			$data[$period] = [
-				'val' => $this->period_agg($period),
-				'anom' => $this->period_sum_anom($period)
-			];
+			$data[$period] = $this->period_agg($period);
 		}
 		$data[self::NOWMON]['anom_f'] = $this->get_period_end_anom($data, self::NOWMON);
 		$data[self::NOWYR]['anom_f'] = $this->get_period_end_anom($data, self::NOWYR);
@@ -103,17 +79,43 @@ class Rain extends Detail {
 		}
 		return $data;
 	}
+	public function extreme_days_yearly() {
+		$data = ['max' => [], 'min' => []];
+		$period = self::RECORD;
+		$cnt_max = $this->period_count_year_extreme(Db::MAX, $this->wet_filter);
+		$cnt_min = $this->period_count_year_extreme(Db::MIN, $this->wet_filter);
+		$data['max'][$period] = ['val' => $cnt_max['val'], 'dt' => $cnt_max['y']];
+		$data['min'][$period] = ['val' => $cnt_min['val'], 'dt' => $cnt_min['y']];
+		return $data;
+	}
 
 	/**
 	 * Wettest and driest spells (totals over fixed-length periods)
 	 * @param type $rainall
 	 */
-	public function extreme_spells() {
-		$rainall = $this->select();
-		$data = [];
-		foreach(self::$periods as $spell_len) {
-			$data[$spell_len] = $this->extreme_n_days($spell_len, $rainall);
+	public function extremes_ndays() {
+		$data = ['max' => [], 'min' => [], 'max_days' => [], 'min_days' => []];
+		$rainall = $this->db->query('d', $this->colname)->order(Db::ASC)->all();
+		foreach(self::$periodsn as $spell_len) {
+			$spells = $this->nday_agg_extremes($spell_len, $rainall);
+			$data['min'][$spell_len] = $spells['min'];
+			$data['max'][$spell_len] = $spells['max'];
+			$data['min_days'][$spell_len] = $spells['min_days'];
+			$data['max_days'][$spell_len] = $spells['max_days'];
 		}
+		return $data;
+	}
+
+	public function record_24hr() {
+		$data = ['max' => []];
+		$now = Store::g()->change('rain', '24h');
+		$data['max'] = ($now <= 54.2) ? [
+			'val' => 54.2,
+			'dt' => 1272805680
+		] : [
+			'val' => $now,
+			'dt' => D_now
+		];
 		return $data;
 	}
 
@@ -194,19 +196,30 @@ class Rain extends Detail {
 		throw new \Exception("Invalid period '$period' specified");
 	}
 
-	private function extreme_n_days($n, &$rainall) {
+	private function nday_agg_extremes($n, &$rainall) {
+		# Totals
 		$driest = INT_MAX;
 		$wettest = 0;
+		$cumrn = 0.0001;
+		# Days
+		$days_fewest = INT_MAX;
+		$days_most = 0;
+		$cumdays = 0;
 
-		$i = 0;
-		foreach ($rainall as $dt => $rain) {
-			$cumrn += $rain;
-
+		foreach ($rainall as $i => $rainpt) {
+			$dt = $rainpt['d'];
+			$cumrn += $rainpt['rain'];
+			$cumdays += ((float)$rainpt['rain'] > $this->wet_filter);
 			if ($i >= $n) {
-				$cumrn -= $rainall[$dt - $n * Date::secs_DAY];
+				$cumrn -= $rainall[$i - $n]['rain'];
+				$cumdays -= ((float)$rainall[$i - $n]['rain'] > $this->wet_filter);
 				if ($cumrn < $driest) {
 					$driest = $cumrn;
 					$driest_end = $dt;
+				}
+				if ($cumdays < $days_fewest) {
+					$days_fewest = $cumdays;
+					$least_end = $dt;
 				}
 			}
 			# Wet spells don't require accumulation of [n] days
@@ -214,11 +227,16 @@ class Rain extends Detail {
 				$wettest = $cumrn;
 				$wettest_end = $dt;
 			}
-			$i++;
+			if ($cumdays > $days_most) {
+				$days_most = $cumdays;
+				$most_end = $dt;
+			}
 		}
 		return [
-			'dry' => ['val' => $driest, 'dt' => $driest_end],
-			'wet' => ['val' => $wettest, 'dt' => $wettest_end]
+			'min' => ['val' => $driest, 'dt' => $driest_end],
+			'max' => ['val' => $wettest, 'dt' => $wettest_end],
+			'min_days' => ['val' => $days_fewest, 'dt' => $least_end],
+			'max_days' => ['val' => $days_most, 'dt' => $most_end]
 		];
 	}
 

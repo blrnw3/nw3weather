@@ -5,6 +5,7 @@ use nw3\app\model\Rain as Rn;
 use nw3\app\model\Detail;
 use nw3\app\model\Store;
 use nw3\app\model\Variable as Vari;
+use nw3\app\util\Date;
 
 /**
  * All rain stats n stuff
@@ -155,10 +156,67 @@ class Rain extends \nw3\app\core\Api {
 //			'hrmax' => ['data' => $this->hrmax->extremes()['max']],
 //			'r10max' => ['data' => $this->r10max->extremes_month()['max']],
 		];
-		foreach($data as $k => &$dat) {
+		foreach($data as &$dat) {
 			$dat['rec_type'] = Rn::MONTHLY;
 		}
 		return $data;
+	}
+	function extremes_year() {
+		$rn = $this->rain->extremes_year();
+		$rndays = $this->rain->extreme_days_yearly();
+		$data = [
+			'wettest' => ['data' => $rn['max'], 'type' => Vari::Rain, 'descrip' => 'Wettest'],
+			'driest' => ['data' => $rn['min'], 'type' => Vari::Rain, 'descrip' => 'Driest'],
+			'rdays_max' => ['data' => $rndays['max'], 'type' => Vari::Days, 'descrip' => 'Most Rn Days'],
+			'rdays_min' => ['data' => $rndays['min'], 'type' => Vari::Days, 'descrip' => 'Fewest Rn Days'],
+		];
+		foreach($data as &$dat) {
+			$dat['rec_type'] = Rn::YEARLY;
+		}
+		return $data;
+	}
+	function extremes_nday() {
+		$rn = $this->rain->extremes_ndays();
+//		$rn2 = $this->rain->extremes_ndays_db();
+		$data = [
+			'wettest' => ['data' => $rn['max'], 'type' => Vari::Rain, 'descrip' => 'Wettest'],
+			'driest' => ['data' => $rn['min'], 'type' => Vari::Rain, 'descrip' => 'Driest'],
+//			'wettest2' => ['data' => $rn2['max'], 'type' => Vari::Rain, 'descrip' => 'Wettest DB'],
+//			'driest2' => ['data' => $rn2['min'], 'type' => Vari::Rain, 'descrip' => 'Driest DB'],
+			'rdays_max' => ['data' => $rn['max_days'], 'type' => Vari::Days, 'descrip' => 'Most Rn Days'],
+			'rdays_min' => ['data' => $rn['min_days'], 'type' => Vari::Days, 'descrip' => 'Fewest Rn Days'],
+		];
+		foreach($data as &$dat) {
+			$dat['rec_type'] = '\T\o jS M Y';
+		}
+		return $data;
+	}
+
+	function ranks() {
+		$rnm = $this->rain->rankings_month();
+		return [
+			'rain' => ['data' => $this->rain->rankings()['max'], 'descrip' => 'Wettest', 'type' => Vari::Rain],
+			'hrmax' => ['data' => $this->hrmax->rankings()['max'], 'descrip' => 'Max in 1hr', 'type' => Vari::Rain],
+			'rain_m_max' => ['data' => $rnm['max'], 'descrip' => 'Wettest Month', 'type' => Vari::Rain, 'rec_type' => Detail::MONTHLY],
+			'rain_m_min' => ['data' => $rnm['min'], 'descrip' => 'Driest Month', 'type' => Vari::Rain, 'rec_type' => Detail::MONTHLY],
+		];
+	}
+
+	function past_yr_month_tots() {
+		return $this->rain->past_year_monthly_aggs();
+	}
+	function past_yr_season_tots() {
+		$tots = $this->rain->past_year_seasonal_aggs();
+		foreach ($tots['periods'] as &$tot) {
+			$tot['d'] = Date::$seasons[$tot['season']] .' '. substr($tot['d'], 0, 4);
+		}
+		return $tots;
+	}
+
+	function record_24hrs() {
+		return [
+			'wettest' => ['data' => $this->rain->record_24hr()['max'], 'descrip' => 'Wettest 24hrs', 'type' => Vari::Rain, 'rec_type' => 'H:i jS M Y']
+		];
 	}
 }
 ?>

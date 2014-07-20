@@ -30,8 +30,15 @@ abstract class Detail {
 	}
 
 	static function date($dt_string, $period, $rec_type) {
+		// Override
+		if($rec_type === false) {
+			return $dt_string;
+		}
 		// Time, no date format required
 		if(!mD::$periods[$period]['multi']) {
+			return $dt_string;
+		}
+		if($rec_type === mD::YEARLY) {
 			return $dt_string;
 		}
 		try {
@@ -39,9 +46,12 @@ abstract class Detail {
 		} catch (\Exception $ex) { // Probably an integer
 			$dt = \DateTime::createFromFormat('U', $dt_string);
 		}
-		$format = key_exists('format', mD::$periods[$period]) ? mD::$periods[$period]['format'] : 'jS M Y';
 		if($rec_type === mD::MONTHLY) {
 			$format = key_exists('mon_format', mD::$periods[$period]) ? mD::$periods[$period]['mon_format'] : 'M Y';
+		} elseif($rec_type) { // Custom format
+			$format = $rec_type;
+		} else {
+			$format = key_exists('format', mD::$periods[$period]) ? mD::$periods[$period]['format'] : 'jS M Y';
 		}
 		return $dt->format($format);
 	}

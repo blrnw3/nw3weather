@@ -13,9 +13,10 @@ class Query {
 	const DEFAULT_TBL = 'daily';
 
 	private $tbl;
-	private $cols;
+	private $cols = [];
 	private $limit;
 	private $conds = [];
+	private $joins = [];
 	private $orders = [];
 	private $groups = [];
 	private $debug = false;
@@ -39,7 +40,16 @@ class Query {
 	 * @return \nw3\app\core\Query
 	 */
 	function fields($fields) {
-		$this->cols = $fields;
+		// Allow passing of arrays of cols
+		foreach($fields as $field) {
+			if(is_array($field)) {
+				foreach($field as $f) {
+					$this->cols[] = $f;
+				}
+			} else {
+				$this->cols[] = $field;
+			}
+		}
 		return $this;
 	}
 
@@ -50,6 +60,11 @@ class Query {
 
 	function group() {
 		$this->groups = func_get_args();
+		return $this;
+	}
+
+	function join($tbl, $on) {
+		$this->joins[] = [$tbl, $on];
 		return $this;
 	}
 
@@ -102,8 +117,9 @@ class Query {
 		$cols = $this->get_cols();
 		$order = $this->get_order();
 		$group = $this->get_group();
+		$join = $this->get_join();
 		$limit = $this->get_limit();
-		$q = "SELECT $cols FROM $this->tbl $conds $group $order $limit";
+		$q = "SELECT $cols FROM $this->tbl $join $conds $group $order $limit";
 		return $this->db->execute($q, $this->debug);
 	}
 
@@ -115,7 +131,7 @@ class Query {
 		if(count($this->cols)) {
 			return implode(', ', array_map(
 				function($col) {
-					return is_array($col) ? "{$col[0]} AS {$col[1]}" : $col;
+					return is_string($col) ? $col : $col->sql();
 				}, $this->cols)
 			);
 		}
@@ -123,7 +139,7 @@ class Query {
 	}
 
 	private function col($index) {
-		return is_array($this->cols[$index]) ? $this->cols[$index][1] : $this->cols[$index];
+		return $this->cols[$index];
 	}
 
 	private function get_order() {
@@ -149,5 +165,16 @@ class Query {
 			return '';
 		}
 		return "GROUP BY ". implode(', ', $this->groups);
+	}
+
+	private function get_join() {
+		if (count($this->joins) === 0) {
+			return '';
+		}
+		if (count($this->joins) > 1) {
+			throw new \Exception('Not implemented. Stick to single joins');
+		}
+		$join = $this->joins[0];
+		return "JOIN {$join[0]} ON {$join[1]}";
 	}
 }

@@ -4,6 +4,7 @@ RewriteEngine on
 order allow,deny
 allow from all
 </Files>
+# Spammers and Hackers
 deny from 94.242.237.127
 deny from 117.26.192.253
 deny from 120.37.228.50
@@ -24,22 +25,15 @@ deny from 46.32.250.86
 deny from 5.9.145.107
 deny from 41.207.19.98
 deny from 190.211.242.190
-#Korea - scraper
-deny from 14.63.229.34
-#USA - spammer
 deny from 216.151.130
 deny from 216.151.137
 deny from 216.246.124.38
-#Russia - spammer
 deny from 195.19.104.8
 deny from 92.53.98.90
-#Ukraine - spammer
 deny from 91.200.14
 deny from 46.118.158
 deny from 159.224.160
-#Turkey - spammer
 deny from 213.238.175
-#China - hacker
 deny from 36.248
 deny from 222.77
 deny from 59.58.154
@@ -49,19 +43,21 @@ deny from 221.172.207.84
 deny from 111.151.149.119
 deny from 113.87.254.229
 deny from 175.42.95.147
-#India - spammer
+deny from 117.18.73.66
+deny from 89.66.65.65
+deny from 120.43.24.70
+deny from 108.186.30.17
 deny from 182.69.0.184
 deny from 182.64
 deny from 180.179.171.194
-#Ezooms bot
+deny from 113.190
+deny from 62.219.8.235
+deny from 188.165.243.45
+# Scrapers
+deny from 14.63.229.34
+# Ezooms bot
 deny from 208.115.113.86
 deny from 208.115.111.70
-#Vietnam - spammer
-deny from 113.190
-#Israel Spammer
-deny from 62.219.8.235
-#France - spammer
-deny from 188.165.243.45
 
 #RewriteCond %{HTTP_HOST} ^www\.nw3weather\.co\.uk [NC]
 #RewriteRule ^(.*)$ http://nw3weather.co.uk/$1 [L,R=301]
