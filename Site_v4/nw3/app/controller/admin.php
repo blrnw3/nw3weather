@@ -26,8 +26,7 @@ class Admin extends core\Controller {
 	}
 
 	public function cron() {
-		$this->check_correct_subpath_length(2);
-		$path = $this->url_args[1];
+		$path = $this->sub_path(1);
 		$cron_class = 'nw3\cron\\'. $path;
 		try {
 			class_exists($cron_class);
@@ -43,8 +42,7 @@ class Admin extends core\Controller {
 	public function migrate() {
 		$script = $this->url_args[1];
 		if($script === 'daily') {
-			$this->check_correct_subpath_length(3);
-			$type = $this->url_args[2];
+			$type = $this->sub_path(2);
 			$migration = new migrate\Importdailylogs($_GET['start_date'], $_GET['end_date']);
 			if($type === 'migrate') {
 				$migration->migrate($this->timer);
@@ -58,8 +56,7 @@ class Admin extends core\Controller {
 			$wd_parser = new migrate\Wdlogstodaily($_GET['start_date'], $_GET['end_date']);
 			$wd_parser->parse();
 		} elseif($script === 'monthly') {
-			$this->check_correct_subpath_length(3);
-			$yr = (int)$this->url_args[2];
+			$yr = (int)$this->sub_path(2);
 			$migration = new migrate\Importmonthlylogs();
 			if($_GET['upto']) {
 				$migration->import_upto($yr);

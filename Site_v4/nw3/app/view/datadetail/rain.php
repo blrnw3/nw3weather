@@ -116,6 +116,9 @@ $pastyr_seasonal = $rain->past_yr_season_tots();
 	<?php $this->viewette('pastyr_tots_tbl', ['data' => $pastyr_seasonal, 'format' => false, 'name' => 'Season']) ?>
 </table>
 
+<img src="../graph/daily/rain" alt="Daily rain totals last 31 days" />
+<img src="../graph/monthly/rain" alt="Monthly rain totals last 12 months" />
+
 <p>
 	<b>Note 1:</b> Rain records began in February 2009<br />
 	<b>Note 2:</b> The minimum recordable rain (the rain gauge resolution) is 0.2 mm<br />

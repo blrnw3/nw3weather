@@ -86,7 +86,7 @@ abstract class Controller {
 	 * @param string $_view [=null] folder of the view. Defaults to controller name
 	 * @param string $_subview [=null] filename of the view file to load. Defaults to method called
 	 */
-	protected function build($title, $_view = null, $_subview = null) {
+	protected function build($title=null, $_view = null, $_subview = null) {
 		$view = ($_view === null) ? $this->controller_name : $_view;
 		$subview = ($_subview === null) ? $this->get_name_of_calling_method() : $_subview;
 		$this->page = $subview;
@@ -129,9 +129,11 @@ abstract class Controller {
 	 * Loads a jpgraph view
 	 * @param string $file name of view file
 	 */
-	protected function jpgraph($file) {
+	protected function jpgraph() {
 		$this->jpgraph_root = __DIR__ .'/../../lib/jpgraph/';
-		require __DIR__ . "/../view/$this->controller_name/$file.php";
+		require $this->jpgraph_root.'jpgraph.php';
+		require $this->jpgraph_root.'jpgraph_bar.php';
+		require $this->view;
 		$this->flush_logs();
 	}
 
@@ -139,7 +141,10 @@ abstract class Controller {
 	 * Get the portion of the URL path at the specified index
 	 * @param type $index Sub path index (0 is the first <em>sub</em> path portion)
 	 */
-	protected function sub_path($index = 0) {
+	protected function sub_path($index=0, $validate=true) {
+		if($validate) {
+			$this->check_correct_subpath_length($index + 1);
+		}
 		return u\String::isBlank($this->url_args[$index]) ? false : $this->url_args[$index];
 	}
 

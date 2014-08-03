@@ -235,6 +235,45 @@ class Detail {
 		}
 	}
 
+	### Graphy stuff ###
+
+	public function monthly($param=false) {
+		$st = $this->DbMkdate(D_month+1, 1, D_year-1);
+		$q = $this->db->query('d', $this->query_agg)
+			->filter("d >= $st")
+			->group('YEAR(d), MONTH(d)')
+			->order(Db::ASC)
+		;
+		return $this->graph_output($q);
+	}
+
+	public function daily($param=false) {
+		$st = $this->DbMkdate(D_month, D_day-31, D_year);
+		$q = $this->db->query('d', new Alias($this->colname, 'val'))
+			->filter("d >= $st")
+		;
+		return $this->graph_output($q);
+	}
+
+	protected function graph_output($query) {
+		$data = [
+			'values' => [],
+			'group' => $this->var
+		];
+		$labs = [];
+		foreach ($query->all() as $record) {
+			$data['values'][] = $record['val'];
+			$labs[] = new \DateTime($record['d']);
+		}
+		return [
+			'data' => [$data],
+			'labels' => $labs
+		];
+	}
+
+
+	### Data-y stuff ###
+
 	public function values() {
 		$data = [];
 		foreach (self::get_periods_single() as $period) {

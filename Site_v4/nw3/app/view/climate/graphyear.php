@@ -1,5 +1,4 @@
 <?php // content="text/plain; charset=utf-8"
-require $this->jpgraph_root.'jpgraph.php';
 require $this->jpgraph_root.'jpgraph_line.php';
 require $this->jpgraph_root.'jpgraph_date.php';
 require $this->jpgraph_root.'jpgraph_utils.inc.php';
@@ -28,7 +27,7 @@ $grace = 0;
 $xmin = $x_labels[0]-$grace;
 $xmax = $x_labels[count($x_labels)-1]+$grace;
 
-$graph = new Graph($this->timer);
+$graph = new \Graph();
 $graph->SetScale('intint',0,0, $xmin, $xmax);
 
 //$graph->xaxis->SetTickLabels(Date::$months3);

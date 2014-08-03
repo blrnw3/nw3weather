@@ -111,14 +111,14 @@ use nw3\app\model\Variable;
 	</tr>
 </table>
 
-<p>A day-by-day progression of the temperature and sun averages can be found <a href="./daily" title="Daily long-term average temperatures and sunshine hours">here</a>.</p>
+<p>A day-by-day progression of the temperature and sun averages can be found <a href="climate/daily" title="Daily long-term average temperatures and sunshine hours">here</a>.</p>
 
-<img class="climate_graph" src="./graph?types=tmin,tmax" alt="climgraph1" />
-<img class="climate_graph" src="./graph?types=tmean,trange" alt="climgraph2" />
-<img class="climate_graph" src="./graph?types=rain" alt="climgraph3" />
-<img class="climate_graph" src="./graph?types=rdays" alt="climgraph3.5" />
-<img class="climate_graph" src="./graph?types=wmean" alt="climgraph4" />
-<img class="climate_graph" src="./graph?types=days_snow,days_snowfall,days_storm,days_frost" alt="climgraph5" />
-<img class="climate_graph" src="./graph?types=wethr" alt="climgraph6" />
-<img class="climate_graph" src="./graph?types=sunhr" alt="climgraph7" />
-<img class="climate_graph" src="./graph?types=sunmax" alt="climgraph8" />
+<img class="climate_graph" src="climate/graph?types=tmin,tmax" alt="climgraph1" />
+<img class="climate_graph" src="climate/graph?types=tmean,trange" alt="climgraph2" />
+<img class="climate_graph" src="climate/graph?types=rain" alt="climgraph3" />
+<img class="climate_graph" src="climate/graph?types=rdays" alt="climgraph3.5" />
+<img class="climate_graph" src="climate/graph?types=wmean" alt="climgraph4" />
+<img class="climate_graph" src="climate/graph?types=days_snow,days_snowfall,days_storm,days_frost" alt="climgraph5" />
+<img class="climate_graph" src="climate/graph?types=wethr" alt="climgraph6" />
+<img class="climate_graph" src="climate/graph?types=sunhr" alt="climgraph7" />
+<img class="climate_graph" src="climate/graph?types=sunmax" alt="climgraph8" />
