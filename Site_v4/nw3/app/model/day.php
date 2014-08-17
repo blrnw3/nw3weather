@@ -339,7 +339,7 @@ class Day {
 			'cnt' => $i_last,
 			'exectime' => $this->timer->executionTimeMs(),
 			# Singles
-			'frostduration' => $frostMins / 60.0,
+			'frosthrs' => $frostMins / 60.0,
 			'wethrs' => $wethrs,
 			'maxhrgst' => $maxhrgst,
 			# Arrays
@@ -420,15 +420,18 @@ class Day {
 	}
 
 	private function get_live_data($start_t, $end_t) {
-		$query = "WHERE t BETWEEN '$start_t' AND '$end_t'";
-		return $this->db->select('live', self::QUERY_COLS, $query);
+		return $this->db->query(self::QUERY_COLS)->tbl('live')
+			->filter(Db::btwn($start_t, $end_t, 't', true))
+			->all()
+		;
 	}
 
 	private function get_last_rain() {
-		$query = "WHERE rain > 0"
-			. " ORDER BY t DESC"
-			. " LIMIT 1";
-		return $this->db->select('live', Db::timestamp(), $query, Db::SCALAR);
+		return $this->db->query(Db::timestamp())->tbl('live')
+			->filter('rain > 0')
+			->extreme(Db::MAX, 't')
+			->scalar()
+		;
 	}
 
 }

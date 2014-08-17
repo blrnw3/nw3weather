@@ -10,6 +10,7 @@ $ranks = $rain->ranks();
 $rec24hr = $rain->record_24hrs()['wettest'];
 $pastyr_monthly = $rain->past_yr_month_tots();
 $pastyr_seasonal = $rain->past_yr_season_tots();
+$show_now_graph = ($recent['rn24hr'] > 0);
 ?>
 
 <h1>Detailed Rainfall Data</h1>
@@ -81,43 +82,37 @@ $pastyr_seasonal = $rain->past_yr_season_tots();
 	</tbody>
 </table>
 
-<table>
-	<caption>Rankings</caption>
-	<thead>
-		<tr>
-			<td>Rank</td>
-			<?php foreach ($ranks as $rank): ?>
-				<td><?php echo $rank['descrip']; ?></td>
-			<?php endforeach; ?>
-		</tr>
-	</thead>
-	<tbody>
-		<?php for ($i = 0; $i < count($ranks['rain']['data']); $i++): ?>
-		<tr>
-			<td><?php echo ($i+1) ?></td>
-			<?php foreach ($ranks as $rank): ?>
-			<td>
-				<?php echo Variable::conv($rank['data'][$i]['val'], $rank['type']) ?>
-				<br />
-				<?php echo D::date($rank['data'][$i]['dt'], 'rec', $rank['rec_type']) ?>
-			</td>
-			<?php endforeach; ?>
-		</tr>
-		<?php endfor; ?>
-	</tbody>
-</table>
+<?php $this->viewette('rank_tbl', [
+	'ranks' => $ranks,
+	'name' => 'Rankings'
+]); ?>
 
-<table>
-	<caption>Rolling 12-months Monthly Totals</caption>
-	<?php $this->viewette('pastyr_tots_tbl', ['data' => $pastyr_monthly, 'format' => 'M Y', 'name' => 'Month']) ?>
-</table>
-<table>
-	<caption>Past Year Seasonal Totals</caption>
-	<?php $this->viewette('pastyr_tots_tbl', ['data' => $pastyr_seasonal, 'format' => false, 'name' => 'Season']) ?>
-</table>
+<?php $this->viewette('pastyr_tbl', [
+	'caption' => 'Rolling 12-months Monthly Totals and Extremes',
+	'data' => $pastyr_monthly,
+	'format' => 'M Y',
+	'name' => 'Month'
+]) ?>
+
+<?php // $this->viewette('pastyr_tbl', [
+//	'caption' => 'Past Year Seasonal Totals',
+//	'data' => $pastyr_seasonal,
+//	'format' => false,
+//	'name' => 'Season'
+//]) ?>
 
 <img src="../graph/daily/rain" alt="Daily rain totals last 31 days" />
 <img src="../graph/monthly/rain" alt="Monthly rain totals last 12 months" />
+
+<p>
+	<a href="../datareport?vartype=rain" title="<?php echo D_year; ?>daily rain totals">
+		<b>View daily totals for the past year</b>
+	</a>
+</p>
+
+<?php if($show_now_graph): ?>
+	<img id="now_graph" src="../graph/liveauto/rain" alt="Last 24hrs Rainfall" />
+<?php endif; ?>
 
 <p>
 	<b>Note 1:</b> Rain records began in February 2009<br />

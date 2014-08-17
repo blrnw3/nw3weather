@@ -42,6 +42,7 @@ abstract class Variable {
 			'name' => 'temperature', #unique identifier
 			'precision' => 1, #Number of decimal places to show
 			'summable' => false, #Can be summed
+			'minmax' => true, //Has a sensible maximum and minimum
 			'imperial_divisor' => 0.555556, #Conversion factor to imperial
 			'round_size' => 5, #For intelligent auto-scale of charts
 			'thresholds_day' => [-5,0,5, 10,15,20, 25,30,35], #For value-based colour banding
@@ -63,6 +64,7 @@ abstract class Variable {
 			'name' => 'pressure',
 			'precision' => 1,
 			'summable' => false,
+			'minmax' => true,
 			'imperial_divisor' => 33.864,
 			'round_size' => 10,
 			'thresholds_day' => [970,980,990, 1000,1010,1015, 1020,1030,1040],
@@ -84,6 +86,7 @@ abstract class Variable {
 			'precision' => 0,
 			'unit' => '%',
 			'summable' => false,
+			'minmax' => true,
 			'imperial_divisor' => 1,
 			'round_size' => 10,
 			'thresholds_day' => [30,40,50, 60,70,80, 90,98],
@@ -161,6 +164,7 @@ abstract class Variable {
 		self::AbsTemp => [
 			'name' => 'absolute_temperature',
 			'summable' => false,
+			'minmax' => true,
 			'imperial_divisor' => 0.55556,
 			'round_size' => 5,
 			'precision' => 1,
@@ -235,26 +239,38 @@ abstract class Variable {
 
 	public static $daily = [
 		'tmin' => [
-			'description' => 'Minimum Temperature',
+			'description' => 'Night Minimum<br />(21-09)',
 			'anomable' => true, #Anomaly calculations possible
 			'group' => self::Temperature, #Inheritance of properties,
 			'category' => 'Temperature', #Practically, e.g. for use in drop-down grouping
 			'colour' => '#33f' #for graphs
 		],
 		'tmax' => [
-			'description' => 'Maximum Temperature',
+			'description' => 'Day Maximum<br />(09-21)',
 			'group' => self::Temperature,
 			'category' => 'Temperature',
 			'anomable' => true,
 			'colour' => 'orange'
 		],
 		'tmean' => [
-			'description' => 'Mean Temperature',
+			'description' => 'Mean Temperature<br />(00-00)',
 			'group' => self::Temperature,
 			'category' => 'Temperature',
 			'anomable' => true,
 			'colour' => '#aae',
 			'spread' => true, # Quantity is an average/sum, so has no point instance and therefore no time_of
+			'db_field' => 't24mean', # Db field name (for calculated fields)
+			'db_field_anom' => '(a_tmax + a_tmin)/2', # Db field name Anom (for calculated fields)
+		],
+		'tmean_calc' => [
+			'description' => 'Mean Temperature (max+min)/2',
+			'group' => self::Temperature,
+			'category' => 'Temperature',
+			'anomable' => true,
+			'colour' => '#ace',
+			'spread' => true,
+			'db_field' => '(tmax + tmin)/2',
+			'db_field_anom' => '(a_tmax + a_tmin)/2',
 		],
 
 		'hmin' => [

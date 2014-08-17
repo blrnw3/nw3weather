@@ -193,17 +193,38 @@ class Rain extends \nw3\app\core\Api {
 	}
 
 	function ranks() {
-		$rnm = $this->rain->rankings_month();
-		return [
-			'rain' => ['data' => $this->rain->rankings()['max'], 'descrip' => 'Wettest', 'type' => Vari::Rain],
-			'hrmax' => ['data' => $this->hrmax->rankings()['max'], 'descrip' => 'Max in 1hr', 'type' => Vari::Rain],
+		$rnm = $this->rain->rankings(Detail::MONTHLY, Detail::RECORD);
+		$data = [
+			'rain' => ['data' => $this->rain->rankings(Detail::DAILY, Detail::RECORD)['max'], 'descrip' => 'Wettest', 'type' => Vari::Rain],
+			'hrmax' => ['data' => $this->hrmax->rankings(Detail::DAILY, Detail::RECORD)['max'], 'descrip' => 'Max in 1hr', 'type' => Vari::Rain],
 			'rain_m_max' => ['data' => $rnm['max'], 'descrip' => 'Wettest Month', 'type' => Vari::Rain, 'rec_type' => Detail::MONTHLY],
 			'rain_m_min' => ['data' => $rnm['min'], 'descrip' => 'Driest Month', 'type' => Vari::Rain, 'rec_type' => Detail::MONTHLY],
+			'rain_daily_curr_yr' => ['data' => $this->rain->rankings(Detail::DAILY, Detail::NOWYR)['max'], 'descrip' => 'Wettest [CURR_YR]', 'type' => Vari::Rain, 'period' => Detail::NOWYR],
 		];
+		foreach($data as &$dat) {
+			if(!$dat['period']) {
+				$dat['period'] = Detail::RECORD;
+			}
+		}
+		return $data;
 	}
 
 	function past_yr_month_tots() {
-		return $this->rain->past_year_monthly_aggs();
+		return [
+			'rn_tot' => $this->rain->past_year_monthly_aggs() + [
+				'type' => Vari::Rain,
+				'descrip' => 'Total Rain',
+				'agg' => true
+			],
+			'rn_max' => [
+				'periods' => $this->rain->past_year_monthly_extremes()['max'],
+				'type' => Vari::Rain,
+				'descrip' => 'Max Rain',
+				'agg' => false,
+				'no_anom' => true,
+				'rec_type' => 'jS'
+			],
+		];
 	}
 	function past_yr_season_tots() {
 		$tots = $this->rain->past_year_seasonal_aggs();

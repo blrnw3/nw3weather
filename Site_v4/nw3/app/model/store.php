@@ -31,6 +31,8 @@ class Store extends \nw3\app\core\Singleton {
 	public $gust_raw;
 	public $w10m;
 	public $wdir;
+	public $dewp;
+	public $feel;
 
 	public $today;
 	public $hr24;
@@ -76,6 +78,9 @@ class Store extends \nw3\app\core\Singleton {
 		$this->gust_raw = (float)($data[2] * $kntsToMph); //true 14s gust
 		$this->w10m = (float)($data[158] * $kntsToMph);
 		$this->wdir = (int)$data[3];
+		// Calculated
+		$this->dewp = Variable::dewPoint($this->temp, $this->humi);
+		$this->feel = Variable::feelsLike($this->temp, $this->wind, $this->dewp);
 	}
 
 }

@@ -3,7 +3,7 @@ use nw3\app\model\Detail as mD;
 use nw3\app\helper\Detail as D;
 use nw3\app\model\Variable;
 
-$headings = array_keys($data[array_keys($data)[0]]['data']);
+$headings = array_keys($_this[array_keys($_this)[0]]['data']);
 ?>
 <thead>
 	<tr>
@@ -14,7 +14,7 @@ $headings = array_keys($data[array_keys($data)[0]]['data']);
 	</tr>
 </thead>
 <tbody>
-	<?php foreach($data as $k => $vals): ?>
+	<?php foreach($_this as $k => $vals): ?>
 	<tr>
 		<td><?php echo $vals['descrip']; ?></td>
 		<?php foreach ($headings as $p): ?>

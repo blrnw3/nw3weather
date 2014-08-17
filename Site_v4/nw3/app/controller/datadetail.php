@@ -25,6 +25,17 @@ class Datadetail extends core\Controller {
 		$this->render();
 	}
 
+	public function temperature() {
+		$this->build('Temperature Detail');
+		$this->render();
+	}
+
+	public function generic() {
+		$var = $this->sub_path(1);
+		$this->build("$var Detail");
+		$this->render();
+	}
+
 }
 
 ?>

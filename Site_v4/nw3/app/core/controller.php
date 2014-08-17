@@ -152,8 +152,11 @@ abstract class Controller {
 	 * Loads a mini view (shared across other views), aka 'partial'
 	 * @param type $name file_name of the viewette (excluding leading underscore and extension)
 	 */
-	protected function viewette($name, $data=null) {
-		require $this->view_base . "_$name.php";
+	protected function viewette($_name, $_this=null) {
+		foreach($_this as $_k => $_val) {
+			${$_k} = $_val;
+		}
+		require $this->view_base . "_$_name.php";
 	}
 
 	protected function check_correct_subpath_length($subpaths_allowed=1) {

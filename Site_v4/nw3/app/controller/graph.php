@@ -21,7 +21,7 @@ class Graph extends core\Controller {
 
 	public function monthly() {
 		$type = $this->sub_path(1);
-		$data = new model\Detail($type);
+		$data = new model\Detail($type, true);
 		$this->data = $data->monthly();
 //		var_dump($this->data);
 		$this->build();
@@ -30,7 +30,7 @@ class Graph extends core\Controller {
 
 	public function daily() {
 		$type = $this->sub_path(1);
-		$data = new model\Detail($type);
+		$data = new model\Detail($type, true);
 		$this->data = $data->daily();
 		$this->build();
 		$this->jpgraph();
