@@ -58,7 +58,7 @@ $newLine = substr($newLine, 0, strlen($newLine)-1) . "\r\n";
 if($tstamp == '0000') {
 	require(ROOT.'data.php');
 
-	if(date('j') == 1) {
+	if(true || date('j') == 1) {
 		exec(EXEC_PATH. 'HourlyLogs.php > hrlogOutput.html');
 	}
 

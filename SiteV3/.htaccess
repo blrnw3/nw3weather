@@ -53,6 +53,8 @@ deny from 180.179.171.194
 deny from 113.190
 deny from 62.219.8.235
 deny from 188.165.243.45
+deny from 103.14.146.44
+deny from 117.18.73.66
 # Scrapers
 deny from 14.63.229.34
 # Ezooms bot

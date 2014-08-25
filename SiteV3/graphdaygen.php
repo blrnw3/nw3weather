@@ -56,7 +56,8 @@ else {
 	else { $message .= $hrs.' hrs '; }
 }
 
-$cachedURL = 'imgCache/'. substr( end(explode('/', $_SERVER['SCRIPT_NAME'])), 0, -4 ) .'_'. $procday;
+$namea = explode('/', $_SERVER['SCRIPT_NAME']);
+$cachedURL = 'imgCache/'. substr( end($namea), 0, -4 ) .'_'. $procday;
 $cachedURL .= isset($_GET['small']) ? '_s' : '';
 $cachedURL .= '.png';
 $cacheName = ROOT . $cachedURL;
