@@ -1,7 +1,6 @@
 <?php
 use nw3\app\api as a;
 use nw3\app\helper\Detail as D;
-use nw3\app\model\Variable;
 
 $temp = new a\Temperature();
 $recent = $temp->recent_values();
@@ -9,39 +8,19 @@ $extremes = $temp->extremes();
 $ranks_day = $temp->ranks_day();
 $ranks_month = $temp->ranks_month();
 $ranks_day_curr_month = $temp->ranks_day_curr_month();
-$rec24hr = $temp->record_24hrs();
-$pastyr_monthly = $temp->past_yr_month_avg_extremes();
-$pastyr_seasonal = $temp->past_yr_season_tots();
+//$rec24hr = $temp->record_24hrs();
+$pastyr_monthly = $temp->past_yr_month_avgs();
+$pastyr_monthly_extrms = $temp->past_yr_month_extrms();
+$pastyr_seasonal = $temp->past_yr_season_means();
 ?>
 
 <h1>Detailed Temperature Data</h1>
 
-<table>
-	<caption>Current / Latest</caption>
-	<thead>
-		<tr>
-			<td>Measure</td>
-			<td>Value</td>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach ($temp->current_latest() as $k => $val): ?>
-		<tr>
-			<td><?php echo $val['descrip'] ?></td>
-			<td>
-				<?php echo Variable::conv($val['val'], $val['type'], true, $val['sign']) ?>
-				<?php if($val['dt']): ?>
-					 at <?php echo $val['dt'] ?>
-				<?php endif; ?>
-			</td>
-		</tr>
-		<?php endforeach; ?>
-	</tbody>
-</table>
+<?php $this->viewette('curr_latest_tbl', $temp->current_latest()) ?>
 
 <table>
 	<caption>Totals and Extremes for recent days</caption>
-	<?php $this->viewette('period_tbl', $temp->recent_values()) ?>
+	<?php $this->viewette('period_tbl', $recent) ?>
 </table>
 
 <table>
@@ -68,24 +47,6 @@ $pastyr_seasonal = $temp->past_yr_season_tots();
 	<?php $this->viewette('period_tbl', $temp->extremes_nday()) ?>
 </table>
 
-<table>
-	<caption>24hr Records</caption>
-	<thead>
-		<tr>
-			<td><?php echo $rec24hr['descrip'] ?></td>
-		</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<td>
-				<?php echo Variable::conv($rec24hr['data']['val'], $rec24hr['type']) ?>
-				<br />
-				<?php echo D::date($rec24hr['data']['dt'], 'rec', $rec24hr['rec_type']) ?>
-			</td>
-		</tr>
-	</tbody>
-</table>
-
 <?php $this->viewette('rank_tbl', [
 	'ranks' => $ranks_day,
 	'name' => 'Daily Rankings'
@@ -106,13 +67,25 @@ $pastyr_seasonal = $temp->past_yr_season_tots();
 	'caption' => 'Rolling 12-months Monthly Means',
 	'data' => $pastyr_monthly,
 	'format' => 'M Y',
-	'name' => 'Month'
-]) ?>
+	'name' => 'Month',
+	'summary_name' => 'Mean/Tot'
+]); ?>
 
-<table>
-	<caption>Past Year Seasonal Means</caption>
-	<?php $this->viewette('pastyr_tots_tbl', ['data' => $pastyr_seasonal, 'format' => false, 'name' => 'Season']) ?>
-</table>
+<?php $this->viewette('pastyr_tbl', [
+	'caption' => 'Rolling 12-months Monthly Extremes',
+	'data' => $pastyr_monthly_extrms,
+	'format' => 'M Y',
+	'name' => 'Month',
+	'no_summary' => true,
+]); ?>
+
+<?php $this->viewette('pastyr_tbl', [
+	'caption' => 'Past Year Seasonal Means',
+	'data' => $pastyr_seasonal,
+	'format' => D::SEASON,
+	'name' => 'Season',
+	'summary_name' => 'Total'
+]); ?>
 
 <img src="../graph/daily/tmean" alt="Daily rain totals last 31 days" />
 <img src="../graph/monthly/tmean" alt="Monthly rain totals last 12 months" />
@@ -140,5 +113,5 @@ $pastyr_seasonal = $temp->past_yr_season_tots();
 	'Humidex', depending on the temperature and humidity.
 	These indices are attempts to depict what the air actually feels like on a human's skin -
 	 either from the warming effect of high humidity, or the cooling effect of the wind.
-	 However, they have little physical meaning and their valid use is debatable, so are provided for interest only.
+	 However, they have little physical meaning and their validity is debatable, so are provided for interest only.
 </p>

@@ -1,6 +1,8 @@
 <?php
 namespace nw3\app\model;
 
+use nw3\data\Beaufort;
+
 use nw3\app\core\Units;
 use nw3\app\util\Time;
 use nw3\app\util\Html;
@@ -316,20 +318,24 @@ abstract class Variable {
 		'wmean' => [
 			'description' => 'Mean Wind Speed',
 			'group' => self::Wind,
+			'anom_day_ignore' => true,
 			'category' => 'Wind',
 			'anomable' => true,
+			'minmax' => true,
 			'colour' => 'red',
 			'spread' => true,
 		],
 		'wmax' => [
 			'description' => 'Maximum Wind Speed',
 			'group' => self::Wind,
+			'anomable' => false,
 			'category' => 'Wind',
 			'colour' => '#f33'
 		],
 		'gust' => [
 			'description' => 'Maximum Gust Speed',
 			'group' => self::Wind,
+			'anomable' => false,
 			'precision' => 0,
 			'category' => 'Wind',
 			'colour' => '#f44'
@@ -337,10 +343,18 @@ abstract class Variable {
 		'wdir' => [
 			'description' => 'Mean Wind Direction',
 			'group' => self::Direction,
+			'anomable' => false,
 			'nosummary' => true,
 			'category' => 'Wind',
 			'colour' => '#f77',
 			'spread' => true,
+		],
+		'w10max' => [
+			'description' => 'Max 10m Speed',
+			'group' => self::Wind,
+			'anomable' => false,
+			'category' => 'Wind',
+			'colour' => '#f99',
 		],
 
 		'rain' => [
@@ -471,7 +485,6 @@ abstract class Variable {
 			}
 		}
 	}
-
 
 	/**
 	* Convert from UK units to US or EU, and neaten-up <br />
@@ -629,7 +642,16 @@ abstract class Variable {
 		return round((237.7*$gamma) / (17.271-$gamma), 1);
 	}
 
-
+	/**
+	 * Convert from wind speeed in mph to a beaufort value and descriptive string
+	 * @param int $mph raw value
+	 * @return string bft-descrip + bft-force
+	 */
+	static function bft($mph) {
+		$force = round(pow($mph / 1.8735, 0.6667));
+		$descrip = Beaufort::$word[$force];
+		return "$descrip (F{$force})";
+	}
 
 	static function assign_units($units) {
 		foreach ($units as $var => $unit) {
@@ -651,9 +673,58 @@ abstract class Variable {
 		return $types[$val];
 	}
 	static function degname($winddegree) {
+		if($winddegree === null) return '[NA]';
 		$windlabels = array ('N','NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S',
 			'SSW','SW', 'WSW', 'W', 'WNW', 'NW', 'NNW','N');
 		return $windlabels[ round($winddegree / 22.5, 0) ];
+	}
+
+	/**
+	 * TODO - this is a near-duplicate of the one in model/day. MERGE THEM
+	 * @param type $vals - numeric array of (wdir, wind assoc arrays)
+	 * @return int
+	 */
+	static function wdirMean(&$vals) {
+		$bitifier = 36; //constant - the quantisation level to convert 360 degrees into a bittier signal
+		$calmThreshold = 1; //constant - values when the wind speed was below this are ignored
+
+		$freqs = [];
+		for($i = 0; $i <= 360/$bitifier; $i++) {
+			$freqs[$i] = 0;
+		}
+
+		//get frequencies for each bitified angle
+		foreach($vals as $val) {
+			if($val['wind'] > $calmThreshold) { // pivot not to be affected by calm times
+				$freqs[round($val['wdir'] / $bitifier)]++;
+			}
+		}
+
+		//choose a pivot
+		$minfreq = min($freqs);
+		$pivot = array_search($minfreq, $freqs);
+		$pivot *= $bitifier;
+
+		//calculate the mean about this method
+		$sum = 0;
+		$count = 0;
+		foreach($vals as $val) {
+			//values from calm times or near pivot are anomalous => ignore
+			if(abs($val['wdir'] - $pivot) >= $bitifier && $val['wind'] > $calmThreshold) {
+				$sum += $val['wdir'];
+				$count++;
+				if($val['wdir'] > $pivot) {
+					$sum -= 360;
+				}
+			}
+		}
+		//clean-up
+		$mean = ($count === 0) ? 0 : round($sum / $count);
+		if($mean < 0) {
+			$mean += 360;
+		}
+
+		return $mean;
 	}
 
 	private static function pretty_last_stamp($last) {
@@ -669,7 +740,5 @@ abstract class Variable {
 		}
 		return Html::tip(date('H:i ', $last) . ' ' . $dateAgo, $ago . ' ago', true);
 	}
-
-
 }
 ?>

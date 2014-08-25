@@ -654,6 +654,15 @@ table.data_report.summary tbody tr {
 	display: inline;
 }
 
+.val_max {
+	color: #DF7401;
+	font-weight: bold;
+}
+.val_min {
+	color: #0101DF;
+	font-weight: bold;
+}
+
 
 /* AUTO-GENERATED */
 .tmin {color:#33f}

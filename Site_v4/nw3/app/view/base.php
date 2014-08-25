@@ -114,7 +114,8 @@ use nw3\app\helper\Main;
 					<div id="script_details">
 						<?php $this->timer->stop(); ?>
 						Script executed <abbr title="Session Cnt: <?php echo Session::page_count(); ?>">in</abbr> <?php echo $this->timer->executionTimeMs(); ?>
-						| DB queries: <?php echo Main::db_stats(); ?>
+						| DB queries: <?php echo Main::db_stats($this->timer->executionTimeMs()); ?>
+						| Memory: <?php Main::mem_stats() ?>
 					</div>
 				</div>
 			</div>

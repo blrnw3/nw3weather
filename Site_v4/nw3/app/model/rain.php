@@ -14,12 +14,10 @@ class Rain extends Detail {
 
 	const MAX_DRY_QUANTITY = 0.1; // Allow up to (inclusive) this much rain to still count as a dry day
 
-	private $wet_filter;
-
 	function __construct() {
+		$this->days_filter = '> '.self::MAX_DRY_QUANTITY;
+		self::$ranknum = 10;
 		parent::__construct('rain');
-
-		$this->wet_filter = '> '.self::MAX_DRY_QUANTITY;
 	}
 
 	public function spells() {
@@ -57,23 +55,11 @@ class Rain extends Detail {
 		return $data;
 	}
 
-	public function days() {
-		$data = [];
-		foreach (self::get_periods('multi') as $period) {
-			$cnt = $this->period_count($period, $this->wet_filter);
-			$data[$period] = [
-				'val' => $cnt,
-				'prop' => $cnt / $this->period_lengths[$period]
-			];
-		}
-		return $data;
-	}
-
 	public function extreme_days_monthly() {
 		$data = ['max' => [], 'min' => []];
 		foreach (self::get_periods('month_recs') as $period) {
-			$cnt_max = $this->period_count_month_extreme($period, Db::MAX, $this->wet_filter);
-			$cnt_min = $this->period_count_month_extreme($period, Db::MIN, $this->wet_filter);
+			$cnt_max = $this->period_count_month_extreme($period, Db::MAX, $this->days_filter);
+			$cnt_min = $this->period_count_month_extreme($period, Db::MIN, $this->days_filter);
 			$data['max'][$period] = ['val' => $cnt_max['val'], 'dt' => $cnt_max['d']];
 			$data['min'][$period] = ['val' => $cnt_min['val'], 'dt' => $cnt_min['d']];
 		}
@@ -82,8 +68,8 @@ class Rain extends Detail {
 	public function extreme_days_yearly() {
 		$data = ['max' => [], 'min' => []];
 		$period = self::RECORD;
-		$cnt_max = $this->period_count_year_extreme(Db::MAX, $this->wet_filter);
-		$cnt_min = $this->period_count_year_extreme(Db::MIN, $this->wet_filter);
+		$cnt_max = $this->period_count_year_extreme(Db::MAX, $this->days_filter);
+		$cnt_min = $this->period_count_year_extreme(Db::MIN, $this->days_filter);
 		$data['max'][$period] = ['val' => $cnt_max['val'], 'dt' => $cnt_max['y']];
 		$data['min'][$period] = ['val' => $cnt_min['val'], 'dt' => $cnt_min['y']];
 		return $data;
@@ -209,10 +195,10 @@ class Rain extends Detail {
 		foreach ($rainall as $i => $rainpt) {
 			$dt = $rainpt['d'];
 			$cumrn += $rainpt['rain'];
-			$cumdays += ((float)$rainpt['rain'] > $this->wet_filter);
+			$cumdays += ((float)$rainpt['rain'] > $this->days_filter);
 			if ($i >= $n) {
 				$cumrn -= $rainall[$i - $n]['rain'];
-				$cumdays -= ((float)$rainall[$i - $n]['rain'] > $this->wet_filter);
+				$cumdays -= ((float)$rainall[$i - $n]['rain'] > $this->days_filter);
 				if ($cumrn < $driest) {
 					$driest = $cumrn;
 					$driest_end = $dt;

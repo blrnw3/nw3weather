@@ -18,6 +18,7 @@ class Date {
 
 	static $seasons = ['Winter', 'Spring', 'Summer', 'Autumn'];
 	static $season_month_nums = [[1,2,12], [3,4,5], [6,7,8], [9,10,11]];
+	static $month_season_map = [];
 
 	 //number of leap years since 2009
 	const num_leap_yrs = 1;
@@ -32,6 +33,7 @@ class Date {
 //		$now = time() - $debug_offset;
 		$debug_date = new \DateTime();
 		$debug_date->setDate(2013, 11, 9);
+//		$debug_date->setTime(6, 0, 0);
 		$now = $debug_date->getTimestamp();
 		define('D_now', $now);
 
@@ -59,21 +61,20 @@ class Date {
 		self::$is_dark = ($now < $sunrise || $now > $sunset);
 
 		$yest = $now - self::secs_DAY;
-		define( 'D_yest', $yest);
+		define('D_yest', $yest);
 		define( 'D_yest_day', (int)date('j', $yest) );
 		define( 'D_yest_month', (int)date('n', $yest) );
 		define( 'D_yest_year', (int)date('Y', $yest) );
 		define( 'D_yest_doy', (int)date('z', $yest) );
 
-
-		//Determine current season
-		for($s = 0; $s < 4; $s++) {
-			if(in_array(D_month,  self::$season_month_nums[$s])) {
-				define('D_season', $s+1);
-				define('D_seasonname', self::$seasons[$s]);
-				break;
+		//Determine current season and fill-in the month map
+		foreach(self::$season_month_nums as $s => $months) {
+			foreach($months as $m) {
+				self::$month_season_map[$m] = $s;
 			}
 		}
+		define('D_season', self::$month_season_map[D_month]);
+		define('D_seasonname', self::$seasons[D_season]);
 	}
 
 	/**
@@ -208,6 +209,10 @@ class Date {
 	static function get_days_in_month($month, $year = 2009) {
 		return (int)date('t',self::mkdate($month,2,$year));
 	}
+	static function get_days_in_month_from_date_string($dt_string) {
+		$dt = new \DateTime($dt_string);
+		return (int) $dt->format('t');
+	}
 	static function get_days_in_year($year) {
 		return date('z', self::mkdate(12,31,$year)) + 1;
 	}
@@ -235,13 +240,17 @@ class Date {
 
 	/** Returns month number (1-12) of the current season's starting month (Dec, Mar, Jun, or Sep) */
 	static function get_current_season_start_month() {
-		return self::$season_month_nums[D_season-1][0];
+		return self::$season_month_nums[D_season][0];
 	}
 
+	/** TODO - great candidate for unit testing */
 	static function get_current_season_days_elapsed() {
-		return date('z', (D_now - self::mkdate(self::get_current_season_start_month(), 1)));
+		return ceil((D_now - self::mkdate(self::get_current_season_start_month(), 1)) / 86400.0);
 	}
 
+	static function season_name_from_month($m) {
+		return self::$seasons[self::$month_season_map[$m]];
+	}
 }
 
 ?>

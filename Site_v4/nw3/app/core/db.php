@@ -43,7 +43,6 @@ class Db extends Singleton {
 	 * @param bool[=null] $explosive_override pass to override the config value
 	 */
 	function __construct($explosive_override = null) {
-
 		$user = Conf::$db['username'];
 		$pass = Conf::$db['password'];
 		$db = Conf::$db['database'];
@@ -181,11 +180,18 @@ class Db extends Singleton {
 	static function min($a) {
 		return "MIN($a)";
 	}
+	static function null_($a) {
+		return "$a IS NULL";
+	}
+	static function not_null($a) {
+		return "$a IS NOT NULL";
+	}
+
+
 	static function timestamp($col='t', $alias=true) {
 		$col = "UNIX_TIMESTAMP($col)";
 		return $alias ? new Alias($col, 'dt') : $col;
 	}
-
 	static function time_field($field) {
 		return "DATE_FORMAT(t_$field, '%H:%i') AS t";
 	}

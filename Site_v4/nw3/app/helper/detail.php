@@ -16,6 +16,7 @@ abstract class Detail {
 
 	const MULTI = 0;
 	const SINGLE = 1;
+	const SEASON = 'seas'; // for date format
 
 	static function of_final_exp($data, $type=null) {
 		$conv_type = is_null($type) ? $data['type'] : $type;
@@ -41,11 +42,19 @@ abstract class Detail {
 		if($rec_type === mD::YEARLY) {
 			return $dt_string;
 		}
+
 		try {
 			$dt = new \DateTime($dt_string);
 		} catch (\Exception $ex) { // Probably an integer
 			$dt = \DateTime::createFromFormat('U', $dt_string);
 		}
+
+		if($rec_type === self::SEASON) {
+			$mon = (int)$dt->format('n');
+			$yr = (int)$dt->format('Y');
+			return Date::season_name_from_month($mon) .' '. $yr;
+		}
+
 		if($period && $rec_type === mD::MONTHLY) {
 			$format = key_exists('mon_format', mD::$periods[$period]) ? mD::$periods[$period]['mon_format'] : 'M Y';
 		} elseif($rec_type) { // Custom format

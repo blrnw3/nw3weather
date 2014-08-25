@@ -19,19 +19,26 @@ $first = $data[array_keys($data)[0]];
 		<tr>
 			<td><?php echo D::date($first['periods'][$i]['d'], null, $format) ?></td>
 			<?php foreach ($data as $vals): ?>
-				<?php $val = $vals['periods'][$i]; ?>
-				<?php $this->viewette('val_date_anom', $val + $vals) ?>
+				<td class="<?php echo $vals['periods'][$i]['is_max'] ? 'val_max' : ''; echo $vals['periods'][$i]['is_min'] ? 'val_min' : ''?>">
+				<?php $this->viewette('val_date_anom', $vals['periods'][$i] + $vals) ?>
+				</td>
 			<?php endforeach; ?>
 		</tr>
 		<?php endfor; ?>
+		<?php if(!$no_summary): ?>
 		<tr>
-			<td>Total</td>
+			<td><?php echo $summary_name; ?></td>
 			<?php foreach ($data as $vals): ?>
 				<?php $val = $vals['annual']; ?>
+				<td>
 				<?php if($val): ?>
 					<?php $this->viewette('val_date_anom', $val + $vals) ?>
+				<?php else: ?>
+					-
 				<?php endif; ?>
+				</td>
 			<?php endforeach; ?>
 		</tr>
+		<?php endif; ?>
 	</tbody>
 </table>

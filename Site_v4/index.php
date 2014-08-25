@@ -3,6 +3,7 @@ use nw3\app\core\Loader;
 
 // Removes DST-based headaches
 date_default_timezone_set('UTC');
+ini_set("memory_limit","1024M");
 
 //For completeness and brevity
 /** * Smallest integer */

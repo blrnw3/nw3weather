@@ -35,8 +35,11 @@ class Detail {
 	const DAILY = 'daily';
 	const MONTHLY = 'monthly';
 	const YEARLY = 'yearly';
+	const SEASONAL = 'sesonal';
 
 	const TBL_DAILY = 'daily';
+
+	static $ranknum = 5;
 
 	static $periodsn = [7, 31, 365];
 
@@ -59,6 +62,7 @@ class Detail {
 	protected $query_year;
 	protected $query_val;
 	protected $query_anom;
+	protected $count_filter;
 
 	protected $period_lengths;
 
@@ -71,6 +75,8 @@ class Detail {
 	protected $aggtype; //Sum or mean
 	protected $summable;
 	protected $anomable;
+
+	protected $days_filter;
 
 	public static $periods = [
 		self::TODAY => [
@@ -108,14 +114,12 @@ class Detail {
 			'month_recs' => true,
 			'descrip' => 'Overall',
 			'has_spell' => true,
-			'ranknum' => 10,
 		],
 		self::RECORD_D => [
 			'multi' => true,
 			'record' => true,
 			'descrip' => 'This Date (day)',
-			'format' => 'Y',
-			'ranknum' => 5,
+			'format' => 'Y'
 		],
 		self::RECORD_M => [
 			'multi' => true,
@@ -125,7 +129,6 @@ class Detail {
 			'format' => '\D\a\y j Y',
 			'mon_format' => 'Y',
 			'has_spell' => true,
-			'ranknum' => 5,
 		],
 		self::CUM_MON_AGO => [
 			'multi' => true,
@@ -186,7 +189,6 @@ class Detail {
 		$this->anomable = $this->var['anomable'];
 		$this->aggtype = $this->var['summable'] ? Db::SUM : Db::AVG;
 
-
 		if(!$this->var) {
 			throw new \Exception("$varname is not a valid variable");
 		}
@@ -227,6 +229,7 @@ class Detail {
 		$this->query_year = new Alias('YEAR(d)', 'y');
 		$this->query_val = new Alias($this->colname, 'val');
 		$this->query_anom = new Alias($this->anom_colname, 'anom');
+		$this->count_filter = "$this->colname $this->days_filter";
 
 		$query_agg = new Alias(Db::agg($this->colname, $this->aggtype));
 		$query_anom_sum = Db::sum($this->colname) .'/'. Db::sum("$this->colname - $this->anom_colname");
@@ -370,7 +373,8 @@ class Detail {
 		return $data;
 	}
 
-	public function rankings($type, $period) {
+	public function rankings($type, $period, $num=null) {
+		$num = is_null($num) ? self::$ranknum : $num;
 		if(!self::$periods[$period]) {
 			throw new \Exception("'$period' is not a valid period");
 		}
@@ -386,9 +390,8 @@ class Detail {
 		}
 
 		$data = ['max' => [], 'min' => []];
-		$rank_num = self::$periods[$period]['ranknum'];
 
-		$max = $this->$fn($period, Db::MAX, $rank_num);
+		$max = $this->$fn($period, Db::MAX, $num);
 		foreach ($max as $val) {
 			$data['max'][] = [
 				'val' => $val['val'],
@@ -396,7 +399,7 @@ class Detail {
 			];
 		}
 		if($this->var['minmax'] || $type !== self::DAILY) {
-			$min = $this->$fn($period, Db::MIN, $rank_num);
+			$min = $this->$fn($period, Db::MIN, $num);
 			foreach ($min as $val) {
 				$data['min'][] = [
 					'val' => $val['val'],
@@ -411,9 +414,51 @@ class Detail {
 		$q = $this->db->query('d', $this->query_agg)
 			->filter("d < $this->mon_st", "d >= $this->yr_ago_mon_st")
 		;
-		return [
+		$data = [
 			'annual' => $q->one(),
 			'periods' => $q->group('MONTH(d)')->order(Db::ASC)->all()
+		];
+		$this->mark_extreme($data['periods']);
+		return $data;
+	}
+	public function past_year_monthly_counts() {
+		$q = $this->db->query('d', new Alias('MONTH(d)', 'm'), $this->query_count)
+			->filter("d < $this->mon_st", "d >= $this->yr_ago_mon_st", $this->count_filter)
+		;
+		$annual = $q->one();
+		$monthly = $q->group('m')->order(Db::ASC)->all();
+
+		$diy = 365;
+		foreach($monthly as &$db_val) {
+			$dim = Date::get_days_in_month_from_date_string($db_val['d']);
+			$db_val['prop'] = $db_val['val'] / $dim;
+			if($dim === 29) ++$diy;
+		}
+		$annual['prop'] = $annual['val'] / $diy;
+
+		if(count($monthly) < 12) {
+			// Really annoying. SQL doesn't return 0 counts on the group by if all rows are filtered out!
+			$mons_missing = [];
+			foreach(Date::$monthsn as $i => $m) {
+				$mons_missing[date('Y-m', Date::mkdate(D_month + $i, 1, D_year-1))] = true;
+			}
+			foreach($monthly as &$db_m) {
+				$mons_missing[substr($db_m['d'], 0, 7)] = false;
+			}
+			foreach($mons_missing as $d => $missing) {
+				if(!$missing) continue;
+				$monthly[] = [
+					'd' => "$d-01",
+					'val' => 0,
+					'prop' => 0
+				];
+			}
+			usort($monthly, function($a, $b) {return ($a['d'] > $b['d']) ? 1 : -1;});
+		}
+		$this->mark_extreme($monthly);
+		return [
+			'annual' => $annual,
+			'periods' => $monthly
 		];
 	}
 
@@ -422,30 +467,33 @@ class Detail {
 		foreach(Date::$monthsn as $i => $m) {
 			$st = $this->DbMkdate(D_month + $i, 1, D_year-1);
 			$en = $this->DbMkdate(D_month + $m, 1, D_year-1);
-			$q = $this->db->query($this->query_val, 'd', $this->query_anom)
+			$q = $this->db->query($this->query_val, 'd')
 				->filter("d < $en", "d >= $st")
 			;
+			if($this->anomable) {
+				$q = $q->fields([$this->query_anom]);
+			}
+			$q_min = clone $q;
 			$data['max'][] = $q->extreme(Db::MAX)->one();
 			if($this->var['minmax']) {
-				$data['min'][] = $q->extreme(Db::MIN)->one();
+				$data['min'][] = $q_min->extreme(Db::MIN)->one();
 			}
 		}
+		$this->mark_extreme($data['min']);
+		$this->mark_extreme($data['max']);
 		return $data;
 	}
 
 	public function past_year_seasonal_aggs() {
 		$q = $this->db->query('d', $this->query_agg, Db::SEASON_COL)
 			->filter("d < $this->seas_st", "d >= $this->yr_ago_seas_st")
-			->group('season')
-			->order(Db::ASC)
 		;
-		$all = $q->all();
-		$tot = array_reduce($all, function($all, $v){return $v['val'] + $all;}, 0);
-		$tot_anom = $tot / $this->climate->annual[$this->varname]['sum'];
-		return [
-			'periods' => $all,
-			'annual' => ['val' => $tot, 'anom' => $tot_anom]
+		$data = [
+			'annual' => $q->one(),
+			'periods' => $q->group('season')->order(Db::ASC)->all()
 		];
+		$this->mark_extreme($data['periods']);
+		return $data;
 	}
 
 	public function extremes_ndays_db() {
@@ -463,13 +511,44 @@ class Detail {
 
 	public function extremes_ndays() {
 		$data = ['max' => [], 'min' => []];
-		$all = $this->db->query('d', $this->colname)->order(Db::ASC)->all();
+		$all = $this->db->query('d', $this->colname)
+			->filter(Db::not_null($this->colname))
+			->order(Db::ASC)
+		->all();
 		foreach(self::$periodsn as $spell_len) {
 			$spells = $this->nday_avg_extremes($spell_len, $all);
 			$data['min'][$spell_len] = $spells['min'];
 			$data['max'][$spell_len] = $spells['max'];
 		}
 		return $data;
+	}
+
+	public function days() {
+		$data = [];
+		foreach (self::get_periods('multi') as $period) {
+			$cnt = $this->period_count($period, $this->days_filter);
+			$data[$period] = [
+				'val' => $cnt,
+				'prop' => $cnt / $this->period_lengths[$period]
+			];
+		}
+		return $data;
+	}
+
+	protected function mark_extreme(&$db_vals) {
+		$min = INT_MAX;
+		$max = INT_MIN;
+		foreach($db_vals as $i => $db_val) {
+			if($db_val['val'] > $max) {
+				$max = $db_val['val'];
+				$max_n = $i;
+			} elseif($db_val['val'] < $min) {
+				$min = $db_val['val'];
+				$min_n = $i;
+			}
+		}
+		$db_vals[$min_n]['is_min'] = true;
+		$db_vals[$max_n]['is_max'] = true;
 	}
 
 	/**
@@ -489,7 +568,7 @@ class Detail {
 		if(!$this->var['spread'] && $num === 1) {
 			$fields[] = Db::time_field($this->colname);
 		}
-		if($this->anomable && !$this->summable) {
+		if($this->anomable && !$this->summable && !$this->var['anom_day_ignore']) {
 			$fields[] = $this->query_anom;
 		}
 		if(self::$periods[$period]['multi']) {
@@ -499,6 +578,9 @@ class Detail {
 			}
 		}
 		$q = $q->fields($fields)->filter($this->get_date_filter($period));
+		if($extrm_type === Db::MIN) {
+			$q = $q->no_nulls();
+		}
 		if($num === 1) {
 			return $q->one();
 		}
@@ -548,6 +630,9 @@ class Detail {
 			->filter($this->get_date_filter_month($period))
 			->group('y', 'm')
 		;
+		if($extrm_type === Db::MIN) {
+			$q = $q->filter(Db::not_null($this->colname));
+		}
 		if($num === 1) {
 			return $q->extreme($extrm_type)->one();
 		}

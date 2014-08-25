@@ -15,29 +15,11 @@ $show_now_graph = ($recent['rn24hr'] > 0);
 
 <h1>Detailed Rainfall Data</h1>
 
-<table>
-	<caption>Current / Latest</caption>
-	<thead>
-		<tr>
-			<td>Measure</td>
-			<td>Value</td>
-		</tr>
-	</thead>
-	<tbody>
-		<?php foreach ($rain->current_latest() as $k => $val): ?>
-		<tr>
-			<td><?php echo $val['descrip'] ?></td>
-			<td>
-				<?php echo Variable::conv($val['val'], $val['type']) ?>
-			</td>
-		</tr>
-		<?php endforeach; ?>
-	</tbody>
-</table>
+<?php $this->viewette('curr_latest_tbl', $rain->current_latest()) ?>
 
 <table>
 	<caption>Totals and Extremes for recent days</caption>
-	<?php $this->viewette('period_tbl', $rain->recent_values()) ?>
+	<?php $this->viewette('period_tbl', $recent) ?>
 </table>
 
 <table>
@@ -91,15 +73,17 @@ $show_now_graph = ($recent['rn24hr'] > 0);
 	'caption' => 'Rolling 12-months Monthly Totals and Extremes',
 	'data' => $pastyr_monthly,
 	'format' => 'M Y',
-	'name' => 'Month'
-]) ?>
+	'name' => 'Month',
+	'summary_name' => 'Total'
+]); ?>
 
-<?php // $this->viewette('pastyr_tbl', [
-//	'caption' => 'Past Year Seasonal Totals',
-//	'data' => $pastyr_seasonal,
-//	'format' => false,
-//	'name' => 'Season'
-//]) ?>
+<?php $this->viewette('pastyr_tbl', [
+	'caption' => 'Past Year Seasonal Totals',
+	'data' => $pastyr_seasonal,
+	'format' => D::SEASON,
+	'name' => 'Season',
+	'summary_name' => 'Total'
+]); ?>
 
 <img src="../graph/daily/rain" alt="Daily rain totals last 31 days" />
 <img src="../graph/monthly/rain" alt="Monthly rain totals last 12 months" />

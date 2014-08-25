@@ -16,7 +16,7 @@ class Rain extends \nw3\app\core\Api {
 	private $ratemax, $r10max, $hrmax;
 
 	function __construct() {
-		parent::__construct();
+		parent::__construct(Vari::Rain, 'rain');
 		$this->rain = new Rn();
 		$this->ratemax = new Detail('ratemax');
 		$this->r10max = new Detail('r10max');
@@ -213,25 +213,32 @@ class Rain extends \nw3\app\core\Api {
 		return [
 			'rn_tot' => $this->rain->past_year_monthly_aggs() + [
 				'type' => Vari::Rain,
-				'descrip' => 'Total Rain',
+				'descrip' => 'Rainfall',
 				'agg' => true
 			],
 			'rn_max' => [
 				'periods' => $this->rain->past_year_monthly_extremes()['max'],
 				'type' => Vari::Rain,
-				'descrip' => 'Max Rain',
+				'descrip' => 'Wettest Day',
 				'agg' => false,
 				'no_anom' => true,
 				'rec_type' => 'jS'
+			],
+			'rn_cnt' => $this->rain->past_year_monthly_counts() + [
+				'type' => Vari::Days,
+				'descrip' => 'Rain Days',
+				'no_anom' => true,
+				'agg' => true
 			],
 		];
 	}
 	function past_yr_season_tots() {
 		$tots = $this->rain->past_year_seasonal_aggs();
-		foreach ($tots['periods'] as &$tot) {
-			$tot['d'] = Date::$seasons[$tot['season']] .' '. substr($tot['d'], 0, 4);
-		}
-		return $tots;
+		return ['tots' => $tots + [
+			'type' => Vari::Rain,
+			'descrip' => 'Rainfall',
+			'agg' => true
+		]];
 	}
 
 	function record_24hrs() {

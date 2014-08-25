@@ -2,10 +2,11 @@
 namespace nw3\app\api;
 
 use nw3\app\model\Detail;
+use nw3\app\model\Tmin;
+use nw3\app\model\Tmax;
 use nw3\app\model\Store;
 use nw3\app\model\Climate;
 use nw3\app\model\Variable as Vari;
-use nw3\app\util\Date;
 
 /**
  * All temperature stats n stuff
@@ -13,12 +14,14 @@ use nw3\app\util\Date;
 class Temperature extends \nw3\app\core\Api {
 
 	private $tmax, $tmin, $tmean;
+	protected $vars;
 
 	function __construct() {
-		parent::__construct();
+		parent::__construct(Vari::Temperature, 'temp');
 		$this->tmean = new Detail('tmean');
-		$this->tmin = new Detail('tmin');
-		$this->tmax = new Detail('tmax');
+		$this->tmin = new Tmin();
+		$this->tmax = new Tmax();
+//		$this->vars = [$this->tmin, $this->tmax, $this->tmean];
 	}
 
 	function current_latest() {
@@ -63,27 +66,22 @@ class Temperature extends \nw3\app\core\Api {
 				'descrip' => 'Feels Like',
 				'val' => $now->feel,
 			],
-			'day_min' => [
-				'descrip' => 'Daily Minimum (00-00)',
-				'val' => $now->today->min['temp'],
-				'dt' => $now->today->timeMin['temp']
+			'24he_min' => [
+				'descrip' => 'Past 24hrs Min',
+				'val' => $now->hr24->min['temp'],
+				'dt' => $now->hr24->timeMin['temp']
 			],
-			'day_max' => [
-				'descrip' => 'Daily Maximum (00-00)',
-				'val' => $now->today->max['temp'],
-				'dt' => $now->today->timeMax['temp']
+			'24hr_max' => [
+				'descrip' => 'Past 24hrs Max',
+				'val' => $now->hr24->max['temp'],
+				'dt' => $now->hr24->timeMax['temp']
 			],
-			'tmean_24hr' => [
-				'descrip' => 'Last 24hrs Mean Temperature',
+			'24hr_mean' => [
+				'descrip' => 'Past 24hrs Mean',
 				'val' => $now->hr24->mean['temp'],
 			],
-			'afhrs' => [
-				'descrip' => 'Daily Air Frost Duration',
-				'val' => $now->today->frosthrs,
-				'type' => Vari::Hours
-			],
-			'afhrs_24' => [
-				'descrip' => '24hr Air Frost Duration',
+			'24hr_afhrs' => [
+				'descrip' => 'Past 24hrs Frost Hrs',
 				'val' => $now->hr24->frosthrs,
 				'type' => Vari::Hours
 			],
@@ -142,6 +140,8 @@ class Temperature extends \nw3\app\core\Api {
 			'Overall Mean' => ['data' => $this->tmean->means()],
 			'Mean Night-min' => ['data' => $this->tmin->means()],
 			'Mean Day-max' => ['data' => $this->tmax->means()],
+			'Air Frosts' => ['data' => $this->tmin->days(), 'type' => Vari::Days],
+			'Heat Days' => ['data' => $this->tmax->days(), 'type' => Vari::Days]
 		];
 		foreach($data as $k => $dat) {
 			if(!key_exists('type', $dat)) {
@@ -269,30 +269,53 @@ class Temperature extends \nw3\app\core\Api {
 		return $data;
 	}
 
-	function past_yr_month_avg_extremes() {
+	function past_yr_month_avgs() {
 		$data = [
 			'mean' => $this->tmean->past_year_monthly_aggs() + ['descrip' => 'Overall Mean'],
 			'min' => $this->tmin->past_year_monthly_aggs() + ['descrip' => 'Mean Night-min'],
 			'max' => $this->tmax->past_year_monthly_aggs() + ['descrip' => 'Mean Day-max'],
+			'af' => $this->tmin->past_year_monthly_counts() + ['descrip' => 'Air Frosts', 'type' => Vari::Days],
+			'heat' => $this->tmax->past_year_monthly_counts() + ['descrip' => 'Heats', 'type' => Vari::Days],
 		];
 		foreach($data as &$dat) {
-			$dat['type'] = Vari::Temperature;
+			if(!$dat['type']) $dat['type'] = Vari::Temperature;
 			$dat['agg'] = true;
 		}
 		return $data;
 	}
-	function past_yr_season_tots() {
-		$tots = $this->tmean->past_year_seasonal_aggs();
-		foreach ($tots['periods'] as &$tot) {
-			$tot['d'] = Date::$seasons[$tot['season']] .' '. substr($tot['d'], 0, 4);
+	function past_yr_month_extrms() {
+		$means = $this->tmean->past_year_monthly_extremes();
+		$maxs = $this->tmax->past_year_monthly_extremes();
+		$mins = $this->tmin->past_year_monthly_extremes();
+		$data = [
+			'coldest' => ['periods' => $means['min'], 'descrip' => 'Coldest Overall'],
+			'coldest_min' => ['periods' => $mins['min'], 'descrip' => 'Coldest by Night'],
+			'coldest_max' => ['periods' => $maxs['min'], 'descrip' => 'Coldest by Day'],
+			'warmest' => ['periods' => $means['max'], 'descrip' => 'Warmest Overall'],
+			'warmest_min' => ['periods' => $mins['max'], 'descrip' => 'Warmest by Night'],
+			'warmest_max' => ['periods' => $maxs['max'], 'descrip' => 'Warmest by Day'],
+		];
+		foreach($data as &$dat) {
+			$dat['type'] = Vari::Temperature;
+			$dat['agg'] = true; // Not interested in date for now
 		}
-		return $tots;
+		return $data;
+	}
+	function past_yr_season_means() {
+		$data = [
+			'mean' => $this->tmean->past_year_seasonal_aggs() + ['descrip' => 'Overall Mean'],
+			'min' => $this->tmin->past_year_seasonal_aggs() + ['descrip' => 'Mean Night-min'],
+			'max' => $this->tmax->past_year_seasonal_aggs() + ['descrip' => 'Mean Day-max'],
+		];
+		foreach($data as &$dat) {
+			$dat['type'] = Vari::Temperature;
+			$dat['agg'] = true; // Not interested in date for now
+		}
+		return $data;
 	}
 
 	function record_24hrs() {
-		return [
-			'wettest' => ['data' => $this->tmean->record_24hr()['max'], 'descrip' => 'Wettest 24hrs', 'type' => Vari::Temperature, 'rec_type' => 'H:i jS M Y']
-		];
+		throw new \BadMethodCallException('Unimplemented');
 	}
 }
 ?>

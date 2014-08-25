@@ -8,7 +8,7 @@ use nw3\app\core\Db;
  *
  * @author Ben
  */
-class Query {
+class Query implements \Iterator {
 
 	const DEFAULT_TBL = 'daily';
 
@@ -20,6 +20,7 @@ class Query {
 	private $orders = [];
 	private $groups = [];
 	private $debug = false;
+	private $no_nulls = false;
 	private $db;
 
 	function __construct($args) {
@@ -31,6 +32,12 @@ class Query {
 
 	function tbl($tbl_name) {
 		$this->tbl = $tbl_name;
+		return $this;
+	}
+
+	function nest($query) {
+		$sql = $query->sql();
+		$this->tbl = "($sql)t";
 		return $this;
 	}
 
@@ -54,7 +61,7 @@ class Query {
 	}
 
 	function filter() {
-		$this->conds = func_get_args();
+		$this->conds = array_merge($this->conds, func_get_args());
 		return $this;
 	}
 
@@ -75,6 +82,7 @@ class Query {
 	 * @return \nw3\app\core\Query
 	 */
 	function order($type, $col=null) {
+//		$this->orders[] = []
 		$this->orders[] = [$col, $type];
 		return $this;
 	}
@@ -112,7 +120,12 @@ class Query {
 		return $this;
 	}
 
-	private function select() {
+	function no_nulls() {
+		$this->no_nulls = true;
+		return $this;
+	}
+
+	function sql() {
 		$conds = $this->get_conds();
 		$cols = $this->get_cols();
 		$order = $this->get_order();
@@ -120,6 +133,11 @@ class Query {
 		$join = $this->get_join();
 		$limit = $this->get_limit();
 		$q = "SELECT $cols FROM $this->tbl $join $conds $group $order $limit";
+		return $q;
+	}
+
+	private function select() {
+		$q = $this->sql();
 		return $this->db->execute($q, $this->debug);
 	}
 
@@ -151,6 +169,10 @@ class Query {
 				$order[0] = $this->col(0);
 			}
 		}
+		if($this->no_nulls) {
+			$null_order = $this->orders[0][0] . ' IS NULL';
+			array_unshift($this->orders, [$null_order, Db::ASC]);
+		}
 		return "ORDER BY " . implode(',', array_map(function($order) {
 			return "{$order[0]} {$order[1]}";
 		}, $this->orders));
@@ -176,5 +198,25 @@ class Query {
 		}
 		$join = $this->joins[0];
 		return "JOIN {$join[0]} ON {$join[1]}";
+	}
+
+	public function current() {
+
+	}
+
+	public function key() {
+
+	}
+
+	public function next() {
+
+	}
+
+	public function rewind() {
+
+	}
+
+	public function valid() {
+
 	}
 }
