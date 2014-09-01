@@ -35,6 +35,11 @@ class Datadetail extends core\Controller {
 		$this->render();
 	}
 
+	public function humidity() {
+		$this->build('Humidity Detail');
+		$this->render();
+	}
+
 	public function generic() {
 		$var = $this->sub_path(1);
 		$this->build("$var Detail");

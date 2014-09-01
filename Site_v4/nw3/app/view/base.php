@@ -111,11 +111,11 @@ use nw3\app\helper\Main;
 						Caution: All data is recorded by an amateur-run personal weather station;
 						accuracy and reliability <a href="<?php Html::href('about'); ?>#data" title="More about nw3's data">may be poor</a>.
 					</div>
-					<div id="script_details">
-						<?php $this->timer->stop(); ?>
-						Script executed <abbr title="Session Cnt: <?php echo Session::page_count(); ?>">in</abbr> <?php echo $this->timer->executionTimeMs(); ?>
-						| DB queries: <?php echo Main::db_stats($this->timer->executionTimeMs()); ?>
-						| Memory: <?php Main::mem_stats() ?>
+					<div id="script_stats">
+						<?php $stats = $this->get_stats(); ?>
+						Script executed <abbr title="Session Cnt: <?php echo Session::page_count(); ?>">in</abbr> <?php echo $stats['cpu']['time']; ?>
+						| DB queries: <?php echo "{$stats['db']['count']} executed in {$stats['db']['time']} ms ({$stats['db']['prop']}%)"; ?>
+						| Memory: <?php echo "{$stats['mem']['current']}  MB ({$stats['mem']['peak']} peak)" ?>
 					</div>
 				</div>
 			</div>

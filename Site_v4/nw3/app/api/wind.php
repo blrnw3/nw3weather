@@ -17,11 +17,11 @@ class Wind extends \nw3\app\core\Api {
 	function __construct() {
 		parent::__construct(Vari::Wind, 'wind');
 
-		$this->wmean = new Detail('wmean');
-		$this->wmax = new Detail('wmax');
-		$this->gust = new Detail('gust');
-		$this->wdir = new Detail('wdir');
-		$this->w10m = new Detail('w10max');
+		$this->wmean = new Detail('wmean', 'wind');
+		$this->wmax = new Detail('wmax', 'wind');
+		$this->gust = new Detail('gust', 'gust');
+		$this->wdir = new Detail('wdir', 'wdir');
+		$this->w10m = new Detail('w10max', 'w10m');
 //		$this->vars = [$this->wmax, $this->gust, $this->wmean];
 	}
 
@@ -60,26 +60,12 @@ class Wind extends \nw3\app\core\Api {
 	}
 
 	function recent_values() {
-		$now = Store::g();
 		$data = [
-			'gust' => [Detail::TODAY => [
-				'val' => $now->today->max['gust'],
-				'dt' => $now->today->timeMax['gust']
-			]] + $this->gust->values(),
-			'wmax' => [Detail::TODAY => [
-				'val' => $now->today->max['wind'],
-				'dt' => $now->today->timeMax['wind'],
-			]] + $this->wmax->values(),
-			'w10max' => [Detail::TODAY => [
-				'val' => $now->today->max['w10m'],
-				'dt' => $now->today->timeMax['w10m'],
-			]] + $this->w10m->values(),
-			'wdir' => [Detail::TODAY => [
-				'val' => $now->today->mean['wdir'],
-			]] + $this->wdir->values(),
-			'wmean' => [Detail::TODAY => [
-				'val' => $now->today->mean['wind'],
-			]] + $this->wmean->values(),
+			'gust' => $this->gust->values(),
+			'wmax' => $this->wmax->values(),
+			'w10max' => $this->w10m->values(),
+			'wdir' => $this->wdir->values(),
+			'wmean' => $this->wmean->values(),
 		];
 		foreach($data as $k => &$dat) {
 			$dat = [

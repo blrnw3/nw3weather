@@ -10,6 +10,8 @@ use nw3\app\core\Session;
 use nw3\app\core\Logger;
 use nw3\config\Admin;
 use nw3\app\model\Variable;
+use nw3\app\core\Db;
+use nw3\app\util\Maths;
 
 abstract class Controller {
 
@@ -21,6 +23,7 @@ abstract class Controller {
 	private $view;
 	private $title;
 	private $vars = [];
+	private $errors = [];
 
 	protected $qs = null;
 	protected $url_args = null;
@@ -34,9 +37,14 @@ abstract class Controller {
 	 */
 	public abstract function index();
 
-	public function subpath() {}
+	public function subpath($param) {}
 
-	public function validate_arg($arg) {
+	public function validate_arg($path) {
+		return $this->invalid_subpath($path,
+			'Warning! No arg validation implemented by subclass');
+	}
+	protected function invalid_subpath($path, $err) {
+		echo "Bad path $path.<br /> $err <br />";
 		return false;
 	}
 
@@ -61,6 +69,8 @@ abstract class Controller {
 		Variable::initialise();
 
 		define('ASSET_PATH', \Config::HTML_ROOT .'static/');
+
+		set_error_handler([$this, 'SecretErrorHandler']);
 	}
 
 	public function __set($key, $val) {
@@ -121,7 +131,12 @@ abstract class Controller {
 	 */
 	protected function json($data) {
 		u\Http::json();
-		echo json_encode($data);
+		$ret = [
+			'data' => $data,
+			'exec_stats' => $this->get_stats(),
+			'err' => $this->errors
+		];
+		echo json_encode($ret);
 		$this->flush_logs();
 	}
 
@@ -177,6 +192,37 @@ abstract class Controller {
 		die();
 	}
 
+	protected function get_stats() {
+		$this->timer->stop();
+		$exec_time = $this->timer->executionTimeMs();
+		if(Db::is_set()) {
+			$db = Db::g();
+			$query_time = round($db->query_time * 1000);
+			$query_count = $db->query_count;
+//			return "$db->query_count executed in $query_time ms ($frac%)";
+		} else {
+			$query_time = $query_count = 0;
+		}
+		$frac = round($query_time / $exec_time * 100);
+		$db_stats = [
+			'count' => $query_count,
+			'time' => $query_time,
+			'prop' => $frac
+		];
+		$mem_usage = Maths::round(memory_get_usage() / 1024 / 1024, 1);
+		$mem_peak = Maths::round(memory_get_peak_usage() / 1024 / 1024, 1);
+		return [
+			'db' => $db_stats,
+			'mem' => [
+				'current' => $mem_usage,
+				'peak' => $mem_peak
+			],
+			'cpu' => [
+				'time' => $exec_time
+			]
+		];
+	}
+
 	private function flush_logs($is_http=true) {
 		Logger::g()->flush($is_http);
 	}
@@ -185,5 +231,29 @@ abstract class Controller {
 		$callers = debug_backtrace();
 		return $callers[2]['function'];
 	}
+
+	public function SecretErrorHandler($errno, $errstr, $errfile, $errline){
+		switch ($errno) {
+			case E_USER_ERROR:
+				$this->errors[] = "ERROR: Fatal error on line $errline in file $errfile [$errno] $errstr";
+				exit(1);
+				break;
+
+			case E_USER_WARNING:
+				$this->errors['warn'] = "WARNING: [$errno] $errstr";
+				break;
+
+			case E_USER_NOTICE:
+				break;
+
+			default:
+				$this->errors['unknown'] = "Unknown error type: [$errno] $errstr";
+				break;
+		}
+
+		/* Don't execute PHP internal error handler */
+		return false;
+	}
+
 }
 ?>

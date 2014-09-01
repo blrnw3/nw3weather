@@ -52,7 +52,8 @@ class Db extends Singleton {
 		$flags = [
 			PDO::ATTR_PERSISTENT => true,
 			PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
-			PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+			PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+			PDO::ATTR_EMULATE_PREPARES => false
 		];
 		try {
 			$this->db = new PDO("mysql:host={$host};port={$port};dbname={$db}", $user, $pass, $flags);
@@ -192,8 +193,9 @@ class Db extends Singleton {
 		$col = "UNIX_TIMESTAMP($col)";
 		return $alias ? new Alias($col, 'dt') : $col;
 	}
-	static function time_field($field) {
-		return "DATE_FORMAT(t_$field, '%H:%i') AS t";
+	static function time_field($field, $alias=false) {
+		$col = "DATE_FORMAT(t_$field, '%H:%i')";
+		return $alias ? new Alias($col, $alias) : $col;
 	}
 
 	/*

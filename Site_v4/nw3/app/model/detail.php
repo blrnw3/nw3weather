@@ -2,10 +2,11 @@
 namespace nw3\app\model;
 
 use nw3\app\model\Variable;
+use nw3\app\model\Store;
+use nw3\app\model\Climate;
 use nw3\app\util\Date;
 use nw3\app\core\Db;
 use nw3\app\core\Alias;
-use nw3\app\model\Climate;
 
 /**
  * Description of Detail
@@ -44,6 +45,16 @@ class Detail {
 	static $periodsn = [7, 31, 365];
 
 	public $num_records;
+	public $var;
+	public $type;
+	public $abs_type;
+
+	public $descrip_min;
+	public $descrip_max;
+	public $descrip_mean;
+	public $descrip_period_min;
+	public $descrip_period_max;
+	public $descrip_period_mean;
 
 	protected $yest;
 	protected $mon_st;
@@ -58,6 +69,7 @@ class Detail {
 
 	protected $query_count;
 	protected $query_agg;
+	protected $query_date;
 	protected $query_month;
 	protected $query_year;
 	protected $query_val;
@@ -66,7 +78,6 @@ class Detail {
 
 	protected $period_lengths;
 
-	protected $var;
 	protected $db;
 	protected $colname;
 	protected $anom_colname;
@@ -77,6 +88,7 @@ class Detail {
 	protected $anomable;
 
 	protected $days_filter;
+	protected $live_var;
 
 	public static $periods = [
 		self::TODAY => [
@@ -178,7 +190,7 @@ class Detail {
 	/**
 	 * @param type $varname as in the db and Variable Class
 	 */
-	function __construct($varname, $graph=false) {
+	function __construct($varname, $livename, $graph=false) {
 		$this->db = Db::g();
 		$this->climate = Climate::g();
 		$this->varname = $varname;
@@ -188,6 +200,12 @@ class Detail {
 		$this->summable = $this->var['summable'];
 		$this->anomable = $this->var['anomable'];
 		$this->aggtype = $this->var['summable'] ? Db::SUM : Db::AVG;
+
+		$this->live_var = $livename;
+		$this->live = Variable::$live[$this->live_var];
+
+		$this->type = $this->var['group'];
+		$this->abs_type = $this->type;
 
 		if(!$this->var) {
 			throw new \Exception("$varname is not a valid variable");
@@ -225,6 +243,7 @@ class Detail {
 
 		# Useful Query fragments
 		$this->query_count = new Alias(Db::count($this->colname));
+		$this->query_date = new Alias('d', 'dt');
 		$this->query_month = new Alias('MONTH(d)', 'm');
 		$this->query_year = new Alias('YEAR(d)', 'y');
 		$this->query_val = new Alias($this->colname, 'val');
@@ -253,6 +272,21 @@ class Detail {
 		foreach (self::$periodsn as $n) {
 			$this->period_lengths[$n] = $n;
 		}
+
+		$this->assign_default_descriptions();
+		$this->assign_descriptions();
+	}
+
+	protected function assign_default_descriptions() {
+		$this->descrip_min = "High {$this->var['description']}";
+		$this->descrip_max = "Low {$this->var['description']}";
+		$this->descrip_mean = "Mean {$this->var['description']}";
+		$this->descrip_period_min = "High {$this->var['description']}";
+		$this->descrip_period_max = "Low {$this->var['description']}";
+		$this->descrip_period_mean = "Mean {$this->var['description']}";
+	}
+	protected function assign_descriptions() {
+		//Override if a better descrip exists
 	}
 
 	### Graphy stuff ###
@@ -294,74 +328,91 @@ class Detail {
 
 	### Data-y stuff ###
 
+	public function live() {
+		return [];
+	}
+
 	public function values() {
 		$data = [];
+		$now = Store::g();
+		// TODO: Subclassing would be great here
+		if($this->var['is_min']) {
+			$data[self::TODAY] = [
+				'val' => $now->today->min[$this->live_var],
+				'dt' => $now->today->timeMin[$this->live_var]
+			];
+		} elseif($this->var['spread']) {
+			$data[self::TODAY] = [
+				'val' => $now->today->mean[$this->live_var],
+			];
+		} else { //max
+			$data[self::TODAY] = [
+				'val' => $now->today->max[$this->live_var],
+				'dt' => $now->today->timeMax[$this->live_var]
+			];
+		}
 		foreach (self::get_periods_single() as $period) {
 			$val = $this->period_extreme($period);
-			$data[$period] = [
-				'val' => $val['val'],
-				'dt' => $val['t']
-			];
-			if($val['anom']) {
-				$data[$period]['anom'] = $val['anom'];
-			}
+			$data[$period] = $val;
 		}
 		return $data;
 	}
 
-	public function extremes() {
-		$data = ['max' => [], 'min' => []];
-		foreach (self::get_periods('multi') as $period) {
-			$max = $this->period_extreme($period, Db::MAX);
-			$data['max'][$period] = [
-				'val' => $max['val'],
-				'dt' => $max['d']
-			];
-			if($max['anom']) {
-				$data['max'][$period]['anom'] = $max['anom'];
-			}
-			if($this->var['minmax']) {
-				$min = $this->period_extreme($period, Db::MIN);
-				$data['min'][$period] = [
-					'val' => $min['val'],
-					'dt' => $min['d']
-				];
-				if($min['anom']) {
-					$data['min'][$period]['anom'] = $min['anom'];
-				}
-			}
+	/**
+	 * Convenience wrapper around extremes and means and counts/days
+	 * @param type $mmm MIN, MAX, MEAN, or COUNT
+	 * @param type $extreme_type
+	 * @return type
+	 */
+	public function extremes_agg_or_days($mmm, $extreme_type=null) {
+		if($mmm === MEAN) {
+			return $this->means();
+		} elseif($mmm === COUNT) {
+			return $this->days();
+		} else {
+			return $this->extremes($extreme_type, $mmm);
 		}
-		return $data;
 	}
-	public function extremes_month() {
-		$data = ['max' => [], 'min' => []];
-		foreach (self::get_periods('month_recs') as $period) {
-			$max = $this->period_extreme_month($period, Db::MAX);
-			$data['max'][$period] = [
-				'val' => $max['val'],
-				'dt' => $max['d']
-			];
-			$min = $this->period_extreme_month($period, Db::MIN);
-			$data['min'][$period] = [
-				'val' => $min['val'],
-				'dt' => $min['d']
-			];
+	public function get_descrip($mmm, $extreme_type) {
+		$is_daily = ($extreme_type === self::DAILY);
+		switch($mmm) {
+			case MIN:
+				return $is_daily ? $this->descrip_min : $this->descrip_period_min;
+			case MAX:
+				return $is_daily ? $this->descrip_max : $this->descrip_period_max;
+			case MEAN:
+				return $is_daily ? $this->descrip_mean : $this->descrip_period_mean;
+			case COUNT:
+				return $is_daily ? 'Daily Count' : 'Period Count';
 		}
-		return $data;
+		throw new \Exception("Bad mmm '$mmm' specified");
 	}
-	public function extremes_year() {
-		$data = ['max' => [], 'min' => []];
-		$period = self::RECORD;
-		$max = $this->period_extreme_year(Db::MAX);
-		$data['max'][$period] = [
-			'val' => $max['val'],
-			'dt' => $max['y']
-		];
-		$min = $this->period_extreme_year(Db::MIN);
-		$data['min'][$period] = [
-			'val' => $min['val'],
-			'dt' => $min['y']
-		];
+
+	public function mins_daily() {
+		return $this->extremes(self::DAILY, MIN);
+	}
+	public function maxs_daily() {
+		return $this->extremes(self::DAILY, MAX);
+	}
+	public function mins_monthly() {
+		return $this->extremes(self::MONTHLY, MIN);
+	}
+	public function maxs_monthly() {
+		return $this->extremes(self::MONTHLY, MAX);
+	}
+	public function mins_yearly() {
+		return $this->extremes(self::YEARLY, MIN);
+	}
+	public function maxs_yearly() {
+		return $this->extremes(self::YEARLY, MAX);
+	}
+
+	protected function extremes($type, $mmm) {
+		$data = [];
+		$fn = $this->get_extreme_fn($type);
+		foreach (self::get_periods($type) as $period) {
+			$data[] = $this->$fn($period, $mmm);
+		}
 		return $data;
 	}
 
@@ -373,41 +424,58 @@ class Detail {
 		return $data;
 	}
 
-	public function rankings($type, $period, $num=null) {
+	public function days() {
+		$data = [];
+		foreach (self::get_periods('multi') as $period) {
+			$cnt = $this->period_count($period, $this->days_filter);
+			$data[$period] = [
+				'val' => $cnt,
+				'prop' => $cnt / $this->period_lengths[$period]
+			];
+		}
+		return $data;
+	}
+
+	public function rankings_min($type, $period, $num=null) {
+		return $this->rankings($type, $period, MIN, $num);
+	}
+	public function rankings_max($type, $period, $num=null) {
+		return $this->rankings($type, $period, MAX, $num);
+	}
+
+	public function rankings($type, $period, $mmm, $num=null) {
 		$num = is_null($num) ? self::$ranknum : $num;
 		if(!self::$periods[$period]) {
 			throw new \Exception("'$period' is not a valid period");
 		}
-		switch($type) {
-			case self::DAILY:
-				$fn = 'period_extreme';
-				break;
-			case self::MONTHLY:
-				$fn = 'period_extreme_month';
-				break;
-			default:
-				throw new \Exception("'$type' is not a valid rank type. Must be D, M, or Y");
-		}
+		$fn = $this->get_extreme_fn($type);
+		return $this->$fn($period, $mmm, $num);
+	}
 
-		$data = ['max' => [], 'min' => []];
-
-		$max = $this->$fn($period, Db::MAX, $num);
-		foreach ($max as $val) {
-			$data['max'][] = [
-				'val' => $val['val'],
-				'dt' => $val['d']
-			];
+	/**
+	 * Convenience wrapper
+	 * @param type $mmm
+	 */
+	public function past_year_monthly_mmm($mmm) {
+		switch($mmm) {
+			case MEAN:
+				return $this->past_year_monthly_aggs();
+			case COUNT:
+				return $this->past_year_monthly_counts();
+			case MIN:
+			case MAX:
+				return $this->past_year_monthly_extremes($mmm);
 		}
-		if($this->var['minmax'] || $type !== self::DAILY) {
-			$min = $this->$fn($period, Db::MIN, $num);
-			foreach ($min as $val) {
-				$data['min'][] = [
-					'val' => $val['val'],
-					'dt' => $val['d']
-				];
-			}
+		throw new \Exception("Bad mmm $mmm passed for past year monthly");
+	}
+	public function past_year_seasonal_mmm($mmm) {
+		switch($mmm) {
+			case MEAN:
+				return $this->past_year_seasonal_aggs();
+			case COUNT:
+				throw new \Exception("Past yr seasonal counts not yet implemented");
 		}
-		return $data;
+		throw new \Exception("Bad mmm $mmm passed for past year seasonal");
 	}
 
 	public function past_year_monthly_aggs() {
@@ -462,8 +530,8 @@ class Detail {
 		];
 	}
 
-	public function past_year_monthly_extremes() {
-		$data = ['max' => [], 'min' => []];
+	public function past_year_monthly_extremes($mmm) {
+		$data = [];
 		foreach(Date::$monthsn as $i => $m) {
 			$st = $this->DbMkdate(D_month + $i, 1, D_year-1);
 			$en = $this->DbMkdate(D_month + $m, 1, D_year-1);
@@ -473,14 +541,9 @@ class Detail {
 			if($this->anomable) {
 				$q = $q->fields([$this->query_anom]);
 			}
-			$q_min = clone $q;
-			$data['max'][] = $q->extreme(Db::MAX)->one();
-			if($this->var['minmax']) {
-				$data['min'][] = $q_min->extreme(Db::MIN)->one();
-			}
+			$data[] = $q->extreme($mmm)->one();
 		}
-		$this->mark_extreme($data['min']);
-		$this->mark_extreme($data['max']);
+		$this->mark_extreme($data);
 		return $data;
 	}
 
@@ -510,27 +573,15 @@ class Detail {
 	}
 
 	public function extremes_ndays() {
-		$data = ['max' => [], 'min' => []];
+		$data = [MAX => [], MIN => []];
 		$all = $this->db->query('d', $this->colname)
 			->filter(Db::not_null($this->colname))
 			->order(Db::ASC)
 		->all();
 		foreach(self::$periodsn as $spell_len) {
 			$spells = $this->nday_avg_extremes($spell_len, $all);
-			$data['min'][$spell_len] = $spells['min'];
-			$data['max'][$spell_len] = $spells['max'];
-		}
-		return $data;
-	}
-
-	public function days() {
-		$data = [];
-		foreach (self::get_periods('multi') as $period) {
-			$cnt = $this->period_count($period, $this->days_filter);
-			$data[$period] = [
-				'val' => $cnt,
-				'prop' => $cnt / $this->period_lengths[$period]
-			];
+			$data[MIN][$spell_len] = $spells['min'];
+			$data[MAX][$spell_len] = $spells['max'];
 		}
 		return $data;
 	}
@@ -566,25 +617,25 @@ class Detail {
 		$fields = [$this->query_val];
 		$q = $this->db->query();
 		if(!$this->var['spread'] && $num === 1) {
-			$fields[] = Db::time_field($this->colname);
+			$fields[] = Db::time_field($this->colname, 'dt');
 		}
 		if($this->anomable && !$this->summable && !$this->var['anom_day_ignore']) {
 			$fields[] = $this->query_anom;
 		}
 		if(self::$periods[$period]['multi']) {
-			$fields[] = 'd';
+			$fields[] = $this->query_date;
 			if($num === 1) {
 				$q = $q->extreme($extrm_type);
 			}
 		}
 		$q = $q->fields($fields)->filter($this->get_date_filter($period));
-		if($extrm_type === Db::MIN) {
+		if($extrm_type === MIN) {
 			$q = $q->no_nulls();
 		}
 		if($num === 1) {
 			return $q->one();
 		}
-		return $q->limit($num)->order(($extrm_type === Db::MAX) ? Db::DESC : Db::ASC)->all();
+		return $q->limit($num)->order($extrm_type)->all();
 	}
 
 	/**
@@ -626,17 +677,18 @@ class Detail {
 	 * @return [int,int,float] year, month, val
 	 */
 	protected function period_extreme_month($period, $extrm_type=null, $num=1) {
-		$q = $this->db->query($this->query_agg, $this->query_year, $this->query_month, 'd')
+		$q = $this->db->query($this->query_agg, $this->query_year,
+				$this->query_month, $this->query_date)
 			->filter($this->get_date_filter_month($period))
 			->group('y', 'm')
 		;
-		if($extrm_type === Db::MIN) {
+		if($extrm_type === MIN) {
 			$q = $q->filter(Db::not_null($this->colname));
 		}
 		if($num === 1) {
 			return $q->extreme($extrm_type)->one();
 		}
-		return $q->order(($extrm_type === Db::MAX) ? Db::DESC : Db::ASC)->limit($num)->all();
+		return $q->order($extrm_type)->limit($num)->all();
 	}
 
 	/**
@@ -644,15 +696,15 @@ class Detail {
 	 * @param boolean $is_high set true to get max, false to get min
 	 * @return [int,float] year, val
 	 */
-	protected function period_extreme_year($extrm_type=null, $num=1) {
-		$q = $this->db->query($this->query_agg, $this->query_year)
+	protected function period_extreme_year($period, $extrm_type=null, $num=1) {
+		$q = $this->db->query($this->query_agg, $this->query_year, $this->query_date)
 			->filter('d < '. $this->yr_st)
 			->group('y')
 		;
 		if($num === 1) {
 			return $q->extreme($extrm_type)->one();
 		}
-		return $q->order(($extrm_type === Db::MAX) ? Db::DESC : Db::ASC)->limit($num)->all();
+		return $q->order($extrm_type)->limit($num)->all();
 	}
 
 	protected function extreme_nday_agg($n, $extrm_type=null) {
@@ -714,7 +766,30 @@ class Detail {
 		return Db::dt(Date::mkdate($m, $d, $y));
 	}
 
+	private function get_extreme_fn($type) {
+		switch($type) {
+			case self::DAILY:
+				return 'period_extreme';
+			case self::MONTHLY:
+				return 'period_extreme_month';
+			case self::YEARLY:
+				return 'period_extreme_year';
+			case self::SEASONAL:
+				throw new \Exception('Seasonal periods extremes not yet implemented');
+		}
+		throw new \Exception("'$type' is not a valid extreme type. Must be D, M, or Y");
+	}
+
 	public static function get_periods($filter, $keys_only=true) {
+		if($filter === self::DAILY) {
+			$filter = 'multi';
+		}
+		if($filter === self::MONTHLY) {
+			$filter = 'month_recs';
+		}
+		if($filter === self::YEARLY) {
+			return [self::RECORD];
+		}
 		if(is_string($filter)) {
 			$cond = true;
 			if($filter[0] === '!') {

@@ -245,7 +245,8 @@ abstract class Variable {
 			'anomable' => true, #Anomaly calculations possible
 			'group' => self::Temperature, #Inheritance of properties,
 			'category' => 'Temperature', #Practically, e.g. for use in drop-down grouping
-			'colour' => '#33f' #for graphs
+			'colour' => '#33f', #for graphs
+			'is_min' => 'true'
 		],
 		'tmax' => [
 			'description' => 'Day Maximum<br />(09-21)',
@@ -279,7 +280,8 @@ abstract class Variable {
 			'description' => 'Minimum Humidity',
 			'group' => self::Humidity,
 			'category' => 'Humidity',
-			'colour' => 'chartreuse'
+			'colour' => 'chartreuse',
+			'is_min' => 'true'
 		],
 		'hmax' => [
 			'description' => 'Maximum Humidity',
@@ -299,7 +301,8 @@ abstract class Variable {
 			'description' => 'Minimum Pressure',
 			'group' => self::Pressure,
 			'category' => 'Pressure',
-			'colour' => '#fab'
+			'colour' => '#fab',
+			'is_min' => 'true'
 		],
 		'pmax' => [
 			'description' => 'Maximum Pressure',
@@ -390,7 +393,8 @@ abstract class Variable {
 			'description' => 'Minimum Dew Point',
 			'group' => self::Temperature,
 			'category' => 'Dew Point',
-			'colour' => 'darkseagreen'
+			'colour' => 'darkseagreen',
+			'is_min' => 'true'
 		],
 		'dmax' => [
 			'description' => 'Maximum Dew Point',
@@ -410,7 +414,8 @@ abstract class Variable {
 			'description' => '24hr Min Temperature (00-00)',
 			'group' => self::Temperature,
 			'category' => 'Other',
-			'colour' => '#227'
+			'colour' => '#227',
+			'is_min' => 'true'
 		],
 
 		'trange' => [
@@ -651,6 +656,23 @@ abstract class Variable {
 		$force = round(pow($mph / 1.8735, 0.6667));
 		$descrip = Beaufort::$word[$force];
 		return "$descrip (F{$force})";
+	}
+
+	static function air_density($pres, $temp) {
+		//http://www.gorhamschaffler.com/humidity_formulas.htm
+		return $pres / (($temp + 273.15) * 287) * 100000;
+	}
+	static function absolute_humidity($humi, $temp) {
+		//http://forum.onlineconversion.com/showthread.php?t=567
+		$B44 = $temp; $C42 = $humi;
+		return ((0.000002*pow($B44,4))+(0.0002*pow($B44,3))+(0.0095*pow($B44,2))+(0.337*$B44)+4.9034)*$C42/100;
+	}
+	static function wetbulb($pres, $temp, $dewp) {
+		//http://forum.weatherzone.com.au/ubbthreads.php/topics/1096474/Wet_Bulb_Temperature_calculati
+		$Tc = $temp; $Tdc = $dewp; $P = $pres;
+		$E = 6.11 * pow(10, (7.5 * $Tdc / (237.7 + $Tdc)));
+		return (((0.00066 * $P) * $Tc) + ((4098 * $E) / ( pow(($Tdc + 237.7), 2)) * $Tdc)) /
+			((0.00066 * $P) + (4098 * $E) / ( pow($Tdc + 237.7, 2)));
 	}
 
 	static function assign_units($units) {

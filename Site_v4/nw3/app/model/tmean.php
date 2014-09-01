@@ -1,6 +1,7 @@
 <?php
 namespace nw3\app\model;
 
+use nw3\app\model\Variable;
 use nw3\app\core\Db;
 use nw3\app\util\Date;
 use nw3\app\model\Store;
@@ -15,6 +16,7 @@ class Tmean extends Detail {
 
 	function __construct() {
 		parent::__construct('tmean');
+		$this->abs_type = Variable::AbsTemp;
 	}
 
 	public function record_24hr() {

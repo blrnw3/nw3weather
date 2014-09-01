@@ -94,49 +94,6 @@ class Date {
 	}
 
 	/**
-	 * Formats a date. Returns 'Today' if that condition is true. Pass null on y, m, or d to not display that in the output
-	 * @param int $year [=false]
-	 * @param int $month [=false]
-	 * @param int $day [=false]
-	 * @param boolean $current [=false] whether to display 'current' or 'Today' as the message if the date is today
-	 * @param long $tstamp [=false] use a timestamp instead of d/m/y
-	 * @param string $debug [=false] prints some debug information
-	 * @param string $format [='js M Y'] date format for full dates
-	 * @return string the formatted date or message
-	 */
-	static function today($year = false, $month = false, $day = false, $current = false, $tstamp = false, $debug = false, $format = 'jS M Y') {
-		global $dyear, $dmonth, $dday;
-
-		if($current) { $message = 'Current'; } else { $message = 'Today'; }
-		if($tstamp) {
-			$record = $tstamp;
-			$year_new = date('Y', $tstamp); $month_new = date('n', $tstamp); $day_new = date('j', $tstamp);
-		}
-		else {
-			if(!$year) { $year_new = $dyear; } else { $year_new = $year; }
-			if(!$month) { $month_new = $dmonth; } else { $month_new = $month; }
-			if(!$day) { $day_new = $dday; } else { $day_new = $day; }
-			$record = self::mkdate($month_new, $day_new, $year_new);
-		}
-		if($debug) {
-			echo date(' H:i, d m Y ',$record), ' xxx ', date(' H:i, d m Y ',mktime(0,0,0)), '<br />';
-			echo '<br />', $year_new, ' ', $month_new, ' ', $day_new, ' ', $message;
-		}
-		if( $record == mktime(0,0,0) ) {
-			return '<span style="color:red">'.$message.'</span>';
-		}
-		else {
-			//echo ' post-fail ';
-			if(!$month && !$day) { return $year_new; }
-			elseif(!$month && !$year) { return datefull($day_new); }
-			elseif(!$year && !$day) { return monthfull($month_new); }
-			elseif(!$day) { return monthfull($month) . ' ' . $year_new; }
-			elseif(!$month) { return 'Day ' . $day_new . ', ' . $year_new; }
-			elseif(!$year) { return datefull($day_new) . ' ' . monthfull($month_new); }
-			else { return date($format, self::mkdate($month_new, $day_new,$year_new)); }
-		}
-	}
-	/**
 	 * mktime(0,0,0, m, d, y) shortcut
 	 * @param type $month
 	 * @param type $day

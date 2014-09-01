@@ -82,7 +82,8 @@ class Query implements \Iterator {
 	 * @return \nw3\app\core\Query
 	 */
 	function order($type, $col=null) {
-//		$this->orders[] = []
+		if($type === MAX) $type = Db::DESC;
+		if($type === MIN) $type = Db::ASC;
 		$this->orders[] = [$col, $type];
 		return $this;
 	}
@@ -94,7 +95,7 @@ class Query implements \Iterator {
 
 	function extreme($type, $col=null) {
 		$this->limit();
-		$this->order(($type === Db::MAX) ? Db::DESC : Db::ASC, $col);
+		$this->order($type, $col);
 		return $this;
 	}
 
