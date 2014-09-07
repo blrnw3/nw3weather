@@ -1,22 +1,29 @@
 <?php
-namespace nw3\app\model;
+namespace nw3\app\vari;
 
 use nw3\app\model\Variable;
-use nw3\app\core\Db;
-use nw3\app\util\Date;
-use nw3\app\model\Store;
+
 
 /**
- * All temp (mean, min, or max) stats n stuff
+ * All tmean stats n stuff
  */
-class Tmean extends Detail {
+class Tmean extends Live {
 
 	const AGG = 'mean';
-	const hr24rec = 99;
 
 	function __construct() {
-		parent::__construct('tmean');
+		parent::__construct('temp');
 		$this->abs_type = Variable::AbsTemp;
+	}
+
+	public function live() {
+		return [
+			$this->main_live(), [
+				'val' => $this->now->feel,
+				'descrip' => 'Feels Like',
+				'type' => Variable::Temperature
+			]
+		];
 	}
 
 	public function record_24hr() {

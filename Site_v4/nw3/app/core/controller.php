@@ -68,9 +68,10 @@ abstract class Controller {
 		Units::initialise();
 		Variable::initialise();
 
+		define('HTML_ROOT', \Config::HTML_ROOT);
 		define('ASSET_PATH', \Config::HTML_ROOT .'static/');
 
-		set_error_handler([$this, 'SecretErrorHandler']);
+//		set_error_handler([$this, 'SecretErrorHandler']);
 	}
 
 	public function __set($key, $val) {
@@ -132,12 +133,17 @@ abstract class Controller {
 	protected function json($data) {
 		u\Http::json();
 		$ret = [
-			'data' => $data,
+			'response' => $data,
 			'exec_stats' => $this->get_stats(),
 			'err' => $this->errors
 		];
 		echo json_encode($ret);
 		$this->flush_logs();
+	}
+
+	protected function redirect($path) {
+		$url = HTML_ROOT . $path;
+		u\Http::redirect($url);
 	}
 
 	/**

@@ -1,7 +1,6 @@
 <?php
 namespace nw3\app\model;
 
-use nw3\app\core\Db;
 use nw3\app\core\Logger;
 use nw3\app\core\Lazyvar;
 use nw3\app\model\Variable;
@@ -81,65 +80,6 @@ class Store extends \nw3\app\core\Singleton {
 		// Calculated
 		$this->dewp = Variable::dewPoint($this->temp, $this->humi);
 		$this->feel = Variable::feelsLike($this->temp, $this->wind, $this->dewp);
-	}
-
-	function trend_avg($var, $duration) {
-		$db = Db::g();
-//		$limit = self::$avg_periods[count(self::$avg_periods)-1];
-		$q_inner = $db->query($var)->tbl('live')->limit($duration)->order(Db::DESC, 't');
-		return $db->query(Db::avg($var))->nest($q_inner)->scalar();
-	}
-
-	function trend_avg_wdir($durations) {
-		$db = Db::g();
-		$data = [];
-		$limit = $durations[count($durations)-1] + 1;
-		$vals = $db->query('wdir', 'wind')->tbl('live')->limit($limit)->order(Db::DESC, 't')->all();
-		foreach ($durations as $duration) {
-			$dat = array_slice($vals, 0, $duration);
-			$data[$duration] = Variable::wdirMean($dat);
-		}
-		return $data;
-	}
-
-	/**
-	 * TODO - this is hideously similar to the one in model/DataDetail
-	 * @param type $var
-	 * @return type
-	 */
-	function record_24hr($var) {
-		$all = $db = Db::g()->query('t', $var)->tbl('live')->filter(Db::not_null($var))->all();
-		$min = INT_MAX;
-		$max = INT_MIN;
-		$n = 1440;
-		$cum = 0.0;
-
-		foreach ($all as $i => $db_val) {
-			$dt = $db_val['t'];
-			$cum += $db_val[$var];
-			if ($i >= $n) {
-				$cum -= $all[$i - $n][$var];
-				if ($cum < $min) {
-					$min = $cum;
-					$min_end = $dt;
-				}
-				if ($cum > $max) {
-					$max = $cum;
-					$max_end = $dt;
-				}
-			}
-		}
-		if(Variable::$_[$var]['summable']) $n = 1;
-		return [
-			'min' => [
-				'val' => $min / $n,
-				'dt' => $min_end
-			],
-			'max' => [
-				'val' => $max / $n,
-				'dt' => $max_end
-			],
-		];
 	}
 }
 ?>

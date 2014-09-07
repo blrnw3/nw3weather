@@ -23,6 +23,11 @@ class Query implements \Iterator {
 	private $no_nulls = false;
 	private $db;
 
+	/* For iteration */
+	private $all;
+	private $all_count;
+	private $index;
+
 	function __construct($args) {
 		$this->db = Db::g();
 		$this->tbl = self::DEFAULT_TBL;
@@ -82,8 +87,7 @@ class Query implements \Iterator {
 	 * @return \nw3\app\core\Query
 	 */
 	function order($type, $col=null) {
-		if($type === MAX) $type = Db::DESC;
-		if($type === MIN) $type = Db::ASC;
+		$type = ($type === MAX) ? Db::DESC : Db::ASC;
 		$this->orders[] = [$col, $type];
 		return $this;
 	}
@@ -202,22 +206,24 @@ class Query implements \Iterator {
 	}
 
 	public function current() {
-
+		return $this->all[$this->index];
 	}
 
 	public function key() {
-
+		return $this->index;
 	}
 
 	public function next() {
-
+		$this->index++;
 	}
 
 	public function rewind() {
-
+		$this->index = 0;
+		$this->all = $this->all();
+		$this->all_count = count($this->all);
 	}
 
 	public function valid() {
-
+		return $this->index < $this->all_count;
 	}
 }

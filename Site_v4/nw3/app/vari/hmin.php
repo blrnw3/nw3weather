@@ -5,10 +5,10 @@ namespace nw3\app\vari;
 /**
  * Daily Maximum Relative Humidity
  */
-class Hmin extends \nw3\app\model\Detail {
+class Hmin extends Min {
 	function __construct() {
 		$this->days_filter = '< 35';
-		parent::__construct('hmin', 'humi');
+		parent::__construct('humi');
 	}
 }
 

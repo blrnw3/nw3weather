@@ -1,14 +1,15 @@
 <?php
-namespace nw3\app\model;
+namespace nw3\app\vari;
 
 use nw3\app\core\Db;
 use nw3\app\util\Date;
 use nw3\app\model\Store;
+use nw3\app\model\Variable;
 
 /**
  * All rain stats n stuff
  */
-class Rain extends Detail {
+class Rain extends Live {
 
 	const AGG = 'total';
 
@@ -16,8 +17,30 @@ class Rain extends Detail {
 
 	function __construct() {
 		$this->days_filter = '> '.self::MAX_DRY_QUANTITY;
-		self::$ranknum = 10;
 		parent::__construct('rain');
+	}
+
+	public function live() {
+		$currspell = $this->curr_spell();
+		$currspell_type = ($this->now->rain > 0) ? 'Wet' : 'Dry';
+		return [$this->main_live(), [
+				'descrip' => 'Rain Duration',
+				'val' => $this->now->hr24->rnduration,
+				'type' => Variable::Hours
+			], [
+				'descrip' => 'Past 24hrs Duration',
+				'val' => $this->now->hr24->wethrs,
+				'type' => Variable::Hours
+			], [
+				'descrip' => 'Most Recent Rain',
+				'val' => $this->now->hr24->rnlast,
+				'type' => Variable::Laststamp
+			], [
+				'descrip' => "Consecutive $currspell_type Days",
+				'val' => $currspell,
+				'type' => Variable::Days
+			],
+		];
 	}
 
 	public function spells() {
@@ -34,7 +57,8 @@ class Rain extends Detail {
 	 * If rained today, the number of days it has rained consecutively,
 	 * else the number of complete days since it last rained
 	 */
-	public function curr_spell($rained_today) {
+	public function curr_spell() {
+		$rained_today = $this->now->rain > 0;
 		$cond = $rained_today ? '=' : '>';
 		$dt = date(Db::DATE_FORMAT, D_now);
 		return $this->db->query("DATEDIFF('$dt', d)")
@@ -44,7 +68,7 @@ class Rain extends Detail {
 		;
 	}
 
-	public function totals() {
+	public function means() {
 		$data = [];
 		foreach (self::get_periods('multi') as $period) {
 			$data[$period] = $this->period_agg($period);
@@ -77,20 +101,21 @@ class Rain extends Detail {
 
 	/**
 	 * Wettest and driest spells (totals over fixed-length periods)
+	 * TODO - refactor so spells work
 	 * @param type $rainall
 	 */
-	public function extremes_ndays() {
-		$data = ['max' => [], 'min' => [], 'max_days' => [], 'min_days' => []];
-		$rainall = $this->db->query('d', $this->colname)->order(Db::ASC)->all();
-		foreach(self::$periodsn as $spell_len) {
-			$spells = $this->nday_agg_extremes($spell_len, $rainall);
-			$data['min'][$spell_len] = $spells['min'];
-			$data['max'][$spell_len] = $spells['max'];
-			$data['min_days'][$spell_len] = $spells['min_days'];
-			$data['max_days'][$spell_len] = $spells['max_days'];
-		}
-		return $data;
-	}
+//	public function extremes_ndays() {
+//		$data = ['max' => [], 'min' => [], 'max_days' => [], 'min_days' => []];
+//		$rainall = $this->db->query('d', $this->colname)->order(Db::ASC)->all();
+//		foreach(self::$periodsn as $spell_len) {
+//			$spells = $this->nday_agg_extremes($spell_len, $rainall);
+//			$data['min'][$spell_len] = $spells['min'];
+//			$data['max'][$spell_len] = $spells['max'];
+//			$data['min_days'][$spell_len] = $spells['min_days'];
+//			$data['max_days'][$spell_len] = $spells['max_days'];
+//		}
+//		return $data;
+//	}
 
 	public function record_24hr() {
 		$data = ['max' => []];

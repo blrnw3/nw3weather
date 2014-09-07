@@ -31,6 +31,10 @@ abstract class Variable {
 	const AbsTemp = 'abstemp';
 	const RainRate = 'rnrt';
 	const Direction = 'dir';
+	const DirectionRaw = 'dir_raw';
+
+	public static $windlabels = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
+		'S', 'SSW','SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
 
 	/**
 	 * A variable (daily, monthly etc.) can belong to a group and thus inherit
@@ -146,7 +150,18 @@ abstract class Variable {
 		self::Direction => [
 			'name' => 'direction',
 			'precision' => 0,
-			'unit' => 'degrees',
+			'unit' => '',
+			'summable' => false,
+			'imperial_divisor' => 1,
+			'round_size' => 20,
+			'thresholds_day' => [45,90,135, 180,225,270, 315],
+			'threshold_colours' => ['f6cece','f6e3ce','f5f6ce', 'e3f6ce','cef6d8','ced8f6', 'ceb3fa','f6cee3'],
+			'threshold_txtcolours' => [false,false,false, false,false,false, false,false]
+		],
+		self::DirectionRaw => [
+			'name' => 'direction',
+			'precision' => 0,
+			'unit' => 'degs',
 			'summable' => false,
 			'imperial_divisor' => 1,
 			'round_size' => 20,
@@ -241,7 +256,8 @@ abstract class Variable {
 
 	public static $daily = [
 		'tmin' => [
-			'description' => 'Night Minimum<br />(21-09)',
+			'description' => 'Night Minimum (21-09)',
+			'descrip' => 'Night Min', # Short description
 			'anomable' => true, #Anomaly calculations possible
 			'group' => self::Temperature, #Inheritance of properties,
 			'category' => 'Temperature', #Practically, e.g. for use in drop-down grouping
@@ -249,14 +265,16 @@ abstract class Variable {
 			'is_min' => 'true'
 		],
 		'tmax' => [
-			'description' => 'Day Maximum<br />(09-21)',
+			'description' => 'Day Maximum (09-21)',
+			'descrip' => 'Daytime Max',
 			'group' => self::Temperature,
 			'category' => 'Temperature',
 			'anomable' => true,
 			'colour' => 'orange'
 		],
 		'tmean' => [
-			'description' => 'Mean Temperature<br />(00-00)',
+			'description' => 'Mean Temperature (00-00)',
+			'descrip' => 'Mean Temp',
 			'group' => self::Temperature,
 			'category' => 'Temperature',
 			'anomable' => true,
@@ -278,6 +296,7 @@ abstract class Variable {
 
 		'hmin' => [
 			'description' => 'Minimum Humidity',
+			'descrip' => 'Min Humidity',
 			'group' => self::Humidity,
 			'category' => 'Humidity',
 			'colour' => 'chartreuse',
@@ -285,6 +304,7 @@ abstract class Variable {
 		],
 		'hmax' => [
 			'description' => 'Maximum Humidity',
+			'descrip' => 'Max Humidity',
 			'group' => self::Humidity,
 			'category' => 'Humidity',
 			'colour' => 'darkolivegreen'
@@ -443,6 +463,14 @@ abstract class Variable {
 			'colour' => 'aqua',
 			'spread' => true,
 		],
+		'afhrs' => [
+			'description' => 'Frost Hours',
+			'group' => self::Hours,
+			'category' => 'Temperature',
+			'anomable' => false,
+			'colour' => '#67f',
+			'spread' => true,
+		],
 
 		'rdays' => [
 			'description' => 'Days of Rain',
@@ -509,7 +537,7 @@ abstract class Variable {
 			return $val;
 		} elseif( is_null($val) ) {
 			return 'null';
-		} elseif($type === 'wdir') {
+		} elseif($type === 'wdir' || $type === self::Direction) {
 			return self::degname((int)$val);
 		} elseif($type === self::Timestamp) {
 			return date('H:i d M', $val);
@@ -647,17 +675,6 @@ abstract class Variable {
 		return round((237.7*$gamma) / (17.271-$gamma), 1);
 	}
 
-	/**
-	 * Convert from wind speeed in mph to a beaufort value and descriptive string
-	 * @param int $mph raw value
-	 * @return string bft-descrip + bft-force
-	 */
-	static function bft($mph) {
-		$force = round(pow($mph / 1.8735, 0.6667));
-		$descrip = Beaufort::$word[$force];
-		return "$descrip (F{$force})";
-	}
-
 	static function air_density($pres, $temp) {
 		//http://www.gorhamschaffler.com/humidity_formulas.htm
 		return $pres / (($temp + 273.15) * 287) * 100000;
@@ -694,59 +711,21 @@ abstract class Variable {
 		$types = ['N', 'Y', 'Light', 'Mod', 'Sevr'];
 		return $types[$val];
 	}
-	static function degname($winddegree) {
+
+	public static function degname($winddegree) {
 		if($winddegree === null) return '[NA]';
-		$windlabels = array ('N','NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S',
-			'SSW','SW', 'WSW', 'W', 'WNW', 'NW', 'NNW','N');
-		return $windlabels[ round($winddegree / 22.5, 0) ];
+		return self::$windlabels[ round($winddegree / 22.5) ];
 	}
 
 	/**
-	 * TODO - this is a near-duplicate of the one in model/day. MERGE THEM
-	 * @param type $vals - numeric array of (wdir, wind assoc arrays)
-	 * @return int
+	 * Convert from wind speeed in mph to a beaufort value and descriptive string
+	 * @param int $mph raw value
+	 * @return string bft-descrip + bft-force
 	 */
-	static function wdirMean(&$vals) {
-		$bitifier = 36; //constant - the quantisation level to convert 360 degrees into a bittier signal
-		$calmThreshold = 1; //constant - values when the wind speed was below this are ignored
-
-		$freqs = [];
-		for($i = 0; $i <= 360/$bitifier; $i++) {
-			$freqs[$i] = 0;
-		}
-
-		//get frequencies for each bitified angle
-		foreach($vals as $val) {
-			if($val['wind'] > $calmThreshold) { // pivot not to be affected by calm times
-				$freqs[round($val['wdir'] / $bitifier)]++;
-			}
-		}
-
-		//choose a pivot
-		$minfreq = min($freqs);
-		$pivot = array_search($minfreq, $freqs);
-		$pivot *= $bitifier;
-
-		//calculate the mean about this method
-		$sum = 0;
-		$count = 0;
-		foreach($vals as $val) {
-			//values from calm times or near pivot are anomalous => ignore
-			if(abs($val['wdir'] - $pivot) >= $bitifier && $val['wind'] > $calmThreshold) {
-				$sum += $val['wdir'];
-				$count++;
-				if($val['wdir'] > $pivot) {
-					$sum -= 360;
-				}
-			}
-		}
-		//clean-up
-		$mean = ($count === 0) ? 0 : round($sum / $count);
-		if($mean < 0) {
-			$mean += 360;
-		}
-
-		return $mean;
+	static function bft($mph) {
+		$force = round(pow($mph / 1.8735, 0.6667));
+		$descrip = Beaufort::$word[$force];
+		return "$descrip (F{$force})";
 	}
 
 	private static function pretty_last_stamp($last) {

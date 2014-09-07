@@ -1,91 +1,11 @@
 <?php
-use nw3\app\api as a;
-use nw3\app\helper\Detail as D;
+$var = new nw3\app\api\Humidity();
 
-$humi = new a\Humidity();
-$recent = $humi->recent_values();
-$extremes = $humi->extremes();
-$ranks_day = $humi->ranks_day();
-$ranks_month = $humi->ranks_month();
-$ranks_day_curr_month = $humi->ranks_day_curr_month();
-//$rec24hr = $humi->record_24hrs();
-$pastyr_monthly = $humi->past_yr_month_avgs();
-$pastyr_monthly_extrms = $humi->past_yr_month_extrms();
-$pastyr_seasonal = $humi->past_yr_season_means();
+$this->viewette('datadetail_main', [
+	'var' => $var,
+	'title' => 'Relative Humidity'
+]);
 ?>
-
-<h1>Detailed Relative Humidity Data</h1>
-
-<?php $this->viewette('curr_latest_tbl', $humi->current_latest()) ?>
-
-<table>
-	<caption>Totals and Extremes for recent days</caption>
-	<?php $this->viewette('period_tbl', $recent) ?>
-</table>
-
-<table>
-	<caption>Totals and Extremes for recent periods</caption>
-	<?php $this->viewette('period_tbl', D::filter_recent($extremes)) ?>
-</table>
-
-<table>
-	<caption>Record Extremes <?php echo D::record_yr_range(); ?></caption>
-	<?php $this->viewette('period_tbl', D::filter_records($extremes)) ?>
-</table>
-
-<table>
-	<caption>Monthly Records and Extremes</caption>
-	<?php $this->viewette('period_tbl', $humi->extremes_month()) ?>
-</table>
-
-<table>
-	<caption>Annual Records and Extremes</caption>
-	<?php $this->viewette('period_tbl', $humi->extremes_year()) ?>
-</table>
-<table>
-	<caption> N-day Period Records and Extremes</caption>
-	<?php $this->viewette('period_tbl', $humi->extremes_nday()) ?>
-</table>
-
-<?php $this->viewette('rank_tbl', [
-	'ranks' => $ranks_day,
-	'name' => 'Daily Rankings'
-]); ?>
-
-<?php $this->viewette('rank_tbl', [
-	'ranks' => $ranks_month,
-	'name' => 'Monthly Rankings'
-]); ?>
-
-<?php $this->viewette('rank_tbl', [
-	'ranks' => $ranks_day_curr_month,
-	'name' => 'Daily Rankings for Curr Month',
-	'period' => 'rec'
-]); ?>
-
-<?php $this->viewette('pastyr_tbl', [
-	'caption' => 'Rolling 12-months Monthly Means',
-	'data' => $pastyr_monthly,
-	'format' => 'M Y',
-	'name' => 'Month',
-	'summary_name' => 'Mean/Tot'
-]); ?>
-
-<?php $this->viewette('pastyr_tbl', [
-	'caption' => 'Rolling 12-months Monthly Extremes',
-	'data' => $pastyr_monthly_extrms,
-	'format' => 'M Y',
-	'name' => 'Month',
-	'no_summary' => true,
-]); ?>
-
-<?php $this->viewette('pastyr_tbl', [
-	'caption' => 'Past Year Seasonal Means',
-	'data' => $pastyr_seasonal,
-	'format' => D::SEASON,
-	'name' => 'Season',
-	'summary_name' => 'Total'
-]); ?>
 
 <img src="../graph/daily/hmean" alt="Daily mean humi last 31 days" />
 <img src="../graph/monthly/hmean" alt="Monthly mean humi last 12 months" />

@@ -7,15 +7,17 @@ use nw3\app\model\Climate;
 use nw3\app\util\Date;
 use nw3\app\core\Db;
 use nw3\app\core\Alias;
+use nw3\app\core\Introspect;
 
 /**
  * Description of Detail
  *
  * @author Ben
  */
-class Detail {
+abstract class Detail {
 
 	const LIVE = 'live';
+	const HR24 = 'hr24';
 	const TODAY = 'today';
 	const YESTERDAY = 'yest';
 	const NOWMON = 'mon';
@@ -44,17 +46,18 @@ class Detail {
 
 	static $periodsn = [7, 31, 365];
 
-	public $num_records;
 	public $var;
 	public $type;
 	public $abs_type;
 
+	public $descrip;
 	public $descrip_min;
 	public $descrip_max;
 	public $descrip_mean;
 	public $descrip_period_min;
 	public $descrip_period_max;
 	public $descrip_period_mean;
+	public $descrip_days_of;
 
 	protected $yest;
 	protected $mon_st;
@@ -76,9 +79,11 @@ class Detail {
 	protected $query_anom;
 	protected $count_filter;
 
-	protected $period_lengths;
+	/* Lazy loaded to minimise db_calls */
+	private $period_lengths;
 
 	protected $db;
+	protected $now;
 	protected $colname;
 	protected $anom_colname;
 	protected $varname;
@@ -94,6 +99,11 @@ class Detail {
 		self::TODAY => [
 			'multi' => false,
 			'descrip' => 'Today',
+			'today' => true
+		],
+		self::HR24 => [
+			'multi' => false,
+			'descrip' => 'Past 24 Hrs',
 			'today' => true
 		],
 		self::YESTERDAY => [
@@ -188,9 +198,10 @@ class Detail {
 	}
 
 	/**
-	 * @param type $varname as in the db and Variable Class
+	 * @param type $livename any live-assoc
 	 */
-	function __construct($varname, $livename, $graph=false) {
+	function __construct($livename, $graph=false) {
+		$varname = Introspect::child_name($this);
 		$this->db = Db::g();
 		$this->climate = Climate::g();
 		$this->varname = $varname;
@@ -203,6 +214,7 @@ class Detail {
 
 		$this->live_var = $livename;
 		$this->live = Variable::$live[$this->live_var];
+		$this->now = Store::g();
 
 		$this->type = $this->var['group'];
 		$this->abs_type = $this->type;
@@ -210,8 +222,6 @@ class Detail {
 		if(!$this->var) {
 			throw new \Exception("$varname is not a valid variable");
 		}
-
-		$this->num_records = $this->db->query($this->colname)->count();
 
 		# Useful db datetimes
 		$this->rec_st = "'2009-01-01'";
@@ -257,33 +267,40 @@ class Detail {
 		if($this->anomable && !$graph) {
 			$this->query_agg[] = new Alias($this->summable ? $query_anom_sum : $query_anom_avg, 'anom');
 		}
-		if($graph) return;
-		# Period lengths
-		$this->period_lengths = [
-			self::RECORD => $this->num_records,
-			self::NOWMON => D_day,
-			self::NOWSEAS => Date::get_current_season_days_elapsed(),
-			self::NOWYR => D_doy + 1,
-			self::CUM_MON_AGO => D_day,
-			self::CUM_YR_AGO => D_doy + 1,
-			self::RECORD_D => $this->db->query($this->colname)->filter($this->get_date_filter(self::RECORD_D))->count(),
-			self::RECORD_M => $this->db->query($this->colname)->filter($this->get_date_filter(self::RECORD_M))->count()
-		];
-		foreach (self::$periodsn as $n) {
-			$this->period_lengths[$n] = $n;
-		}
 
 		$this->assign_default_descriptions();
 		$this->assign_descriptions();
 	}
 
+	protected function period_lengths() {
+		if(!$this->period_lengths) {
+			$this->period_lengths = [
+				self::RECORD => $this->db->query($this->colname)->count(),
+				self::NOWMON => D_day,
+				self::NOWSEAS => Date::get_current_season_days_elapsed(),
+				self::NOWYR => D_doy + 1,
+				self::CUM_MON_AGO => D_day,
+				self::CUM_YR_AGO => D_doy + 1,
+				self::RECORD_D => $this->db->query($this->colname)->filter($this->get_date_filter(self::RECORD_D))->count(),
+				self::RECORD_M => $this->db->query($this->colname)->filter($this->get_date_filter(self::RECORD_M))->count()
+			];
+			foreach (self::$periodsn as $n) {
+				$this->period_lengths[$n] = $n;
+			}
+		}
+		return $this->period_lengths;
+	}
+
 	protected function assign_default_descriptions() {
-		$this->descrip_min = "High {$this->var['description']}";
-		$this->descrip_max = "Low {$this->var['description']}";
-		$this->descrip_mean = "Mean {$this->var['description']}";
-		$this->descrip_period_min = "High {$this->var['description']}";
-		$this->descrip_period_max = "Low {$this->var['description']}";
-		$this->descrip_period_mean = "Mean {$this->var['description']}";
+		$descrip = $this->var['descrip'] ? $this->var['descrip'] : $this->var['description'];
+		$this->descrip = $descrip;
+		$this->descrip_min = "Lowest $descrip";
+		$this->descrip_max = "Highest $descrip";
+		$this->descrip_mean = $this->var['spread'] ? "Overall $descrip" : "Mean $descrip";
+		$this->descrip_period_min = "Lowest $descrip";
+		$this->descrip_period_max = "Highest $descrip";
+		$this->descrip_period_mean = "Mean $descrip";
+		$this->descrip_days_of = "Days of $descrip $this->days_filter";
 	}
 	protected function assign_descriptions() {
 		//Override if a better descrip exists
@@ -315,7 +332,7 @@ class Detail {
 			'group' => $this->var
 		];
 		$labs = [];
-		foreach ($query->all() as $record) {
+		foreach ($query as $record) {
 			$data['values'][] = $record['val'];
 			$labs[] = new \DateTime($record['d']);
 		}
@@ -328,29 +345,25 @@ class Detail {
 
 	### Data-y stuff ###
 
+	public function num_records() {
+		return $this->period_lengths()[self::RECORD];
+	}
+
 	public function live() {
+		return [];
+	}
+	public function trend_diffs($diff_periods) {
+		return [];
+	}
+	public function trend_avgs($avg_periods) {
+		return [];
+	}
+	protected function values_today_n_24() {
 		return [];
 	}
 
 	public function values() {
-		$data = [];
-		$now = Store::g();
-		// TODO: Subclassing would be great here
-		if($this->var['is_min']) {
-			$data[self::TODAY] = [
-				'val' => $now->today->min[$this->live_var],
-				'dt' => $now->today->timeMin[$this->live_var]
-			];
-		} elseif($this->var['spread']) {
-			$data[self::TODAY] = [
-				'val' => $now->today->mean[$this->live_var],
-			];
-		} else { //max
-			$data[self::TODAY] = [
-				'val' => $now->today->max[$this->live_var],
-				'dt' => $now->today->timeMax[$this->live_var]
-			];
-		}
+		$data = $this->values_today_n_24();
 		foreach (self::get_periods_single() as $period) {
 			$val = $this->period_extreme($period);
 			$data[$period] = $val;
@@ -383,7 +396,11 @@ class Detail {
 			case MEAN:
 				return $is_daily ? $this->descrip_mean : $this->descrip_period_mean;
 			case COUNT:
-				return $is_daily ? 'Daily Count' : 'Period Count';
+				return $this->descrip_days_of;
+			case SPELL:
+				return 'Spell';
+			case SPELL_INV:
+				return 'Spell INV';
 		}
 		throw new \Exception("Bad mmm '$mmm' specified");
 	}
@@ -411,7 +428,7 @@ class Detail {
 		$data = [];
 		$fn = $this->get_extreme_fn($type);
 		foreach (self::get_periods($type) as $period) {
-			$data[] = $this->$fn($period, $mmm);
+			$data[$period] = $this->$fn($period, $mmm);
 		}
 		return $data;
 	}
@@ -430,7 +447,7 @@ class Detail {
 			$cnt = $this->period_count($period, $this->days_filter);
 			$data[$period] = [
 				'val' => $cnt,
-				'prop' => $cnt / $this->period_lengths[$period]
+				'prop' => $cnt / $this->period_lengths()[$period]
 			];
 		}
 		return $data;
@@ -505,7 +522,7 @@ class Detail {
 		$annual['prop'] = $annual['val'] / $diy;
 
 		if(count($monthly) < 12) {
-			// Really annoying. SQL doesn't return 0 counts on the group by if all rows are filtered out!
+			// Really annoying. SQL doesn't return counts of 0 on the group_by if all rows are filtered out!
 			$mons_missing = [];
 			foreach(Date::$monthsn as $i => $m) {
 				$mons_missing[date('Y-m', Date::mkdate(D_month + $i, 1, D_year-1))] = true;

@@ -1,89 +1,14 @@
 <?php
-use nw3\app\api as a;
-use nw3\app\helper\Detail as D;
-use nw3\app\model\Variable;
+$var = new nw3\app\api\Rain();
 
-$rain = new a\Rain();
-$recent = $rain->recent_values();
-$extremes = $rain->extremes();
-$ranks = $rain->ranks();
-$rec24hr = $rain->record_24hrs()['wettest'];
-$pastyr_monthly = $rain->past_yr_month_tots();
-$pastyr_seasonal = $rain->past_yr_season_tots();
-$show_now_graph = ($recent['rn24hr'] > 0);
+$this->viewette('datadetail_main', [
+	'var' => $var,
+	'title' => 'Rain'
+]);
+//TODO
+//$show_now_graph = ($recent['rn24hr'] > 0);
 ?>
 
-<h1>Detailed Rainfall Data</h1>
-
-<?php $this->viewette('curr_latest_tbl', $rain->current_latest()) ?>
-
-<table>
-	<caption>Totals and Extremes for recent days</caption>
-	<?php $this->viewette('period_tbl', $recent) ?>
-</table>
-
-<table>
-	<caption>Totals and Extremes for recent periods</caption>
-	<?php $this->viewette('period_tbl', D::filter_recent($extremes)) ?>
-</table>
-
-<table>
-	<caption>All-time Totals and Record Extremes <?php echo D::record_yr_range(); ?></caption>
-	<?php $this->viewette('period_tbl', D::filter_records($extremes)) ?>
-</table>
-
-<table>
-	<caption>Monthly Records and Extremes</caption>
-	<?php $this->viewette('period_tbl', $rain->extremes_month()) ?>
-</table>
-
-<table>
-	<caption>Annual Records and Extremes</caption>
-	<?php $this->viewette('period_tbl', $rain->extremes_year()) ?>
-</table>
-<table>
-	<caption> N-day Period Records and Extremes</caption>
-	<?php $this->viewette('period_tbl', $rain->extremes_nday()) ?>
-</table>
-
-<table>
-	<caption>24hr Records</caption>
-	<thead>
-		<tr>
-			<td><?php echo $rec24hr['descrip'] ?></td>
-		</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<td>
-				<?php echo Variable::conv($rec24hr['data']['val'], $rec24hr['type']) ?>
-				<br />
-				<?php echo D::date($rec24hr['data']['dt'], 'rec', $rec24hr['rec_type']) ?>
-			</td>
-		</tr>
-	</tbody>
-</table>
-
-<?php $this->viewette('rank_tbl', [
-	'ranks' => $ranks,
-	'name' => 'Rankings'
-]); ?>
-
-<?php $this->viewette('pastyr_tbl', [
-	'caption' => 'Rolling 12-months Monthly Totals and Extremes',
-	'data' => $pastyr_monthly,
-	'format' => 'M Y',
-	'name' => 'Month',
-	'summary_name' => 'Total'
-]); ?>
-
-<?php $this->viewette('pastyr_tbl', [
-	'caption' => 'Past Year Seasonal Totals',
-	'data' => $pastyr_seasonal,
-	'format' => D::SEASON,
-	'name' => 'Season',
-	'summary_name' => 'Total'
-]); ?>
 
 <img src="../graph/daily/rain" alt="Daily rain totals last 31 days" />
 <img src="../graph/monthly/rain" alt="Monthly rain totals last 12 months" />

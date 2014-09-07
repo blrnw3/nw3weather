@@ -2,7 +2,6 @@
 namespace nw3\app\vari;
 
 use nw3\app\model\Variable;
-use nw3\app\model\Store;
 
 /**
  * Daily Mean Relative Humidity
@@ -10,11 +9,11 @@ use nw3\app\model\Store;
 class Hmean extends Live {
 	function __construct() {
 //		$this->days_filter = '= 98';
-		parent::__construct('hmean', 'humi');
+		parent::__construct('humi');
 	}
 
 	public function live() {
-		$now = Store::g();
+		$now = $this->now;
 		return [
 			$this->main_live(), [
 				'val' => Variable::wetbulb($now->pres, $now->temp, $now->dewp),

@@ -16,7 +16,6 @@ abstract class Detail {
 
 	const MULTI = 0;
 	const SINGLE = 1;
-	const SEASON = 'seas'; // for date format
 
 	static function of_final_exp($data, $type=null) {
 		$conv_type = is_null($type) ? $data['type'] : $type;
@@ -40,7 +39,7 @@ abstract class Detail {
 			return $dt_string;
 		}
 		if($rec_type === mD::YEARLY) {
-			return $dt_string;
+			return substr($dt_string, 0, 4);
 		}
 
 		try {
@@ -49,7 +48,7 @@ abstract class Detail {
 			$dt = \DateTime::createFromFormat('U', $dt_string);
 		}
 
-		if($rec_type === self::SEASON) {
+		if($rec_type === mD::SEASONAL) {
 			$mon = (int)$dt->format('n');
 			$yr = (int)$dt->format('Y');
 			return Date::season_name_from_month($mon) .' '. $yr;
@@ -57,12 +56,12 @@ abstract class Detail {
 
 		if($period && $rec_type === mD::MONTHLY) {
 			$format = key_exists('mon_format', mD::$periods[$period]) ? mD::$periods[$period]['mon_format'] : 'M Y';
+		} elseif($period && $rec_type === mD::DAILY) {
+			$format = key_exists('format', mD::$periods[$period]) ? mD::$periods[$period]['format'] : 'jS M Y';
 		} elseif($rec_type) { // Custom format
 			$format = $rec_type;
-		} elseif($period) {
-			$format = key_exists('format', mD::$periods[$period]) ? mD::$periods[$period]['format'] : 'jS M Y';
 		} else {
-			$format = '\<Y-m-d\>';
+			$format = "[Y-m-d] ($period, $rec_type)";
 		}
 		return $dt->format($format);
 	}

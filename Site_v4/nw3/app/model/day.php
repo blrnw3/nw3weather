@@ -2,11 +2,10 @@
 namespace nw3\app\model;
 
 use nw3\app\model\Variable;
+use nw3\app\vari\Wdir;
 use nw3\app\util\Maths;
 use nw3\app\util\Time;
 use nw3\app\util\Date;
-use nw3\app\util\Html;
-use nw3\app\util\File;
 use nw3\app\util\ScriptTimer;
 use nw3\config\Station;
 use nw3\app\core\Db;
@@ -255,7 +254,7 @@ class Day {
 		}
 
 		$means['w10m'] = Maths::mean($wind10);
-		$means['wdir'] = $this->wdirMean($dat['wdir'], $dat['wind']);
+		$means['wdir'] = Wdir::mean($dat);
 
 		$means['rain'] = $rn_total;
 		if ($rn_total == 0) {
@@ -360,55 +359,6 @@ class Day {
 		return $data;
 	}
 
-	/**
-	 * Good implementation of calculating the mean wind direction from an array of wdirs and speeds
-	 * @param array $wdirs raw array
-	 * @param array $speeds so calm times can be ignored
-	 * @return int
-	 */
-	function wdirMean($wdirs, $speeds) {
-		$bitifier = 36; //constant - the quantisation level to convert 360 degrees into a bittier signal
-		$calmThreshold = 1; //constant - values when the wind speed was below this are ignored
-
-		$freqs = [];
-		for($i = 0; $i <= 360/$bitifier; $i++) {
-			$freqs[$i] = 0;
-		}
-
-		//get frequencies for each bitified angle
-		foreach($wdirs as $t => $dir) {
-			if($speeds[$t] > $calmThreshold) { // pivot not to be affected by calm times
-				$freqs[round($dir / $bitifier)]++;
-			}
-		}
-
-		//choose a pivot
-		$minfreq = min($freqs);
-		$pivot = array_search($minfreq, $freqs);
-		$pivot *= $bitifier;
-
-		//calculate the mean about this method
-		$sum = 0;
-		$count = 0;
-		foreach($wdirs as $t => $dir) {
-			//values from calm times or near pivot are anomalous => ignore
-			if(abs($dir - $pivot) >= $bitifier && $speeds[$t] > $calmThreshold) {
-				$sum += $dir;
-				$count++;
-				if($dir > $pivot) {
-					$sum -= 360;
-				}
-			}
-		}
-		//clean-up
-		$mean = ($count === 0) ? 0 : round($sum / $count);
-		if($mean < 0) {
-			$mean += 360;
-		}
-
-		return $mean;
-	}
-
 	private function time_from_extremum($extremum, $arr) {
 		$time = array_search($extremum, $arr) * 60;
 		return Time::stamp($time);
@@ -427,7 +377,7 @@ class Day {
 	}
 
 	private function get_last_rain() {
-		return $this->db->query(Db::timestamp())->tbl('live')
+		return (int)$this->db->query(Db::timestamp())->tbl('live')
 			->filter('rain > 0')
 			->extreme(Db::MAX, 't')
 			->scalar()

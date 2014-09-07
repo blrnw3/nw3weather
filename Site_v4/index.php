@@ -17,7 +17,9 @@ const MEAN = 2;
 const MAX =  3;
 const COUNT = 4;
 const DAYS = 4;
-const MINMAX = 5;
+const SPELL = 5;
+const SPELL_INV = 6;
+const MINMAX = 13;
 
 spl_autoload_extensions(".php");
 spl_autoload_register();

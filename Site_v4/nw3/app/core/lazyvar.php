@@ -30,6 +30,11 @@ class Lazyvar {
 		throw new \Exception("$name is not a valid key for $this->path");
 	}
 
+	public function json() {
+		$this->load();
+		return $this->data;
+	}
+
 	private function load() {
 		$this->data = unserialize(File::live_data($this->path));
 	}

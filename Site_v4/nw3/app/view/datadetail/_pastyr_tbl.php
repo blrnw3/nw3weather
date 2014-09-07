@@ -17,7 +17,7 @@ $first = $data[array_keys($data)[0]];
 	<tbody>
 		<?php for($i = 0; $i < count($first['periods']); $i++): ?>
 		<tr>
-			<td><?php echo D::date($first['periods'][$i]['d'], null, $format) ?></td>
+			<td><?php echo D::date($first['periods'][$i]['d'], $first['period'], $first['rec_type']) ?></td>
 			<?php foreach ($data as $vals): ?>
 				<td class="<?php echo $vals['periods'][$i]['is_max'] ? 'val_max' : ''; echo $vals['periods'][$i]['is_min'] ? 'val_min' : ''?>">
 				<?php $this->viewette('val_date_anom', $vals['periods'][$i] + $vals) ?>

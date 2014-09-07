@@ -1,91 +1,11 @@
 <?php
-use nw3\app\api as a;
-use nw3\app\helper\Detail as D;
+$var = new nw3\app\api\Temperature();
 
-$temp = new a\Temperature();
-$recent = $temp->recent_values();
-$extremes = $temp->extremes();
-$ranks_day = $temp->ranks_day();
-$ranks_month = $temp->ranks_month();
-$ranks_day_curr_month = $temp->ranks_day_curr_month();
-//$rec24hr = $temp->record_24hrs();
-$pastyr_monthly = $temp->past_yr_month_avgs();
-$pastyr_monthly_extrms = $temp->past_yr_month_extrms();
-$pastyr_seasonal = $temp->past_yr_season_means();
+$this->viewette('datadetail_main', [
+	'var' => $var,
+	'title' => 'Temperature'
+]);
 ?>
-
-<h1>Detailed Temperature Data</h1>
-
-<?php $this->viewette('curr_latest_tbl', $temp->current_latest()) ?>
-
-<table>
-	<caption>Totals and Extremes for recent days</caption>
-	<?php $this->viewette('period_tbl', $recent) ?>
-</table>
-
-<table>
-	<caption>Totals and Extremes for recent periods</caption>
-	<?php $this->viewette('period_tbl', D::filter_recent($extremes)) ?>
-</table>
-
-<table>
-	<caption>Record Extremes <?php echo D::record_yr_range(); ?></caption>
-	<?php $this->viewette('period_tbl', D::filter_records($extremes)) ?>
-</table>
-
-<table>
-	<caption>Monthly Records and Extremes</caption>
-	<?php $this->viewette('period_tbl', $temp->extremes_month()) ?>
-</table>
-
-<table>
-	<caption>Annual Records and Extremes</caption>
-	<?php $this->viewette('period_tbl', $temp->extremes_year()) ?>
-</table>
-<table>
-	<caption> N-day Period Records and Extremes</caption>
-	<?php $this->viewette('period_tbl', $temp->extremes_nday()) ?>
-</table>
-
-<?php $this->viewette('rank_tbl', [
-	'ranks' => $ranks_day,
-	'name' => 'Daily Rankings'
-]); ?>
-
-<?php $this->viewette('rank_tbl', [
-	'ranks' => $ranks_month,
-	'name' => 'Monthly Rankings'
-]); ?>
-
-<?php $this->viewette('rank_tbl', [
-	'ranks' => $ranks_day_curr_month,
-	'name' => 'Daily Rankings for Curr Month',
-	'period' => 'rec'
-]); ?>
-
-<?php $this->viewette('pastyr_tbl', [
-	'caption' => 'Rolling 12-months Monthly Means',
-	'data' => $pastyr_monthly,
-	'format' => 'M Y',
-	'name' => 'Month',
-	'summary_name' => 'Mean/Tot'
-]); ?>
-
-<?php $this->viewette('pastyr_tbl', [
-	'caption' => 'Rolling 12-months Monthly Extremes',
-	'data' => $pastyr_monthly_extrms,
-	'format' => 'M Y',
-	'name' => 'Month',
-	'no_summary' => true,
-]); ?>
-
-<?php $this->viewette('pastyr_tbl', [
-	'caption' => 'Past Year Seasonal Means',
-	'data' => $pastyr_seasonal,
-	'format' => D::SEASON,
-	'name' => 'Season',
-	'summary_name' => 'Total'
-]); ?>
 
 <img src="../graph/daily/tmean" alt="Daily rain totals last 31 days" />
 <img src="../graph/monthly/tmean" alt="Monthly rain totals last 12 months" />
