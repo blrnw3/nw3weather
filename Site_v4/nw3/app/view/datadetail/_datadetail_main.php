@@ -14,16 +14,26 @@ $ranks_daily_past_year = $var->ranks_daily_past_year();
 $pastyr_monthly = $var->past_yr_monthly_aggs();
 $pastyr_monthly_extrms = $var->past_yr_monthly_extremes();
 $pastyr_seasonal = $var->past_yr_season_aggs();
+
+# TODO: descrip of each table for searching puropses
 ?>
 
 <h1>Detailed <?php echo $title ?> Data</h1>
 
 <?php $this->viewette('curr_latest_tbl', $current) ?>
 <?php if($trends):
-	$this->viewette('trend_tbl', $trends + ['caption' => 'Trends - Changes']);
+	$this->viewette('trend_tbl', [
+	'data' => $var->trend_diffs(),
+	'caption' => 'Trends - Changes',
+	'trend_caption' => 'Change since last'
+]);
 endif; ?>
 <?php if($trend_avgs):
-	$this->viewette('trend_tbl', $trend_avgs + ['caption' => 'Trends - Averages']);
+	$this->viewette('trend_tbl', [
+	'data' => $var->trend_avgs(),
+	'caption' => 'Trends - Averages',
+	'trend_caption' => 'Average over past'
+]);
 endif; ?>
 <table>
 	<caption>Totals and Extremes for recent days</caption>
@@ -82,7 +92,7 @@ endif; ?>
 
 <?php if($pastyr_monthly) {
 	$this->viewette('pastyr_tbl', [
-		'caption' => 'Rolling 12-months Monthly Means',
+		'caption' => 'Rolling 12-months Means',
 		'data' => $pastyr_monthly,
 		'name' => 'Month',
 		'summary_name' => 'Mean/Tot'
@@ -91,7 +101,7 @@ endif; ?>
 
 <?php if($pastyr_monthly_extrms) {
 	$this->viewette('pastyr_tbl', [
-		'caption' => 'Rolling 12-months Monthly Extremes',
+		'caption' => 'Rolling 12-months Extremes',
 		'data' => $pastyr_monthly_extrms,
 		'name' => 'Month',
 		'no_summary' => true,

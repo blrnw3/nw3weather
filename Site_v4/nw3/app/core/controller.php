@@ -4,6 +4,8 @@ namespace nw3\app\core;
 
 use nw3\app\util as u;
 use nw3\app\util\Date;
+use nw3\app\util\Maths;
+use nw3\app\util\String;
 use nw3\app\helper as h;
 use nw3\app\core\Units;
 use nw3\app\core\Session;
@@ -11,7 +13,6 @@ use nw3\app\core\Logger;
 use nw3\config\Admin;
 use nw3\app\model\Variable;
 use nw3\app\core\Db;
-use nw3\app\util\Maths;
 
 abstract class Controller {
 
@@ -177,7 +178,11 @@ abstract class Controller {
 		foreach($_this as $_k => $_val) {
 			${$_k} = $_val;
 		}
-		require $this->view_base . "_$_name.php";
+		if(String::contains($_name, '/')) {
+			require  __DIR__ ."/../view/$_name.php";
+		} else {
+			require "{$this->view_base}_$_name.php";
+		}
 	}
 
 	protected function check_correct_subpath_length($subpaths_allowed=1) {
@@ -205,15 +210,17 @@ abstract class Controller {
 			$db = Db::g();
 			$query_time = round($db->query_time * 1000);
 			$query_count = $db->query_count;
+			$avg = ($query_count > 0) ? Maths::round($query_time / $query_count) : 0;
 //			return "$db->query_count executed in $query_time ms ($frac%)";
 		} else {
-			$query_time = $query_count = 0;
+			$query_time = $query_count = $avg = 0;
 		}
 		$frac = round($query_time / $exec_time * 100);
 		$db_stats = [
 			'count' => $query_count,
 			'time' => $query_time,
-			'prop' => $frac
+			'prop' => $frac,
+			'avg' => $avg
 		];
 		$mem_usage = Maths::round(memory_get_usage() / 1024 / 1024, 1);
 		$mem_peak = Maths::round(memory_get_peak_usage() / 1024 / 1024, 1);

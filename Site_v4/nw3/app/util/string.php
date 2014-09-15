@@ -8,14 +8,23 @@ namespace nw3\app\util;
 class String {
 
 	/**
-	 * Searches a string for a substring
-	 * @param string $search
-	 * @param string $find
-	 * @return bool true on success
+	 * Searches a string for a number of terms, returning true if any are contained within
+	 * @param string $str subject
+	 * @param mixed $searchTerms array of search terms, or single string
+	 * @return boolean true if the string contains of the searched-for terms, false otherwise
 	 */
-	static function contains($search, $find) {
-		return strpos($search, $find) !== false;
+	static function contains($str, $searchTerms) {
+		if(is_array($searchTerms)) {
+			foreach ($searchTerms as $search) {
+				if(strpos($str, $search) !== false) {
+					return true;
+				}
+			}
+			return false;
+		}
+		return (strpos($str, $searchTerms) !== false);
 	}
+
 
 	static function starts_with($search, $find) {
 		return strpos($search, $find) === 0;
@@ -57,25 +66,6 @@ class String {
 	static function fixed_length($string, $length) {
 		$padding = (strlen($string) > $length) ? '...' : '';
 		return substr( str_pad($string, $length), 0, $length - strlen($padding) ) . $padding .' ';
-	}
-
-	/**
-	 * Searches a string for a number of terms, returning true if any are contained within
-	 * @param string $str subject
-	 * @param mixed $searchTerms array of search terms, or single string
-	 * @return boolean true if the string contains of the searched-for terms, false otherwise
-	 */
-	static function strContains($str, $searchTerms) {
-		if(is_array($searchTerms)) {
-			foreach ($searchTerms as $search) {
-				if(strpos($str, $search) !== false) {
-					return true;
-				}
-			}
-			return false;
-		} else {
-			return (strpos($str, $searchTerms) !== false);
-		}
 	}
 
 	/**

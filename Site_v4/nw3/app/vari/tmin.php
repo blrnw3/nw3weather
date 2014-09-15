@@ -13,18 +13,18 @@ class Tmin extends Min {
 		$this->abs_type = Variable::AbsTemp;
 	}
 
-	protected function values_today_n_24() {
+	protected function value_today() {
 		$ltas = \nw3\app\model\Climate::g()->daily;
 		return [
-			self::TODAY => [
-				'val' => $this->now->today->min['night'],
-				'dt' => $this->now->today->timeMin['night'],
-				'anom' => $this->now->today->min['night'] - $ltas['tmin'][D_doy]
-			],
-			self::HR24 => [
-				'val' => $this->now->today->min['temp'],
-				'dt' => $this->now->today->timeMin['temp']
-			],
+			'val' => $this->now->today->min['night'],
+			'dt' => $this->now->today->timeMin['night'],
+			'anom' => $this->now->today->min['night'] - $ltas['tmin'][D_doy]
+		];
+	}
+	protected function value_hr24() {
+		return [
+			'val' => $this->now->today->min['temp'],
+			'dt' => $this->now->today->timeMin['temp']
 		];
 	}
 

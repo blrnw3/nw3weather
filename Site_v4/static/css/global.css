@@ -332,7 +332,7 @@ tbody tr {
 tbody tr:nth-child(2n) {
 	background-color: white;
 }
-tbody tr:hover {
+table:not(.legacy) tbody tr:hover {
 	background-color: rgba(235, 175, 206, 0.34);
 }
 .td14 {
@@ -661,6 +661,12 @@ table.data_report.summary tbody tr {
 .val_min {
 	color: #0101DF;
 	font-weight: bold;
+}
+
+/* Home */
+#pauser {
+	font-size:90%;
+	border-bottom: 1px dotted;
 }
 
 

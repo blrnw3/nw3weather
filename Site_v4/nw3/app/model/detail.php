@@ -46,6 +46,8 @@ abstract class Detail {
 
 	static $periodsn = [7, 31, 365];
 
+	private static $init = false;
+
 	public $var;
 	public $type;
 	public $abs_type;
@@ -91,6 +93,8 @@ abstract class Detail {
 	protected $aggtype; //Sum or mean
 	protected $summable;
 	protected $anomable;
+
+	public $no_daily_anom = false;
 
 	protected $days_filter;
 	protected $live_var;
@@ -182,7 +186,13 @@ abstract class Detail {
 
 	];
 
+	public static function get_instance($varname) {
+		$cls = new \ReflectionClass("nw3\\app\\vari\\$varname");
+		return $cls->newInstance();
+	}
+
 	public static function initialise() {
+		self::$init = true;
 		foreach (self::$periodsn as $n) {
 			self::$periods[$n] = [
 				'multi' => true,
@@ -270,6 +280,10 @@ abstract class Detail {
 
 		$this->assign_default_descriptions();
 		$this->assign_descriptions();
+
+		if(!self::$init) {
+			self::initialise();
+		}
 	}
 
 	protected function period_lengths() {
@@ -358,13 +372,18 @@ abstract class Detail {
 	public function trend_avgs($avg_periods) {
 		return [];
 	}
-	protected function values_today_n_24() {
+	protected function value_today() {
+		return [];
+	}
+	protected function value_hr24() {
 		return [];
 	}
 
-	public function values() {
-		$data = $this->values_today_n_24();
-		foreach (self::get_periods_single() as $period) {
+	public function values($periods=null) {
+		if(is_null($periods)) {
+			$periods = self::get_periods_single(true);
+		}
+		foreach ($periods as $period) {
 			$val = $this->period_extreme($period);
 			$data[$period] = $val;
 		}
@@ -377,14 +396,20 @@ abstract class Detail {
 	 * @param type $extreme_type
 	 * @return type
 	 */
-	public function extremes_agg_or_days($mmm, $extreme_type=null) {
-		if($mmm === MEAN) {
-			return $this->means();
-		} elseif($mmm === COUNT) {
-			return $this->days();
-		} else {
-			return $this->extremes($extreme_type, $mmm);
+	public function extremes_agg_or_days($mmm, $extreme_type=null, $periods=null) {
+		switch($mmm) {
+			case MEAN:
+				return $this->means($periods);
+			case COUNT:
+				return $this->days($periods);
+			case SPELL:
+			case SPELL_INV:
+				return $this->spells($mmm);
+			case MIN:
+			case MAX:
+				return $this->extremes($extreme_type, $mmm, $periods);
 		}
+		throw new \Exception("Bad mmm '$mmm' specified");
 	}
 	public function get_descrip($mmm, $extreme_type) {
 		$is_daily = ($extreme_type === self::DAILY);
@@ -398,9 +423,9 @@ abstract class Detail {
 			case COUNT:
 				return $this->descrip_days_of;
 			case SPELL:
-				return 'Spell';
+				return "Spell $this->descrip_days_of";
 			case SPELL_INV:
-				return 'Spell INV';
+				return "Spell not $this->descrip_days_of";
 		}
 		throw new \Exception("Bad mmm '$mmm' specified");
 	}
@@ -424,33 +449,43 @@ abstract class Detail {
 		return $this->extremes(self::YEARLY, MAX);
 	}
 
-	protected function extremes($type, $mmm) {
+	public function extremes($type, $mmm, $periods=null) {
 		$data = [];
 		$fn = $this->get_extreme_fn($type);
-		foreach (self::get_periods($type) as $period) {
+		if(is_null($periods)) $periods = self::get_periods($type);
+		foreach ($periods as $period) {
 			$data[$period] = $this->$fn($period, $mmm);
 		}
 		return $data;
 	}
 
-	public function means() {
+	public function means($periods=null) {
 		$data = [];
-		foreach (self::get_periods('multi') as $period) {
+		if(is_null($periods)) $periods = self::get_periods('multi');
+		foreach ($periods as $period) {
 			$data[$period] = $this->period_agg($period);
 		}
 		return $data;
 	}
 
-	public function days() {
+	public function days($periods=null) {
 		$data = [];
-		foreach (self::get_periods('multi') as $period) {
+		if(is_null($periods)) $periods = self::get_periods('multi');
+		foreach ($periods as $period) {
 			$cnt = $this->period_count($period, $this->days_filter);
 			$data[$period] = [
 				'val' => $cnt,
-				'prop' => $cnt / $this->period_lengths()[$period]
 			];
+			$len = $this->period_lengths()[$period];
+			if($len > 1) {
+				$data[$period]['prop'] = $cnt / $len;
+			}
 		}
 		return $data;
+	}
+
+	public function spells($mmm) {
+		throw new \Exception("Spells not implemented for $this->colname");
 	}
 
 	public function rankings_min($type, $period, $num=null) {
@@ -625,12 +660,26 @@ abstract class Detail {
 	 * @return float summation
 	 */
 	protected function period_agg($period) {
+		if($period == self::TODAY) {
+			return $this->value_today();
+		}
+		if($period == self::HR24) {
+			return $this->value_hr24();
+		}
+		
 		return $this->db->query($this->query_agg)
 			->filter($this->get_date_filter($period))
 			->one();
 	}
 
 	protected function period_extreme($period, $extrm_type=null, $num=1) {
+		if($period == self::TODAY) {
+			return $this->value_today();
+		}
+		if($period == self::HR24) {
+			return $this->value_hr24();
+		}
+
 		$fields = [$this->query_val];
 		$q = $this->db->query();
 		if(!$this->var['spread'] && $num === 1) {
@@ -662,6 +711,10 @@ abstract class Detail {
 	 * @return int count that match $filter within $period
 	 */
 	protected function period_count($period, $filter=null) {
+		if($period == self::TODAY || $period == self::HR24) {
+			return null;
+		}
+
 		$val_filter = ($filter === null) ? null : "$this->colname $filter";
 		return $this->db->query($this->colname)
 			->filter($this->get_date_filter($period), $val_filter)

@@ -21,6 +21,10 @@ class Station {
 
 	/** * IP Address */
 	const IP = '217.155.197.157';
+
+	const START_DATE = '2009-02-01';
+	const START_DATE_NW3 = '2010-07-18';
+
 }
 
 ?>

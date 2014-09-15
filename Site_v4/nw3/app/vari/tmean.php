@@ -26,6 +26,20 @@ class Tmean extends Live {
 		];
 	}
 
+	protected function value_today() {
+		$ltas = \nw3\app\model\Climate::g()->daily;
+		return [
+			'val' => $this->now->today->mean['temp'],
+			'anom' => $this->now->today->mean['temp'] -
+				($ltas['tmax'][D_doy] + $ltas['tmin'][D_doy]) / 2.0
+		];
+	}
+	protected function value_hr24() {
+		return [
+			'val' => $this->now->today->max['temp'],
+		];
+	}
+
 	public function record_24hr() {
 		$data = ['max' => [], 'min' => []];
 		$now = Store::g()->hr24->temp;

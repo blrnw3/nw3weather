@@ -15,6 +15,10 @@ class Rain extends Live {
 
 	const MAX_DRY_QUANTITY = 0.1; // Allow up to (inclusive) this much rain to still count as a dry day
 
+	private $cached_spells;
+
+	public $no_daily_anom = true;
+
 	function __construct() {
 		$this->days_filter = '> '.self::MAX_DRY_QUANTITY;
 		parent::__construct('rain');
@@ -43,12 +47,12 @@ class Rain extends Live {
 		];
 	}
 
-	public function spells() {
+	public function spells($mmm) {
 		$all_spells = $this->all_spells();
-		$data = ['dry' => [], 'wet' => []];
+		$data = [];
 		foreach (self::get_periods('has_spell') as $period) {
-			$data['dry'][$period] = $this->get_longest_spell_for_period($all_spells['dry'], $this->get_spell_filter($period));
-			$data['wet'][$period] = $this->get_longest_spell_for_period($all_spells['wet'], $this->get_spell_filter($period));
+			$data[$period] = $this->get_longest_spell_for_period($all_spells[$mmm],
+				$this->get_spell_filter($period));
 		}
 		return $data;
 	}
@@ -59,18 +63,20 @@ class Rain extends Live {
 	 */
 	public function curr_spell() {
 		$rained_today = $this->now->rain > 0;
-		$cond = $rained_today ? '=' : '>';
+		$cond = $rained_today ? '<=' : '>';
 		$dt = date(Db::DATE_FORMAT, D_now);
+		$dc = self::MAX_DRY_QUANTITY;
 		return $this->db->query("DATEDIFF('$dt', d)")
-			->filter("rain $cond 0")
-			->extreme(Db::MAX, 'd')
+			->filter("rain $cond $dc")
+			->extreme(MAX, 'd')
 			->scalar()
 		;
 	}
 
-	public function means() {
+	public function means($periods=null) {
 		$data = [];
-		foreach (self::get_periods('multi') as $period) {
+		if(is_null($periods)) $periods = self::get_periods('multi');
+		foreach ($periods as $period) {
 			$data[$period] = $this->period_agg($period);
 		}
 		$data[self::NOWMON]['anom_f'] = $this->get_period_end_anom($data, self::NOWMON);
@@ -132,6 +138,10 @@ class Rain extends Live {
 
 	/** Get all wet and dry spells */
 	function all_spells() {
+		if($this->cached_spells) {
+			return $this->cached_spells;
+		}
+
 		$drylen = $wetlen = 0;
 		$dryspells = [];
 		$wetspells = [];
@@ -165,10 +175,11 @@ class Rain extends Live {
 			$wetspells[] = ['val' => $wetlen, 'dt' => $dt];
 		}
 
-		return [
-			'dry' => $dryspells,
-			'wet' => $wetspells
+		$this->cached_spells = [
+			SPELL_INV => $dryspells,
+			SPELL => $wetspells
 		];
+		return $this->cached_spells;
 	}
 
 	/**

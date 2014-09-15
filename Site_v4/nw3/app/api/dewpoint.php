@@ -3,15 +3,15 @@ namespace nw3\app\api;
 
 use nw3\app\model\Detail;
 /**
- * All Relative Humidity stats n stuff
+ * All Dew Point stats n stuff
  */
-class Humidity extends Datadetail {
+class Dewpoint extends Datadetail {
 
 	function __construct() {
 		parent::__construct([
-			'hmin',
-			'hmax',
-			'hmean'
+			'dmin',
+			'dmax',
+			'dmean'
 		]);
 	}
 

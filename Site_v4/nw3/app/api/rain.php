@@ -7,7 +7,7 @@ use nw3\app\model\Variable as Vari;
 /**
  * All rain stats n stuff
  */
-class Rain extends \nw3\app\core\Api {
+class Rain extends Datadetail {
 
 	function __construct() {
 		parent::__construct([
@@ -78,7 +78,7 @@ class Rain extends \nw3\app\core\Api {
 
 	function record_24hrs() {
 		return [
-			'wettest' => ['data' => $this->vars['rain']->record_24hr()['max'], 'descrip' => 'Wettest 24hrs', 'type' => Vari::Rain, 'rec_type' => 'H:i jS M Y']
+			'wettest' => ['data' => $this->vari('rain')->record_24hr()['max'], 'descrip' => 'Wettest 24hrs', 'type' => Vari::Rain, 'rec_type' => 'H:i jS M Y']
 		];
 	}
 }

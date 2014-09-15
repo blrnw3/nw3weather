@@ -50,7 +50,7 @@ class Admin {
 			],
 			'Data Summary' => [
 				'title' => 'Extremes and Trends, and Averages',
-				'map' => 'data'
+				'map' => 'datasummary'
 			],
 			'Forecast' => [
 				'title' => 'Local Forecasts and Latest Maps',
@@ -87,8 +87,16 @@ class Admin {
 				'map' => 'datadetail/wind'
 			],
 			'Humidity' => [
-				'title' => 'Detailed Rain Data',
+				'title' => 'Detailed Humidity Data',
 				'map' => 'datadetail/humidity'
+			],
+			'Dew Point' => [
+				'title' => 'Detailed Dew Point Data',
+				'map' => 'datadetail/dewpoint'
+			],
+			'Pressure' => [
+				'title' => 'Detailed Pressure Data',
+				'map' => 'datadetail/pressure'
 			],
 			'Charts' => [
 				'title' => '31-day and 12-month Data Charts',

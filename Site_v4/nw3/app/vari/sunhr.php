@@ -2,11 +2,12 @@
 namespace nw3\app\vari;
 
 /**
- * All AF hrs stats n stuff
+ * All Sun hrs stats n stuff
  */
-class Afhrs extends Live {
+class Sunhr extends Live {
 	function __construct() {
-		parent::__construct('frosthrs');
+		$this->days_filter = '> 0.1';
+		parent::__construct(null);
 	}
 
 	public function trend_diffs($p) {
@@ -18,10 +19,14 @@ class Afhrs extends Live {
 	}
 
 	protected function value_today() {
-		return ['val' => $this->now->today->frosthrs];
+		return [
+			'val' => null,
+		];
 	}
 	protected function value_hr24() {
-		return ['val' => $this->now->hr24->frosthrs];
+		return [
+			'val' => null,
+		];
 	}
 }
 ?>

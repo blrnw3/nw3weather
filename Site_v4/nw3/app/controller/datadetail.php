@@ -13,7 +13,6 @@ class Datadetail extends core\Controller {
 
 	public function __construct($path) {
 		parent::__construct(__CLASS__, $path);
-		Detail::initialise();
 	}
 
 	public function index() {
@@ -40,8 +39,20 @@ class Datadetail extends core\Controller {
 		$this->render();
 	}
 
+	public function dewpoint() {
+		$this->build('Dew Point Detail');
+		$this->render();
+	}
+
+	public function pressure() {
+		$this->build('Pressure Detail');
+		$this->render();
+	}
+
 	public function generic() {
+		// TODO: UI for this
 		$var = $this->sub_path(1);
+		$this->generic_var = $var;
 		$this->build("$var Detail");
 		$this->render();
 	}

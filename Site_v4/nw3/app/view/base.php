@@ -32,7 +32,7 @@ use nw3\app\helper\Main;
 			<div id="background_header"></div>
 			<div id="page">
 				<div id="header">
-					<table align="center" width="100%" cellpadding="0" cellspacing="0"><tr>
+					<table class="legacy" align="center" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
 					<td align="left" valign="top">
 						<img src="<?php echo ASSET_PATH; ?>img/leftheadN.JPG" alt="lefthead-anemometer" width="114" height="100" />
 					</td>
@@ -114,7 +114,7 @@ use nw3\app\helper\Main;
 					<div id="script_stats">
 						<?php $stats = $this->get_stats(); ?>
 						Script executed <abbr title="Session Cnt: <?php echo Session::page_count(); ?>">in</abbr> <?php echo $stats['cpu']['time']; ?>
-						| DB queries: <?php echo "{$stats['db']['count']} executed in {$stats['db']['time']} ms ({$stats['db']['prop']}%)"; ?>
+						| DB queries: <?php echo "{$stats['db']['count']} executed in {$stats['db']['time']} ms ({$stats['db']['avg']}, {$stats['db']['prop']}%)"; ?>
 						| Memory: <?php echo "{$stats['mem']['current']}  MB ({$stats['mem']['peak']} peak)" ?>
 					</div>
 				</div>

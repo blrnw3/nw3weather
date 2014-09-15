@@ -447,10 +447,24 @@ abstract class Variable {
 			'spread' => true,
 		],
 
+		'fmin' => [
+			'description' => 'Minimum Windchill',
+			'group' => self::Temperature,
+			'category' => 'Feels Like',
+			'colour' => 'darkseagreen',
+			'is_min' => 'true'
+		],
+		'fmax' => [
+			'description' => 'Maximum Humidex',
+			'group' => self::Temperature,
+			'category' => 'Feels Like',
+			'colour' => 'darkslategray'
+		],
+
 		'sunhr' => [
 			'description' => 'Sun Hours',
 			'group' => self::Hours,
-			'category' => 'Observation',
+			'category' => 'Sun',
 			'anomable' => true,
 			'colour' => '#ff3',
 			'spread' => true,

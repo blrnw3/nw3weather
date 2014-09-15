@@ -7,7 +7,7 @@ use nw3\app\model\Detail;
 /**
  * All Wind stats n stuff
  */
-class Wind extends \nw3\app\core\Api {
+class Wind extends Datadetail {
 
 	function __construct() {
 		parent::__construct([

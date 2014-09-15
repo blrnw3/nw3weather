@@ -44,6 +44,10 @@ class Store extends \nw3\app\core\Singleton {
 		$this->hr24 = new Lazyvar(self::DAT24_NAME);
 	}
 
+	function mins_since_last_rain() {
+		return (D_now - (int)$this->hr24->rnlast) / 60.0;
+	}
+
 	function change($var, $since) {
 		return $this->hr24->trend[0][$var] - $this->hr24->trend[$since][$var];
 	}

@@ -5,7 +5,7 @@ use nw3\app\model\Detail;
 /**
  * All temperature stats n stuff
  */
-class Temperature extends \nw3\app\core\Api {
+class Temperature extends Datadetail {
 
 	function __construct() {
 		parent::__construct([
@@ -17,8 +17,8 @@ class Temperature extends \nw3\app\core\Api {
 
 	public function recent_values() {
 		\nw3\app\model\Climate::g()->load();
-		return $this->get_recent_values($this->vars +
-			['afhrs' => new \nw3\app\vari\Afhrs()]
+		return $this->get_recent_values(
+			array_merge($this->default_vars, ['afhrs'])
 		);
 	}
 
