@@ -34,6 +34,8 @@ class Store extends \nw3\app\core\Singleton {
 	public $dewp;
 	public $feel;
 
+	public $updated;
+
 	public $today;
 	public $hr24;
 
@@ -57,6 +59,7 @@ class Store extends \nw3\app\core\Singleton {
 		$live_path = File::live_path('wd_latest.txt');
 
 		$size = filesize($live_path);
+		$this->updated = filemtime($live_path);
 //		$time_diff = D_now - filemtime($live_path);
 
 		if($size === 0) {

@@ -6,6 +6,7 @@ use nw3\app\util as u;
 use nw3\app\util\Date;
 use nw3\app\util\Maths;
 use nw3\app\util\String;
+use nw3\app\util\File;
 use nw3\app\helper as h;
 use nw3\app\core\Units;
 use nw3\app\core\Session;
@@ -175,8 +176,10 @@ abstract class Controller {
 	 * @param type $name file_name of the viewette (excluding leading underscore and extension)
 	 */
 	protected function viewette($_name, $_this=null) {
-		foreach($_this as $_k => $_val) {
-			${$_k} = $_val;
+		if($_this !== null) {
+			foreach($_this as $_k => $_val) {
+				${$_k} = $_val;
+			}
 		}
 		if(String::contains($_name, '/')) {
 			require  __DIR__ ."/../view/$_name.php";
@@ -232,7 +235,9 @@ abstract class Controller {
 			],
 			'cpu' => [
 				'time' => $exec_time
-			]
+			],
+			'now' => microtime(true),
+			'data_updated' => \nw3\app\model\Store::g()->updated
 		];
 	}
 

@@ -21,7 +21,6 @@ use nw3\app\helper\Main;
 		<link rel="stylesheet" type="text/css" href="<?php echo ASSET_PATH; ?>css/global.css" media="screen" title="screen" />
 
 		<script src="<?php echo ASSET_PATH; ?>js/lib/jquery.js"></script>
-		<script src="<?php echo ASSET_PATH; ?>js/global.js"></script>
 		<?php if($include_analytics): ?>
 			<script src="<?php echo ASSET_PATH; ?>js/analytics.js"></script>
 		<?php endif ?>
@@ -91,7 +90,8 @@ use nw3\app\helper\Main;
 					</table>
 				</div>
 
-				<input id="constants-time" type="hidden" value="<?php echo D_now ?>" />
+				<input id="constants-time" type="hidden" value="<?php echo microtime(true) ?>" />
+				<script src="<?php echo ASSET_PATH; ?>js/global.js"></script>
 
 				<div id="main" class="page_<?php echo $this->controller_name ?> subpage_<?php echo $this->page ?>">
 					<?php require $this->view; ?>
@@ -116,6 +116,10 @@ use nw3\app\helper\Main;
 						Script executed <abbr title="Session Cnt: <?php echo Session::page_count(); ?>">in</abbr> <?php echo $stats['cpu']['time']; ?>
 						| DB queries: <?php echo "{$stats['db']['count']} executed in {$stats['db']['time']} ms ({$stats['db']['avg']}, {$stats['db']['prop']}%)"; ?>
 						| Memory: <?php echo "{$stats['mem']['current']}  MB ({$stats['mem']['peak']} peak)" ?>
+					</div>
+					<div id="system_stats">
+						Server time: <?php echo date('r', $stats['now']) ?>
+						| System time: <?php echo date('r', $stats['data_updated']) ?>
 					</div>
 				</div>
 			</div>

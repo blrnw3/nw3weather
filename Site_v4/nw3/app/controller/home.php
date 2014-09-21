@@ -1,7 +1,6 @@
 <?php
 namespace nw3\app\controller;
 
-use nw3\app\model\Live;
 use nw3\app\core;
 
 /**

@@ -25,7 +25,7 @@
 
 <?php $this->viewette('skycam') ?>
 
-A <a href="skycam" title="Contains skycam only">self-contained version</a> is also available.
+A <a href="webcam/skycam" title="Contains skycam only">self-contained version</a> is also available.
 </p>
 
 <hr />

@@ -40,7 +40,7 @@ class Date {
 		//Define (globally) some of the most useful date-based pseudo-constants
 		define('D_monthname', date('F', $now));
 		define('D_monthshort', date('M', $now));
-		define('D_date', date('d M Y', $now));
+		define('D_date', date('D jS M Y', $now));
 		define('D_time', date('H:i', $now));
 		define('D_dst', date('i', $now) ? 'BST' : 'GMT');
 		define('D_is_dst', date('i', $now));
