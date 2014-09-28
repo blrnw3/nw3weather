@@ -1,5 +1,6 @@
 <?php
 use nw3\app\util\Html;
+use nw3\app\util\Time;
 use nw3\app\core\Units;
 use nw3\app\core\Session;
 use nw3\app\helper\Main;
@@ -120,6 +121,7 @@ use nw3\app\helper\Main;
 					<div id="system_stats">
 						Server time: <?php echo date('r', $stats['now']) ?>
 						| System time: <?php echo date('r', $stats['data_updated']) ?>
+						(Diff: <?php echo Time::secsToReadable($stats['now'] - $stats['data_updated']) ?>)
 					</div>
 				</div>
 			</div>

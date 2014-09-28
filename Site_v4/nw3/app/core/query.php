@@ -12,7 +12,7 @@ class Query implements \Iterator {
 
 	const DEFAULT_TBL = 'daily';
 
-	private $tbl;
+	private $tbls = [];
 	private $cols = [];
 	private $limit;
 	private $conds = [];
@@ -30,19 +30,18 @@ class Query implements \Iterator {
 
 	function __construct($args) {
 		$this->db = Db::g();
-		$this->tbl = self::DEFAULT_TBL;
 		$this->fields($args);
 		return $this;
 	}
 
-	function tbl($tbl_name) {
-		$this->tbl = $tbl_name;
+	function tbl() {
+		$this->tbls = func_get_args();
 		return $this;
 	}
 
 	function nest($query) {
 		$sql = $query->sql();
-		$this->tbl = "($sql)t";
+		$this->tbls[] = "($sql)t";
 		return $this;
 	}
 
@@ -108,8 +107,15 @@ class Query implements \Iterator {
 	}
 
 	function count() {
-		$this->cols = [Db::count(count($this->cols) ? $this->col(0) : '*')];
-		return $this->select()->fetchColumn();
+		$cnt_field = count($this->cols) ? $this->col(0) : '*';
+		if(!is_string($cnt_field)) {
+			$cnt_field = $cnt_field->field;
+		}
+		$tables = $this->get_tables();
+		$conds = $this->get_conds();
+		$cols = Db::count($cnt_field);
+		$q = "SELECT $cols FROM $tables $conds";
+		return $this->db->execute($q, $this->debug)->fetchColumn();
 	}
 
 	function one() {
@@ -131,19 +137,27 @@ class Query implements \Iterator {
 	}
 
 	function sql() {
+		$tables = $this->get_tables();
 		$conds = $this->get_conds();
 		$cols = $this->get_cols();
 		$order = $this->get_order();
 		$group = $this->get_group();
 		$join = $this->get_join();
 		$limit = $this->get_limit();
-		$q = "SELECT $cols FROM $this->tbl $join $conds $group $order $limit";
+		$q = "SELECT $cols FROM $tables $join $conds $group $order $limit";
 		return $q;
 	}
 
 	private function select() {
 		$q = $this->sql();
 		return $this->db->execute($q, $this->debug);
+	}
+
+	private function get_tables() {
+		if(!$this->tbls) {
+			return self::DEFAULT_TBL;
+		}
+		return implode(', ', $this->tbls);
 	}
 
 	private function get_conds() {

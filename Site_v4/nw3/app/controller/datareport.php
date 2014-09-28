@@ -16,6 +16,10 @@ class Datareport extends core\Controller {
 	}
 
 	public function index() {
+		$this->redirect('datareport/daily');
+	}
+
+	public function daily() {
 		$this->build('Data reports - daily');
 
 		$year = isset($_GET['year']) ? (int)$_GET['year'] : D_year;
@@ -27,6 +31,7 @@ class Datareport extends core\Controller {
 
 		$this->render();
 	}
+
 
 }
 

@@ -172,4 +172,5 @@ $month_report = $latest->monthly_report(Date::mkdate(D_month-1, 1, D_year));
 	]
 ] ?>
 <div id="init_live" style="display:none"><?php echo json_encode($live_plus) ?></div>
-<script src="<?php echo ASSET_PATH ?>js/home.js"></script>
+
+<?php $this->js_script('home') ?>

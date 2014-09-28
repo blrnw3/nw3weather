@@ -65,7 +65,21 @@ class Api extends core\Controller {
 		$this->json($dat);
 	}
 
+	public function datareport() {
+		$varname = $this->sub_path(1, false);
+		$call = $this->sub_path(2);
+		$this->introspect('datareport', $call, $varname);
+	}
+
 	public function validate_arg($path) {
+		$this->introspect($path,  $this->sub_path(1));
+		return true;
+	}
+
+	public function subpath($path) {
+	}
+
+	private function introspect($path, $call, $constructor_arg=null) {
 		$api_class = 'nw3\app\api\\'. $path;
 		try {
 			class_exists($api_class);
@@ -78,11 +92,10 @@ class Api extends core\Controller {
 			$this->redirect('api');
 		}
 
-		$call = $this->sub_path(1);
 		$poss_calls = array_filter($api_reflect->getMethods(\ReflectionMethod::IS_PUBLIC),
 			function($c){return !String::starts_with($c->name, '__');});
 		if($this->valid_call($call, $poss_calls)) {
-			$api = $api_reflect->newInstance();
+			$api = $api_reflect->newInstance($constructor_arg);
 			$dat = $api->{$call}();
 			$this->json($dat);
 		} else {
@@ -95,10 +108,6 @@ class Api extends core\Controller {
 			$this->calls = $calls;
 			$this->base_api = $path .'/';
 		}
-		return true;
-	}
-
-	public function subpath($path) {
 		if($this->do_raw) {
 			$this->build('API', null, 'index');
 			$this->render();

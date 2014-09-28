@@ -77,6 +77,13 @@ class Date {
 		define('D_seasonname', self::$seasons[D_season]);
 	}
 
+	static function short_mon($month_index_natural) {
+		return self::$months3[$month_index_natural-1];
+	}
+	static function mon($month_index_natural) {
+		return date('F', self::mkdate($month_index_natural, 1));
+	}
+
 	/**
 	 * Returns true if it's the first day of the month, else false
 	 * @return bool

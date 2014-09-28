@@ -51,7 +51,7 @@ abstract class Reports {
 			<td>'. $day .'</td>
 			';
 		foreach ($months as $month) {
-			echo '<td>'. Date::$months3[$month-1] .'</td>
+			echo '<td>'. Date::short_mon($month) .'</td>
 			';
 		}
 		echo '</tr>

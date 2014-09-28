@@ -1,5 +1,4 @@
 <?php
-use nw3\app\util\Html;
 use nw3\app\model\Report;
 use nw3\app\helper\Reports;
 
@@ -15,16 +14,13 @@ $rep = $this->report;
 			<label class="variable">Weather Variable
 				<?php Reports::var_dropdown($rep->categories, $rep->var['id']); ?>
 			</label>
-			<span class="arrow previous" title="Previous var">&#9664;</span>
-			<span class="arrow next" title="Next var">&#9654;</span>
+			<?php $this->viewette('arrow_cycle') ?>
 		</div>
 		<div>
 			<label class="year">Year
 				<?php Reports::year_dropdown($rep->year); ?>
 			</label>
-
-			<span class="arrow previous" title="Previous year">&#9664;</span>
-			<span class="arrow next" title="Next year">&#9654;</span>
+			<?php $this->viewette('arrow_cycle') ?>
 		</div>
 	</form>
 </div>
@@ -131,18 +127,4 @@ $rep = $this->report;
 		<?php endif; ?>
 	<?php endif; ?>
 </p>
-
-<script type="text/javascript">
-$(document).ready(function(){
-	$('#data_report_header').find('.arrow').click(function() {
-		var is_next = $(this).hasClass('next');
-		var _select = $(this).parent().find('select')[0];
-		if(is_next) {
-			_select.selectedIndex = (_select.selectedIndex + 1) % _select.length;
-		} else {
-			_select.selectedIndex = (_select.selectedIndex === 0) ? _select.length-1 : _select.selectedIndex - 1;
-		}
-		$('#data_report_header').find('form').submit();
-	});
-});
-</script>
+<?php $this->js_script('datareport') ?>

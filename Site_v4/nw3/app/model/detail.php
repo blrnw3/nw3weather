@@ -360,7 +360,10 @@ abstract class Detail {
 	### Data-y stuff ###
 
 	public function num_records() {
-		return $this->period_lengths()[self::RECORD];
+		if(!$this->period_lengths) {
+			return $this->db->query($this->colname)->count();
+		}
+		return $this->period_lengths[self::RECORD];
 	}
 
 	public function live() {
@@ -666,7 +669,7 @@ abstract class Detail {
 		if($period == self::HR24) {
 			return $this->value_hr24();
 		}
-		
+
 		return $this->db->query($this->query_agg)
 			->filter($this->get_date_filter($period))
 			->one();
@@ -803,6 +806,39 @@ abstract class Detail {
 			throw new Exception("Invalid period $period specified");
 		}
 		return $this->summable ? $data[$period]['val'] / $lta : $data[$period]['val'] - $lta;
+	}
+
+	public function get_rank_of_day($date) {
+		if($date === self::YESTERDAY) {
+			$date = $this->yest;
+		}
+		$q_ranks = $this->db->query('d', $this->colname, new Alias('@cr := @cr + 1', 'rank'))
+			->tbl('daily', '(SELECT @cr := 0) r')
+			->order(MAX, $this->colname)
+			->order(MAX, 'd')
+		;
+		$q = $this->db->query('d', $this->query_val, 'rank')
+			->nest($q_ranks)
+			->filter("d = $date")
+		;
+		return $q->one();
+	}
+
+	public function get_record_daily_ranks_for_month($month, $num) {
+		$q = $this->db->query();
+		if($month !== 0) {
+			$q = $q->filter("MONTH(d) = ".$month);
+		}
+		$num_all = $q->count();
+		$q = $q->fields([$this->query_val, $this->query_date])
+			->filter(Db::not_null($this->colname));
+		$q_min = clone $q;
+		return [
+			'desc' => $q->limit($num)->order(MAX)->all(),
+			'asc' => $q_min->limit($num)->order(MIN)->all(),
+			'count_all' => $num_all,
+			'count_good' => $q->count(),
+		];
 	}
 
 	private function nday_avg_extremes($n, &$all_vals) {

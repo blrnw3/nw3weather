@@ -66,6 +66,15 @@ abstract class Detail {
 		return $dt->format($format);
 	}
 
+	static function date_custom($dt_string, $format) {
+		try {
+			$dt = new \DateTime($dt_string);
+		} catch (\Exception $ex) { // Probably an integer
+			$dt = \DateTime::createFromFormat('U', $dt_string);
+		}
+		return $dt->format($format);
+	}
+
 	static function filter_data(&$data, $field, $cond) {
 		foreach ($data as &$dat) {
 			foreach ($dat['data'] as $p => $d) {

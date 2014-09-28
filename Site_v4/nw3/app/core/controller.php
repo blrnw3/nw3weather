@@ -188,6 +188,10 @@ abstract class Controller {
 		}
 	}
 
+	protected function js_script($name) {
+		echo '<script src="'. ASSET_PATH ."js/$name.js\"></script>";
+	}
+
 	protected function check_correct_subpath_length($subpaths_allowed=1) {
 		$args_num = count($this->url_args);
 		if($args_num <= $subpaths_allowed) {

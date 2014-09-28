@@ -7,53 +7,27 @@ use nw3\app\model\Report;
 use nw3\app\util\Date;
 use nw3\app\util\Maths;
 use nw3\app\core\Db;
-use nw3\config\Admin;
 
 /*
  * Data Reports
  */
 class Datareport extends Report {
-	const DEFAULT_VARNAME = 'rain';
 
-	public $var;
 	public $year;
 	public $rolling12;
 	public $months;
 	public $dims;
 	public $data = [];
 
-	private $class_prefix;
-	private $class_bands = [];
 
 	public function __construct($var_name, $year, $rolling12) {
-		parent::__construct();
+		parent::__construct($var_name);
 
 		$this->rolling12 = $rolling12;
 		$this->year = $this->sanitise_year($year);
-		$this->var = $this->sanitise_varname($var_name);
 
 		$this->get_months();
 		$this->get_data(new Db());
-
-		$this->class_prefix = $this->var['name'] .'_level_';
-		$this->class_bands['day'] = [
-			'count' => count($this->var['thresholds_day']),
-			'bands' => $this->var['thresholds_day']
-		];
-		if($this->var['thresholds_month']) {
-			$this->class_bands['month'] = [
-				'count' => count($this->var['thresholds_month']),
-				'bands' => $this->var['thresholds_month']
-			];
-		}
-		if($this->var['summable']) {
-			$day_thresholds = Variable::$_[Variable::Days]['thresholds_month'];
-			$this->class_bands['count'] = [
-				'count' => count($day_thresholds),
-				'bands' => $day_thresholds
-			];
-		}
-
 	}
 
 	function get_months() {
@@ -89,7 +63,7 @@ class Datareport extends Report {
 			->filter(Db::btwn($d1, $d2, 'd', true));
 
 		$daily = [];
-		foreach ($data->all() as $val) {
+		foreach ($data as $val) {
 			$daily[$val['m']][$val['d']] = $val['var'];
 		}
 		$this->data['daily'] = $daily;
@@ -165,33 +139,6 @@ class Datareport extends Report {
 		return $this->class_level($value, $this->class_bands['day']);
 	}
 
-	private function class_level($value, $bands) {
-		if($value === null) {
-			return 'null';
-		}
-		for($i = 0; $i < $bands['count']; $i++){
-			if($value < $bands['bands'][$i]) {
-				return $this->class_prefix.$i;
-			}
-		}
-		return $this->class_prefix.$i;
-	}
 
-	private function sanitise_year($yr) {
-		if(is_null($yr) || $yr > D_year) {
-			return D_yest_year;
-		}
-		if($yr !== 0 && $yr < Admin::FIRST_YEAR_REPORTS) {
-			return Admin::FIRST_YEAR_REPORTS;
-		}
-		return $yr;
-	}
-
-	private function sanitise_varname($varname) {
-		if(is_null($varname) || !Variable::is_valid($varname)) {
-			return Variable::$daily[self::DEFAULT_VARNAME];
-		}
-		return Variable::$daily[$varname];
-	}
 }
 ?>

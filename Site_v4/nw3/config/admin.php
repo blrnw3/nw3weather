@@ -100,7 +100,7 @@ class Admin {
 			],
 			'Charts' => [
 				'title' => '31-day and 12-month Data Charts',
-				'map' => 'charts'
+				'map' => 'graphs/charts'
 			],
 			'Climate' => [
 				'title' => 'Long-term Climate Averages for NW3',
@@ -114,7 +114,7 @@ class Admin {
 			],
 			'Rankings' => [
 				'title' => 'Daily and monthly ranked data by type',
-				'map' => 'ranking_tables'
+				'map' => 'rank'
 			],
 			'Reports' => [
 				'title' => 'Weather Reports - daily and monthly',
