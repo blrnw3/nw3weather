@@ -55,14 +55,19 @@ deny from 62.219.8.235
 deny from 188.165.243.45
 deny from 103.14.146.44
 deny from 117.18.73.66
+deny from 195.2.240.101
 # Scrapers
 deny from 14.63.229.34
 # Ezooms bot
 deny from 208.115.113.86
 deny from 208.115.111.70
 
-#RewriteCond %{HTTP_HOST} ^www\.nw3weather\.co\.uk [NC]
-#RewriteRule ^(.*)$ http://nw3weather.co.uk/$1 [L,R=301]
+# Block semalt
+RewriteCond %{HTTP_REFERER} .*semalt\.com [NC]
+RewriteRule .* - [F]
+
+RewriteCond %{HTTP_HOST} ^www\.nw3weather\.co\.uk [NC]
+RewriteRule ^(.*)$ http://nw3weather.co.uk/$1 [L,R=301]
 
 redirect 301 /wx.php /
 redirect 301 /dailyreport.htm /dailyreport.php

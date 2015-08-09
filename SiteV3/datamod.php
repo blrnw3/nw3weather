@@ -29,8 +29,8 @@ require('unit-select.php');
 <div id="main">
 
 <?php
-if(!$nw3) {
-	die('Not allowed on this ip. Admin only!');
+if(!$me) {
+	die('Not allowed from this IP. Admin only!');
 }
 
 if(isset($_GET['cerealify'])) {
@@ -38,7 +38,14 @@ if(isset($_GET['cerealify'])) {
 	die();
 }
 
+
 if(isset($_GET['dtm'])) { $dtm = $_GET['dtm']; } else { $dtm = 1; }
+
+//If less than 0749 and editing yesterday... WARN
+if($dtm == 1 && date('Hi') < '0749') {
+	echo '<h2><b>WARNING: TOO EARLY!</b></h2><p>Cannot edit previous day until after 0749</p>';
+}
+
 //Link to EGLC pressure
 echo '<a href="http://www.wunderground.com/history/airport/EGLC/',
 	date('Y/n/d',mktime(1,1,1,date('n'),date('d')-$dtm)),
@@ -184,7 +191,9 @@ if(isset($_POST['pwd']) && (date('j', $modTimestamp) == date('t', $modTimestamp)
 	$DATM = unserialize(file_get_contents(ROOT.'serialised_datm.txt'));
 	$MDAT = DATtoMDAT($DATA);
 	$MDATM = DATtoMDAT($DATM);
+	echo '<pre>';
 	monthlyReport((int)date('n', $modTimestamp), (int)date('Y', $modTimestamp));
+	echo '</pre>';
 	echo '<h1>Mmonthly report for '.date('n', $modTimestamp). (int)date('Y', $modTimestamp).' has been produced </h1>';
 }
 ?>
@@ -346,6 +355,9 @@ function monthlyReport($repMonth, $repYear) {
 	$output = '<?php
 		$export = ' . var_export($export, true) . ';
 		?>';
+	//var_dump($MDATM);
+	//var_dump($manualRawM[3]);
+	var_dump($export);
 	file_put_contents(ROOT.$repYear."/report$repMonth.php", $output);
 }
 ?>

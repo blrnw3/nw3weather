@@ -160,7 +160,7 @@ function minMaxMeanSumCount($arr, $type, $morx) {
 			if($val < $min) { $min = $val; }
 			if($val > $max) { $max = $val; }
 			$sum += $val;
-			$count += (int)($val > 0.1);
+			$count += (int)($val > 0);
 		}
 	}
 	if($validCnt === 0)

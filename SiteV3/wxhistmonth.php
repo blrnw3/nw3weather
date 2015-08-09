@@ -31,12 +31,12 @@
 if(isset($_GET['month'])) { $mproc = intval($_GET['month']); } else { $mproc = ($dmonth == 1) ? 12 : $dmonth-1; }
 if(isset($_GET['year'])) { $yproc = (int) $_GET['year']; } else { $yproc = ($dmonth == 1) ? $dyear-1 : $dyear; }
 $sproc1 = mkdate($mproc,1,$yproc); $dim = date('t',$sproc1); $sproc = mkdate($mproc,$dim,$yproc);
-if($mproc == $dmonth && $yproc == $dyear) { $sproc = mktime()-3600*24; $dim = $day_yest; $num_adv = 31-$dim; }
+if($mproc == $dmonth && $yproc == $dyear) { $sproc = time()-3600*24; $dim = $day_yest; $num_adv = 31-$dim; }
 if($sproc < mkdate(2,1,2009) || $sproc > mkdate($dmonth+1, 1, $dyear) || $mproc > 12 || $mproc < 1) {
 	$toofar = true;
 	$mproc = $dmonth;
 	$yproc = $dyear;
-	$sproc = $sproc1 = mktime()-3600*24;
+	$sproc = $sproc1 = time()-3600*24;
 	$dim = $day_yest;
 }
 $dzed = date('z',$sproc)+1;

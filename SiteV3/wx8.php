@@ -267,13 +267,13 @@ $file = 8;
 		</thead>
 		<tfoot> <!-- Yes, it is meant to go here! -->
 			<tr>
-				<td>Jun 2012 - Current</td>
-				<td>~150</td>
+				<td>Jan 2014 - Current</td>
+				<td>~200</td>
 			</tr>
 		</tfoot>
 		<tbody>
 			<tr class="rowdark">
-				<td>Sep 2010 - Mar 2011</td>
+				<td>pre- Apr 2011</td>
 				<td>~10</td>
 			</tr>
 			<tr class="rowlight">
@@ -287,6 +287,10 @@ $file = 8;
 			<tr class="rowlight">
 				<td>Feb 2012 - May 2012</td>
 				<td>~100</td>
+			</tr>
+			<tr class="rowdark">
+				<td>Jun 2012 - Dec 2013</td>
+				<td>~150</td>
 			</tr>
 		</tbody>
 	</table>
@@ -304,7 +308,7 @@ $file = 8;
 		<tfoot> <!-- Yes, it is meant to go here! -->
 			<tr>
 				<td>Total</td>
-				<td>&gt;125,000</td>
+				<td>&gt;200,000</td>
 			</tr>
 		</tfoot>
 		<tbody>
@@ -319,6 +323,10 @@ $file = 8;
 			<tr class="rowdark">
 				<td>2013</td>
 				<td>~63,000</td>
+			</tr>
+			<tr class="rowlight">
+				<td>2014</td>
+				<td>~75,000</td>
 			</tr>
 		</tbody>
 	</table>
@@ -396,12 +404,16 @@ $file = 8;
 	<p>
 		I am a weather fanatic with a particular interest in data analysis,
 		and have been since around 2007 when I first started to collect data (in Excel) from a very basic weather station I had.
-		I enjoy any weather which is interesting from a data point-of-view - whether that be extreme cold, heat, snow or dullness -
-		though I always appreciate convective events (storms, hail and heavy showers) - rare though these are in London.
+		I enjoy any weather which is interesting from a data point-of-view - whether that be extreme cold, heat or snow -
+		though I always appreciate convective events (storms, hail and heavy showers) - uncommon though these are in London.
 	</p>
 	<p>
 		My academic background is in Physics and Computer Science, both of which I was largely motivated to study by my love of the weather.<br />
 		I currently live and work in London. Weather remains just a hobby.
+	</p>
+	<p>
+		For more insight into the world of a weather hobbyist, 
+		<a href="news.php#post-20141116">take a look at the article on me in the local paper</a>.
 	</p>
 
 </div>

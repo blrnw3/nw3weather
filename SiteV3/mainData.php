@@ -21,7 +21,7 @@ if($crsizeFinal === 0) {
 }
 
 ######## TO BE COMPLETED  ###########
-//pseudo code for when I get this sorted
+//pseudeo code for when I get this sorted
 //if($oldData) {
 //	$usePath = 'ucl data';
 //}
@@ -39,6 +39,14 @@ $kntsToMph = 1.152;
 // Main current weather variables
 $temp = $mainData[4];
 $humi = $mainData[5];
+
+if(false && $temp == 15.4) {
+	$ext_dat_file = urlToArray("http://weather.stevenjamesgray.com/realtime.txt");
+	$ext_dat = $ext_dat_file[0];
+	$dat_fields = explode(" ", $ext_dat);
+	$temp = $dat_fields[2];
+	$humi = $dat_fields[3];
+}
 $pres = $mainData[6];
 $rain = $mainData[7];
 $wind = $mainData[1] * $kntsToMph;

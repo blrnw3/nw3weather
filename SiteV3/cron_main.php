@@ -270,7 +270,7 @@ if($tstamp == '1637') {
 if($tstamp == '2348') {
 	$path = ROOT.'Logs/siteV3Access.txt';
 	if(file_exists($path)) {
-		$path_new = ROOT.'Logs/old/siteV3Access_to'. date('dMY') .'.txt';
+		$path_new = ROOT.'Logs/old/siteV3Access_day_of_month_'. date('d') .'.txt';
 		copy($path, $path_new);
 		unlink($path);
 	}

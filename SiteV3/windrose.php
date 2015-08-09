@@ -18,7 +18,7 @@ $data = array(
 $graph = new WindroseGraph(400, 400);
 
 // Setup title
-$graph->title->Set('Windrose');
+$graph->title->Set('Windrose basic example');
 $graph->title->SetFont(FF_VERDANA,FS_BOLD,12);
 $graph->title->SetColor('navy');
 

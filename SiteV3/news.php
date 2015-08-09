@@ -28,6 +28,21 @@
 	<h1>Site Blog and Weather Station news/updates</h1>
 
 	<table width="850">
+	<tr id="post-20141116"><td>
+		<h2>The weather station (and me) in the Ham and High, 30th Oct 2014</h2>
+		<p>
+			After the record rainfall (for this station) on 13th October 2014, I was contacted by
+			someone at the local paper, the Ham and High, for an interview about the significance
+			of the event. Pictures of me looking silly with my manual rain gauge were taken and
+			the interview was done, but they ended up not using my contribution for that piece.
+			They did, however, run a entirely different piece just about me and the weather station,
+			following a further, more personal, interview some days later.
+			<a href="/static-images/me_hnh.pdf" title="full-page pdf">Here it is!</a> (Sadly there is no online copy, but see the photo below).
+		</p>
+		<img src="/static-images/me_hnh.png" title="Me in the Ham and High" alt="me" /> <br />
+		<p>I thought they were stretching it a bit thin calling me a storm chaser...<p>
+		<span style="color:gray;font-style:italic">Posted: 16th Nov 2014</span><br />
+	</td></tr>
 	<tr id="post-20140330"><td>
 		<h2>Weather station maintenance / minor upgrade</h2>
 		<p>
@@ -57,13 +72,12 @@
 			<h3>Before:</h3>
 			<img src="/photos/oldwx_body.jpg"></img><img src="/photos/oldwx_base.jpg"></img>
 			<img src="/photos/oldwx_roof.jpg"></img><img src="/photos/oldwx_funnel.jpg"></img>
-			
+
 			<h3>After:</h3>
 			<img src="/photos/newwx_body.jpg"></img><img src="/photos/newwx_full.jpg"></img>
 			<img src="/photos/newwx_top.jpg"></img><img src="/photos/newwx_bot.jpg"></img>
 		</p>
-		<p>A <a href="./wx_albgen.php?albnum=4">full photo album</a> has now been published,
-			but I still need to touch-up the old paintwork before declaring the project complete.</p>
+		<p>A <a href="./wx_albgen.php?albnum=4">full photo album</a> has now been published</p>
 		<span style="color:gray;font-style:italic">Posted: 30th Mar 2014</span><br />
 	</td></tr>
 	<tr><td>

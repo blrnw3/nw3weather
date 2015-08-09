@@ -1,3 +1,3 @@
-Album photos (weather photogrphy)
+Album photos (weather photography)
 
-Not shown due to size limitatios - [view them on the live webnsite instead](http://nw3weather.co.uk/wx7.php).
+Not shown due to size limitations - [view them on the live website instead](http://nw3weather.co.uk/wx7.php).

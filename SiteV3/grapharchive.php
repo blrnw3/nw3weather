@@ -8,13 +8,20 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <?php
+function zerolead_hax($tag) {
+	$tag = intval($tag);
+	if($tag < 10 && $tag >= 0) { $tag = '0'.$tag; }
+	return $tag;
+}
+
+
 $yproc = date("Y", mktime(0,0,0,$dmonth,$dday-1)); $mproc = date("m", mktime(0,0,0,$dmonth,$dday-1)); $dproc = date("d", mktime(0,0,0,$dmonth,$dday-1));
 $datedescrip = 'Yesterday'; $direc = '';
 if(isset($_GET['month'])) {
 	$yproc = $_GET['year']; $mproc = $_GET['month']; $dproc = $_GET['day'];
 	$datedescrip = date('jS F Y',mktime(0,0,0,intval($_GET['month']),intval($_GET['day']),$_GET['year']));
 }
-$datetag = $yproc.$mproc.$dproc;
+$datetag = $yproc . zerolead_hax($mproc) . zerolead_hax($dproc);
 ?>
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">

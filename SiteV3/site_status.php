@@ -1,7 +1,16 @@
 <?php
 //$statusMessage = 'Site update due to be completed on 22nd May';
-$statusMessage = '<b>Site update, 22nd May:</b> I have <a href="news.php" title="details of the upgrade"> made a few changes</a>
- to nw3weather. Enjoy.';
+//$statusMessage = '<b>Site update, 22nd May:</b> I have <a href="news.php" title="details of the upgrade"> made a few changes</a>
+// to nw3weather. Enjoy.';
+//$statusMessage = 'There may be some downtime today due to planned upgrades to the local network infrastructure';
+//$statusMessage = 'Due to planned weather station maintenance this weekend, some sensor readings will be inaccurate until work is complete';
+//$statusMessage = '<a href="./news.php#post-20140330" title="Details of the work carried out">Weather station maintenance</a> is now complete, so sensors should be reporting normally';
+//$statusMessage = '<b>'.date('H:i d M Y: ', mktime(20,12,0,3,31,2014)) . '</b>'. 'Downtime was due to a local power cut at 11:30 this morning. Now restored with full data recovery.';
+//$statusMessage = '<b>08z '. date('d M: ', mktime(8,12,0,2,3,2015)) . '</b>'. '2.5 cm lying snow on the ground at nw3weather HQ. <i>NB: the rain gauge can\'t record snowfall until it melts</i>.';
+//$statusMessage = '<b>'. date('d M: ', mktime(8,12,0,5,11,2015)) . '</b>'. 'Absence of live wind data is being investigated. More info tonight';
+//$statusMessage = '<b>7pm '. date('d M: ', mktime(8,12,0,5,11,2015)) . '</b>'. 'Live wind data restored after six days downtime due to a battery failure whilst I was away';
+//$statusMessage = '<b>11am '. date('d M: ', mktime(11,12,0,7,24,2015)) . '</b>'. 'The temperature/humidity sensor failed at 7am this morning. Data for these measures is currently being sourced from a <a href="http://weather.stevenjamesgray.com/realtime.txt">nearby local weather station</a>. I will attempt to fix the faulty sensor at the weekend.';
+$statusMessage = '<b>11am '. date('d M: ', mktime(11,12,0,7,25,2015)) . '</b>'. 'Temperature/humidity data restored after sensor failure yesterday at 7am. The fault was due to a poor connection at the battery terminals and has now been resolved.';
 $showMessage = false;
 if($showMessage) {
 	showStatusDiv($statusMessage, false);

@@ -40,17 +40,17 @@ if($sleep) { quick_log('sleep_cam.txt', str_pad($wsizen1, 6) . ' ' . str_pad($ws
 //Check and fix missed file saves
 for($i = 2; $i < 8; $i++) {
 	$tstampL = date('Hi', mktime(date('H'), date('i')-$i));
-	if(mktime() - filemtime($root.'currcam/'.$tstampL.'currcam.jpg') > 999) {
+	if(time() - filemtime($root.'currcam/'.$tstampL.'currcam.jpg') > 999) {
 		copy($root.'currcam.jpg', $root.'currcam/'.$tstampL.'currcam.jpg');
 		quick_log('cam_fail.txt', $tstampL . ' Saved by net ' . $i, $i == 7);
 	}
-	if($tstampL == $sunset && mktime() - filemtime($root.'sunsetcam.jpg') > 999) {
+	if($tstampL == $sunset && time() - filemtime($root.'sunsetcam.jpg') > 999) {
 		copy($root.'currcam.jpg', $root.'sunsetcam.jpg');
 		quick_log('cam_fail.txt', $tstampL . ' sunsetcam save from net ' . $i);
 	}
 }
 //quick_log($fullpath.'cam_templog.txt', mktime() - filemtime($root.'currcam/'.$tstampL.'currcam.jpg'));
-if(date('H:i',mktime()-60) == $sunset) { quick_log('cam_templog.txt', mktime() - filemtime($root.'sunsetcam.jpg') . ' sunsetcam age'); }
+if(date('H:i',time()-60) == $sunset) { quick_log('cam_templog.txt', time() - filemtime($root.'sunsetcam.jpg') . ' sunsetcam age'); }
 
 // if(date('i') % 5 == 3) {
 	// chmod($root.$img, 0444);
