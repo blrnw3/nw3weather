@@ -42,8 +42,8 @@ for($v = 0; $v < count($vars); $v++) {
 }
 
 //365-day clim avs
-$dtfanomcc = file($root.'tminmaxav.csv');
-$dsuncc = file($root.'maxsun.csv');
+$dtfanomcc = file(ROOT . 'tminmaxav.csv');
+$dsuncc = file(ROOT . 'maxsun.csv');
 for($z = 0; $z < 365; $z++) {
 	$dtanomcc = explode(',', $dtfanomcc[$z]);
 	$lta[0][$z] = $dtanomcc[0];

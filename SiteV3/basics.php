@@ -85,6 +85,8 @@ const JQUERY = '<script type="text/javascript" src="http://ajax.googleapis.com/a
 const GRAPH_DIMS_LARGE = ' height="1017" width="850" ';
 const GRAPH_DIMS_SMALL = ' height="619" width="542" ';
 
+$sunGrabTime = '0833'; // When to scrape Wonline for EGLL Sun Hrs
+
 /*
  * ###### BUGS #####
  *

@@ -92,4 +92,7 @@ if(date('j') == 1 && date('n') == 1) { //first day of the year
 }
 
 quick_log('data_crontime.txt', $p_time);
+
+mail("blr@nw3weather.co.uk", "Daily wx report $day_yest $mon_yest $yr_yest (exec: $p_time s)",
+	var_export($yestNow, true), "From: server");
 ?>

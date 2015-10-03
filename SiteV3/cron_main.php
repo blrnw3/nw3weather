@@ -58,9 +58,7 @@ $newLine = substr($newLine, 0, strlen($newLine)-1) . "\r\n";
 if($tstamp == '0000') {
 	require(ROOT.'data.php');
 
-	if(true || date('j') == 1) {
-		exec(EXEC_PATH. 'HourlyLogs.php > hrlogOutput.html');
-	}
+	exec(EXEC_PATH. 'HourlyLogs.php > hrlogOutput.html');
 
 	$rain = 0; //clientraw hasn't had time to upload and reset this
 	file_put_contents($todaylog, $newLine); //reset
@@ -91,7 +89,7 @@ file_put_contents( ROOT.'serialised_datNow.txt', serialize($newNOW) );
 file_put_contents( ROOT.'serialised_datHr24.txt', serialize( dailyData( date('Ymd') ) ) );
 
 //datm append
-if($tstamp == '0749') { // Earliest I'd ever reasonably get up, and time enough for sun hrs to be published
+if($tstamp == $sunGrabTime) {
 	$sunhrs = getSunHrs();
 	$wethrs = file_get_contents(ROOT."wethrs.txt");
 	$listm = array($sunhrs,$wethrs,'u','','','','','','blr','','','','\n');
@@ -157,6 +155,13 @@ if(time() - filemtime(ROOT.'datm'.$yr_yest.'.csv') < 65) {
 	serialiseCSVm();
 	//Now generate the sunTags file
 	exec(EXEC_PATH. 'cron_tags.php blr ftw > /dev/null &');
+}
+
+// Monthly report
+if($firstday && $fiveMinutely && time() - filemtime(ROOT.'datm'.$yr_yest.'.csv') < 303) {
+	require ('monthrepgen.php');
+	$rep = monthlyReport((int)$mon_yest, (int)$yr_yest);
+	mail("blr@nw3weather.co.uk","Monthly report $mon_yest $yr_yest", $rep, "From: server");
 }
 
  // Ensure that data.php did indeed run at midnight
@@ -259,7 +264,7 @@ if($tstamp == '0621' && $dday == 1) {
 }
 
 //check that datamod was done
-if($tstamp == '1637') {
+if($tstamp == '2137') {
 	$datamod_last = filemtime(ROOT."dat" . $yr_yest . ".csv");
 	if(time() - $datamod_last > 36000) {
 		$last_done = date('H:i d M Y', $datamod_last);
