@@ -28,6 +28,23 @@
 	<h1>Site Blog and Weather Station news/updates</h1>
 
 	<table width="850">
+	<tr id="post-20151003"><td>
+		<h2>nw3weather joins twitter</h2>
+		<p>
+			After experimenting with various ways of sharing interesting stats about the weather that this
+			station records, I've decided for now that using Twitter is the best way. It is easy to reach a
+			wide audience and very easy to post text updates and photos. I plan to use it for sharing both stats 
+			("today was the warmest in 18 months") and station issues ("webcam not working"). Also photos I hope.
+			I'm not convinced by the 140 character limit, which I generally find annoying as I have to resort to
+			trimming short what I want to say or reverting to text speak or poor grammar. However, I will try it out. <br />
+		</p>
+		<p>
+			<a href="https://twitter.com/nw3weather">Link to nw3weather's twitter page</a> <br />
+			I have also put the feed at the bottom of the homepage so visitors can find it.
+		</p>
+		<p>P.S. The 2014 annual weather report has been archived <a href="repyear.php">here</a></p>
+		<span style="color:gray;font-style:italic">Posted: 3rd Oct 2015</span><br />
+	</td></tr>
 	<tr id="post-20141116"><td>
 		<h2>The weather station (and me) in the Ham and High, 30th Oct 2014</h2>
 		<p>

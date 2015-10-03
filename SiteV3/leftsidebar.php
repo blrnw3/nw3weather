@@ -3,7 +3,7 @@
 		<p class="sideBarTitle">Navigation</p>
 		<ul>
 <?php
-$lastPost = mkdate(11,16,2014); //MUST KEEP UPDATED - latest blog post
+$lastPost = mkdate(10,3,2015); //MUST KEEP UPDATED - latest blog post
 $lastAlbum = mkdate(4,12,2014); //MUST KEEP UPDATED - latest album upload
 
 $newLength = (3 * 3600 * 24);
@@ -14,23 +14,23 @@ $photos = 'Photos'. ( ((time() - $lastAlbum < $newLength)) ?
 
 $itemsM = array('Home', 'Webcam', 'Graphs', 'Data Summary', 'Forecast', 'Astronomy', $photos, 'About');
 $itemsD = array('Rain', 'Wind', 'Temperature', 'Humidity', 'Charts', 'Climate');
-$itemsH = array('Data Tables', 'Rankings', 'Daily Reports', 'Monthly Reports', 'Custom Graphs');
+$itemsH = array('Data Tables', 'Rankings', 'Daily Reports', 'Monthly Reports', 'Annual Reports', 'Custom Graphs');
 $itemsO = array($blog, 'System', 'External');
 
 $titleM = array('Return to main page', 'Live Webcam and Timelapses', 'Latest Daily and Monthly Graphs &amp; Charts', ' Extremes and Trends, and Averages', ' Local Forecasts and Latest Maps',
 	'Sun and Moon Data', 'My Weather Photography', ' About this Weather Station and Website');
 $titleD = array('Detailed Rain Data', 'Detailed Wind Data', 'Detailed Temperature Data', 'Detailed Humidity Data', '31-day and 12-month Data Charts', 'Long-term climate averages');
-$titleH = array('Tables of monthly and daily data by type', 'Daily and monthly ranked data by type', 'Weather', 'Weather', 'Customisable multi-variable line graphs');
+$titleH = array('Tables of monthly and daily data by type', 'Daily and monthly ranked data by type', 'Weather Daily', 'Weather Monthly', 'Weather Annual', 'Customisable multi-variable line graphs');
 $titleO = array('Website and weather station blog and news', 'System Status and Miscellaneous', 'My Site on the Web and Useful Weather Links');
 
 $nameM = array('index', 'wx2', 'wx3', 'wx4', 'wx5', 'wx6', 'wx7', 'wx8');
 $nameD = array('wx12', 'wx13', 'wx14', 'wx10', 'charts', 'wxaverages', 'wx15');
-$nameH = array('wxdataday', 'RankDay', 'wxhistday', 'wxhistmonth', 'graphviewer', 'Historical');
+$nameH = array('wxdataday', 'RankDay', 'wxhistday', 'wxhistmonth', 'repyear', 'graphviewer');
 $nameO = array('news', 'wx15', 'wx9');
 
 $numsM = array(1, 2, 3, 4, 5, 6, 7, 8);
 $numsD = array(12, 13, 14, 10, 32, 20);
-$numsH = array(40, 41, 85, 86, 31, 87);
+$numsH = array(40, 41, 85, 86, 87);
 $numsO = array(96, 15, 9);
 
 $cfile = explode('/', $_SERVER['PHP_SELF']);
