@@ -28,6 +28,47 @@
 	<h1>Site Blog and Weather Station news/updates</h1>
 
 	<table width="850">
+	<tr id="post-20151107"><td>
+		<h2>Moving to New York</h2>
+		<p>Tomorrow I am moving to live in New York. However my beloved weather station is staying here in nw3 in the care of my family.
+		The impact of this to my dear fans should be minimal during normal operation, but please be aware that any problems which arise may take much longer to resolve.
+		Sadly the art of weather station maintenance is not easy to teach and I have failed to adequately prepare anyone in the UK to deal with potential issues.
+		Thankfully software problems are generally easy to resolve remotely, or with a quick call home.
+		</p>
+
+		<p>In all likelihood, though, if anything serious were to happen such as a hardware failure then I would be unable to fix the problem until I returned to the UK to visit.
+		<br />Some sample disaster scenarios:
+		<ul>
+		<li>Sensor malfunction</li>
+		<li>Hard drive failure</li>
+		<li>Sensor batteries run out</li>
+		<li>High wind topples the wooden housing of the T/H and rain sensors</li>
+		</ul>
+		Fortunately the only one of those that has happened in seven years of running the station is battery failure, and that is the easiest to fix.
+		Furthermore, I have just replaced the batteries in all sensors to reduce the chance of them dying before my next trip back.
+		Nevertheless the others are a very real possibility, especially now that the station is quite old (I've been talking about replacing it for years).
+		</p>
+		
+		<p>The other impact of my departure is that I won't be around to experience the London weather and report on a number of things which require manual observation rather than automated sensors.
+		<br />These are:
+		<ul>
+		<li>Snowfall (falling and lying)</li>
+		<li>Thunderstorms</li>
+		<li>Hail</li>
+		</ul>
+		I will have to rely on family and friends left in the UK, as well as official weather reports, to help me fill in these details, plus any loyal fans out there!
+		</p>
+		
+		<p>
+		Despite my absence, however, I fully expect to be able to run the weather station in much the same way as I did whilst I lived here.
+		After all, when I first set it up I was often away from London for months at a time whilst studying at university. <br />
+		And maybe one day nw3weather will have a sister station in the USA.
+		</p>
+
+		<p>P.S. This is why I moved the weather server and webcams to the loft last weekend (they were previously in my bedroom, which is no longer mine).</p>
+		<p><b>Summary: I'm moving abroad but the station and site are staying put and will be unaffected unless disaster strikes.</b></p>
+		<span style="color:gray;font-style:italic">Posted: 7th Nov 2015</span><br />
+	</td></tr>
 	<tr id="post-20151003"><td>
 		<h2>nw3weather joins twitter</h2>
 		<p>
@@ -54,7 +95,8 @@
 			the interview was done, but they ended up not using my contribution for that piece.
 			They did, however, run a entirely different piece just about me and the weather station,
 			following a further, more personal, interview some days later.
-			<a href="/static-images/me_hnh.pdf" title="full-page pdf">Here it is!</a> (Sadly there is no online copy, but see the photo below).
+			<a href="/static-images/me_hnh.pdf" title="full-page pdf">Here it is!</a>
+			<br />The article is now <a href="http://www.hamhigh.co.uk/news/weather/gospel_oak_storm_chaser_rivals_met_office_with_1_000_weather_station_1_3830494">available online</a> too.
 		</p>
 		<img src="/static-images/me_hnh.png" title="Me in the Ham and High" alt="me" /> <br />
 		<p>I thought they were stretching it a bit thin calling me a storm chaser...<p>
@@ -168,7 +210,7 @@
 		to be able to finish it to a level that's acceptable for a full release this year.
 		However, I'm releasing <a href="/sitev3" title="Test out new website version">site v.3</a>
 		as a 'beta' (incomplete, potentially buggy, but usable). I'll continue to upgrade, fix, and add new features, so please note that content may change or
-		dissappear from it at any time. Any feature suggestions, reports of problems, or general feedback are all welcome - please use the <a href="contact.php">contact page</a>.
+		disappear from it at any time. Any feature suggestions, reports of problems, or general feedback are all welcome - please use the <a href="contact.php">contact page</a>.
 		Many pages are unchanged but all have adopted the new look, and server-side graphs has been implemented. <br />
 		</p>
 		<span style="color:gray;font-style:italic">Posted: 30th Sep 2012</span><br />

@@ -409,7 +409,7 @@ $file = 8;
 	</p>
 	<p>
 		My academic background is in Physics and Computer Science, both of which I was largely motivated to study by my love of the weather.<br />
-		I currently live and work in London. Weather remains just a hobby.
+		I currently live and work in New York, having <a href="/news.php#post-20151107">moved here</a> from London in late 2015. Weather is my main hobby.
 	</p>
 	<p>
 		For more insight into the world of a weather hobbyist, 

@@ -266,7 +266,7 @@ if($tstamp == '0621' && $dday == 1) {
 //check that datamod was done
 if($tstamp == '2137') {
 	$datamod_last = filemtime(ROOT."dat" . $yr_yest . ".csv");
-	if(time() - $datamod_last > 36000) {
+	if(time() - $datamod_last > 66666) {
 		$last_done = date('H:i d M Y', $datamod_last);
 		mail("alerts@nw3weather.co.uk","Datamod not done","Alert! Not done since $last_done. Act NOW!", "From: server");
 	}
