@@ -250,16 +250,15 @@ tableHead("Past Year Seasonal Totals");
 tr();
 echo '<td class="td12">Season</td><td class="td12">Total</td><td class="td12">Anomaly</td></tr>';
 
-for($i = 0; $i < 12; $i++) {
-	if($i % 3 == 0) { $alttots[$i] = $lymrain+$lymrain1+$raintots[$i+1]; }
-	elseif($i % 3 == 1) { $alttots[$i] = $lymrain+$lymrain1+$lymrain2; }
-	else { $alttots[$i] = $lymrain+$raintots[$i+1]+$raintots[$i+2]; }
-}
+
+// When the season is in full swing, we need to use monthly totals from >12 months ago
+if($sc >= 2) { $raintots[$dmonth == 1 ? 11 : $dmonth-2] = $lymrain1; }
+if($sc == 3) { $raintots[$dmonth == 2 ? 11 : $dmonth-3] = $lymrain2; }
+
 $sraintots = array($raintots[0]+$raintots[1]+$raintots[11], $raintots[2]+$raintots[3]+$raintots[4], $raintots[5]+$raintots[6]+$raintots[7], $raintots[8]+$raintots[9]+$raintots[10]);
 $srainav = array($rainav[0]+$rainav[1]+$rainav[11], $rainav[2]+$rainav[3]+$rainav[4], $rainav[5]+$rainav[6]+$rainav[7], $rainav[8]+$rainav[9]+$rainav[10]);
 for($i = 0; $i < 4; $i++) {
 	if($i % 2 == 0) { $style = 'rowlight'; } else { $style = 'rowdark'; } $hlite = '';
-	if($i+1 == $season) { $sraintots[$i] = $alttots[date('n')-1]; }
 	if($i+1 == $season-1) { $hlite = 'border-bottom:3px solid #8181F7'; }
 	if($i+1 < $season || date('n') == 12) { $nwint = $dyear; } else { $nwint = $dyear-1; } $dfo1 = date('Y')-2001; $dfo2 = date('Y')-2000; $dfo3 = date('Y')-2002;
 	if(date('n') > 2) { $wint = $dfo1 .'/' .$dfo2; } else { $wint = $dfo3 .'/' .$dfo1; } $yr3 = array($wint, $nwint, $nwint, $nwint);
