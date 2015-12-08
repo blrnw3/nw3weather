@@ -169,7 +169,7 @@ if($time > 21): $tl_day = 'Today'; else: $tl_day = 'Yesterday'; endif;
 	<li><?php if($file == 87): echo '<b>Other</b>'; elseif($file == 871): echo '<a href="Historical.php" title="Return to Main historical-other page"><b>Other</b></a>'; else: echo '<a href="Historical.php" title="Historical data about page and other links">Other</a>'; endif; ?></li>
 	<li><br /></li>
 	<li><?php if($file == 96): echo '<b>Blog</b>'; else: echo '<a href="news.php" title="Website and weather station blog and news">Blog</a>'; endif; ?>
-		<?php if(mktime()-3600*24*7 < mktime(23,0,0,10,1,2012)) { echo '<acronym style="border-bottom-width: 0" title="Latest post: 1st Oct"><sup style="color:green">new post</sup></acronym>'; } ?></li>
+		<?php if(time()-3600*24*7 < mktime(23,0,0,10,1,2012)) { echo '<acronym style="border-bottom-width: 0" title="Latest post: 1st Oct"><sup style="color:green">new post</sup></acronym>'; } ?></li>
 	<li><?php if($file == 95): echo '<b>Site map</b>'; else: echo '<a href="sitemap.php" title="Full website map/directory">Site map</a>'; endif; ?></li>
 	</ul>
 	<?php if($file == 111) { echo '<br /><br /><p class="sideBarTitle">Site Options</p><table><tr><td align="center">'; print_css_style_menu(1); echo '</td></tr></table>'; } ?>

@@ -201,5 +201,5 @@ function curmonthrec() {
 }
 
 $report = date("F", mktime(0,0,0,$date_month,$date_day-1)).date("Y", mktime(0,0,0,$date_month,$date_day-1,$date_year)).'.htm';
-if(mktime()-filemtime($report) > 24.2*3600) { mail("blr@nw3weather.co.uk","Old Report","Warning! Latest report not uploaded! Act now!","From: server"); }
+if(time()-filemtime($report) > 24.2*3600) { mail("blr@nw3weather.co.uk","Old Report","Warning! Latest report not uploaded! Act now!","From: server"); }
 ?>

@@ -89,7 +89,7 @@ for($l = 0; $l < count($oldt); $l++) {
 echo '<b>NB: </b> These are averages over the operation lifetime of this weather station, not <a href="wxaverages.php">long-term climate averages</a>.<br />';
 
 // Produce the tables
-echo 'Total number of records = <b>', round((mktime()-mktime(1,1,1,3,20,2008))/86400), ' </b>&nbsp;(20 Mar 2008 - ',date('d M Y',mktime()),')
+echo 'Total number of records = <b>', round((time()-mktime(1,1,1,3,20,2008))/86400), ' </b>&nbsp;(20 Mar 2008 - ',date('d M Y',time()),')
 	<h2>Daily Minima and Maxima temperature averages (from 00-00)</h2>
 	<table class="table1" width="95%" cellpadding="2"><tr><th class="labels" rowspan="2">Day</th>';
 for($i = 1; $i < 13; $i++) { echo '<th class="labels" colspan="2"><b>', $monthshort[$i], '</b></th>

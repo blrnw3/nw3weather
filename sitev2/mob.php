@@ -33,7 +33,7 @@ Links: <ul><li><a href="index.php">Main Site</a></li>
 <li><a href="mob.php?img=1#graph">Latest Graph</a></li>
 <li><a href="/iwdl/">In-depth Mobile Site</a></li></ul>
 
-<?php if(isset($_GET['img']) && $_GET['img'] == 1) { echo '<img src="curr24hourgraph.gif?', mktime(), '" alt="24hr weather graph" title="Latest weather data over the last 24hrs" />'; }
+<?php if(isset($_GET['img']) && $_GET['img'] == 1) { echo '<img src="curr24hourgraph.gif?', time(), '" alt="24hr weather graph" title="Latest weather data over the last 24hrs" />'; }
 
 if(isset($_GET['img']) && $_GET['img'] == 2) {
 	include("main_tags.php");

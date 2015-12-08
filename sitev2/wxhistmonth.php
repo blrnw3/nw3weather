@@ -50,7 +50,7 @@ if(intval($mproc) < 8 && intval($mproc) > 3 && $yproc == 2010) echo '<b>Special 
 $cond1 = mktime(0,0,0,$mproc,1,$yproc) > mktime(0,0,0,2,2,2009) && mktime(0,0,0,$mproc,1,$yproc) < mktime(1,0,0,$date_month+1,1,$date_year);
 $cond2 = mktime(0,0,0,$mproc,$dim,$yproc) < mktime(0,0,0,$date_month,$date_day-1,$date_year) && mktime(1,0,0,$mproc,3,$yproc) > mktime(0,0,0,1,1,2009);
 $cond3 = mktime(0,0,0,$mproc,1,$yproc) < mktime(0,0,0,$date_month,$date_day-1,$date_year) && mktime(1,0,0,$mproc,3,$yproc) > mktime(0,0,0,2,1,2009);
-if(!$cond1 && mktime(0,0,0,$mproc,1,$yproc) < mktime()) { echo '<br /><b>First report available is February 2009</b>'; }
+if(!$cond1 && mktime(0,0,0,$mproc,1,$yproc) < time()) { echo '<br /><b>First report available is February 2009</b>'; }
 ?>
 
 <table width="750">

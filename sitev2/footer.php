@@ -76,7 +76,7 @@ if($phpload < 100 && intval($file) >= 1 && $file != 30 && $file != 111 && strpos
 	}
 	
 	$report = $root.date("FY", mktime(0,0,0,intval(date('m')),date('j')-1)).'.htm';
-	if(mktime()-filemtime($report) > 24.05*3600 && date('H') < 8) {
+	if(time()-filemtime($report) > 24.05*3600 && date('H') < 8) {
 		mail("alerts@nw3weather.co.uk","Old Report","Warning! Latest report not uploaded! Act now! (detected by action in file ".$file. ' by '.
 			$_SERVER['REMOTE_ADDR']. ' '.$_SERVER['HTTP_USER_AGENT']. ")", "From: server");
 	}

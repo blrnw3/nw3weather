@@ -171,7 +171,7 @@ function showElapsedTime() {
 <!--
 	var c = 1;
 function showElapsedTimeWC() {
-	var rightNow = new Date(); var elapsedTime = -rightNow.getTime() + <?php echo mktime()*1000 . ' + ' . $rt*1000; ?>*c;
+	var rightNow = new Date(); var elapsedTime = -rightNow.getTime() + <?php echo time()*1000 . ' + ' . $rt*1000; ?>*c;
 	var elapsedSeconds = Math.round(elapsedTime / 1000);
 	var message = 'Next image refresh in ';
 	var sec = ' s'; var refr = ''; var failcase = '';

@@ -14,7 +14,7 @@ include('../main_tags.php');
 $file = 1;
 $client = file($path. '/clientraw.txt');
 $live = explode(" ", $client[0]);
-$craw_lag = -mktime($live[29], $live[30], $live[31])+mktime();
+$craw_lag = -mktime($live[29], $live[30], $live[31])+time();
 if(intval($live[5]) < 10 || intval($crsize) == 0 || $craw_lag > 99) {
 	$live[5] = $hum; $live[4] = $temp; $live[72] = $dew; $live[6] = $baro; $live[1] = $avgspd; $live[3] = $dirlabel; $live[140] = $gstspd; $live[7] = $dayrn;
 	$live[29] = $time_hour; $live[30] = $time_minute; $live[31] = '00'; $live[8] = $monthrn; $live[10] = $currentrainratehr / 60;

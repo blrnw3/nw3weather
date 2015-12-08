@@ -58,7 +58,7 @@ for($y = 2009; $y <= $date_year; $y++) { //Add past data to the array
 			$raw[$m][$y] = getnoaafile($filename);
 			for($d = 1; $d <= $daysvalid; $d++) {
 				$dd = fullify($d); $mm = fullify($m,2);
-				$dmyID = mktime(1,1,1,$m,$d,$y)/mktime()/1000;
+				$dmyID = mktime(1,1,1,$m,$d,$y)/time()/1000;
 				
 				$rawtmin[$dd.$mm.$y] = $rawtmin2[date('d M Y',mktime(1,1,1,$m,$d,$y))] = $raw[$m][$y][$d-1][4] + $dmyID;
 				$rawtminM[$m][$dd.$mm.$y] = $rawtminM2[$m][date('d M Y',mktime(1,1,1,$m,$d,$y))] = $rawtmin[$dd.$mm.$y];
@@ -77,23 +77,23 @@ for($y = 2009; $y <= $date_year; $y++) { //Add past data to the array
 }
 
 $dd = date('d'); $mm = date('m'); $yy = date('Y'); $d = date('j'); $m = date('n'); //Add today's values to the array
-$t_tmin = floatval($mintemp) + mktime(1,1,1,$mm,$dd,$yy)/mktime()/1000;
+$t_tmin = floatval($mintemp) + mktime(1,1,1,$mm,$dd,$yy)/time()/1000;
 $rawtmin[$dd.$mm.$yy] = $rawtmin2[date('d M Y',mktime(1,1,1,$mm,$dd,$yy))] = $t_tmin;
 $rawtminM[$m][$dd.$mm.$yy] = $rawtminM2[$m][date('d M Y',mktime(1,1,1,$mm,$dd,$yy))] = $t_tmin;
-$t_tmax = floatval($maxtemp) + mktime(1,1,1,$mm,$dd,$yy)/mktime()/1000;
+$t_tmax = floatval($maxtemp) + mktime(1,1,1,$mm,$dd,$yy)/time()/1000;
 $rawtmax[$dd.$mm.$yy] = $rawtmax2[date('d M Y',mktime(1,1,1,$mm,$dd,$yy))] = $t_tmax;
 $rawtmaxM[$m][$dd.$mm.$yy] = $rawtmaxM2[$m][date('d M Y',mktime(1,1,1,$mm,$dd,$yy))] = $t_tmax;
-$t_tmean = floatval($avtempsincemidnight) + mktime(1,1,1,$mm,$dd,$yy)/mktime()/1000;
+$t_tmean = floatval($avtempsincemidnight) + mktime(1,1,1,$mm,$dd,$yy)/time()/1000;
 $rawtmean[$dd.$mm.$yy] = $rawtmean2[date('d M Y',mktime(1,1,1,$mm,$dd,$yy))] = $t_tmean;
 $rawtmeanM[$m][$dd.$mm.$yy] = $rawtmeanM2[$m][date('d M Y',mktime(1,1,1,$mm,$dd,$yy))] = $t_tmean;
-$t_trange = $t_tmax - $t_tmin + mktime(1,1,1,$mm,$dd,$yy)/mktime()/1000;
+$t_trange = $t_tmax - $t_tmin + mktime(1,1,1,$mm,$dd,$yy)/time()/1000;
 $rawtrange[$dd.$mm.$yy] = $rawtrange2[date('d M Y',mktime(1,1,1,$mm,$dd,$yy))] = $t_trange;
 $rawtrangeM[$m][$dd.$mm.$yy] = $rawtrangeM2[$m][date('d M Y',mktime(1,1,1,$mm,$dd,$yy))] = $t_trange;
 
 $oldt = file($absRoot.'extraTdata.csv'); // Special addition of available 2008 data
 for($l = 0; $l < count($oldt); $l++) {
 	$oldtl = explode(',', $oldt[$l]);
-	$dd = fullify($oldtl[1]); $mm = fullify($oldtl[0],2); $yy = $y = 2008; $dmyID = mktime(1,1,1,$m,$d,$y)/mktime()/1000; $d = intval($dd); $m = intval($mm);
+	$dd = fullify($oldtl[1]); $mm = fullify($oldtl[0],2); $yy = $y = 2008; $dmyID = mktime(1,1,1,$m,$d,$y)/time()/1000; $d = intval($dd); $m = intval($mm);
 	if(intval($oldtl[0]) != 1) {
 		$rawtmin[$dd.$mm.$yy] = $rawtmin2[date('d M Y',mktime(1,1,1,$m,$d,$y))] = floatval($oldtl[2]) + $dmyID;
 		$rawtminM[$m][$dd.$mm.$yy] = $rawtminM2[$m][date('d M Y',mktime(1,1,1,$m,$d,$y))] = $rawtmin[$dd.$mm.$yy];
@@ -196,7 +196,7 @@ else { //Rank all together
 	}
 	echo '</form></td></tr></table><br /><b>NB:</b> Hover over a heading for an explanation of its meaning';
 	if($cust_length == $all_ranks) { $cust_length = $length[0]; }
-	echo '<h2>Records</h2>Total number of records = <b>', $length[1], ' </b> (20 Mar 2008 - ', date('d M Y',mktime()),')';
+	echo '<h2>Records</h2>Total number of records = <b>', $length[1], ' </b> (20 Mar 2008 - ', date('d M Y',time()),')';
 	echo '<table align="center" class="table1" width="1000" cellpadding="3">
 		<tr><th width="2%" class="labels">Rank</th>';
 	for($t = 0; $t < 4; $t++) {

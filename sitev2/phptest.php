@@ -134,7 +134,7 @@ if($time_hour > 21) {
 else {
 	echo date("Ymd", mktime(0,0,0,$date_month,$date_day-1,$date_year));
 } ?>dayvideo.wmv"><? echo $tl_day; ?>'s timelapse</a>
-<h2>There are <span style="font-weight:bold;font-size:120%;color:blue"><?php echo round((mktime(12,0,0,6,4,2012)-mktime())/86400) ?></span> days until the end of NST! </h2>
+<h2>There are <span style="font-weight:bold;font-size:120%;color:blue"><?php echo round((mktime(12,0,0,6,4,2012)-time())/86400) ?></span> days until the end of NST! </h2>
 <h3>Latest Graph</h3>
 <?php $hor = 'hide'; if(!isset($_GET['show']) && (isset($_GET['hide']) or $_SESSION['count'][$file] > 3)) { $hor = 'show'; } ?>
 <a href="phptest.php?<?php echo $hor; ?>"><?php echo $hor; ?> images</a>

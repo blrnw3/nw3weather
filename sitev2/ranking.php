@@ -59,8 +59,8 @@ for($y = 2009; $y <= $date_year; $y++) { //Add past data to the array
 		if(file_exists($filename)) {
 			$raw[$m][$y] = getnoaafile($filename);
 			for($d = 1; $d <= $daysvalid; $d++) {
-				$rawrain[$d.$m.$y] = $raw[$m][$y][$d-1][8] + mktime(1,1,1,$m,$d,$y)/mktime()/1000;
-				$rawrain2[date('jS F Y',mktime(1,1,1,$m,$d,$y))] = $raw[$m][$y][$d-1][8] + mktime(1,1,1,$m,$d,$y)/mktime()/1000;
+				$rawrain[$d.$m.$y] = $raw[$m][$y][$d-1][8] + mktime(1,1,1,$m,$d,$y)/time()/1000;
+				$rawrain2[date('jS F Y',mktime(1,1,1,$m,$d,$y))] = $raw[$m][$y][$d-1][8] + mktime(1,1,1,$m,$d,$y)/time()/1000;
 			}
 		}
 	}
