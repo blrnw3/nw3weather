@@ -13,6 +13,7 @@ if($dyear < 2000) { //some sort of non-inclusion
 	<div>
 		<a href="#header">Top</a> |
 		<a href="contact.php" title="E-mail me">Contact</a> |
+		<a href="mob.php" title="Very basic mobile browsing">Mobile</a> |
 		<a href="http://nw3weather.co.uk" title="Browse to homepage">Home</a>
 	</div>
 	<div>
