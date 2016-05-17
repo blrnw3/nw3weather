@@ -27,6 +27,7 @@ $tstamp = date('Hi');
 $stamplog = ROOT.'logfiles/daily/'.date('Ymd').'log.txt';
 $goodlog = ROOT.'goodlog.txt';
 $todaylog = ROOT.'logfiles/daily/todaylog.txt';
+$goodlog_backup = ROOT.'logfiles/backup/goodlog_'. $tstamp .'.txt';
 
 //Rebuild 24hr and today data logs, plus neaten.
 //Do 10-minutely (on top of after downtime) just for extra security, and in case the cron missed an append
@@ -34,17 +35,22 @@ $recentWDdowntime = time() - filemtime(ROOT. "Logs/WDuploadReallyBad.txt") < 120
 if($tstamp != '0000' && (date('i') % 10 == 0 || $recentWDdowntime)) {
 	$fsize = filesize(ROOT.'customtextout.txt');
 	$fage = time() - filemtime(ROOT.'customtextout.txt');
-	if($fsize > 56000 && $fage < 60) { //probably new and valid
-		logneatenandrepair();
+	if($fsize > 50000 && $fsize < 99000) { //probably valid
+		if($fage < 60) { // probably new
+			copy($goodlog, $goodlog_backup);
+			logneatenandrepair();
+		} else {
+			quick_log("badCustomlogUpload.txt", $fsize.'B '. $fage.'s');
+		}
 	} else {
-		quick_log("badCustomlogUpload.txt", $fsize.'B '. $fage.'s');
+		mail("alerts@nw3weather.co.uk","Datalog corrupt","Alert! customtextout.txt is corrupt. Size: ". $fsize, "From: server");
 	}
 }
 
 //Prepare data for appending logs
 $lineVars = array($wind, $gust, $wdir, $temp, $humi, $pres, $dewp, $rain);
 $isBadLineData = ($pres == 0);
-$newLine = date('H,i,j,');
+$newLine = date('H,i,d,');
 foreach ($lineVars as $value) {
 	$newLine .= round( trim($value), 1) . ',';
 }
@@ -77,7 +83,7 @@ if(!$isBadLineData) {
 	fwrite($filelog, $newLine);
 	fclose($filelog);
 } else {
-	quick_log("bad_dataline.txt", "");
+	quick_log("bad_dataline.txt", $newLine);
 }
 
 // make date-alias of goodlog (this is needed, even though goodlog never called elsewhere, to keep the 24hr rolling aspect going
@@ -103,7 +109,7 @@ if($fiveMinutely) {
 	//Serialise data
 	serialiseCSV('dat');
 
-	//Generate tags
+	//Generate tags in the background, after some delay to reduce memory
 	exec(EXEC_PATH. 'cron_tags.php > /dev/null &');
 
 	//pre-run 24hr graphs
@@ -209,6 +215,30 @@ if($tstamp % 100 == 0) {
 		$condition = $xml->forecast->simpleforecast->forecastdays->forecastday->conditions;
 		file_put_contents(ROOT."WUforecast.txt", $condition);
 //		file_put_contents(ROOT."WUforecastDump.txt", print_r($xml->forecast->simpleforecast->forecastdays, true));
+	}
+}
+
+// External clientraw grab and save
+$no_wind_data = true;
+if($no_wind_data) {
+	//$path = 'http://www.tottenhamweatheronline.co.uk/clientraw.txt';
+	$path = 'http://www.harpendenweather.co.uk/live/clientraw.txt';
+	//$path = 'http://www.sandhurstweather.org.uk/clientraw.txt';
+	$harpendenData = urlToArray($path);
+	if($harpendenData[0] && count($harpendenData) === 1) {
+		file_put_contents(ROOT.'EXTclientraw.txt', $harpendenData[0]);
+	} else {
+		quick_log("HarpendenBadData.txt", $harpendenData[0]);
+	}
+}
+$no_th_data = false;
+if($no_th_data) {
+	$path2 = "http://weather.casa.ucl.ac.uk/realtime.txt";
+	$casaData = urlToArray($path2);
+	if($casaData[0] && count($casaData) === 1) {
+		file_put_contents(ROOT.'EXTclientraw2.txt', $casaData[0]);
+	} else {
+		quick_log("CasaBadData.txt", $casaData[0]);
 	}
 }
 
@@ -341,12 +371,24 @@ function graph_stitch() {
 //	}
 }
 
+
 /**
  * Neaten up the WD-uploaded custom log by padding missing lines and cleaning values
  * Copies output to goodlog.txt, and todaylog.txt using lines for today only
  */
 function logneatenandrepair() {
 	global $goodlog, $todaylog;
+	
+	$NO_WIND_DATA_CHANGES = true;
+	
+	if($NO_WIND_DATA_CHANGES) {
+		$live_data = file($goodlog);
+		$len = count($live_data);
+		$livel = array();
+		for($i = 0; $i < $len; $i++) {
+			$livel[substr($live_data[$i], 0, 8)] = explode(',', $live_data[$i]);
+		}
+	}
 
 	$filelog = fopen($goodlog, "w");
 	$filelog2 = fopen($todaylog,"w");
@@ -358,6 +400,14 @@ function logneatenandrepair() {
 		$custl[$i] = explode(',', $filcust[$i]);
 		$custl[$i][8] = (int)$custl[$i][8];
 		$custl[$i][10] = (float)$custl[$i][10];
+		if($NO_WIND_DATA_CHANGES) { // Preserve the goodlog values
+			$ts = substr($filcust[$i], 0, 8);
+			if($livel[$ts]) {
+				for($j = 3; $j <= 5; $j++) {
+					$custl[$i][$j] = $livel[$ts][$j];
+				}
+			}
+		}
 	}
 
 	$linewrite[0] = implode(',', $custl[0]);
@@ -543,4 +593,5 @@ function getXml($url){
 		return false;
 	}
 }
+
 ?>
