@@ -28,6 +28,28 @@
 	<h1>Site Blog and Weather Station news/updates</h1>
 
 	<table width="850">
+	<tr id="post-20160415"><td>
+		<h2>Recent live data downtime</h2>
+		<p>As promised, moving abroad brought with it the risk of increased data downtime for the weather station left behind.
+		Just three months after leaving, the wind sensor stopped reporting on the 11th Feb, so I began to serve up data from 
+		<a href="http://www.harpendenweather.co.uk">Harpenden Weather</a>, a nearby weather station with good wind data
+		(wind speeds don't vary much across 50 miles or so).
+		</p>
+		<p>Then, on 12th April, the other two sensors (temp/hum and rain) stopped reporting too, and I thought nw3weather's days were over.
+		I began to serve up temp, hum, and rain data from <a href="http://weather.casa.ucl.ac.uk">UCL's weather station</a>
+		in Bloomsbury whilst I tried to think
+		of ways to solve the crisis. At this point nw3weather.co.uk was simply a proxy for data from nearby weather stations;
+		temperature, humidity and rainfall are much more localised phenomenon so even though UCL is only a few miles away,
+		the data can be quite different.
+		</p>
+		<p>On 14th April I was able to call home and my weather assistant kindly followed my debugging instructions. 15 minutes later
+		ALL sensors were functioning again. All it took was a hard reset of the weather console!
+		</p>
+		<p><img src="/static-images/volatile_nw3data.png" alt="weather graph apr 13-14 2016" title="A volatile few days" /><br />
+		<b>Volatile data</b>: T/H and rain sensors stop reporting on the 12th. On the 13th, UCL's data is hooked in (the rain data took some time to get right),
+		followed by a return to nw3 data at 20:45 on the 14th (with a surprisingly smooth temperature transition).</p>
+		<span style="color:gray;font-style:italic">Posted: 15th Apr 2016</span><br />
+	</td></tr>
 	<tr id="post-20151107"><td>
 		<h2>Moving to New York</h2>
 		<p>Tomorrow I am moving to live in New York. However my beloved weather station is staying here in nw3 in the care of my family.
