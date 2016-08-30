@@ -4,10 +4,12 @@ const smallGraphWidth2 = 500;
 const smallGraphWidth3 = 505;
 
 $t_start = microtime(get_as_float);
-include('/home/nwweathe/public_html/basics.php');
+include('/var/www/html/basics.php');
+
+echo "START: ". date('r'). "\n";
 
 //Move clientraw from the wrong directory (stupid WD).
-$badCRpath = '/home/nwweathe/clientraw.txt';
+$badCRpath = 'clientraw.txt';
 if(file_exists($badCRpath)) {
 	copy($badCRpath, LIVE_DATA_PATH);
 	unlink($badCRpath);
@@ -32,7 +34,7 @@ $goodlog_backup = ROOT.'logfiles/backup/goodlog_'. $tstamp .'.txt';
 //Rebuild 24hr and today data logs, plus neaten.
 //Do 10-minutely (on top of after downtime) just for extra security, and in case the cron missed an append
 $recentWDdowntime = time() - filemtime(ROOT. "Logs/WDuploadReallyBad.txt") < 1200;
-if($tstamp != '0000' && (date('i') % 10 == 0 || $recentWDdowntime)) {
+if($tstamp != '0000' && (date('i') % 10 == 0 || $recentWDdowntime) && !$isBadLineData) {
 	$fsize = filesize(ROOT.'customtextout.txt');
 	$fage = time() - filemtime(ROOT.'customtextout.txt');
 	if($fsize > 50000 && $fsize < 99000) { //probably valid
@@ -43,13 +45,12 @@ if($tstamp != '0000' && (date('i') % 10 == 0 || $recentWDdowntime)) {
 			quick_log("badCustomlogUpload.txt", $fsize.'B '. $fage.'s');
 		}
 	} else {
-		mail("alerts@nw3weather.co.uk","Datalog corrupt","Alert! customtextout.txt is corrupt. Size: ". $fsize, "From: server");
+		mail("alerts@nw3weather.co.uk","Datalog corrupt","Alert! customtextout.txt is corrupt. Size: ". $fsize);
 	}
 }
 
 //Prepare data for appending logs
 $lineVars = array($wind, $gust, $wdir, $temp, $humi, $pres, $dewp, $rain);
-$isBadLineData = ($pres == 0);
 $newLine = date('H,i,d,');
 foreach ($lineVars as $value) {
 	$newLine .= round( trim($value), 1) . ',';
@@ -64,7 +65,7 @@ $newLine = substr($newLine, 0, strlen($newLine)-1) . "\r\n";
 if($tstamp == '0000') {
 	require(ROOT.'data.php');
 
-	exec(EXEC_PATH. 'HourlyLogs.php > hrlogOutput.html');
+	exec(EXEC_PATH. 'HourlyLogs.php > html/Log/hrlogOutput.html');
 
 	$rain = 0; //clientraw hasn't had time to upload and reset this
 	file_put_contents($todaylog, $newLine); //reset
@@ -73,18 +74,15 @@ if($tstamp == '0000') {
 }
 
 //Append goodlog, deleting the oldest line
-if(!$isBadLineData) {
-	$oldLines = file($goodlog);
-	$len = count($oldLines);
-	$filelog = fopen($goodlog, "w");
-	for($i = 1; $i < $len; $i++) {
-		fwrite($filelog, $oldLines[$i]);
-	}
-	fwrite($filelog, $newLine);
-	fclose($filelog);
-} else {
-	quick_log("bad_dataline.txt", $newLine);
+$oldLines = file($goodlog);
+$len = count($oldLines);
+$filelog = fopen($goodlog, "w");
+for($i = 1; $i < $len; $i++) {
+	fwrite($filelog, $oldLines[$i]);
 }
+fwrite($filelog, $newLine);
+fclose($filelog);
+
 
 // make date-alias of goodlog (this is needed, even though goodlog never called elsewhere, to keep the 24hr rolling aspect going
 copy($goodlog, $stamplog);
@@ -109,9 +107,6 @@ if($fiveMinutely) {
 	//Serialise data
 	serialiseCSV('dat');
 
-	//Generate tags in the background, after some delay to reduce memory
-	exec(EXEC_PATH. 'cron_tags.php > /dev/null &');
-
 	//pre-run 24hr graphs
 	exec(EXEC_PATH. 'graphday.php 1.png');
 	exec(EXEC_PATH. 'graphday2.php 2.png');
@@ -130,7 +125,7 @@ if($fiveMinutely) {
 			$arg3 = (int)($i % 2 === 1);
 			$arg4 = $margs[$i-1];
 			exec(EXEC_PATH. "graphdayA.php main$i.png $arg1 $arg2 $arg3 $arg4 miniMain");
-			copy('main'.$i.'.png', 'public_html/mainGraph'.$i.'.png');
+			copy('main'.$i.'.png', 'html/mainGraph'.$i.'.png');
 		}
 	}
 }
@@ -160,14 +155,14 @@ if(time() - filemtime(ROOT.'datt'.$yr_yest.'.csv') < 65) {
 if(time() - filemtime(ROOT.'datm'.$yr_yest.'.csv') < 65) {
 	serialiseCSVm();
 	//Now generate the sunTags file
-	exec(EXEC_PATH. 'cron_tags.php blr ftw > /dev/null &');
+	exec(EXEC_PATH. 'cron_tags.php blr ftw > log/cronsuntaglog.txt &');
 }
 
 // Monthly report
 if($firstday && $fiveMinutely && time() - filemtime(ROOT.'datm'.$yr_yest.'.csv') < 303) {
 	require ('monthrepgen.php');
 	$rep = monthlyReport((int)$mon_yest, (int)$yr_yest);
-	mail("blr@nw3weather.co.uk","Monthly report $mon_yest $yr_yest", $rep, "From: server");
+	mail("blr@nw3weather.co.uk","Monthly report $mon_yest $yr_yest", $rep);
 }
 
  // Ensure that data.php did indeed run at midnight
@@ -175,7 +170,7 @@ if($tstamp == '0700') {
 	$age = time() - filemtime(ROOT."dat" . $yr_yest . ".csv");
 	if($age > 30000) { // 8.3 hrs
 		require(ROOT.'data.php');
-		mail("alerts@nw3weather.co.uk","Cron fail","Alert! Cron data.php failed on first attempt. Problems may exist", "From: server");
+		mail("alerts@nw3weather.co.uk","Cron fail","Alert! Cron data.php failed on first attempt. Problems may exist");
 	}
 }
 
@@ -183,7 +178,7 @@ if($tstamp == '0700') {
 if(date('i') % 15 == 1) {
 	$ageC = time() - filemtime(LIVE_DATA_PATH);
 	if($ageC > 500) {
-		mail("alerts@nw3weather.co.uk","Old live data","Alert! live data not updating. Act NOW!", "From: server");
+		mail("alerts@nw3weather.co.uk","Old live data","Alert! live data not updating. Act NOW!");
 		quick_log("WDuploadReallyBad.txt", $ageC);
 	}
 }
@@ -194,12 +189,12 @@ $rn24hrs = $HR24['trendRn'][0];
 if( $rn24hrs > 20 && $rn24hrs > $rain && ($HR24['trendRn'][0] - $HR24['trendRn']['10m'] > 0) ) {
 	quick_log('rain_excess.txt', $rn24hrs);
 	if(date('i') % 10 == 0) {
-		mail("blr@nw3weather.co.uk","Rain excess","Notice! More than 20 mm of rain (" . $rn24hrs . ") has fallen in the past 24 hrs", "From: server");
+		mail("blr@nw3weather.co.uk","Rain excess","Notice! More than 20 mm of rain (" . $rn24hrs . ") has fallen in the past 24 hrs");
 	}
 }
 //record 24hr rain is v. close (54.2 is actual)
 if($rn24hrs > 54) {
-	mail("alerts@nw3weather.co.uk","Rain record very near","Alert! May need to change wx12 soon - " . $rn24hrs . "mm has fallen in the past 24 hrs", "From: server");
+	mail("alerts@nw3weather.co.uk","Rain record very near","Alert! May need to change wx12 soon - " . $rn24hrs . "mm has fallen in the past 24 hrs");
 }
 
 // METAR retrieve and parse (updated at 20 and 50 mins past the hour, with delay)
@@ -221,7 +216,7 @@ if($tstamp % 100 == 0) {
 // External clientraw grab and save
 $no_wind_data = true;
 if($no_wind_data) {
-	//$path = 'http://www.tottenhamweatheronline.co.uk/clientraw.txt';
+	// $path = 'http://www.tottenhamweatheronline.co.uk/clientraw.txt';
 	$path = 'http://www.harpendenweather.co.uk/live/clientraw.txt';
 	//$path = 'http://www.sandhurstweather.org.uk/clientraw.txt';
 	$harpendenData = urlToArray($path);
@@ -231,7 +226,7 @@ if($no_wind_data) {
 		quick_log("HarpendenBadData.txt", $harpendenData[0]);
 	}
 }
-$no_th_data = false;
+$no_th_data = true;
 if($no_th_data) {
 	$path2 = "http://weather.casa.ucl.ac.uk/realtime.txt";
 	$casaData = urlToArray($path2);
@@ -240,6 +235,10 @@ if($no_th_data) {
 	} else {
 		quick_log("CasaBadData.txt", $casaData[0]);
 	}
+}
+
+if($isBadLineData) {
+	mail("alerts@nw3weather.co.uk","Bad dataline","Alert! dataline is corrupt: ". $corruptLine);
 }
 
 //########### OLD WD file crap ##########//
@@ -298,11 +297,11 @@ if($tstamp == '2137') {
 	$datamod_last = filemtime(ROOT."dat" . $yr_yest . ".csv");
 	if(time() - $datamod_last > 66666) {
 		$last_done = date('H:i d M Y', $datamod_last);
-		mail("alerts@nw3weather.co.uk","Datamod not done","Alert! Not done since $last_done. Act NOW!", "From: server");
+		mail("alerts@nw3weather.co.uk","Datamod not done","Alert! Not done since $last_done. Act NOW!");
 	}
 }
 
-if($tstamp == '2348') {
+if($tstamp == '2359') {
 	$path = ROOT.'Logs/siteV3Access.txt';
 	if(file_exists($path)) {
 		$path_new = ROOT.'Logs/old/siteV3Access_day_of_month_'. date('d') .'.txt';
@@ -315,7 +314,7 @@ if($tstamp == '2348') {
 $p_time = microtime(get_as_float) - $t_start;
 file_put_contents( ROOT."Logs/cronExecuted.txt", myround($p_time) );
 /////////END OF SCRIPT//////END OF SCRIPT///////////////////////////////////////////////////////////################
-
+echo "END: ". date('r'). "\n";
 
 ### Functions ###
 function graph_stitch() {

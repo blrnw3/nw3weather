@@ -38,6 +38,9 @@ if(isset($_GET['cerealify'])) {
 	die();
 }
 
+for($i = 0; $i < 10; $i++) {
+	echo vidlink($i);
+}
 
 if(isset($_GET['dtm'])) { $dtm = $_GET['dtm']; } else { $dtm = 1; }
 
@@ -47,7 +50,7 @@ if(date('Hi') < $sunGrabTime) {
 }
 
 //Link to EGLC pressure
-echo '<a href="http://www.wunderground.com/history/airport/EGLC/',
+echo '<br /><a href="http://www.wunderground.com/history/airport/EGLC/',
 	date('Y/n/d',mktime(1,1,1,date('n'),date('d')-$dtm)),
 	'/DailyHistory.html">EGLC History for yesterday</a><br />';
 
@@ -77,6 +80,15 @@ $modlinet = explode(',', $moddatat[count($moddatat)-$dtm]);
 $moddatam = file($fullpath."datm" . date('Y',mktime(1,1,1,date('n'),date('j')-$dtm,date('Y'))) . ".csv");
 $modlinem = explode(',', $moddatam[count($moddatam)-$dtm]);
 $modlinem = str_ireplace('?', ',', $modlinem);
+
+// Work out which days need modding
+$missing = [];
+for($i = count($moddatam)-1; $i >= 0; $i--) {
+	if(strContains($moddatam[$i], ',blr,')) {
+		$missing[] = count($moddatam) - $i;
+	}
+}
+echo '<br />Missing days (dtm): '. implode(', ', $missing);
 
 if(isset($_POST['pwd'])) {
 	if($_POST['pwd'] == 'datachanges') {
@@ -122,7 +134,7 @@ if(isset($_POST['pwd'])) {
 		fclose($fildatm);
 //		serialiseCSVm();
 
-//		exec('/usr/local/bin/php -q /home/nwweathe/public_html/cron_tags.php blr ftw > /dev/null &');
+//		exec('/usr/local/bin/php -q /var/www/html/cron_tags.php blr ftw > /dev/null &');
 	}
 	else {
 		echo 'password fail';
@@ -184,6 +196,17 @@ echo '</table><br />
 	} else {
 		echo '<h3>FAIL GRAPH SMALL!</h3>';
 	}
+
+	
+function vidlink($offset) {
+	global $dmonth, $dday, $dyear;
+	$dt = date("Ymd", mkdate($dmonth,$dday-$offset,$dyear));
+	$name = $dt . 'dayvideo.wmv';
+	if(file_exists($name)) {
+		return "<a href='/$name' title='Most recent full-day extended HQ timelapse'>$name</a>. ";
+	}
+	return $name;
+}
 ?>
 
 <img src="/<?php echo date("Y/Ymd", $modTimestamp); ?>dailywebcam.jpg" alt="daycamsum" />

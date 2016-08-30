@@ -1,6 +1,6 @@
 RewriteEngine on
 
-<Files 403.shtml>
+<Files 403.html>
 order allow,deny
 allow from all
 </Files>

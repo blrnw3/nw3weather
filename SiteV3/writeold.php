@@ -1,6 +1,6 @@
 <?php
 ini_set( "max_execution_time", 200);
-$fullpath = '/home/nwweathe/public_html/';
+$fullpath = '/var/www/html/';
 require($fullpath.'basics.php');
 require($fullpath.'functions.php');
 

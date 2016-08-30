@@ -1,5 +1,5 @@
 <?php // content="text/plain; charset=utf-8"
-include('/home/nwweathe/public_html/basics.php');
+include('/var/www/html/basics.php');
 require_once (ROOT.'jpgraph/src/jpgraph.php');
 require_once (ROOT.'jpgraph/src/jpgraph_windrose.php');
 //include($root.'unit-select.php');

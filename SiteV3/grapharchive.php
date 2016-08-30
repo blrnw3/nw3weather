@@ -87,7 +87,7 @@ if(file_exists($root.'logfiles/daily/'.$datetag. 'log.txt')) {
 else {
 	echo 'Daily graph not available for this day'; if(preg_match('/^66\.249/',$_SERVER['REMOTE_ADDR']) == 0) {
 	mail("blr@nw3weather.co.uk","Graph not found","Notice! Graph requested but not available. File: ".$datetag.".gif; User: ".
-	$_SERVER['REMOTE_ADDR']. ' '.$_SERVER['HTTP_USER_AGENT'], "From: server"); }
+	$_SERVER['REMOTE_ADDR']. ' '.$_SERVER['HTTP_USER_AGENT']); }
 }
 ?>
 

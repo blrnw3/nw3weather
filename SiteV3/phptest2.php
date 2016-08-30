@@ -71,7 +71,7 @@ list($width, $height) = getimagesize($root.'static-images/main.JPG');
 $image = imagecreatefromjpeg($root.'static-images/main.JPG');
 //imagecopyresampled($im, $image, 0, 0, 0, 0, 300, 100, 529, 388);
 
-$font = '/home/nwweathe/public_html/jpgraph/src/fonts/DejaVuSans.ttf';
+$font = '/var/www/html/jpgraph/src/fonts/DejaVuSans.ttf';
 
 imagettftext($image, 36, 0, $width/5.5, $height/1.5, imagecolorallocate($image, 188, 245, 169), $font, 'nw3 weather');
 //imagestring($image, 5, $width/2, $height/2, 'nw3 weather', imagecolorallocate($image, 225, 25, 125));
@@ -96,7 +96,7 @@ for($i = 1; $i <= 3; $i++) {
 	$dest_width += $widthn[$i]-1;
 }
 
-$font = '/home/nwweathe/public_html/jpgraph/src/fonts/DejaVuSans.ttf';
+$font = '/var/www/html/jpgraph/src/fonts/DejaVuSans.ttf';
 imagettftext($im, 36, 0, $widthn[1]-10, 100/2.2, imagecolorallocate($im, 168, 245, 159), $font, 'nw3 weather');
 imagettftext($im, 18, 0, $widthn[1]+$widthn[2]+50, 100/3.4, imagecolorallocate($im, 20, 63, 8), $font, 'Hampstead');
 imagettftext($im, 18, 0, $widthn[1]+$widthn[2]+50, 100/1.8, imagecolorallocate($im, 42, 71, 34), $font, 'London');

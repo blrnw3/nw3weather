@@ -1,14 +1,14 @@
 <?php
 date_default_timezone_set('Europe/London');
 
-const ROOT = '/home/nwweathe/public_html/';
+const ROOT = '/var/www/html/';
 const IMG_ROOT = '/static-images/';
 $root = ROOT;
 
-const EXEC_PATH = '/usr/local/bin/php -q /home/nwweathe/public_html/';
+const EXEC_PATH = '/usr/bin/php -q /var/www/html/';
 
 /** Path to the live data text file */
-const LIVE_DATA_PATH = '/home/nwweathe/public_html/clientraw.txt';
+const LIVE_DATA_PATH = '/var/www/html/clientraw.txt';
 
 $fullpath = $siteRoot = ROOT;
 

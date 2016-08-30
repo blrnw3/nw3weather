@@ -8,9 +8,10 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-	<title>NW3 Weather - <!--#echo var="REDIRECT_STATUS" --> Error</title>
+	<title>NW3 Weather - Error</title>
 
 	<?php require('chead.php'); ?>
+	<?php include_once("ggltrack.php"); ?>
 </head>
 
 <body>
@@ -48,13 +49,6 @@ $codeHelps = array(
 echo "<h1>{$codeNames[$errorIndex]}!</h1>
 	<h2>{$codeHelps[$errorIndex]}</h2>";
 ?>
-
-<h3>Error Details</h3>
-<p style="margin:2em">
-Referrer: <!--#echo var="HTTP_REFERER" --> <br />
-Requested URL: <!--#echo var="REQUEST_URI" --> <br />
-Error Code: <!--#echo var="REDIRECT_STATUS" -->
-</p>
 
 </div>
 

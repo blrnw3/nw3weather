@@ -491,7 +491,7 @@ function fileLog($txtname, $content, $isCron = false, $threshold = false) {
 }
 
 function server_mail($txtname, $content) {
-	mail("alerts@nw3weather.co.uk","Logging threshold breached by " . $txtname, $content, "From: server");
+	mail("alerts@nw3weather.co.uk","Logging threshold breached by " . $txtname, $content);
 }
 
 /**

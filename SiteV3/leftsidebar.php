@@ -3,7 +3,7 @@
 		<p class="sideBarTitle">Navigation</p>
 		<ul>
 <?php
-$lastPost = mkdate(10,3,2015); //MUST KEEP UPDATED - latest blog post
+$lastPost = mkdate(11,7,2015); //MUST KEEP UPDATED - latest blog post
 $lastAlbum = mkdate(4,12,2014); //MUST KEEP UPDATED - latest album upload
 
 $newLength = (3 * 3600 * 24);

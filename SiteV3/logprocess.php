@@ -1,7 +1,7 @@
 <?php
 ini_set("memory_limit","128M");
 
-include('/home/nwweathe/public_html/basics.php');
+include('/var/www/html/basics.php');
 require('unit-select.php');
 include($root.'functions.php');
 

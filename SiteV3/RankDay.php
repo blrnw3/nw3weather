@@ -63,20 +63,27 @@ $data_sort = $datGood;
 sort($data_sort, SORT_NUMERIC);
 $sortLen = count($data_sort);
 
+$fmat = isset($_GET['withdayofweek']) ? 'D d M Y' : 'd M Y';
+
+$dow = array();
+
 for ($i = 1; $i <= $rankSize; $i++) {
 	$highest[$i] = $data_sort[$sortLen - $i];
 	$dayRecH = array_search($highest[$i], $datGood);
-	$highest_day[$i] = today(true, true, true, null, daytotime($dayRecH), false, 'd M Y');
+	$highest_day[$i] = today(true, true, true, null, daytotime($dayRecH), false, $fmat);
 	$datGood[$dayRecH] = -999; //prevent duplicated dates
 	$lowest[$i] = $data_sort[$i - 1];
 	$dayRecL = array_search($lowest[$i], $datGood);
-	$lowest_day[$i] = today(true, true, true, null, daytotime($dayRecL), false, 'd M Y');
+	$lowest_day[$i] = today(true, true, true, null, daytotime($dayRecL), false, $fmat);
 	$datGood[$dayRecL] = -999; //prevent duplicated dates
+	$dow[today(true, true, true, null, daytotime($dayRecH), false, 'D')] += 1;   
 
 	if($dayRecH === false || $dayRecL === false) { //all values from array put into high or low list, do not continue
 		$rankSize = $i-1;
 	}
 }
+
+
 
 $highest['today'] = $lowest['today'] = $datall[$end-1];
 $highest['yest'] = $lowest['yest'] = $datall[$end-2];
@@ -99,6 +106,9 @@ if($month === 0) {
 echo "<p>Ranked daily data from $stMon 2009 to present. For $description, there are<b> $sortLen </b>valid values from a possible $datallCnt$extraMon.</p>";
 
 
+if(isset($_GET['withdayofweek'])) {
+    var_dump($dow);
+}
 ?>
 </div>
 

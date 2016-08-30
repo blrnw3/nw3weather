@@ -1,6 +1,6 @@
 <?php
 $allDataNeeded = true;
-include('/home/nwweathe/public_html/basics.php');
+include('/var/www/html/basics.php');
 require_once ($root.'jpgraph/src/jpgraph.php');
 require_once ($root.'jpgraph/src/jpgraph_bar.php');
 include($root.'unit-select.php');

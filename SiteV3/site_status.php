@@ -16,13 +16,16 @@
 //$statusMessage = '<b>Webcam relocation:</b> Both webcams have been relocated one floor up but facing the same direction. Earlier problems with glare and poor focus have now been resolved.';
 //$statusMessage = '<b>5pm '. date('d M: ', mktime(17,52,0,12,8,2015)) . '</b>'. 'The local network exchange is up again so normal service has resumed. No data was compromised during outage.';
 //$statusMessage = '<b>7am '. date('d M: ', mktime(6,52,0,12,8,2015)) . '</b>'. 'The local network exchange <a href="http://status.zensupport.co.uk/active/3/4500">is down</a> so local data cannot reach the web server. Service should resume once BT fixes the problem.';
-$statusMessage = '<b>1pm '. date('d M: ', mktime(6,52,0,2,11,2016)) . '</b>'. 'The wind sensor is not functioning, and has been down since 1pm on the 10th. I will try to fix it this weekend<br />
-<b>Update, 11pm 15 Feb:</b> The sensor is not repairable for the foreseeable future (probably not until mid-2017). In its long absence, wind data is being served from a nearby weather station, <a href="http://www.harpendenweather.co.uk">Harpenden weather</a>. All other sensors are currently working fine';
+//$statusMessage = '<b>1pm '. date('d M: ', mktime(6,52,0,2,11,2016)) . '</b>'. 'The wind sensor is not functioning, and has been down since 1pm on the 10th. I will try to fix it this weekend<br />
+//<b>Update, 11pm 15 Feb:</b> The sensor is not repairable for the foreseeable future (probably not until mid-2017). In its long absence, wind data is being served from a nearby weather station, <a href="http://www.harpendenweather.co.uk">Harpenden weather</a>. All other sensors are currently working fine';
 //$statusMessage = '<p><b>UPDATE 9pm 14th Apr: nw3weather is back! Updates to follow.</b><br /><b>'. date('d M: ', mktime(6,52,0,4,12,2016)) . '</b>'. 'All sensors are currently not functioning. No live data is available.<br />Meantime, data is being served from nearby weather stations, <a href="http://www.harpendenweather.co.uk">Harpenden weather</a> for wind data, and <a href="http://weather.casa.ucl.ac.uk">UCL casa</a> for the rest.</p>';
 //$statusMessage = '<b>15th Apr</b>: ALL sensors at nw3weather are now reporting correctly. <a href="news.php">Read more about the downtime</a>';
 $showMessage = ($file == 13);
 $isBad = true;
-echo "<div class='statusBox warning' style='background-color: #fc5;'>nw3weather is undergoing server maintenance this weekend. The site may be down for several hours at a minimum. <br />I am moving from a shared hosted solution to a cheaper, more powerful and more flexible cloud VM host</div>";
+// echo "<div class='statusBox info'><b>10am, Mon 16th May</b>: The thermo/hygro sensor is functioning again</div>";
+//echo "<div class='statusBox warning' style='background-color: #fc5;'>nw3weather is undergoing server maintenance this weekend. The site may be down for several hours at a minimum. <br />I am moving from a shared hosted solution to a cheaper, more powerful and more flexible cloud VM host</div>";
+//echo "<div class='statusBox info'><b>10pm, 8th May</b>: Server maintenance has completed successfully.<br />I have moved from a shared hosting solution to a cheaper, more powerful and more flexible cloud VM host<br /><a href='/contact.php'>Please do report any issues that may have resulted from this</a></div>";
+//echo "<div class='statusBox warning'><b>11am, Sat 6th Aug</b>: The thermo/hygro sensor is failing to report. Hoping to fix it by end of the day</div>";
 if($showMessage) {
 	showStatusDiv($statusMessage, $isBad);
 }

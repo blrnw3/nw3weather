@@ -76,7 +76,7 @@ copy(ROOT.'dat' . $yr_yest . '.csv', ROOT.'backup/dat' . $yr_yest.'-'.$day_yest 
 copy(ROOT.'datt' . $yr_yest . '.csv', ROOT.'backup/datt' . $yr_yest.'-'.$day_yest . '.csv');
 
 //Delete old videos
-$vid_dtd = $root . date('Ymd', mkdate(date('n'),date('j')-3)) . 'dayvideo.wmv';
+$vid_dtd = $root . date('Ymd', mkdate(date('n'),date('j')-10)) . 'dayvideo.wmv';
 if(file_exists($vid_dtd)) { unlink($vid_dtd); }
 //delete dailywebcam.gif
 $cam_dtd1 = $root . date('Ymd', mkdate(date('n'),date('j')-1)) . 'dailywebcam.gif';
@@ -94,5 +94,5 @@ if(date('j') == 1 && date('n') == 1) { //first day of the year
 quick_log('data_crontime.txt', $p_time);
 
 //mail("blr@nw3weather.co.uk", "Daily wx report $day_yest $mon_yest $yr_yest (exec: $p_time s)",
-//	var_export($yestNow, true), "From: server");
+//	var_export($yestNow, true));
 ?>

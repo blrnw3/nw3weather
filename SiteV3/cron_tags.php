@@ -1,12 +1,15 @@
 <?php
+
 ini_set("memory_limit","128M");
 
 $allDataNeeded = true;
-$root = '/home/nwweathe/public_html/';
+$root = '/var/www/html/';
 $t_start = microtime(get_as_float);
 include($fullpath . 'unit-select.php');
 include($fullpath . 'functions.php');
 include $fullpath . 'climavs.php';
+
+echo "START: ". date('r'). "\n";
 
 $DATT = unserialize(file_get_contents($root . 'serialised_datt.txt'));
 
@@ -1128,4 +1131,6 @@ if (isset($_GET['BLRdebugTags'])) {
 	$procTime = microtime(true) - $t_start;
 	echo "Executed in $procTime seconds";
 }
+
+echo "END: ". date('r'). "\n";
 ?>

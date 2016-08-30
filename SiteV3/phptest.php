@@ -114,7 +114,7 @@ if(isset($_GET['sorttest'])) {
 }
 
 if(isset($_GET['exectest']))
-	exec('/usr/local/bin/php -q /home/nwweathe/public_html/cron_tags.php blr ftw > /dev/null &');
+	exec('/usr/local/bin/php -q /var/www/html/cron_tags.php blr ftw > /dev/null &');
 
 if(isset($_GET['wotest'])) {
 	$fileSun = file("http://www.weatheronline.co.uk/weather/maps/current?CONT=ukuk&TYP=sonne&ART=tabelle");
@@ -130,12 +130,38 @@ if(isset($_GET['wotest'])) {
 		echo 'Not found';
 }
 if(isset($_GET['imgtest'])) {
-	$execPath = '/usr/local/bin/php -q /home/nwweathe/public_html/';
+	$execPath = '/usr/local/bin/php -q /var/www/html/';
 	exec($execPath. 'graphday.php temp1.png null 20130518');
 	exec($execPath. 'graphday2.php temp2.png null 20130518');
 	exec($execPath. 'graphdayA.php temp3.png wdir 20130518');
 
 }
+
+$rainav_curr = $rainav[$dmonth - 1];
+$rainall = $rainallM = $rains = array();
+for ($y = 2009; $y <= $dyear; $y++) { //Rain tags
+	$rains[$y] = $DATA[13][$y];
+	$rain2[$y] = MDtoZ($rains[$y]);
+	$rain3[$y] = MDtoMsummary($rains[$y], true);
+	$rainall = array_merge($rainall, $rain2[$y]);
+	$rainallM = array_merge($rainallM, $rain3[$y]);
+}
+$rainallCnt = count($rainall);
+
+$allrn = array_sum($rainall);
+$rain365a = $rain2[$dyear] + $rain2[$dyear - 1];
+var_dump($rain365a);
+$raintots = array_merge($rain3[$dyear] + $rain3[$dyear - 1]);
+$day_rain_last_year = $rains[$dyear - 1][$dmonth][$dday];
+$monthrn = array_sum($rains[$dyear][$dmonth]);
+$yearrn = array_sum($rain2[$dyear]);
+$yestrn = $ystdrain = $rain2[$yr_yest][$dz_yest];
+
+for ($d = 1; $d <= 31; $d++) {
+	$rain31 += $rain365a[date('z', mkday($dday - $d)) + 1];
+}
+var_dump($rain31);
+
 
 function graph_stitch_big($date) {
 	$start = ROOT.'imgCache/graphday';
@@ -222,7 +248,7 @@ if(isset($_GET['cacheImages'])) {
 if(isset($_GET['errorpages'])) {
 	$codes = array(400, 401, 403, 404, 412, 500);
 	foreach ($codes as $code) {
-		exec('/usr/local/bin/php -q /home/nwweathe/public_html/errorTemplate.php '. $code .' > /home/nwweathe/public_html/'. $code .'.shtml');
+		exec('php -q /var/www/html/errorTemplate.php '. $code .' > /var/www/html/'. $code .'.html');
 	}
 }
 
@@ -549,7 +575,7 @@ list($width, $height) = getimagesize($root.'static-images/main.JPG');
 $image = imagecreatefromjpeg($root.'static-images/main.JPG');
 //imagecopyresampled($im, $image, 0, 0, 0, 0, 300, 100, 529, 388);
 
-$font = '/home/nwweathe/public_html/jpgraph/src/fonts/DejaVuSans.ttf';
+$font = '/var/www/html/jpgraph/src/fonts/DejaVuSans.ttf';
 
 imagettftext($image, 36, 0, $width/5.5, $height/1.5, imagecolorallocate($image, 188, 245, 169), $font, 'nw3 weather');
 //imagestring($image, 5, $width/2, $height/2, 'nw3 weather', imagecolorallocate($image, 225, 25, 125));
@@ -574,7 +600,7 @@ for($i = 1; $i <= 3; $i++) {
 	$dest_width += $widthn[$i]-1;
 }
 
-$font = '/home/nwweathe/public_html/jpgraph/src/fonts/DejaVuSans.ttf';
+$font = '/var/www/html/jpgraph/src/fonts/DejaVuSans.ttf';
 imagettftext($im, 36, 0, $widthn[1]-10, 100/2.2, imagecolorallocate($im, 168, 245, 159), $font, 'nw3 weather');
 imagettftext($im, 18, 0, $widthn[1]+$widthn[2]+50, 100/3.4, imagecolorallocate($im, 20, 63, 8), $font, 'Hampstead');
 imagettftext($im, 18, 0, $widthn[1]+$widthn[2]+50, 100/1.8, imagecolorallocate($im, 42, 71, 34), $font, 'London');

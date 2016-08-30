@@ -20,13 +20,6 @@ if($crsizeFinal === 0) {
 	$usePath = LIVE_DATA_PATH;
 }
 
-######## TO BE COMPLETED  ###########
-//pseudo code for when I get this sorted
-//if($oldData) {
-//	$usePath = 'ucl data';
-//}
-######################################
-
 $client = file($usePath);
 $mainData = explode(" ", $client[0]);
 
@@ -39,14 +32,6 @@ $kntsToMph = 1.152;
 $temp = $mainData[4];
 $humi = $mainData[5];
 
-// No T/H data - use someone else's live data
-if(false && $temp == 15.4) {
-	$ext_dat_file = urlToArray("http://weather.stevenjamesgray.com/realtime.txt");
-	$ext_dat = $ext_dat_file[0];
-	$dat_fields = explode(" ", $ext_dat);
-	$temp = $dat_fields[2];
-	$humi = $dat_fields[3];
-}
 $pres = $mainData[6];
 $rain = $mainData[7];
 $wind = $mainData[1] * $kntsToMph;
@@ -67,11 +52,12 @@ $maxgsthr = $HR24['misc']['maxhrgst'];
 $maxgstToday = $NOW['max']['gust'];
 $maxavgToday = $maxavgspd;
 
+
 // No wind data - use Harpenden wind data from their clientraw (cached by cron_main)
 // For persistence, see NO_WIND_DATA_CHANGES in logneatenandrepair in cron_main
 if(true) {
 	$extClient = file(ROOT.'EXTclientraw.txt');
-	$extOffset = 0.91; //1.3 - tott;
+	$extOffset = 1.4; // 0.91; //1.3 - tott;
 	$extData = explode(" ", $extClient[0]);
 	$wind = $extData[1] * $kntsToMph * $extOffset;
 	$gust = $extData[140] * $kntsToMph * $extOffset; //actually the max 1-min gust
@@ -82,12 +68,16 @@ if(true) {
 	$feel = feelsLike($temp, $gust, $dewp);
 	$maxavgToday = $NOW['max']['wind'];
 }
-if(false && $temp == 12.4) {
+// Detect errors, use casa as backup
+$isBadLineData = ($pres == 0) || ($temp < -10);
+if($isBadLineData || $overrideIsBadData) {
+	$corruptLine = implode(' ', array(date('r'), $wind, $gust, $wdir, $temp, $humi, $pres, $dewp, $rain)); // For cron_main emailing
+	
 	$extClient2 = file(ROOT.'EXTclientraw2.txt');
 	$extData2 = explode(" ", $extClient2[0]);
 	$temp = $extData2[2] - 0.5;
-	$humi = $extData2[3] + 5;
-	$rain = $extData2[9];
+	$humi = $extData2[3] + 3;
+	// $rain = $extData2[9];
 	$dewp = dewPoint($temp, $humi);
 	$feel = feelsLike($temp, $gust, $dewp);
 }

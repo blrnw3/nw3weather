@@ -1,5 +1,5 @@
 <?php
-include('/home/nwweathe/public_html/basics.php');
+include('/var/www/html/basics.php');
 require('unit-select.php');
 include($root.'functions.php');
 echo "<html>";

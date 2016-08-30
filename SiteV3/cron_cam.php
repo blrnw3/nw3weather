@@ -1,9 +1,11 @@
 <?php
 error_reporting(E_ERROR | E_PARSE);
-$root = '/home/nwweathe/public_html/';
+$root = '/var/www/html/';
 $t_start = microtime(get_as_float);
 include($root.'basics.php');
 include($fullpath.'functions.php');
+
+echo "START: ". date('r'). "\n";
 
 //Webcam saving
 $img = 'jpgwebcam.jpg';
@@ -157,6 +159,8 @@ if($mailBufferCount > 0) {
 		server_mail($email['file'], $email['content']);
 	}
 }
+
+echo "END: ". date('r'). "\n";
 
 function webcam_summary($frac, $w, $dest, $gcam = false, $yest = false) { //Produce webcam summary image
 	global $root;

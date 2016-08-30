@@ -47,7 +47,7 @@ $rawTp = '$avtempsincemidnight, $nighttimeMin, $daytimeMax, $nighttimeMinT, $day
 $tagsTp = explode(',', preg_replace('/\s+/','',$rawTp));
 
 echo "<pre>\$output =
-'";
+		'";
 
 foreach($tagsTp as $tag) {
 	echo $tag . " = '.var_export($tag, true).';\r\n";
