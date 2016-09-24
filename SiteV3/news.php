@@ -28,6 +28,26 @@
 	<h1>Site Blog and Weather Station news/updates</h1>
 
 	<table width="850">
+<tr id="post-20160917"><td>
+                <h2>More data downtime - Temperature & Humidity</h2>
+                <p>On 4th Sep the thermo/hygrometer (combined temperature and humidity sensor) failed. It had been suffering
+                a lot lately, but this time it really was dead, and my (proxy) efforts to revive it failed. I bought a new sensor
+                and my weather assistant kindly installed it for me (thanks, mum!). Temperature data was back after its longest 
+                absence in over 7 years running this weather station. Phew.
+                </p>
+                
+                <p>What a time to lose data though - on 13th Sep London recorded its hottest September day in 100 years!
+                The value from the proxy station I use was an impressive 32.2 C, which would be my 5th hottest ever.
+                Although the data is likely similar to what mine would have been, I can't say for sure, and
+                overnight temperatures are certainly a bit higher there (<a href="http://weather.casa.ucl.ac.uk">UCL</a>, Bloomsbury, central London).
+                </p>
+                
+                <p>Unfortunately the wind sensor is still broken and due to the difficulty of replacing that, I won't be.
+                However, I do want to continue running this station (remotely, with the help of my on-site assistant) for
+                as long as possible. I'm currently investigating other weather stations that might be more reliable,
+                and all being well I would like to have a new one installed by the end of 2017.</p>
+                <span style="color:gray;font-style:italic">Posted: 17th Sep 2016</span><br />
+        </td></tr>
 	<tr id="post-20160415"><td>
 		<h2>Recent live data downtime</h2>
 		<p>As promised, moving abroad brought with it the risk of increased data downtime for the weather station left behind.

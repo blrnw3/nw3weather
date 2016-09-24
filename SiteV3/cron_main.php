@@ -34,7 +34,7 @@ $goodlog_backup = ROOT.'logfiles/backup/goodlog_'. $tstamp .'.txt';
 //Rebuild 24hr and today data logs, plus neaten.
 //Do 10-minutely (on top of after downtime) just for extra security, and in case the cron missed an append
 $recentWDdowntime = time() - filemtime(ROOT. "Logs/WDuploadReallyBad.txt") < 1200;
-if($tstamp != '0000' && (date('i') % 10 == 0 || $recentWDdowntime) && !$isBadLineData) {
+if($tstamp != '0000' && (date('i') % 10 == 0 || $recentWDdowntime)) {
 	$fsize = filesize(ROOT.'customtextout.txt');
 	$fage = time() - filemtime(ROOT.'customtextout.txt');
 	if($fsize > 50000 && $fsize < 99000) { //probably valid
@@ -51,6 +51,7 @@ if($tstamp != '0000' && (date('i') % 10 == 0 || $recentWDdowntime) && !$isBadLin
 
 //Prepare data for appending logs
 $lineVars = array($wind, $gust, $wdir, $temp, $humi, $pres, $dewp, $rain);
+$isBadLineData = ($pres == 0);
 $newLine = date('H,i,d,');
 foreach ($lineVars as $value) {
 	$newLine .= round( trim($value), 1) . ',';
@@ -80,9 +81,14 @@ $filelog = fopen($goodlog, "w");
 for($i = 1; $i < $len; $i++) {
 	fwrite($filelog, $oldLines[$i]);
 }
+if($isBadLineData) {
+	// Grab newline from the most recent one, replacing its datetime with the current
+	$oldNewLine = $newLine;
+	$newLine = date('H,i,d') . substr($oldLines[$len-1], 8);
+	mail("alerts@nw3weather.co.uk", "Bad Dataline - corrupt!", "Offender: $oldNewLine . Replaced by $newLine");
+}
 fwrite($filelog, $newLine);
 fclose($filelog);
-
 
 // make date-alias of goodlog (this is needed, even though goodlog never called elsewhere, to keep the 24hr rolling aspect going
 copy($goodlog, $stamplog);
@@ -199,7 +205,7 @@ if($rn24hrs > 54) {
 
 // METAR retrieve and parse (updated at 20 and 50 mins past the hour, with delay)
 if(date('i') % 30 == 28) {
-	$noaaMetar = urlToArray('http://weather.noaa.gov/pub/data/observations/metar/stations/EGLL.TXT');
+	$noaaMetar = urlToArray('http://tgftp.nws.noaa.gov/data/observations/metar/stations/EGLL.TXT');
 	if($noaaMetar !== false) file_put_contents(ROOT."METAR.txt", $noaaMetar[1]);
 }
 
@@ -214,8 +220,7 @@ if($tstamp % 100 == 0) {
 }
 
 // External clientraw grab and save
-$no_wind_data = true;
-if($no_wind_data) {
+if($NO_WIND_DATA) {
 	// $path = 'http://www.tottenhamweatheronline.co.uk/clientraw.txt';
 	$path = 'http://www.harpendenweather.co.uk/live/clientraw.txt';
 	//$path = 'http://www.sandhurstweather.org.uk/clientraw.txt';
@@ -226,19 +231,17 @@ if($no_wind_data) {
 		quick_log("HarpendenBadData.txt", $harpendenData[0]);
 	}
 }
-$no_th_data = true;
-if($no_th_data) {
+$no_thr_data = true;
+if($no_thr_data) {
 	$path2 = "http://weather.casa.ucl.ac.uk/realtime.txt";
+	//$path2 = "http://www.jon00.me.uk/clientraw.txt";
+	//$path2 = "http://www.snglinks.com/wx/spiel/clientraw.txt";
 	$casaData = urlToArray($path2);
 	if($casaData[0] && count($casaData) === 1) {
 		file_put_contents(ROOT.'EXTclientraw2.txt', $casaData[0]);
 	} else {
 		quick_log("CasaBadData.txt", $casaData[0]);
 	}
-}
-
-if($isBadLineData) {
-	mail("alerts@nw3weather.co.uk","Bad dataline","Alert! dataline is corrupt: ". $corruptLine);
 }
 
 //########### OLD WD file crap ##########//
@@ -297,7 +300,7 @@ if($tstamp == '2137') {
 	$datamod_last = filemtime(ROOT."dat" . $yr_yest . ".csv");
 	if(time() - $datamod_last > 66666) {
 		$last_done = date('H:i d M Y', $datamod_last);
-		mail("alerts@nw3weather.co.uk","Datamod not done","Alert! Not done since $last_done. Act NOW!");
+		log_events("Datamod_not_done.txt","Alert! Not done since $last_done. Act NOW!");
 	}
 }
 
@@ -308,6 +311,22 @@ if($tstamp == '2359') {
 		copy($path, $path_new);
 		unlink($path);
 	}
+}
+
+// CHECK for data flat-lining
+$lastChange = 0;
+$tn = $temp;
+foreach($HR24['trend'] as $ti => $trend) {
+        //echo  $ti . $trend['temp'] . '<br />';
+        if($trend['temp'] != $temp) {
+	        $lastChange = $ti;
+                break;
+        }
+}
+echo 'LAST CHANGE: ' . $lastChange . '<br />';
+if($lastChange == 120) {
+        echo 'NOOOOOOO';
+	mail("alerts@nw3weather.co.uk","Data is flat-lining","Alert! Temperature is stuck at $temp");
 }
 
 ///////END OF SCRIPT////////END OF SCRIPT///////////////////////////////////////////////////////////################
@@ -377,15 +396,20 @@ function graph_stitch() {
  */
 function logneatenandrepair() {
 	global $goodlog, $todaylog;
-	
-	$NO_WIND_DATA_CHANGES = true;
-	
-	if($NO_WIND_DATA_CHANGES) {
+
+	// e.g. 02,10,24,1.3,4.8,214,12.5,74,1020,8.0,0
+	// wind: 3, 4, 5
+	// T/H/Dew: 6, 7, 9
+	// Baro: 8
+	// Rain: 10
+	$FIELDS_TO_PRESERVE = [3, 4, 5];
+
+	if($FIELDS_TO_PRESERVE) {
 		$live_data = file($goodlog);
 		$len = count($live_data);
 		$livel = array();
 		for($i = 0; $i < $len; $i++) {
-			$livel[substr($live_data[$i], 0, 8)] = explode(',', $live_data[$i]);
+			$livel[substr($live_data[$i], 0, 8)] = explode(',', trim($live_data[$i]));
 		}
 	}
 
@@ -397,12 +421,15 @@ function logneatenandrepair() {
 
 	for($i = 0; $i < $len; $i++) {
 		$custl[$i] = explode(',', $filcust[$i]);
+		if($custl[$i][8] == "1007.1" && $i > 0) {
+			$custl[$i][8] = $custl[$i-1][8];
+		}
 		$custl[$i][8] = (int)$custl[$i][8];
 		$custl[$i][10] = (float)$custl[$i][10];
-		if($NO_WIND_DATA_CHANGES) { // Preserve the goodlog values
+		if($FIELDS_TO_PRESERVE) { // Preserve the goodlog values
 			$ts = substr($filcust[$i], 0, 8);
 			if($livel[$ts]) {
-				for($j = 3; $j <= 5; $j++) {
+				foreach($FIELDS_TO_PRESERVE as $j) {
 					$custl[$i][$j] = $livel[$ts][$j];
 				}
 			}

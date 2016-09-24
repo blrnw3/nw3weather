@@ -52,10 +52,9 @@ $maxgsthr = $HR24['misc']['maxhrgst'];
 $maxgstToday = $NOW['max']['gust'];
 $maxavgToday = $maxavgspd;
 
-
 // No wind data - use Harpenden wind data from their clientraw (cached by cron_main)
-// For persistence, see NO_WIND_DATA_CHANGES in logneatenandrepair in cron_main
-if(true) {
+$NO_WIND_DATA = true;
+if($NO_WIND_DATA) {
 	$extClient = file(ROOT.'EXTclientraw.txt');
 	$extOffset = 1.4; // 0.91; //1.3 - tott;
 	$extData = explode(" ", $extClient[0]);
@@ -64,22 +63,34 @@ if(true) {
 	$gustRaw = $extData[2] * $kntsToMph * $extOffset; //true 14s gust
 	$w10m = $extData[158] * $kntsToMph * $extOffset;
 	$wdir = $extData[3];
-	
+
 	$feel = feelsLike($temp, $gust, $dewp);
 	$maxavgToday = $NOW['max']['wind'];
 }
-// Detect errors, use casa as backup
-$isBadLineData = ($pres == 0) || ($temp < -10);
-if($isBadLineData || $overrideIsBadData) {
-	$corruptLine = implode(' ', array(date('r'), $wind, $gust, $wdir, $temp, $humi, $pres, $dewp, $rain)); // For cron_main emailing
-	
+if(false && $temp == 16.9) {
+	// Casa
 	$extClient2 = file(ROOT.'EXTclientraw2.txt');
 	$extData2 = explode(" ", $extClient2[0]);
-	$temp = $extData2[2] - 0.5;
-	$humi = $extData2[3] + 3;
-	// $rain = $extData2[9];
+	$temp = $extData2[2] - 0.7;
+	$humi = $extData2[3] + 1;
 	$dewp = dewPoint($temp, $humi);
 	$feel = feelsLike($temp, $gust, $dewp);
+}
+if(false && $temp == 16.9) {
+	// StAlbans
+	$extClient2 = file(ROOT.'EXTclientraw2.txt');
+	$extData2 = explode(" ", $extClient2[0]);
+	$temp = $extData2[4] + 0.3;
+	$humi = $extData2[5] - 1;
+	$dewp = dewPoint($temp, $humi);
+	$feel = feelsLike($temp, $gust, $dewp);
+}
+
+if(true && $rain == 0 && date("Hi") > "0009") {
+	// Casa rain
+	$extClient2 = file(ROOT.'EXTclientraw2.txt');
+	$extData2 = explode(" ", $extClient2[0]);
+	$rain = $extData2[9];
 }
 
 ?>
