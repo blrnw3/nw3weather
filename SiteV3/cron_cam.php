@@ -74,6 +74,20 @@ if(date('i') % 10 == 1) { //Groundcam saving
 	if($sleep) { quick_log('sleep_gcam.txt', str_pad($wsizen1, 6) . ' ' . str_pad($wsizen2, 6) . ' ' . str_pad($wsizen3, 6)); }
 }
 
+// Rolling long-term cam save
+$sky_freq = 5;
+$gnd_freq = 30;
+if(date('i') % $sky_freq == 0) {
+	$dstamp = date('Y/m/d');
+	$stamp = date('Y/m/d/Hi');
+	mkdir($root . 'camchive/sky/'. $dstamp, 0775, true);
+	mkdir($root . 'camchive/gnd/'. $dstamp, 0775, true);
+	copy($root.'currcam.jpg', $root .'camchive/sky/'. $stamp .'sky.jpg');
+	if(date('i') % $gnd_freq == 0) {
+		copy($root.'currgcam.jpg', $root .'camchive/gnd/'. $stamp .'gnd.jpg');
+	}
+}
+
 $daily_proctime = ( $tstamp == '2357' && !file_exists($root . date('Y/Ymd') . 'dailywebcam.jpg') ) ? '2357' : '2354';
  //Daily webcam procedure
 
