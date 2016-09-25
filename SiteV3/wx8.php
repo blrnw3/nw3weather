@@ -49,7 +49,6 @@ $file = 8;
 
 		<style type="text/css">
 			.aboutTbl {
-				width: 35%;
 				margin: 0.7em;
 			}
 
@@ -76,6 +75,89 @@ $file = 8;
 <?php require('leftsidebar.php'); ?>
 
 		<!-- ##### Main Copy ##### -->
+
+<?php
+class Traffic {
+	public static $annual = [
+		2011 => [ // Based on 01 Sep - End
+			'sum' => 7000,
+			'mean' => 57,
+			'median' => 54,
+			'min' => null,
+			'max' => 240,
+			'min_date' => null,
+			'max_date' => null
+		],
+		2012 => [
+			'sum' => 49000,
+			'mean' => 133,
+			'median' => 127,
+			'min' => 39,
+			'max' => 667,
+			'min_date' => '10 Jan',
+			'max_date' => '04 Feb'
+		],
+		2013 => [
+			'sum' => 63000,
+			'mean' => 174,
+			'median' => 152,
+			'min' => 67,
+			'max' => 1562,
+			'min_date' => '03 Sep',
+			'max_date' => '18 Jan'
+		],
+		2014 => [
+			'sum' => 75000,
+			'mean' => 206,
+			'median' => 188,
+			'min' => 106,
+			'max' => 599,
+			'min_date' => '06 Sep',
+			'max_date' => '14 Feb'
+		],
+		2015 => [
+			'sum' => 84000,
+			'mean' => 231,
+			'median' => 210,
+			'min' => 116,
+			'max' => 679,
+			'min_date' => '17 Oct',
+			'max_date' => '01 Jul'
+		],
+		2016 => [
+			'sum' => 64000,
+			'TO' => "24 Sep",
+			'mean' => 237,
+			'median' => 217,
+			'min' => 128,
+			'max' => 813,
+			'min_date' => '13 Aug',
+			'max_date' => '23 Jun'
+		]
+	];
+
+	public $annual_summary = [
+		'sum' => 0,
+		'mean' => 0,
+		'min' => PHP_INT_MAX,
+		'max' => PHP_INT_MIN,
+	];
+
+	function prepare_annual_data_table() {
+		foreach (self::$annual as $year => $data) {
+			$this->annual_summary['sum'] += $data['sum'];
+			$this->annual_summary['mean'] += $data['mean'];
+			if($data['min'] < $this->annual_summary['min']) {
+				$this->annual_summary['min'] = $data['min'];
+			}
+			if($data['max'] > $this->annual_summary['max']) {
+				$this->annual_summary['max'] = $data['max'];
+			}
+		}
+		$this->annual_summary['mean'] = round($this->annual_summary['mean'] / count(self::$annual));
+	}
+}
+?>
 
 <div id="main">
 
@@ -202,7 +284,7 @@ $file = 8;
 		but other modern browsers have been tested and found to display most things correctly (no guarantee for old ones, though - especially the horror show that is MSIE).
 		<br /><code>nw3weather.co.uk</code> launched on 10th September 2010, I having acquired the domain name soon after moving here in July.
 		The most recent version (v3) launched on 22nd May 2013. <br />
-		At approx 8am daily, I submit manual observations for the previous day to the system, as well as fixing glitches and correcting misreads.
+		Within 24hrs or so, I submit manual observations for the previous day to the system, as well as fixing glitches and correcting misreads.
 		These changes are reflected on the site almost immediately.
 	</p>
 
@@ -216,7 +298,7 @@ $file = 8;
 		Weather Display software renders and uploads this data via
 		<abbr title="file transfer protocol">FTP</abbr> to a web server -
 		which broadcasts the PHP-rendered web pages to the World Wide Web so anyone making a valid HTTP request can view them.
-		The web server is hosted by <a href='http://www.clook.net/'>Clook</a> on a shared package running the classic Linux/Apache setup.
+		The web server runs on a Linux VM which I manage, but is provisioned by Digital Ocean.
 		All web pages and data procedures are written in PHP (inc. graphs powered by the JPGraph library),
 		with some Javascript/JQuery/AJAX used to provide a basic level of dynamism.
 		Data storage is a combination of <abbr title='comma separated value'>CSV</abbr> (long-term),
@@ -254,85 +336,55 @@ $file = 8;
 	</p>
 
 	<h3>Site Traffic</h3>
-	These figures are approximations based on my site logs, and are for interest only.
-	<table class="table1 aboutTbl">
-		<thead>
-			<tr class="table-head">
-				<td class="td12" style="padding: 0.5em" colspan="2">Nw3weather Site Traffic History</td>
-			</tr>
-			<tr class="table-top">
-				<td>Date</td>
-				<td>Median Daily Visits</td>
-			</tr>
-		</thead>
-		<tfoot> <!-- Yes, it is meant to go here! -->
-			<tr>
-				<td>Jan 2014 - Current</td>
-				<td>~200</td>
-			</tr>
-		</tfoot>
-		<tbody>
-			<tr class="rowdark">
-				<td>pre- Apr 2011</td>
-				<td>~10</td>
-			</tr>
-			<tr class="rowlight">
-				<td>Apr 2011 - Sep 2011</td>
-				<td>~30</td>
-			</tr>
-			<tr class="rowdark">
-				<td>Oct 2011 - Jan 2012</td>
-				<td>~60</td>
-			</tr>
-			<tr class="rowlight">
-				<td>Feb 2012 - May 2012</td>
-				<td>~100</td>
-			</tr>
-			<tr class="rowdark">
-				<td>Jun 2012 - Dec 2013</td>
-				<td>~150</td>
-			</tr>
-		</tbody>
-	</table>
+	These figures are approximations based on my site logs, and are for interest only. Figures for 2011 are from 01 Sep onwards.
 
+
+	<?php
+$traffic = new Traffic();
+$traffic->prepare_annual_data_table();
+?>
 	<table class="table1 aboutTbl">
 		<thead>
 			<tr class="table-head">
-				<td class="td12" style="padding: 0.5em" colspan="2">Nw3weather Annual Traffic</td>
+				<td class="td12" style="padding: 0.5em" colspan="6">Nw3weather Annual Traffic</td>
 			</tr>
 			<tr class="table-top">
 				<td>Year</td>
 				<td>Total Visits</td>
+				<td>Mean</td>
+				<td>Median</td>
+				<td>Max</td>
+				<td>Min</td>
 			</tr>
 		</thead>
 		<tfoot> <!-- Yes, it is meant to go here! -->
 			<tr>
 				<td>Total</td>
-				<td>&gt;200,000</td>
+				<td><?php echo number_format($traffic->annual_summary['sum']) ?></td>
+				<td><?php echo $traffic->annual_summary['mean'] ?></td>
+				<td></td>
+				<td><?php echo $traffic->annual_summary['max'] ?></td>
+				<td><?php echo $traffic->annual_summary['min'] ?></td>
 			</tr>
 		</tfoot>
 		<tbody>
-			<tr class="rowdark">
-				<td>2011</td>
-				<td>~12,000</td>
+			<?php foreach (Traffic::$annual as $year => $data): ?>
+			<tr>
+				<td><?php echo $year ?></td>
+				<td><?php echo number_format($data['sum']); if($year == $dyear) echo "+ (to ${data['TO']})"; ?></td>
+				<td><?php echo $data['mean'] ?></td>
+				<td><?php echo $data['median'] ?></td>
+				<td><?php echo $data['max'] ?> (<?php echo $data['max_date'] ?>)</td>
+				<td><?php echo $data['min'] ?> (<?php echo $data['min_date'] ?>)</td>
 			</tr>
-			<tr class="rowlight">
-				<td>2012</td>
-				<td>~48,000</td>
-			</tr>
-			<tr class="rowdark">
-				<td>2013</td>
-				<td>~63,000</td>
-			</tr>
-			<tr class="rowlight">
-				<td>2014</td>
-				<td>~75,000</td>
-			</tr>
+			<?php endforeach; ?>
 		</tbody>
 	</table>
 	<p>Additionally, it is found that, as expected, traffic is higher on days of precipitation - particularly snowfall, which can drive traffic up by more than 500% -
 		record site traffic was over 1500 visits on <a href='/wxhistday.php?year=2013&amp;month=1&amp;day=18' title='daily weather breakdown'>18th Jan 2013</a>.
 	</p>
+
+	<?php img("/static-images/traffic.PNG", "nw3weather site traffic - sessions", 0.9, "nw3weather daily site visits, 2012-2016", 846, 457); ?>
 
 	<h2>Acknowledgements</h2>
 	<p>
@@ -412,7 +464,7 @@ $file = 8;
 		I currently live and work in New York, having <a href="/news.php#post-20151107">moved here</a> from London in late 2015. Weather is my main hobby.
 	</p>
 	<p>
-		For more insight into the world of a weather hobbyist, 
+		For more insight into the world of a weather hobbyist,
 		<a href="news.php#post-20141116">take a look at the article on me in the local paper</a>.
 	</p>
 

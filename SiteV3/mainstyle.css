@@ -443,6 +443,31 @@ select {
 	text-align: center;
 }
 
+
+.aboutTbl {
+	margin: 0.7em;
+	width: 95%;
+}
+
+.aboutTbl td {
+	text-align: center;
+	padding: 0.3em 0.8em;
+	border: solid 1px #CAB99D;
+	border-spacing: 1px;
+}
+
+.aboutTbl tfoot {
+	background-color: #A5DF40;
+	font-weight: bold;
+}
+
+.aboutTbl tbody tr:nth-child(2n) {
+	background-color: white;
+}
+.aboutTbl td:first-child {
+	font-weight: bold;
+}
+
 /******************Footer***************************/
 #footer {
 	font-family: arial;
