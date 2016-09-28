@@ -77,26 +77,22 @@ if(date('i') % 10 == 1) { //Groundcam saving
 // Rolling long-term cam save
 $sky_freq = 5;
 $gnd_freq = 30;
-if(date('i') % $sky_freq == 0) {
-	$dstamp = date('Y/m/d');
-	$stamp = date('Y/m/d/Hi');
-	mkdir($root . 'camchive/sky/'. $dstamp, 0775, true);
-	mkdir($root . 'camchive/gnd/'. $dstamp, 0775, true);
-	copy($root.'currcam.jpg', $root .'camchive/sky/'. $stamp .'sky.jpg');
-	if(date('i') % $gnd_freq == 0) {
-		copy($root.'currgcam.jpg', $root .'camchive/gnd/'. $stamp .'gnd.jpg');
-	}
-}
+$dstamp = date('Y/m/d');
+$stamp = date('Y/m/d/Hi');
+mkdir($root . 'camchive/sky/'. $dstamp, 0775, true);
+mkdir($root . 'camchive/gnd/'. $dstamp, 0775, true);
+copy($root.'currcam.jpg', $root .'camchive/sky/'. $stamp .'sky.jpg');
+copy($root.'currgcam.jpg', $root .'camchive/gnd/'. $stamp .'gnd.jpg');
 
 $daily_proctime = ( $tstamp == '2357' && !file_exists($root . date('Y/Ymd') . 'dailywebcam.jpg') ) ? '2357' : '2354';
  //Daily webcam procedure
 
 if($tstamp == $daily_proctime) {
 
-	for($i = 0; $i < 8; $i++) { //Copy select files to permanent date stamped versions
-		copy($root.'currcam/' . zerolead($i*3) . '00currcam.jpg', $root.'img-save/skycam'.date('Y.m.d-') . zerolead($i*3) .'00.jpg');
-		copy($root.'currgcam/' . zerolead($i*3) . '00currgcam.jpg', $root.'img-save/gndcam'.date('Y.m.d-') . zerolead($i*3) .'00.jpg');
-	}
+//	for($i = 0; $i < 8; $i++) { //Copy select files to permanent date stamped versions
+//		copy($root.'currcam/' . zerolead($i*3) . '00currcam.jpg', $root.'img-save/skycam'.date('Y.m.d-') . zerolead($i*3) .'00.jpg');
+//		copy($root.'currgcam/' . zerolead($i*3) . '00currgcam.jpg', $root.'img-save/gndcam'.date('Y.m.d-') . zerolead($i*3) .'00.jpg');
+//	}
 	for($i = 0; $i < 1440; $i++) { //Copy all files to yesterday directory
 		$stamp = zerolead(floor($i / 60)) . zerolead($i % 60);
 		$currcam = $root.'currcam/' . $stamp . 'currcam.jpg';

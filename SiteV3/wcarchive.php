@@ -1,5 +1,5 @@
 <?php require('unit-select.php');
-		
+
 		$file = 2;
 		$subfile = true;
 ?>
@@ -48,7 +48,7 @@ $prevd = date('j', $prevs); $prevm = date('n', $prevs); $prevy = date('Y', $prev
 $nextd = date('j', $nexts); $nextm = date('n', $nexts); $nexty = date('Y', $nexts);
 
 $cond1 = $sproc > mkdate(8,1,2010);
-$cond2 = $sproc < mkdate($dmonth,$dday+1,$dyear) && mktime(1,0,0,$mproc,$dproc,$yproc) > mkdate(7,31,2010);
+$cond2 = $sproc < mkdate($dmonth,$dday,$dyear) && mktime(1,0,0,$mproc,$dproc,$yproc) > mkdate(7,31,2010);
 $cond3 = $sproc < mkdate(6,27,2012);
 if($cond3) { $endtag = 'gif'; } else { $endtag = 'jpg'; $direc = date('Y',$sproc). '/'; }
 if(!$cond1) { echo '<b>Archive begins on 1st August 2010</b>'; }
