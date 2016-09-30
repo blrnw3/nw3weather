@@ -10,14 +10,18 @@ echo "START: ". date('r'). "\n";
 //Webcam saving
 $img = 'jpgwebcam.jpg';
 $tstamp = date('Hi', mktime(date('H'), date('i')-1));
-$wsizen1 = filesize($root.$img); usleep(500000); clearstatcache(); $wsizen2 = filesize($root.$img); $sleep = false;
-if(abs($wsizen1 - $wsizen2) > 1) { sleep(4); $sleep = true; $wsizen3 = filesize($root.$img); }
+$wsizen1 = filesize($root.$img);
+usleep(500000);
+clearstatcache();
+$wsizen2 = filesize($root.$img);
+clearstatcache();
+$sleep = false;
 
-
-//if(date('i') % 5 == 2) {
-	//chmod($root.$img, 0644);
-	//chmod($root.'jpggroundcam.jpg', 0644);
-//}
+if(abs($wsizen1 - $wsizen2) > 1) {
+	sleep(5);
+	$sleep = true;
+	$wsizen3 = filesize($root.$img);
+}
 
 $frac = 0.37;
 $sunset = date_sunset(time(), SUNFUNCS_RET_STRING, 51.5, 0.2, 90, date('I'));
@@ -25,47 +29,32 @@ $image = imagecreatefromjpeg($root.$img);
 if($image) {
 	imagejpeg($image, $root.'currcam.jpg');
 	if(date('H:i') == $sunset) { imagejpeg($image, $root.'sunsetcam.jpg'); }
-	imagejpeg($image, $root.'currcam/'.$tstamp.'currcam.jpg', 60);
 	$image_small = imagecreatetruecolor($frac*640,$frac*480);
 	imagecopyresampled($image_small, $image, 0, 0, 0, 0, $frac*640, $frac*480, 640, 480);
 	imagejpeg($image_small, $root.'currcam_small.jpg', 70);
 	imagedestroy($image);
 	imagedestroy($image_small);
-}
-else {
-	copy($root.'currcam.jpg', $root.'currcam/'.$tstamp.'currcam.jpg');
-	quick_log('cam_fail.txt', $tstamp .' Saved by primary net');
+} else {
+	quick_log('cam_fail.txt', $tstamp .' No live cam');
 }
 
 if($sleep) { quick_log('sleep_cam.txt', str_pad($wsizen1, 6) . ' ' . str_pad($wsizen2, 6) . ' ' . str_pad($wsizen3, 6)); }
 
-//Check and fix missed file saves
-for($i = 2; $i < 8; $i++) {
-	$tstampL = date('Hi', mktime(date('H'), date('i')-$i));
-	if(time() - filemtime($root.'currcam/'.$tstampL.'currcam.jpg') > 999) {
-		copy($root.'currcam.jpg', $root.'currcam/'.$tstampL.'currcam.jpg');
-		quick_log('cam_fail.txt', $tstampL . ' Saved by net ' . $i, $i == 7);
-	}
-	if($tstampL == $sunset && time() - filemtime($root.'sunsetcam.jpg') > 999) {
-		copy($root.'currcam.jpg', $root.'sunsetcam.jpg');
-		quick_log('cam_fail.txt', $tstampL . ' sunsetcam save from net ' . $i);
-	}
+if(date('H:i',time()-60) == $sunset) {
+	quick_log('cam_templog.txt', time() - filemtime($root.'sunsetcam.jpg') . ' sunsetcam age');
 }
-//quick_log($fullpath.'cam_templog.txt', mktime() - filemtime($root.'currcam/'.$tstampL.'currcam.jpg'));
-if(date('H:i',time()-60) == $sunset) { quick_log('cam_templog.txt', time() - filemtime($root.'sunsetcam.jpg') . ' sunsetcam age'); }
-
-// if(date('i') % 5 == 3) {
-	// chmod($root.$img, 0444);
-	//chmod($root.'jpggroundcam.jpg', 0444);
-// }
 
 if(date('i') % 10 == 1) { //Groundcam saving
 	$img = 'jpggroundcam.jpg';
-	$wsizen1 = filesize($root.$img); usleep(500000); clearstatcache(); $wsizen2 = filesize($root.$img); $sleep = false;
+	$wsizen1 = filesize($root.$img);
+	usleep(500000);
+	clearstatcache();
+	$wsizen2 = filesize($root.$img);
+	clearstatcache();
+	$sleep = false;
 	if(abs($wsizen1 - $wsizen2) > 1) { sleep(6); $sleep = true; $wsizen3 = filesize($root.$img); }
 	$image = imagecreatefromjpeg($root.$img);
 	imagejpeg($image, $root.'currgcam.jpg');
-	imagejpeg($image, $root.'currgcam/'.$tstamp.'currgcam.jpg', 60);
 	$image_small = imagecreatetruecolor($frac*640,$frac*480);
 	imagecopyresampled($image_small, $image, 0, 0, 0, 0, $frac*640, $frac*480, 640, 480);
 	imagejpeg($image_small, $root.'currgcam_small.jpg', 70);
@@ -88,20 +77,21 @@ $daily_proctime = ( $tstamp == '2357' && !file_exists($root . date('Y/Ymd') . 'd
  //Daily webcam procedure
 
 if($tstamp == $daily_proctime) {
-
-//	for($i = 0; $i < 8; $i++) { //Copy select files to permanent date stamped versions
-//		copy($root.'currcam/' . zerolead($i*3) . '00currcam.jpg', $root.'img-save/skycam'.date('Y.m.d-') . zerolead($i*3) .'00.jpg');
-//		copy($root.'currgcam/' . zerolead($i*3) . '00currgcam.jpg', $root.'img-save/gndcam'.date('Y.m.d-') . zerolead($i*3) .'00.jpg');
-//	}
-	for($i = 0; $i < 1440; $i++) { //Copy all files to yesterday directory
-		$stamp = zerolead(floor($i / 60)) . zerolead($i % 60);
-		$currcam = $root.'currcam/' . $stamp . 'currcam.jpg';
-		copy($currcam, $root.'currcam/yest/' . $stamp . 'yestcam.jpg');
-		if($i % 10 == 0) {
-			$currgcam = $root.'currgcam/' . $stamp . 'currgcam.jpg';
-			copy($currgcam, $root.'currgcam/yest/' . $stamp . 'yestgcam.jpg');
+	// High-freq cam-save cleanup
+	$highfreq_keep_days = 10;
+	$minfreq_to_keep = 5;
+	$stamp = date("Y/m/d", mkdate($dmonth, $dday-$highfreq_keep_days, $dyear));
+	foreach(["sky", "gnd"] as $cam_type) {
+		$camdir = "$root/camchive/$cam_type/$stamp/";
+		for($i = 0; $i < 1440; $i++) {
+			$f = $camdir . date("Hi", mktime(0, $i, 0)) . "$cam_type.jpg";
+			if($i % $minfreq_to_keep !== 0 && file_exists($f)) {
+				echo "$f <br />";
+				unlink($f);
+			}
 		}
 	}
+
 	webcam_summary(.22, 6, date('Y/Ymd') . 'dailywebcam.jpg');
 	webcam_summary(.4, 6, date('Y/Ymd') . 'dailywebcam_large.jpg');
 	//webcam_summary(.22, 6, date('Y/Ymd', true) . '/dailygwebcam.jpg');
