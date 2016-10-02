@@ -12,12 +12,12 @@ $blog = 'Blog'. ( ((time() - $lastPost < $newLength)) ?
 $photos = 'Photos'. ( ((time() - $lastAlbum < $newLength)) ?
 	' <sup title="Last upload: '. date('jS M Y', $lastAlbum) . '" style="color:#382">new album</sup>' : '' );
 
-$itemsM = array('Home', 'Webcam', 'Graphs', 'Data Summary', 'Forecast', 'Astronomy', $photos, 'About');
+$itemsM = array('Home', 'Webcam', 'Graphs', 'Records', 'Forecast', 'Astronomy', $photos, 'About');
 $itemsD = array('Rain', 'Wind', 'Temperature', 'Humidity', 'Charts', 'Climate');
 $itemsH = array('Data Tables', 'Rankings', 'Daily Reports', 'Monthly Reports', 'Annual Reports', 'Custom Graphs');
 $itemsO = array($blog, 'System', 'External');
 
-$titleM = array('Return to main page', 'Live Webcam and Timelapses', 'Latest Daily and Monthly Graphs &amp; Charts', ' Extremes and Trends, and Averages', ' Local Forecasts and Latest Maps',
+$titleM = array('Return to main page', 'Live Webcam and Timelapses', 'Latest Daily and Monthly Graphs &amp; Charts', 'Records, Extremes, Trends, and Averages', ' Local Forecasts and Latest Maps',
 	'Sun and Moon Data', 'My Weather Photography', ' About this Weather Station and Website');
 $titleD = array('Detailed Rain Data', 'Detailed Wind Data', 'Detailed Temperature Data', 'Detailed Humidity Data', '31-day and 12-month Data Charts', 'Long-term climate averages');
 $titleH = array('Tables of monthly and daily data by type', 'Daily and monthly ranked data by type', 'Weather Daily', 'Weather Monthly', 'Weather Annual', 'Customisable multi-variable line graphs');
