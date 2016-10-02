@@ -112,7 +112,7 @@ if(date('i') % 30 == 2) { //Produce dailywebcam.jpg
 	for($i = 0; $i < $imgno_y; $i++) {
 		if(($i % $w) == 0) { $hstep += 1; }
 		$j =  $tstart_int + $i * $tinc; $stamp = zerolead(floor($j / 60)) . zerolead($j % 60);
-		$image = imagecreatefromjpeg($root.'curr'. $g . 'cam/'. $day0 . $stamp . $day. $g . 'cam.jpg');
+		$image = imagecreatefromjpeg(cam_location($g, $day0, $stamp));
 		imagecopyresampled($image_p, $image, (640*$frac+$sw)*($i % $w), $hstep*(480*$frac+$sh)+15, 0, 0, 640*$frac, 480*$frac, 640, 480);
 		imagestring($image_p, 4, (640*$frac+$sw)*($i % $w)+$frac*640*0.4, $hstep*(480*$frac+$sh)+480*$frac+18, $stamp, imagecolorallocate($image_p, 54, 14, 14));
 		imagedestroy($image);
@@ -123,7 +123,7 @@ if(date('i') % 30 == 2) { //Produce dailywebcam.jpg
 		if(($i % $w) == 0) { $hstep += 1; }
 		if($hstep_end == $hstep) { $spc = -15; } else { $spc = 0; }
 		$j = ($i-$imgno_y) * $tinc; $stamp = zerolead(floor($j / 60)) . zerolead($j % 60);
-		$image = imagecreatefromjpeg($root.'curr'. $g . 'cam/'. $day0 . $stamp . $day. $g . 'cam.jpg');
+		$image = imagecreatefromjpeg(cam_location($g, $day0, $stamp));
 		imagecopyresampled($image_p, $image, (640*$frac+$sw)*($i % $w), $hstep*(480*$frac+$sh)+30+$spc, 0, 0, 640*$frac, 480*$frac, 640, 480);
 		imagestring($image_p, 4, (640*$frac+$sw)*($i % $w)+$frac*640*0.4, $hstep*(480*$frac+$sh)+480*$frac+33+$spc, $stamp, imagecolorallocate($image_p, 54, 14, 14));
 		imagedestroy($image);
@@ -140,7 +140,7 @@ if(date('i') % 30 == 2) { //Produce dailywebcam.jpg
 		if(($i % $w) == 0) { $hstep += 1; }
 		if($hstep_end == $hstep) { $spc = -15; } else { $spc = 0; }
 		$j = $i * $tinc; $stamp = zerolead(floor($j / 60)) . zerolead($j % 60);
-		$image = imagecreatefromjpeg($root.'curr'. $g . 'cam/'. $day0 . $stamp . $day. $g . 'cam.jpg');
+		$image = imagecreatefromjpeg(cam_location($g, $day0, $stamp));
 		imagecopyresampled($image_p, $image, (640*$frac+$sw)*($i % $w), $hstep*(480*$frac+$sh)+30+$spc, 0, 0, 640*$frac, 480*$frac, 640, 480);
 		imagestring($image_p, 4, (640*$frac+$sw)*($i % $w)+$frac*640*0.4, $hstep*(480*$frac+$sh)+480*$frac+33+$spc, $stamp, imagecolorallocate($image_p, 54, 14, 14));
 		imagedestroy($image);
@@ -173,12 +173,20 @@ function webcam_summary($frac, $w, $dest, $gcam = false, $yest = false) { //Prod
 	for($i = 0; $i < $imgno; $i++) {
 		if(($i % $w) == 0) { $hstep += 1; }
 		$stamp = zerolead(floor($i/2)); if($i % 2 == 0) { $stamp .= '00'; } else { $stamp .= '30'; }
-		$image = imagecreatefromjpeg($root.'curr'. $g . 'cam/'. $day0 . $stamp . $day. $g . 'cam.jpg');
+		$image = imagecreatefromjpeg(cam_location($g, $day0, $stamp));
 		imagecopyresampled($image_p, $image, (640*$frac+$sw)*($i % $w), $hstep*(480*$frac+$sh), 0, 0, 640*$frac, 480*$frac, 640, 480);
 		imagestring($image_p, 4, (640*$frac+$sw)*($i % $w)+$frac*640*0.4, $hstep*(480*$frac+$sh)+480*$frac+3, $stamp, imagecolorallocate($image_p, 54, 14, 14));
 		imagedestroy($image);
 	}
 	imagejpeg($image_p, $root. $dest, 60);
 	imagedestroy($image_p);
+}
+
+function cam_location($g, $day0, $stamp) {
+	global $root, $dmonth, $dday;
+	$cam_type = ($g == '') ? "sky" : "gnd";
+	$offset = ($day0 == "") ? 0 : 1;
+	$ymd = date("Y/m/d", mktime(12, 0, 0, $dmonth, $dday - $offset));
+	return "$root/camchive/$cam_type/$ymd/$stamp$cam_type.jpg";
 }
 ?>
