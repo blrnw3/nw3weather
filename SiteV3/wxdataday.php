@@ -5,7 +5,7 @@ require('unit-select.php'); ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?php 
+<?php
 	$file = 40;
 	$showYear = true;
 	$isDaily = true;
@@ -170,9 +170,13 @@ table();
 tr();
 td('Day', 'td4C', 4, 1, 1 + (int)($extra > 1));
 for($m = $st_mon - 1; $m <= $st_mon - 1 + $num; $m++) {
-	$monthsTbl[$m] = date('n', mkdate($m + 1, 1, $styr));
+	$m_true = $m + 1;
+	$monthsTbl[$m] = date('n', mkdate($m_true, 1, $styr));
 	$maxdays[$m] = get_days_in_month($monthsTbl[$m], $endyr);
-	td( $months3[$monthsTbl[$m]-1], 'td4C', 8, $varNum );
+	$mon = $months3[$monthsTbl[$m]-1];
+	$lnk = "/wxhistmonth.php?year=$year&month=$m_true";
+	$linked_mon = ($year < $yr_yest || $m_true <= $mon_yest) ? '<a class="hidden-link" href="'. $lnk .'" title="View detailed report for month">'. $mon .'</a>' : $mon;
+	td( $linked_mon, 'td4C', 8, $varNum );
 }
 tr_end();
 
@@ -203,6 +207,9 @@ for($day = 1; $day <= 31; $day++) {
 	tr(null);
 	td( $day, 'row'.colcol($day).'" style="text-align:center' );
 	for($m = $st_mon - 1; $m <= $st_mon - 1 + $num; $m++) {
+		$m_true = $m + 1;
+		$lnk = "/wxhistday.php?year=$year&month=$m_true&day=$day";
+		$show_link = false;
 		for($i = 0; $i < $varNum; $i++) {
 			//defaults
 			$rconv = false;
@@ -217,6 +224,7 @@ for($day = 1; $day <= 31; $day++) {
 //				echo $data[ $arrnum[$i] ][$m][$day], ',';
 				$class = 'invalid';
 				$finalVal = '&nbsp;';
+				$show_link = true;
 			}
 			else {
 				$rconv = $typeconvs_all[$arrnum[$i]];
@@ -228,8 +236,10 @@ for($day = 1; $day <= 31; $day++) {
 				$finalVal = conv( $put, $rconv, false );
 				$valcolval = $valcolConvert ? $finalVal : $put;
 				$class = valcolr( $valcolval, $wxtablecols_all[$arrnum[$i]] );
+				$show_link = true;
 			}
-			td($finalVal, $class );
+			$finalValLinked = $show_link ? '<a class="hidden-link" href="'. $lnk .'" title="View detailed report for day">'. $finalVal .'</a>' : $finalVal;
+			td($finalValLinked, $class );
 		}
 	}
 	tr_end();
@@ -384,7 +394,7 @@ if($endyr == $dyear) {
 	echo "<br />
 		Values for recent days are subject to quality control and may be adjusted at any time.";
 	if(!$hasToday) {
-		echo '<br />Values for the current day normally become avaialble by 12noon the following day, though potentially much later.';
+		echo '<br />Values for the current day normally become available on the following Sunday, when manual observations for the week are input.';
 	}
 }
 echo '</p>';

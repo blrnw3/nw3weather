@@ -68,6 +68,8 @@ class MonthlySummaryDataTables {
 	 * @param string $heading table heading
 	 */
 	public function makeTable($t, $heading) {
+		global $yr_yest, $mon_yest;
+		
 		$isAnom = $this->CVAR->isAnom;
 		$sumfix = ($this->CVAR->isSum && $t === 2) ? $this->valcolSumOffset : 1;
 		$isCount = ($t === 3);
@@ -118,8 +120,9 @@ class MonthlySummaryDataTables {
 							'<br />(' . self::anomMonth($extreme[$m][$y], $m - 1) . ')' : '';
 					}
 				}
-
-				td($value . $anom, $class);
+				$lnk = "/wxhistmonth.php?year=$y&month=$m";
+				$linked_val = ($y < $yr_yest || $m <= $mon_yest) ? '<a class="hidden-link" href="'. $lnk .'" title="View detailed report for month">'. $value .'</a>' : $value;
+				td($linked_val . $anom, $class);
 			}
 
 			//Annual summary
