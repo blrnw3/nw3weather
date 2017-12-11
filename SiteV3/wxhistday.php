@@ -406,7 +406,7 @@ if($todcond) {
 				<dt>Notes</dt>
 				<dd>Times of extremes are computed using the midpoint time of the extremum (if the value persisted for >1 minute). <br />
 				Cumulative anomalies are reported according to the expected value for the month-to-date rather than month-end. <br />
-				Sun hrs, Wet hrs, Cloud cover and Events are based on manual equipment/observations; their reliablity is questionable and they
+				Sun hrs, Wet hrs, Cloud cover and Events are based on manual equipment/observations (entered with a delay of 1-10 days); their reliablity is questionable and they
 				are provided for interest only.</dd>
 			</dl>';
 	}

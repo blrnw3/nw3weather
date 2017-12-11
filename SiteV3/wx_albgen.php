@@ -33,7 +33,7 @@ echo "<h1>$title</h1>";
 
 if (!isset($_GET['view'])) {
 	echo '<p>', $albdescrip, '</p>';
-	echo '<p align="center"><b>Overview</b><br /><i>Click on thumbnail to jump to full-size image and show film-strip</i><br /><br />';
+	echo '<p align="center"><b>Overview</b><br /><i>Click on thumbnail to view full-size images, or <b><a href="albgen.php?view=Full">view full album</a></b></i><br /><br />';
 	for ($i = 1; $i <= $imgnum; $i++) {
 		echo '<a href="wx_albgen.php?view=Strip&img=', $i, '#start"><img src="', $imgref, $i, 's.jpg" width="200" alt="photo" title="', $imgdescrip[$i - 1], '" /></a><span style="color:white">\n</span>';
 		if ($i % 3 == 0) {
@@ -43,7 +43,7 @@ if (!isset($_GET['view'])) {
 	echo '</p><a href="wx7.php" title="Return to overview of photo galleries">Back to Photos</a><br />';
 } else {
 	if ($_GET['view'] == 'Full') { // All photos displayed
-		echo '<p>', $albdescrip, '</p><p align="center"><b>Overview</b><br /><i>Click on thumbnail to jump to full-size image</i><br /><br />';
+		echo '<p>', $albdescrip, '</p><p align="center"><b>Overview</b><br /><i>Click on thumbnail to jump to full-size image, or simply scroll</i><br /><br />';
 
 		for ($i = 1; $i <= $imgnum; $i++) {
 			echo '<a href="#pic', $i, '"><img src="', $imgref, $i, 's.jpg" width="220" alt="Photo..." title="', $imgdescrip[$i - 1], '" /></a><span style="color:white">\n</span>';

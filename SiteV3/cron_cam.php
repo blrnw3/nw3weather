@@ -44,7 +44,7 @@ if(date('H:i',time()-60) == $sunset) {
 	quick_log('cam_templog.txt', time() - filemtime($root.'sunsetcam.jpg') . ' sunsetcam age');
 }
 
-if(date('i') % 10 == 1) { //Groundcam saving
+if(date('i') % 2 == 1) { //Groundcam saving
 	$img = 'jpggroundcam.jpg';
 	$wsizen1 = filesize($root.$img);
 	usleep(500000);

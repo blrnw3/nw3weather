@@ -28,30 +28,79 @@
 	<h1>Site Blog and Weather Station news/updates</h1>
 
 	<table width="850">
-<tr id="post-20160917"><td>
-                <h2>More data downtime - Temperature & Humidity</h2>
-                <p>On 4th Sep the thermo/hygrometer (combined temperature and humidity sensor) failed. It had been suffering
-                a lot lately, but this time it really was dead, and my (proxy) efforts to revive it failed. I bought a new sensor
-                and my weather assistant kindly installed it for me (thanks, mum!). Temperature data was back after its longest 
-                absence in over 7 years running this weather station. Phew.
-                </p>
-                
-                <p>What a time to lose data though - on 13th Sep London recorded its hottest September day in 100 years!
-                The value from the proxy station I use was an impressive 32.2 C, which would be my 5th hottest ever.
-                Although the data is likely similar to what mine would have been, I can't say for sure, and
-                overnight temperatures are certainly a bit higher there (<a href="http://weather.casa.ucl.ac.uk">UCL</a>, Bloomsbury, central London).
-                </p>
-                
-                <p>Unfortunately the wind sensor is still broken and due to the difficulty of replacing that, I won't be.
-                However, I do want to continue running this station (remotely, with the help of my on-site assistant) for
-                as long as possible. I'm currently investigating other weather stations that might be more reliable,
-                and all being well I would like to have a new one installed by the end of 2017.</p>
-                <span style="color:gray;font-style:italic">Posted: 17th Sep 2016</span><br />
-        </td></tr>
+	<tr id="post-20170906"><td>
+		<h2>New weather station</h2>
+
+		<p>Aged 18, a near-penniless student with mounting debt, I opted for one of the cheaper models of personal weather stations - Oregon Scientific's WMR-200.
+			It was known to be a little unreliable, but the top-of-the-line brand was more than double the price.
+			Nevertheless, it served me well for the best part of seven years, and I had learned to tolerate its many quirks and
+			frequent issues maintaining connection to the wireless sensors. Leaving the UK in 2015 made things even more difficult,
+			as operating and maintaining an aging, unreliable piece of kit remotely proved challenging. My on-site assistant
+			was able to perform basic repair with over-the-phone instructions, but keeping everything running smoothly
+			proved impossible as the sensors started failing more frequently.
+			Well eight years later, a working man, I could finally afford that more expensive brand, so I bought a Davis Vantage Pro 2
+			personal weather station and scheduled a trip home to install it.
+		</p>
+		<p>It was long-overdue; two out of the three outdoor sensors had failed (wind in Feb '16 and rain in March '17), and the other (temperature/humidity)
+			having failed and been replaced a year ago. Last weekend I was finally able to completely replace the entire weather station before it collapsed completely.
+			After a few weeks of planning in July, I bought the new station and plotted a strategy for the two days
+			I would have to install it. The weather gods were largely on my side and produced a spell of dry weather on Sat and Sun,
+			enabling a successful and largely smooth installation (plus a full clean and repaint of the radiation shield).
+			By 9pm on Sunday 4th Sep 2017, the new station was operational
+			and sending data to this website, and the old, now crumbling station of nearly 9 years operation was discarded.
+		</p>
+		<p>This new hardware <i>should</i> be more reliable and offer more accurate data due to higher quality sensors
+			and a more advanced data transmission system. Key advantages over the old Oregon Scientific WMR-200 station:
+			<ul>
+				<li>Higher quality of sensors - ALL are better constructed so are more accurate and long-lasting. Particularly the barometer and wind sensor</li>
+				<li>More frequent updates (every 3-20s rather than 15-60s). This is especially important for wind speed so I anticipate being able to record higher wind gusts</li>
+				<li>More powerful, centralised transmitter (rather than having one in each sensor), will improve signal reliability.
+				The old sensors often suffered a drop-off in signal, and replacing the batteries in three separate sensors was a pain.
+				The one watch-out with the new sensors is the cables (which link to the central transmitter), as although weather-proof, are a new source of potential	failure.</li>
+			</ul>
+		</p>
+		<p>Finally I'd like to thank my weather assistant for her years of help, and ongoing support keeping the station operational.
+			Additional thanks to my sisters for helping with the installation and tolerating the flies &amp; spiders crawling around the old sensors.
+			I'm also grateful to my aunt for lending me tools essential to completing the job.
+		</p>
+		<p>Special thanks are due to the owners of the weather stations I used for wind, rain, and sometimes temperature data whilst my own
+			sensors were failing me: <a href="http://www.harpendenweather.co.uk">Harpenden weather</a>,
+			<a href='http://weather.casa.ucl.ac.uk'>UCL casa</a>, and <a href='http://weather.bencook.net/'>N16 weather</a>.
+		</p>
+		<p>Photos of the installation process and of the new weather station are in a <a href="/wx_albgen.php?albnum=6&view=Full"> new photo album</a>. Favourites below:<br /><br />
+			<img src="/photos/wx_replace/3s.jpg" width="385" alt="Old sensors" title="Old Sensors" />
+			<img src="/photos/wx_replace/1s.jpg" width="420" alt="New Sensors" title="New Sensors" />
+			<img src="/photos/wx_replace/16.jpg" width="370" alt="dismantling pole" title="Replacing the old wind sensor" />
+			<img src="/photos/wx_replace/15.jpg" width="480" alt="new wx stn" title="New weather station" />
+		</p>
+		<a href="/wx_albgen.php?albnum=6&view=Full">Full album</a>
+
+		<p><span style="color:gray;font-style:italic">Posted: 6th Sep 2017</span></p>
+    </td></tr>
+	<tr id="post-20160917"><td>
+		<h2>More data downtime - Temperature & Humidity</h2>
+		<p>On 4th Sep the thermo/hygrometer (combined temperature and humidity sensor) failed. It had been suffering
+		a lot lately, but this time it really was dead, and my (proxy) efforts to revive it failed. I bought a new sensor
+		and my weather assistant kindly installed it for me (thanks, mum!). Temperature data was back after its longest
+		absence in over 7 years running this weather station. Phew.
+		</p>
+
+		<p>What a time to lose data though - on 13th Sep London recorded its hottest September day in 100 years!
+		The value from the proxy station I use was an impressive 32.2 C, which would be my 5th hottest ever.
+		Although the data is likely similar to what mine would have been, I can't say for sure, and
+		overnight temperatures are certainly a bit higher there (<a href="http://weather.casa.ucl.ac.uk">UCL</a>, Bloomsbury, central London).
+		</p>
+
+		<p>Unfortunately the wind sensor is still broken and due to the difficulty of replacing that, I won't be.
+		However, I do want to continue running this station (remotely, with the help of my on-site assistant) for
+		as long as possible. I'm currently investigating other weather stations that might be more reliable,
+		and all being well I would like to have a new one installed by the end of 2017.</p>
+		<span style="color:gray;font-style:italic">Posted: 17th Sep 2016</span><br />
+    </td></tr>
 	<tr id="post-20160415"><td>
 		<h2>Recent live data downtime</h2>
 		<p>As promised, moving abroad brought with it the risk of increased data downtime for the weather station left behind.
-		Just three months after leaving, the wind sensor stopped reporting on the 11th Feb, so I began to serve up data from 
+		Just three months after leaving, the wind sensor stopped reporting on the 11th Feb, so I began to serve up data from
 		<a href="http://www.harpendenweather.co.uk">Harpenden Weather</a>, a nearby weather station with good wind data
 		(wind speeds don't vary much across 50 miles or so).
 		</p>
@@ -90,7 +139,7 @@
 		Furthermore, I have just replaced the batteries in all sensors to reduce the chance of them dying before my next trip back.
 		Nevertheless the others are a very real possibility, especially now that the station is quite old (I've been talking about replacing it for years).
 		</p>
-		
+
 		<p>The other impact of my departure is that I won't be around to experience the London weather and report on a number of things which require manual observation rather than automated sensors.
 		<br />These are:
 		<ul>
@@ -100,7 +149,7 @@
 		</ul>
 		I will have to rely on family and friends left in the UK, as well as official weather reports, to help me fill in these details, plus any loyal fans out there!
 		</p>
-		
+
 		<p>
 		Despite my absence, however, I fully expect to be able to run the weather station in much the same way as I did whilst I lived here.
 		After all, when I first set it up I was often away from London for months at a time whilst studying at university. <br />
@@ -116,7 +165,7 @@
 		<p>
 			After experimenting with various ways of sharing interesting stats about the weather that this
 			station records, I've decided for now that using Twitter is the best way. It is easy to reach a
-			wide audience and very easy to post text updates and photos. I plan to use it for sharing both stats 
+			wide audience and very easy to post text updates and photos. I plan to use it for sharing both stats
 			("today was the warmest in 18 months") and station issues ("webcam not working"). Also photos I hope.
 			I'm not convinced by the 140 character limit, which I generally find annoying as I have to resort to
 			trimming short what I want to say or reverting to text speak or poor grammar. However, I will try it out. <br />

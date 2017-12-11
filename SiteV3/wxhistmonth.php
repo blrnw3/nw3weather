@@ -317,7 +317,7 @@ if($sproc1 < mkdate($dmonth,$dday+1,$dyear) && $sproc > mkdate(2,0,2009) && !$to
 	}
 	table_end();
 	echo '<p><b>NB: </b>Hover over a value to view the date it was recorded. <br />
-			 &nbsp;&nbsp;&nbsp; Sun hrs, Wet hrs, Cloud cover and Events are based on manual equipment/observations.
+			 &nbsp;&nbsp;&nbsp; Sun hrs, Wet hrs, Cloud cover and Events are based on manual equipment/observations  (entered with a delay of 1-10 days).
 			Consequently, their reliablity is questionable and they &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; are provided for interest only.</p>';
 
 	//Monthly specials

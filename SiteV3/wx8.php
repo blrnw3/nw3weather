@@ -125,13 +125,12 @@ class Traffic {
 			'max_date' => '01 Jul'
 		],
 		2016 => [
-			'sum' => 64000,
-			'TO' => "24 Sep",
-			'mean' => 237,
-			'median' => 217,
-			'min' => 128,
+			'sum' => 85000,
+			'mean' => 232,
+			'median' => 213,
+			'min' => 121,
 			'max' => 813,
-			'min_date' => '13 Aug',
+			'min_date' => '25 Dec',
 			'max_date' => '23 Jun'
 		]
 	];
@@ -167,16 +166,15 @@ class Traffic {
 
 	<h3>Technical</h3>
 	<p>
-		I am operating an Oregon Scientific WMR-200 and using Weather Display software to collect the data in real time from the sensors,
-		which is then broadcast to this website. Each sensor polls for data every 15-60s, and is available live on nw3weather with a delay of approx 5s, though
-		aggregation-type data (e.g. daily mean, monthly max, graphs) is only calculated every 1-5 minutes. At midnight, daily aggregation data is saved to the
+		I am operating a Davis Vantage Pro 2 and using Weather Display software to collect the data in real time from the sensors,
+		which is then broadcast to this website. Each sensor polls for data every 3-20s, and is available live on nw3weather with a delay of approx 5s, with
+		aggregated data (e.g. daily mean, monthly max, graphs) calculated every 1-5 minutes. At midnight, daily aggregations of the data are saved to the
 		permanent historical data-sets.
 	</p>
 	<p>
 		It is, however, important to note that these various updates will not always be carried out due to the large number of
 		potential failure nodes in the system - sensors (power, wireless signal), local PC (HDD failure, software crash, internet connection),
-		and the web server. The most frequent cause of downtime is local internet connection loss, when live updates cannot be sent to the remote web server.
-		I have been lucky not to suffer any serious hardware failures (most failures result in no physical data loss), but undoubtedly the time will come.<br />
+		and the web server. I have been lucky not to suffer any serious hardware failures (most failures result in no physical data loss), but undoubtedly the time will come.<br />
 		The current uptime status can view on the <a href="wx15.php">system page</a>.
 	</p>
 
@@ -201,32 +199,34 @@ class Traffic {
 	<a name="location"></a>
 	<h2>Location</h2>
 	<p>
-		NW3 weather station is situated on the south-eastern edge of London's Hampstead Heath, a 790 acre ancient park just a few miles north of central London.
-		<a href="http://hampsteadheath.net/" title="External Link">View more information about The Heath.</a><br />
-		Nearby areas include Hampstead village to the North-West, Highgate to the North, Belsize Park to the South-West, and Kentish Town to the South East.</p>
+		The nw3weather station is situated on the south-eastern edge of London's Hampstead Heath, a
+		<a href="http://hampsteadheath.net/" title="External Link">790 acre ancient park</a> just a few miles north of central London.<br />
+		Nearby areas include Hampstead village to the North-West, Highgate to the North, Belsize Park to the South-West, and Kentish Town to the SE.</p>
 	<div id="map" style="width: 500px; height: 300px">
 		<noscript>Javascript required to display map<br /></noscript>
 		Google maps placeholder
 	</div>
-	<p>The station co-ordinates are approx. 51.556, -0.155, which is ~55m (190ft) above mean sea level.</p>
+	<p>The station co-ordinates are approx. 51.556, -0.155, which is ~57m (195ft) above mean sea level.</p>
 
 	<h2>Setup</h2>
 	The station comprises several sensors:
 	<ul>
 		<li>A combined thermometer/hygrometer housed in a home-built Stevenson Screen (a radiation shield)</li>
 		<li>A combined anemometer &amp; wind vane, located atop a 6m pole attached to the chimney of the house</li>
-		<li>A self-tipping rain gauge modified to a resolution of 0.2mm, which is attached to the roof of the Stevenson Screen</li>
+		<li>A self-tipping rain gauge with a tip resolution of 0.2mm, which is attached to the roof of the Stevenson Screen</li>
 		<li>A barometer integrated into the receiving unit (indoors).</li>
 	</ul>
 	<?php
 		img("/photos/wxstn/box.jpg", "Thermo/Hygro and Rain Gauge", 0.2, "Thermo/Hygro in radiation shield, Rain Gauge on top", 430, 338);
 		img("/static-images/P1010074.JPG", "Wind Sensors", 0.2, "Anemometer &amp; Wind Vane on top of pole", 394, 338);
-		echo '<p>All the sensors are automatic and send data wirelessly to the receiving unit every 14-60s.</p>';
+		echo '<p>The external sensors are wired to a solar-powered transmission unit (which sits atop the radiation shield box).
+			This wirelessly transmits the data from all sensors to the internal console every few seconds.
+			Battery-backup and a data-logger ensure continuous operation</p>';
 		img("/static-images/PICT2516.JPG", "Thermo/Hygro close-up", 0.2, "Thermo/Hygro close-up inside radiation shield", 420, 315);
 		img("/static-images/P1010076.JPG", "Wind Sensors close-up", 0.2, "Wind Sensors close-up", 420, 315);
 	?>
 	<p><a href="./wx7.php#wx-albums">Weather station albums</a> are also available,
-		with more complete and detailed pictures of past and present setups.</p>
+		with more complete and detailed pictures of past and present setups (note that the above pics are of a previous station).</p>
 <!--		<a href='/static-images/P1010070.JPG' title='Enlarge'>
 			<img src='/static-images/P1010070.JPG' alt='Thermo/Hygro and Rain Gauge' width='430' height='338' title='Thermo/Hygro in radiation shield, Rain Gauge on top'   />
 		</a>
@@ -261,6 +261,10 @@ class Traffic {
 	<p>
 		The sky-facing webcam (Logitech C300) was added to the station on 1st August 2010; The ground-facing one on 19th December 2010.
 	</p>
+	<p> In 2016 the original Oregon Scientific WMR-200 sensors began to fail due to age.
+		In Feb '16 the wind sensor failed, followed by the T/H sensor in Sept '16 (replaced a month later),	and the rain sensor in March '17.
+		In Sept '17 I therefore <a href="./news.php#post-20170906" title="Full details in blog post">replaced the entire station</a> with a Davis VP2, a better model.
+	</p>
 
 	<h3>Technical history</h3>
 	<ul>
@@ -274,6 +278,7 @@ class Traffic {
 		<li type="disc">A manual rain gauge <a href="./news.php#post-20120107" title="Details in blog post">was installed</a> on 4th September 2011 - this is for the verification and calibration of the automatic gauge data. </li>
 		<li type="disc">The automatic rain gauge was <a href="./news.php#post-20140330" title="Full details in blog post">further modified</a> on 30th March 2014 to a new resolution of 0.18 mm. </li>
 		<li type="disc">The base and roof of the radiation shield <a href="./news.php#post-20140330" title="Full details in blog post">were replaced</a> on 30th March 2014 owing to decay of the originals. </li>
+		<li type="disc">The entire weather station <a href="./news.php#post-20170906" title="Full details in blog post">was replaced</a> on 5th September 2017 due to failure of the original. </li>
 	</ul>
 
 
@@ -331,11 +336,11 @@ class Traffic {
 
 	<p>
 		<b><a href="/oldSites/sitev0">Site version 0</a></b> (pre-nw3weather, Aug 2009 - Sep 2010). <br />
-		Was a bit of a joke, really. It was simply a webpage pre-generated by Weather Display and hosted on
-		a rubbish (but free) web server. I only set it up so I could view my data away from home.
+		Embarrassing. It was simply a webpage pre-generated by Weather Display and hosted on
+		a free, ad-ridden web server. I only set it up so I could view my data away from home.
 	</p>
 
-	<h3>Site Traffic</h3>
+	<h3 id="site-traffic">Site Traffic</h3>
 	These figures are approximations based on my site logs, and are for interest only. Figures for 2011 are from 01 Sep onwards.
 
 
@@ -390,6 +395,7 @@ $traffic->prepare_annual_data_table();
 	<p>
 		Thanks go to TNET weather and Wildwood Weather for script ideas which helped in the development of the historical data tables.<br />
 		Thanks also to carterlake for CSS and HTML templates that I used in nw3weather's early years (pre-2013).<br />
+		Special thanks to my weather assistant Juliet, and the various other family members who have helped keep the station running over the years<br />
 		Finally, enormous thanks to any frequent visitors, and especially those have contacted me with kind words -
 		I really appreciate this as it makes all the effort and resources I devote to building and maintaining this website especially worthwhile.
 	</p>
@@ -401,12 +407,12 @@ $traffic->prepare_annual_data_table();
 		The accuracy of the local forecast on the home page is considered to be low, since it is based entirely on pressure
 		trends - falling pressure means cloud, and if it continues to fall, then rain;
 		rising pressure signals sunny intervals then clear conditions. This is obviously very simplistic. The forecasting
-		done by national meteorological offices requires the amassing of a huge amount of data from observation sites on land,
+		done by national meteorological offices requires the amassing of a huge amount of data from observation sites on land (like this one),
 		on the sea, in the air and even from satellites in space. The data is then fed through supercomputers running numerical models
 		that aim to simulate extremely complex atmospheric processes.
 		The model outputs then need processing and interpreting before a forecast is produced.
 		The whole operation costs many millions of pounds to set up and run. Barometric prediction, on the other hand, is very cheap but has
-		severe limitations: it cannot offer regional guidance, it is only relevant for the next ~24 hours, and it breaks down
+		severe limitations: it cannot offer regional guidance, it is only relevant for the next ~24-48 hours, and it breaks down
 		completely in more complex atmospheric set-ups.
 	</p>
 
@@ -431,7 +437,7 @@ $traffic->prepare_annual_data_table();
 		I am happy to share my raw data files with anyone who <a href='contact.php'>requests</a> them from me.
 		I can provide most data from Jan 2009, and temperature data from March 2008, at minutely or greater intervals, in CSV format.
 		Additionally I am happy to answer questions and provide analysis of this data to individuals or groups with non-commercial interests.
-		However, due to limited resources, I cannot provide extensive or repeated analysis, and you should seek professional guidance (from the Met Office, probably).
+		However, due to limited resources, I cannot provide extensive or repeated analysis; for this you should seek professional guidance (from the Met Office, probably).
 	</p>
 
 	<h3>Rain Gauge - Trace Rain, and Snowfall</h3>
@@ -456,12 +462,11 @@ $traffic->prepare_annual_data_table();
 	<p>
 		I am a weather fanatic with a particular interest in data analysis,
 		and have been since around 2007 when I first started to collect data (in Excel) from a very basic weather station I had.
-		I enjoy any weather which is interesting from a data point-of-view - whether that be extreme cold, heat or snow -
-		though I always appreciate convective events (storms, hail and heavy showers) - uncommon though these are in London.
+		I enjoy extremes of weather, whether that be cold, heat, rain, dry, sun, cloud, snow, storms, hail, heavy showers, sleet, fog...
 	</p>
 	<p>
-		My academic background is in Physics and Computer Science, both of which I was largely motivated to study by my love of the weather.<br />
-		I currently live and work in New York, having <a href="/news.php#post-20151107">moved here</a> from London in late 2015. Weather is my main hobby.
+		I studied Physics and Computer Science, both of which I was largely motivated to study by my love of the weather, and
+		currently live and work in New York, having <a href="/news.php#post-20151107">moved here</a> from London in late 2015.
 	</p>
 	<p>
 		For more insight into the world of a weather hobbyist,

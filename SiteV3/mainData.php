@@ -53,16 +53,29 @@ $maxgstToday = $NOW['max']['gust'];
 $maxavgToday = $maxavgspd;
 
 // No wind data - use Harpenden wind data from their clientraw (cached by cron_main)
-$NO_WIND_DATA = true;
+$NO_WIND_DATA = false;
 if($NO_WIND_DATA) {
 	$extClient = file(ROOT.'EXTclientraw.txt');
-	$extOffset = 1.4; // 0.91; //1.3 - tott;
+	$extOffset = 0.91; // 0.91; //1.3 - tott;
 	$extData = explode(" ", $extClient[0]);
 	$wind = $extData[1] * $kntsToMph * $extOffset;
 	$gust = $extData[140] * $kntsToMph * $extOffset; //actually the max 1-min gust
 	$gustRaw = $extData[2] * $kntsToMph * $extOffset; //true 14s gust
 	$w10m = $extData[158] * $kntsToMph * $extOffset;
 	$wdir = $extData[3];
+
+	$feel = feelsLike($temp, $gust, $dewp);
+	$maxavgToday = $NOW['max']['wind'];
+}
+if(false && $extData[3] === "101") { // CASA rules whilst Harpenden is down ;(
+	$extClient = file(ROOT.'EXTclientraw2.txt');
+	$extOffset = 0.95; // 0.91; //1.3 - tott;
+	$extData = explode(" ", $extClient[0]);
+	$wind = $extData[5] * $extOffset;
+	$gust = $extData[6] * $extOffset;
+	$gustRaw = $extData[6] * $extOffset;
+	$w10m = $extData[5] * $extOffset;
+	$wdir = $extData[7];
 
 	$feel = feelsLike($temp, $gust, $dewp);
 	$maxavgToday = $NOW['max']['wind'];
@@ -86,11 +99,19 @@ if(false && $temp == 16.9) {
 	$feel = feelsLike($temp, $gust, $dewp);
 }
 
-if(true && $rain == 0 && date("Hi") > "0009") {
+if(false && $rain == 0 && date("Hi") > "0009") {
 	// Casa rain
 	$extClient2 = file(ROOT.'EXTclientraw2.txt');
 	$extData2 = explode(" ", $extClient2[0]);
 	$rain = $extData2[9];
 }
+
+if(false && $rain == 0 && date("Hi") > "0009") {
+	// Bencook/brixton rain
+	$extClient2 = file(ROOT.'EXTclientraw2.txt');
+	$extData2 = explode(" ", $extClient2[0]);
+	$rain = $extData2[7];
+}
+
 
 ?>

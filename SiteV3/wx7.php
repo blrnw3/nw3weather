@@ -20,7 +20,7 @@ for ($i = count($mains)-1; $i >= 0; $i--) {
 		echo '<tr valign="top" align="center">';
 	}
 	echo '<td align="center">
-			<a href="albgen.php?albnum='. ($i+1) .'" title="Click to view full album">
+			<a href="albgen.php?albnum='. ($i+1) .'&view=Full" title="Click to view full album">
 				<img src="/photos/'. $refs[$i] . $mains[$i] .'s.JPG" alt="preview photo" width="200" height="150" border="1" />
 			</a>
 			<br />
@@ -42,14 +42,11 @@ table('', null, 5, true, 5);
 
 $cnt = 0;
 for ($i = count($wx_mains)-1; $i >= 0; $i--) {
-	if($i === 2 && !$me) {
-		continue; // Skip the 'ageing' album
-	}
 	if($cnt % 4 === 0) {
 		echo '<tr valign="top" align="center">';
 	}
 	echo '<td align="center">
-			<a href="wx_albgen.php?albnum='. ($i+1) .'" title="Click to view full album">
+			<a href="wx_albgen.php?albnum='. ($i+1) .'&view=Full" title="Click to view full album">
 				<img src="/photos/'. $wx_refs[$i] .'/'. $wx_mains[$i] .'s.jpg" alt="preview photo" width="200" height="150" border="1" />
 			</a>
 			<br />

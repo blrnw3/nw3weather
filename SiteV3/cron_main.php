@@ -37,7 +37,7 @@ $recentWDdowntime = time() - filemtime(ROOT. "Logs/WDuploadReallyBad.txt") < 120
 if($tstamp != '0000' && (date('i') % 10 == 0 || $recentWDdowntime)) {
 	$fsize = filesize(ROOT.'customtextout.txt');
 	$fage = time() - filemtime(ROOT.'customtextout.txt');
-	if($fsize > 50000 && $fsize < 99000) { //probably valid
+	if($fsize > 63000 && $fsize < 75000) { //probably valid
 		if($fage < 60) { // probably new
 			copy($goodlog, $goodlog_backup);
 			logneatenandrepair();
@@ -231,9 +231,11 @@ if($NO_WIND_DATA) {
 		quick_log("HarpendenBadData.txt", $harpendenData[0]);
 	}
 }
-$no_thr_data = true;
+$no_thr_data = false;
 if($no_thr_data) {
-	$path2 = "http://weather.casa.ucl.ac.uk/realtime.txt";
+	//$path2 = "http://weather.casa.ucl.ac.uk/realtime.txt";
+	//$path2 = "http://www.lambethmeters.co.uk/weather/clientraw.txt";
+	$path2 = "http://weather.bencook.net/clientraw.txt";
 	//$path2 = "http://www.jon00.me.uk/clientraw.txt";
 	//$path2 = "http://www.snglinks.com/wx/spiel/clientraw.txt";
 	$casaData = urlToArray($path2);
@@ -292,15 +294,6 @@ if($tstamp == '0621' && $dday == 1) {
 			unlink(ROOT.$fileToDelete);
 			log_events("WDfilesDeleted.txt", $fileToDelete);
 		}
-	}
-}
-
-//check that datamod was done
-if($tstamp == '2137') {
-	$datamod_last = filemtime(ROOT."dat" . $yr_yest . ".csv");
-	if(time() - $datamod_last > 66666) {
-		$last_done = date('H:i d M Y', $datamod_last);
-		log_events("Datamod_not_done.txt","Alert! Not done since $last_done. Act NOW!");
 	}
 }
 
@@ -402,7 +395,7 @@ function logneatenandrepair() {
 	// T/H/Dew: 6, 7, 9
 	// Baro: 8
 	// Rain: 10
-	$FIELDS_TO_PRESERVE = [3, 4, 5];
+	$FIELDS_TO_PRESERVE = [3, 4, 5, 6, 7, 8, 9, 10];
 
 	if($FIELDS_TO_PRESERVE) {
 		$live_data = file($goodlog);

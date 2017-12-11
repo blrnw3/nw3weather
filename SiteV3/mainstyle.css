@@ -304,6 +304,10 @@ select {
 	color: black;
 	background-color: rgb(233,232,225);
 }
+.rowdarkmain {
+	color: black;
+	background-color: rgba(233,233,233,0.4);
+}
 .rowlight {
 	color: black;
 	background-color: white;
@@ -324,8 +328,9 @@ select {
 }
 
 .table2 {
-	border: ridge 6px #2E9D30;
-	text-align: left;
+    border: solid 1px #2E9D30;
+    text-align: left;
+    padding: 2px 9px;
 }
 
 .table1 {
@@ -466,6 +471,12 @@ select {
 }
 .aboutTbl td:first-child {
 	font-weight: bold;
+}
+
+#main a.hidden-link {
+	text-decoration: none;
+	color: inherit;
+	padding: 0.3em;
 }
 
 /******************Footer***************************/

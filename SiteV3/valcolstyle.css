@@ -129,7 +129,7 @@
 
 .invalid {
 	background-color: #a6abad;
-	color: #a6abad;
+	color: transparent;
 	border: 1px solid #6C8288;
 }
 

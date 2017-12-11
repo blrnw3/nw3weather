@@ -20,8 +20,10 @@
 //<b>Update, 11pm 15 Feb:</b> The sensor is not repairable for the foreseeable future (probably not until mid-2017). In its long absence, wind data is being served from a nearby weather station, <a href="http://www.harpendenweather.co.uk">Harpenden weather</a>. All other sensors are currently working fine';
 //$statusMessage = '<p><b>UPDATE 9pm 14th Apr: nw3weather is back! Updates to follow.</b><br /><b>'. date('d M: ', mktime(6,52,0,4,12,2016)) . '</b>'. 'All sensors are currently not functioning. No live data is available.<br />Meantime, data is being served from nearby weather stations, <a href="http://www.harpendenweather.co.uk">Harpenden weather</a> for wind  <a href="http://weather.casa.ucl.ac.uk">UCL casa</a>data, and <a href="http://weather.casa.ucl.ac.uk">UCL casa</a> for the rest.</p>';
 //$statusMessage = '<b>15th Apr</b>: ALL sensors at nw3weather are now reporting correctly. <a href="news.php">Read more about the downtime</a>';
-$showMessage = ($file == 13);
-$isBad = true;
+//$statusMessage = '<b>5th Sep 2017, New weather station</b>: <a href="/news.php" title="Read more">Data is now coming from the new sensors I installed on 4th Sep</a>. Enjoy. <a href="/wx_albgen.php?albnum=6&view=Full">See photos</a>';
+
+$showMessage = false;
+$isBad = false;
 // echo "<div class='statusBox info'><b>10am, Mon 16th May</b>: The thermo/hygro sensor is functioning again</div>";
 //echo "<div class='statusBox warning' style='background-color: #fc5;'>nw3weather is undergoing server maintenance this weekend. The site may be down for several hours at a minimum. <br />I am moving from a shared hosted solution to a cheaper, more powerful and more flexible cloud VM host</div>";
 //echo "<div class='statusBox info'><b>10pm, 8th May</b>: Server maintenance has completed successfully.<br />I have moved from a shared hosting solution to a cheaper, more powerful and more flexible cloud VM host<br /><a href='/contact.php'>Please do report any issues that may have resulted from this</a></div>";
@@ -30,6 +32,10 @@ $isBad = true;
 if($showMessage) {
 	showStatusDiv($statusMessage, $isBad);
 }
+//echo "<div class='statusBox info' style=''><b>Weather station replacement</b>: This weekend I am replacing the weather station with an entirely new one, a Davis VP2. This will improve reliabilty and data quality. Note well that during the upgrade, data may not be accurate.<br /><b>UPDATE 9pm Sunday</b>: Data from the new weather station is now LIVE. Enjoy. <br />I will post pics of the process and of the new hardware tomorrowish.</div>";
+//if ($file == 13) echo "<div class='statusBox warning'><b>Broken sensor</b>: As of 8th Feb 2016 the wind sensor is broken. In its long absence, wind data is being served from a nearby weather station, <a href='http://www.harpendenweather.co.uk'>Harpenden weather</a>.</div>";
+# if ($file == 12) echo "<div class='statusBox warning'><b>Phantom rain</b>: The rain sensor appears to be intermittently misreporting rainfall. These phantom readings started in Jan '17 and appear to be getting worse. I will correct any misreadings as soon as I spot them.</div>";
+//if ($file == 12) echo "<div class='statusBox warning'><b>Broken sensor</b>: The rain sensor has ceased to function as of approx 12 March. I aim to replace it in September. Meantime, data is served from nearby Bloomsbury, courtesy of <a href='http://weather.casa.ucl.ac.uk'>UCL casa</a>.</div>";
 
 //function depth($depth) { global $unitT; if($unitT == 'F') { $depth = round($depth/2.54).'</b> in.'; } else { $depth .= '</b> cm'; } return $depth; }
 

@@ -42,7 +42,11 @@ for($i = 0; $i < 10; $i++) {
 	echo vidlink($i);
 }
 
+
 if(isset($_GET['dtm'])) { $dtm = $_GET['dtm']; } else { $dtm = 1; }
+
+
+echo "<br />Camlink: <a href='/highreswebcam.php?camtype=sky&light=day&width=6&freq=10'>Highres cam for today</a>";
 
 //If less than sunhrs scrape time... WARN
 if(date('Hi') < $sunGrabTime) {
@@ -56,16 +60,6 @@ echo '<br /><a href="http://www.wunderground.com/history/airport/EGLC/',
 
 echo 'datt size in B: ', filesize($fullpath."datt" . date('Y',mktime(1,1,1,date('n'),date('j')-$dtm,date('Y'))) . ".csv"), '<br />';
 if(!isset($_POST['pwd'])) {
-	$wufil = urlToArray('http://www.wunderground.com/history/airport/EGLC/' . date('Y/n/d',mktime(1,1,1,date('n'),date('d')-$dtm)) . '/DailyHistory.html?format=1');
-	$eglc_pmax = 1; $eglc_pmin = 1100;
-	for($i = 1; $i < count($wufil); $i++) {
-		$eglc = explode(',', $wufil[$i]);
-		$eglc_p = intval($eglc[4]);
-		if($eglc_p > $eglc_pmax) { $eglc_pmax = $eglc_p; }
-		if($eglc_p < $eglc_pmin && $eglc_p > 9) { $eglc_pmin = $eglc_p; }
-	}
-	echo $wufil ? ($eglc_pmax .' '. $eglc_pmin) : 'Timeout';
-
 	$sun = file(ROOT.'maxsun.csv');
 	echo '<br />Max sun for this day: ', $sun[date('z',mkdate(date('n'),date('j')-$dtm, date('Y')))], ' hours';
 }
@@ -88,7 +82,10 @@ for($i = count($moddatam)-1; $i >= 0; $i--) {
 		$missing[] = count($moddatam) - $i;
 	}
 }
-echo '<br />Missing days (dtm): '. implode(', ', $missing);
+echo '<br />Missing days (dtm): ';
+foreach($missing as $m) {
+	echo "<a href='/datamod.php?dtm=$m'>$m</a>, ";
+}
 
 if(isset($_POST['pwd'])) {
 	if($_POST['pwd'] == 'datachanges') {
@@ -197,7 +194,7 @@ echo '</table><br />
 		echo '<h3>FAIL GRAPH SMALL!</h3>';
 	}
 
-	
+
 function vidlink($offset) {
 	global $dmonth, $dday, $dyear;
 	$dt = date("Ymd", mkdate($dmonth,$dday-$offset,$dyear));

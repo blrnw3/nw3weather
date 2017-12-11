@@ -1,4 +1,5 @@
 <?php require('unit-select.php');
+		include $rareTags;
 	$file = 1;
 
 	require_once 'functions.php';
@@ -167,7 +168,7 @@ function pause() {
 
 <div>
 <table width="99%" cellpadding="2" cellspacing="0" align="center" border="0" rules="none">
-<tr class="rowdark">
+<tr class="rowdarkmain">
 <td width="25%" align="center"><b><span style="color:#610B0B">Weather Report</span></b>
 <br /><br /><?php //decode WD cond, using metar too
 $rnrt = $HR24['misc']['rnrate'];
@@ -261,9 +262,9 @@ echo '<img '.$click.'id="graph1" src="'.$img1.'&amp;currid='. time().'" alt="Las
 </td>
 </tr>
 
-<tr class="rowdark">
+<tr class="rowdarkmain">
 <td><span style="color:rgb(243,242,235)">-</span></td></tr>
-<tr class="rowdark">
+<tr class="rowdarkmain">
 <td align="center"><b><span style="color:#6A4EC6">Local Forecast</span></b>
 <br /><br />
 <?php
@@ -289,11 +290,11 @@ echo '<img src="/static-images/'.$icon.'_lg.png" style="background-color:#CCCEEC
 <a href="wx5.php" title="5-Day Local Forecast and Maps">Full forecast</a></td></tr>
 
 <tr class="rowlight">
-<td colspan="3" align="center"><table align="center" class="table2" width="97%"><tr class="rowlight">
+<td colspan="3" align="center"><table align="center" class="table2" width="100%"><tr class="rowlight">
 <td><b>NW3 Weather</b> is a meteorological observation site located near Hampstead, in North London, UK. <br />
-The site was established with an automatic, server-linked personal weather station in July 2010 and runs continuously.
-<br />Live data is updated at least once a minute, graphs and other data every 5 minutes.
-More info can be found on the <a href="wx8.php" title="Detailed station and website information">About</a> page.</td></tr>
+	The site was established with an <a href="wx8.php" title="Detailed station and website information">automatic personal weather station</a>
+	in July 2010 and runs continuously, with updates at least every 60s.
+</td></tr>
 </table></td></tr>
 </table>
 
@@ -305,10 +306,19 @@ More info can be found on the <a href="wx8.php" title="Detailed station and webs
 
 	<noscript><p><b>Warning:</b> Javascript must be enabled for live updates to function</p></noscript>
 </div>
-
 <span id="pauser" style="color:#3a5;" onclick="pause();">
 	Pause live updates
 </span>
+<p>Live pressure-based <a href="/wx5.php" title="View detailed forecasts">forecast</a>: <?php echo $vpforecasttext; ?></p>
+
+<!--
+<h1 id="2016-review">2016 Weather Report</h1>
+<p style="margin-bottom: 0.5em;" id="report-2016">
+</p>
+<span style="color:#555; font-size: 90%">
+	Updated: 1st Jan 2017
+</span>
+-->
 
 <h1>Latest Monthly Weather Report</h1>
 <?php
@@ -326,7 +336,7 @@ displayMonthlyReport($repMonth, $repYear);
 		Tweets by @nw3weather
 	</a>
 	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
-          
+
 </div>
 
 <p style="margin-top: 2em;">This weather station has been recording data for

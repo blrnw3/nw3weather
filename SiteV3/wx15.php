@@ -67,11 +67,12 @@
 
 	$freemem = ($freememory < 0) ? (4000 + $freememory) : $freememory;
 	$measures = array('<acronym title="Weather Display - the data collection software used">WD</acronym> Version &amp; Build #',
-		'WD Start Time', 'WD Data Count', 'WD Memory Use', '---', 'Windows Uptime', 'Free System Memory', '---', 'Station Altitude',
-		'Station Latitude', 'Station Longitude');
+		'WD Start Time', 'WD Data Count', 'WD Memory Use', '---', 'Windows Uptime', 'Free System Memory', '---',
+		'<acronym title="Davis Vantage Pro2 - the weather station model">VP2</acronym> console battery',
+		'<acronym title="packets received, packets missed, resynchs, best packet run, CRC errors">VP2 reception</acronym>', 'VP2 transmitter status');
 	$values = array($wdversion .' - '. $wdbuild,
-		$startimedate, $datareceivedcount, $memoryused, '---', $windowsuptime, str_replace("MB", " MB", $freemem) .' (Max: 4GB)', '---', '57 m (187 ft)',
-		$lat, $lng);
+		$startimedate, $datareceivedcount, $memoryused, '---', $windowsuptime, $freemem .' (Max: 4GB)', '---',
+		$vpconsolebattery, $vpreception2 .' ('. $vpreception .')', $vpissstatus);
 
 	table(null, '53%" align="left', 5);
 	tableHead("Local System and Site Information", 2);
@@ -119,7 +120,7 @@
 ?>
 
 <br />
-Site owner and administrator: Ben Lee-Rodgers (2010 - present)
+Site owner and administrator: Ben Lee-Rodgers (2010 - 2015), Ben Masschelein-Rodgers (2015-)
 <hr />
 
 <div align="center">
@@ -139,6 +140,9 @@ Site owner and administrator: Ben Lee-Rodgers (2010 - present)
 <img src="/hidden.gif" title="Latest Screenshot of Weather Display Program" alt="not available" />
 
 </div>
+<p>
+	Storm Rain: <?php echo $vpstormrain; ?> (<?php echo $vpstormrainstart; ?>)
+</p>
 </div>
 
 <!-- ##### Footer ##### -->

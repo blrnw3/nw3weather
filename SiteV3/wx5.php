@@ -1,4 +1,5 @@
-<?php require('unit-select.php'); ?>
+<?php require('unit-select.php');
+		include $rareTags; ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -34,9 +35,8 @@ $file = 5;
 	<p><b>NB:</b> NW3 is an observation site, which means it cannot provide detailed forecasts and therefore uses those that are externally produced.<br />
 		Proper forecasting relies on running sophisticated computer models using data from a wide array of sources, including land-based observations sites like this one.
 		A full discussion of this can be found <a href="wx8.php#Forecasting" title="Found on the about page">here</a>. </p>
-
 	<p>
-		<a href="/CP_Solutions/WxApp/?desktop">View Live Ranked weather data for Europe</a>
+		Simplistic, local, live pressure-based forecast: <?php echo $vpforecasttext; ?>
 	</p>
 
 	<table cellpadding="5" border="0" width="99%" align="center">
@@ -87,7 +87,7 @@ $file = 5;
 	<br /><br />
 
 	<h2>Surface Pressure Chart</h2>
-	<img src="http://www.metoffice.gov.uk/weather/charts/FSXX00T_00.jpg" alt="fax" title="Surface pressure analysis chart from the Met Office" />
+	<img src="http://www.weathercharts.net/noaa_ukmo_prognosis/PPVE89.gif" alt="fax" title="Surface pressure analysis chart from the Met Office" />
 	<i>Source: UK Met Office</i>
 
 	<br />
@@ -96,29 +96,19 @@ $file = 5;
 
 	<table border="0" width="99%" align="center">
 		<tr>
-			<td align="center"><h4>Jet Stream</h4></td>
+			<td align="center"><h4>Temperature</h4></td>
 			<td align="center"><h4>Wind Speed</h4></td>
 		</tr>
 		<tr>
-			<td width="50%" align="center"><img src="http://icons-ak.wunderground.com/data/images/eu_jt.gif" alt="Jet" width="384" height="288" title="Position of Jet Stream across Europe" /></td>
+			<td width="50%" align="center"><img src="http://icons-ak.wunderground.com/data/images/eu_st.gif" alt="Jet" width="384" height="288" title="Temperatures across Europe" /></td>
 			<td width="50%" align="center"><img src="http://icons-ak.wunderground.com/data/images/eu_ws.gif" alt="wind" width="384" height="288" title="Wind Speeds across Europe" /></td>
 		</tr>
 
 	</table>
 
-	<br /><br />
-
-	<table border="0" width="99%" align="center">
-		<tr>
-			<td align="center"><h4>Temperature</h4></td>
-			<td align="center"><h4>Relative Humidity</h4></td>
-		</tr>
-		<tr>
-			<td width="50%" align="center"><img src="http://icons-ak.wunderground.com/data/images/eu_st.gif" alt="Jet" width="384" height="288" title="Temperatures across Europe" /></td>
-			<td width="50%" align="center"><img src="http://icons-ak.wunderground.com/data/images/eu_rh.gif" alt="wind" width="384" height="288" title="Rel hums across Europe" /></td>
-		</tr>
-
-	</table>
+	<p>
+		<a href="http://wxapp.nw3weather.co.uk/Webview/">View Live Ranked weather data for Europe</a> (my former side-project)
+	</p>
 
 </div>
 
