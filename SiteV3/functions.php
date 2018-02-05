@@ -848,5 +848,62 @@ function urlToArray($url, $timeout = 5) {
 	return file($url, false, $ctx);
 }
 
+function listdir($dir) {
+	return array_diff(scandir($dir), array('.', '..'));
+}
+
+function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset = null, $cam = "sky", $frame_rate = 24, $crf = 25, $name = null) {
+	global $lat, $lng, $zenith;
+
+	$months = $month ? array($month) : range(1, 12);
+	$src = "/var/www/html/camchive/$cam";
+	if(is_null($name)) {
+		$period = is_null($twiset) ? "all" : "sun$twiset";
+		$name = "${cam}cam_test_${year}_m${month}_d${day}_f${freq}_p-${period}_r${frame_rate}";
+	}
+	$tmpdir = "/var/www/tmpdir/$name";
+	$outfile = "/var/www/html/camchive/timelapse/${name}.mp4";
+
+	echo shell_exec("mkdir $tmpdir");
+
+	foreach($months as $mi) {
+		$m = zerolead($mi);
+		$mbase = "$src/$year/$m/";
+		$days = ($day == 0) ? listdir($mbase) : array(zerolead($day));
+		foreach($days as $d) {
+			$dbase = $mbase . $d . "/";
+			$sproc = mkdate($mi, intval($d), $year);
+			if(is_null($twiset)) {
+				$sunrise = -1;
+				$sunset = 9999;
+			} else {
+				$sunrise = intval(date_sunrise($sproc, SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) * 60 - $twiset);
+				$sunset = intval(date_sunset($sproc, SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) * 60 + $twiset);
+			}
+			echo "Processing $dbase: sunrise: $sunrise, sunset: $sunset\n";
+			foreach(listdir($dbase) as $c){
+				$hr = substr($c, 0, 2);
+				$min = substr($c, 2, 2);
+				$num = intval($hr) * 60 + intval($min);
+				if($num % $freq == 0 && $num > $sunrise && $num < $sunset) {
+					$trgt = "$tmpdir/$year$m${d}_$c";
+					copy($dbase . $c, $trgt);
+				}
+			}
+		}
+	}
+	$cmd = "/usr/bin/ffmpeg -r $frame_rate -pattern_type glob -y -i \"$tmpdir/*.jpg\" -crf $crf $outfile";
+	echo $cmd . "\n";
+
+	echo shell_exec("ls $tmpdir");
+
+	$ffmpeg_res = shell_exec($cmd);
+	echo $ffmpeg_res . "\n";
+
+	$res = shell_exec("rm -rf $tmpdir");
+	echo $res . "\n";
+	return $outfile;
+}
+
 require_once 'mainData.php';
 ?>

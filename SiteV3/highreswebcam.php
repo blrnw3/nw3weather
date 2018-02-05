@@ -55,8 +55,8 @@ $sproc = mkdate($mproc,$dproc,$yproc);
 $datetag = date('Ymd',$sproc) . 'daily';
 $datedescrip = date('jS F Y',$sproc);
 
-$riseproc = date_sunrise($sproc, SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I')) - 1.25;
-$setproc = date_sunset($sproc, SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I')) + 1;
+$riseproc = date_sunrise($sproc, SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) - 1.5;
+$setproc = date_sunset($sproc, SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) + 1.5;
 
 if($me) { echo " Sunrise: $riseproc; &nbsp; Sunset: $setproc <br />"; }
 

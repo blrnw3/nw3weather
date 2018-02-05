@@ -479,6 +479,32 @@ select {
 	padding: 0.3em;
 }
 
+#skycam-selector {
+	margin: 1em;
+}
+
+#skycam-selector span {
+	background-color: #bbb;
+	padding: 0.3em 0.8em;
+	margin: 0.2em 1em;
+	border: solid 1px #CAB99D;
+	cursor: pointer;
+}
+#skycam-selector span:hover {
+	background-color: #bbf;
+}
+
+#skycam-selector span.selected {
+	font-weight: bold;
+	color: white;
+	background-color: #77f;
+}
+
+select.timelapse {
+	margin-right: 1.5em;
+	margin-left: 0.5em;
+}
+
 /******************Footer***************************/
 #footer {
 	font-family: arial;

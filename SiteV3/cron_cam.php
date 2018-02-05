@@ -99,6 +99,66 @@ if($tstamp == $daily_proctime) {
 	quick_log( 'cronCamTimeDaily.txt', myround( microtime(get_as_float) - $t_start ) );
 }
 
+if(date('i') == '02') {
+	// Videos
+	$FRAME_RATE = 24;
+	$CRF = 25;
+
+	$offset = date('H') == '00' ? 1 : 0;
+	$indate = date('Y/m/d',mkdate(date('n'),date('j')-$offset, date('Y')));
+	$outdate = date('Ymd',mkdate(date('n'),date('j')-$offset, date('Y')));
+	$inglob = "/var/www/html/camchive/sky/$indate/*.jpg";
+	$outfile = "/var/www/html/camchive/timelapse/skycam_$outdate.mp4";
+	$today = "/var/www/html/camchive/timelapse/skycam_today.mp4";
+	$yest = "/var/www/html/camchive/timelapse/skycam_yest.mp4";
+	$cmd = "/usr/bin/ffmpeg -r $FRAME_RATE -pattern_type glob -y -i \"$inglob\" -crf $CRF $outfile";
+
+	if(date('H') == '01') {
+		copy($today, $yest);
+	}
+
+	$ffmpeg_res = shell_exec($cmd);
+	copy($outfile, $today);
+
+	quick_log( 'timelapse.txt', myround( microtime(get_as_float) - $t_start ) ." DAILY ". $cmd);
+}
+
+if($tstamp == '0107') {
+	// Monthly timelapse
+	$freq = 10;
+	$twiset = 90;
+	$cam = "sky";
+	$rate = 18;
+	$qual = 24;
+	$mon_yest_zero = zerolead($mon_yest);
+	$name = "skycam_monthly_${yr_yest}_${mon_yest_zero}";
+	$filf = extract_for_timelapse($yr_yest, $mon_yest, 0, $freq, $twiset, $cam, $rate, $qual, $name);
+	quick_log( 'timelapse.txt', myround( microtime(get_as_float) - $t_start ) ." MONTHLY ". $filf);
+}
+
+if($tstamp == '0112') {
+	// Yearly timelapse
+	$freq = 120;
+	$twiset = -30;
+	$cam = "sky";
+	$rate = 15;
+	$qual = 24;
+	$name = "skycam_yearly_${yr_yest}";
+	$filf = extract_for_timelapse($yr_yest, 0, 0, $freq, $twiset, $cam, $rate, $qual, $name);
+	quick_log( 'timelapse.txt', myround( microtime(get_as_float) - $t_start ) ." YEARLY ". $filf);
+}
+
+if($tstamp == '0117') {
+	// Yearly midday timelapse
+	$freq = 720;
+	$twiset = 0;
+	$cam = "sky";
+	$rate = 6;
+	$qual = 24;
+	$name = "skycam_yearly_midday_${yr_yest}";
+	$filf = extract_for_timelapse($yr_yest, 0, 0, $freq, $twiset, $cam, $rate, $qual, $name);
+	quick_log( 'timelapse.txt', myround( microtime(get_as_float) - $t_start ) ." YEARLY_MIDDAY ". $filf);
+}
 
 if(date('i') % 30 == 2) { //Produce dailywebcam.jpg
 	$frac = 0.22; $w = 6; $dest = 'dailywebcam.jpg'; $imgno = 48; $tinc = 30; $g = '';
@@ -150,7 +210,7 @@ if(date('i') % 30 == 2) { //Produce dailywebcam.jpg
 }
 
 $tttl = microtime(get_as_float) - $t_start;
-if($tttl > 5) {
+if($tttl > 10) {
 	quick_log( 'cronCamTime.txt', myround($tttl) );
 }
 
