@@ -132,6 +132,15 @@ class Traffic {
 			'max' => 813,
 			'min_date' => '25 Dec',
 			'max_date' => '23 Jun'
+		],
+		2017 => [
+			'sum' => 98000,
+			'mean' => 269,
+			'median' => 240,
+			'min' => 126,
+			'max' => 1486,
+			'min_date' => '24 Dec',
+			'max_date' => '10 Dec'
 		]
 	];
 
@@ -389,7 +398,7 @@ $traffic->prepare_annual_data_table();
 		record site traffic was over 1500 visits on <a href='/wxhistday.php?year=2013&amp;month=1&amp;day=18' title='daily weather breakdown'>18th Jan 2013</a>.
 	</p>
 
-	<?php img("/static-images/traffic.PNG", "nw3weather site traffic - sessions", 0.9, "nw3weather daily site visits, 2012-2016", 846, 457); ?>
+	<?php img("/static-images/traffic.PNG", "nw3weather site traffic - sessions", 0.9, "nw3weather daily site visits, 2012-2016", 849, 464); ?>
 
 	<h2>Acknowledgements</h2>
 	<p>

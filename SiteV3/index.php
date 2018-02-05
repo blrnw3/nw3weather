@@ -312,13 +312,30 @@ echo '<img src="/static-images/'.$icon.'_lg.png" style="background-color:#CCCEEC
 <p>Live pressure-based <a href="/wx5.php" title="View detailed forecasts">forecast</a>: <?php echo $vpforecasttext; ?></p>
 
 <!--
-<h1 id="2016-review">2016 Weather Report</h1>
-<p style="margin-bottom: 0.5em;" id="report-2016">
+<h1 id="2017-review">2017 Weather Report</h1>
+<p style="margin-bottom: 0.5em;" id="report-2017">
+
+<p>
+<a href="/TablesDataMonth.php?vartype=rain" title="Monthly Rain Records">
+	These pages are useful for comparing all aspects of the weather across the years
+</a>.
+</p>
+<p>
+<h2>Weather cam timelapse for 2017 (9am - 3pm)</h2>
+<video width="640" height="480" controls>
+  <source src="/camchive/skycam_2017_9to3.mp4" type="video/mp4">
+Your browser does not support the video tag.
+</video>
+<br />
+<a href="/repyear.php">Report is also archived along with previous years' reports</a>
+</p>
 </p>
 <span style="color:#555; font-size: 90%">
-	Updated: 1st Jan 2017
+	Produced: 15th Jan 2018
 </span>
 -->
+
+<a href="/repyear.php">View nw3weather's 2017 Annual Report</a>
 
 <h1>Latest Monthly Weather Report</h1>
 <?php

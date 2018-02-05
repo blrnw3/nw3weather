@@ -3,7 +3,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?php 
+<?php
 	$file = 32;
 	//$showMonth = true;
 	//$showYear = true;
@@ -91,17 +91,7 @@
 
 	<!-- ##### Main Copy ##### -->
 	<div id="main">
-<?php
-//require('wxdatagen.php');
 
-//if(isset($_GET['length'])) { $length = (int)$_GET['length']; } else { $length = 31; }
- ?>
-
-<?php // echo '<img src="graph31.php?x=800&amp;y=400&amp;type='. $type .'&amp;length='. $length .'" alt="Chart" /><br />';
-//graph31($typegraph, $length);
-
-//print_m($DATM);
-?>
 <h1 id="heading">Daily Data Charts - Mean Temperature<br /></h1>
 
 <h2>Select Weather Variable, Chart Type, Period, and Period Length</h2>

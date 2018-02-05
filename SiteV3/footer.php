@@ -51,7 +51,7 @@ if(spam_hack_request()) {
 }
 // Mail/logging alerts
 $wcimg = $root.date("Y/Ymd", mkday($dday-1,$dyear)).'dailywebcam.jpg';
-if( !file_exists($wcimg) && date('H') < 3 ) {
+if( !file_exists($wcimg) && date('H') < 1 ) {
 	mail("alerts@nw3weather.co.uk","Old WC image","Warning! Latest webcam image summary not created! Act now!");
 }
 if($_SESSION['count'][$file] == 20 && $phpload < 100 && !$is_bot && !$me) {
