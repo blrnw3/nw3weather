@@ -1,0 +1,5 @@
+* * * * * cd /var/www && /usr/bin/php -q /var/www/html/cron_main.php > /var/www/log/cronlog.txt
+*/5 * * * * cd /var/www && sleep 6 && /usr/bin/php -q /var/www/html/cron_tags.php > /var/www/log/crontaglog.txt
+* * * * * cd /var/www && sleep 9 && /usr/bin/php -q /var/www/html/cron_cam.php > /var/www/log/croncamlog.txt
+
+28 7,9,11,13,16,19,22 * * * cd /var/www && sleep 20 && /usr/bin/php -q html/wxapp/API/APIgrabber.php blr > /var/www/log/cronOutput.htm

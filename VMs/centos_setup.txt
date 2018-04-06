@@ -1,0 +1,47 @@
+sudo yum -y install httpd
+sudo systemctl start httpd.service
+sudo systemctl enable httpd.service
+sudo firewall-cmd --permanent --zone=public --add-service=http
+sudo firewall-cmd --permanent --zone=public --add-service=https
+sudo firewall-cmd --reload
+
+sudo yum -y install php
+sudo yum install gd gd-devel php-gd
+
+cd ~
+sudo mv V3CoreFiles.zip /var/www/html/
+cd /var/www/html/
+sudo yum install zip
+sudo yum install unzip
+sudo unzip V3CoreFiles.zip
+sudo mv V3CoreFiles/* ./
+sudo rm -r V3CoreFiles*
+sudo mv /home/Ben/php.ini /etc/php.ini
+
+sudo chown -R apache:apache /var/www
+sudo chmod -R g+rw /var/www/
+sudo chcon -R -t httpd_sys_content_t /var/www/
+sudo chcon -R -t httpd_sys_content_rw_t /var/www/html/
+
+sudo yum install mariadb-server mariadb
+sudo systemctl start mariadb
+sudo mysql_secure_installation
+sudo systemctl enable mariadb.service
+sudo yum install php-mysql
+
+sudo yum install epel-release
+sudo yum install phpmyadmin
+sudo vi /etc/httpd/conf.d/phpMyAdmin.conf
+# Change IPs and remove defualt alias -> replace w Alias /dba_blronlyplease /usr/share/phpMyAdmin
+sudo systemctl restart httpd.service
+
+# NTP
+sudo timedatectl set-timezone Europe/London
+timedatectl
+sudo yum install ntp ntpdate ntp-doc
+sudo chkconfig ntpd on
+sudo ntpdate pool.ntp.org
+sudo service ntpd start
+
+
+

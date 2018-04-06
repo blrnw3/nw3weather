@@ -21,9 +21,9 @@
 //$statusMessage = '<p><b>UPDATE 9pm 14th Apr: nw3weather is back! Updates to follow.</b><br /><b>'. date('d M: ', mktime(6,52,0,4,12,2016)) . '</b>'. 'All sensors are currently not functioning. No live data is available.<br />Meantime, data is being served from nearby weather stations, <a href="http://www.harpendenweather.co.uk">Harpenden weather</a> for wind  <a href="http://weather.casa.ucl.ac.uk">UCL casa</a>data, and <a href="http://weather.casa.ucl.ac.uk">UCL casa</a> for the rest.</p>';
 //$statusMessage = '<b>15th Apr</b>: ALL sensors at nw3weather are now reporting correctly. <a href="news.php">Read more about the downtime</a>';
 //$statusMessage = '<b>5th Sep 2017, New weather station</b>: <a href="/news.php" title="Read more">Data is now coming from the new sensors I installed on 4th Sep</a>. Enjoy. <a href="/wx_albgen.php?albnum=6&view=Full">See photos</a>';
-
+$statusMessage = '<b>'. date('H:i d M: ', mktime(12,30,0,3,29,2018)) . '</b>'. 'Having some weather server problems today. Slow updates, no webcam, some missing data. Will investigate tonight';
 $showMessage = false;
-$isBad = false;
+$isBad = true;
 // echo "<div class='statusBox info'><b>10am, Mon 16th May</b>: The thermo/hygro sensor is functioning again</div>";
 //echo "<div class='statusBox warning' style='background-color: #fc5;'>nw3weather is undergoing server maintenance this weekend. The site may be down for several hours at a minimum. <br />I am moving from a shared hosted solution to a cheaper, more powerful and more flexible cloud VM host</div>";
 //echo "<div class='statusBox info'><b>10pm, 8th May</b>: Server maintenance has completed successfully.<br />I have moved from a shared hosting solution to a cheaper, more powerful and more flexible cloud VM host<br /><a href='/contact.php'>Please do report any issues that may have resulted from this</a></div>";

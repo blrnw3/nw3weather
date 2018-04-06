@@ -26,7 +26,7 @@ $dst = date("I") ? "BST" : "GMT";
 $dday = date('j'); $dmonth = date('n'); $dyear = date('Y'); $dz = date('z'); $dhr = date('H'); $dt = date('t');
 define('DDAY', $dday);
 $da = array('j' => $dday, 'n' => $dmonth, 'Y' => $dyear);
-$lyNum = 1; //number of leap years since 2009
+$lyNum = 2; //number of leap years since 2009
 
 $lat = 51.556;
 $lng = -0.154;

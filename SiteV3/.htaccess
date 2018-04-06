@@ -3,8 +3,10 @@ RewriteEngine on
 <Files 403.html>
 order allow,deny
 allow from all
+require all granted
 </Files>
 # Spammers and Hackers
+deny from 91.200.12.9
 deny from 94.242.237.127
 deny from 117.26.192.253
 deny from 120.37.228.50
@@ -56,6 +58,21 @@ deny from 188.165.243.45
 deny from 103.14.146.44
 deny from 117.18.73.66
 deny from 195.2.240.101
+deny from 153.92.0.8
+deny from 213.32.93.218
+deny from 178.170.139.29
+deny from 42.104.73.10
+deny from 185.86.93.25
+deny from 144.48.9.147
+deny from 69.28.199.180
+deny from 64.150.177.237
+deny from 104.131.255.59
+deny from 192.241.131.136
+deny from 185.6.72.50
+deny from 62.109.130.113
+deny from 185.86.93.21
+deny from 91.200.12.9
+
 # Scrapers
 deny from 14.63.229.34
 # Ezooms bot

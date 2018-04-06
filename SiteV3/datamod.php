@@ -187,12 +187,6 @@ echo '</table><br />
 	echo '<br />
 	';
 	$graphres = $target_st .'small_'. $target_en;
-	if(file_exists(ROOT. $graphres)) {
-		echo '<img src="/'. $graphres .'" alt="day graph" '. GRAPH_DIMS_SMALL .' />
-			';
-	} else {
-		echo '<h3>FAIL GRAPH SMALL!</h3>';
-	}
 
 
 function vidlink($offset) {
@@ -239,6 +233,14 @@ $repls = array('',',','','','','Sh','Light ','Moderate ','Heavy ','Torrential ',
 		</dd>
 	</dl>
 </p>
+<?php
+if(file_exists(ROOT. $graphres)) {
+	echo '<img src="/'. $graphres .'" alt="day graph" '. GRAPH_DIMS_SMALL .' />
+		';
+} else {
+	echo '<h3>FAIL GRAPH SMALL!</h3>';
+}
+?>
 </div>
 
 <!-- ##### Footer ##### -->

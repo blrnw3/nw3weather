@@ -37,8 +37,9 @@ $recentWDdowntime = time() - filemtime(ROOT. "Logs/WDuploadReallyBad.txt") < 120
 if($tstamp != '0000' && (date('i') % 10 == 0 || $recentWDdowntime)) {
 	$fsize = filesize(ROOT.'customtextout.txt');
 	$fage = time() - filemtime(ROOT.'customtextout.txt');
-	if($fsize > 63000 && $fsize < 75000) { //probably valid
-		if($fage < 60) { // probably new
+	if($fsize > 61000 && $fsize < 75000) { //probably valid
+		if($fage < 500) { // probably new
+		   # TODO: check data integrity: are all hours in the file 
 			copy($goodlog, $goodlog_backup);
 			logneatenandrepair();
 		} else {
