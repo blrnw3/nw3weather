@@ -364,9 +364,10 @@ function wdirMean($wdir, $speed) {
  * @return array of data for the chosen daily logfile
  */
 function dailyData($procfil = 'today') {
+	$datt = $dat = array();
 	for($t = 6; $t < 10; $t++) {
-		$datt[$t]['max'] = $datt[$t]['max2'] = -99;
-		$datt[$t]['min'] = $datt[$t]['min2'] = 1100;
+		$datt[$t]['max'] = -99999999;
+		$datt[$t]['min'] = 99999999;
 	}
 	$round_pt = array(0,0,0,1,0,0, 2,1,1,2);
 	$trendKeys = array('wind', 'gust', 'wdir', 'temp', 'humi', 'pres', 'dewp');
@@ -393,10 +394,21 @@ function dailyData($procfil = 'today') {
 			$dat[$t][$i] = floatval($custl[$t]);
 			if($t > 5 && $t < 10) {
 				$custl[$t] = floatval($custl[$t]);
-				if($custl[$t] >= $datt[$t]['max']) { $datt[$t]['max'] = $custl[$t]; $datt[$t]['timeLmax'] = mktime($custhr[$i],$custmin[$i]); }
-				if($custl[$t] <= $datt[$t]['min']) { $datt[$t]['min'] = $custl[$t]; $datt[$t]['timeLmin'] = mktime($custhr[$i],$custmin[$i]); }
-				if($custl[$t] > $datt[$t]['max2']) { $datt[$t]['max2'] = $custl[$t]; $datt[$t]['timeHmax'] = mktime($custhr[$i],$custmin[$i]); }
-				if($custl[$t] < $datt[$t]['min2']) { $datt[$t]['min2'] = $custl[$t]; $datt[$t]['timeHmin'] = mktime($custhr[$i],$custmin[$i]); }
+				// Set max/min, and find _every_ time of max/min
+				if($custl[$t] > $datt[$t]['max']) {
+					$datt[$t]['max'] = $custl[$t];
+					$datt[$t]['timesMax'] = array(mktime($custhr[$i],$custmin[$i]));
+				}
+				if($custl[$t] === $datt[$t]['max']) {
+					$datt[$t]['timesMax'][] = mktime($custhr[$i],$custmin[$i]);
+				}
+				if($custl[$t] < $datt[$t]['min']) {
+					$datt[$t]['min'] = $custl[$t];
+					$datt[$t]['timesMin'] = array(mktime($custhr[$i],$custmin[$i]));
+				}
+				if($custl[$t] === $datt[$t]['min']) {
+					$datt[$t]['timesMin'][] = mktime($custhr[$i],$custmin[$i]);
+				}
 			}
 		}
 
@@ -518,8 +530,9 @@ function dailyData($procfil = 'today') {
 		$maxs['rate'] = $maxs['rate'];
 	}
 	for($t = 6; $t < 10; $t++) {
-		$timesMin[$daytypes[$t]] = date('H:i',($datt[$t]['timeHmin']+$datt[$t]['timeLmin'])/2);
-		$timesMax[$daytypes[$t]] = date('H:i',($datt[$t]['timeHmax']+$datt[$t]['timeLmax'])/2);
+		// Time of max/min is the mean time of the longest continuous period at that value
+		$timesMin[$daytypes[$t]] = date('H:i', midpoint_of_longest($datt[$t]['timesMin'], 120));
+		$timesMax[$daytypes[$t]] = date('H:i', midpoint_of_longest($datt[$t]['timesMax'], 120));
 		$mins[$daytypes[$t]] = $datt[$t]['min'];
 		$maxs[$daytypes[$t]] = $datt[$t]['max'];
 		$means[$daytypes[$t]] = round( mean($dat[$t]), $round_pt[$t] );
@@ -656,5 +669,25 @@ function dailyData($procfil = 'today') {
 function timeFromMM($mm, $arr, $hrs, $mins) {
 	$line = array_search($mm, $arr);
 	return zerolead($hrs[$line]).':'.zerolead($mins[$line]);
+}
+
+function midpoint_of_longest($arr, $max_gap) {
+	$curr_period = 0;
+	$longest_period = 0;
+	$longest_p_end = 0;
+	$arrlen = count($arr);
+	$arr[-1] = $arr[0];
+
+	for($i = 0; $i < $arrlen; $i++) {
+		if(abs($arr[$i] - $arr[$i - 1]) > $max_gap) {
+			$curr_period = 0;
+		}
+		$curr_period++;
+		if($curr_period > $longest_period) {
+			$longest_period = $curr_period;
+			$longest_p_end = $i;
+		}
+	}
+	return $arr[$longest_p_end - floor($longest_period / 2)];
 }
 ?>
