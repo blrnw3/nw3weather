@@ -112,8 +112,8 @@ $rnShamt = (0.03 * $yAdjust * $unitcorr) + (0.003 * $data['rnmax'] * $yAdjust);
 //$spike = array(99,99,99,9,9,360,0.5,5,0.5,2,9);
 //$tconv = array(false,false,false,4,4,false,1,false,3,1,2);
 //$depth = ceil(5/$num);
-$baroSmoothConst = 25;
-$baroSmoothDiff = ($imperial ? 0.03 : 1) / $baroSmoothConst;
+$baroSmoothConst = 5;
+$baroSmoothDiff = ($imperial ? 0.02 : 0.5) * pow($num, 0.5) / $baroSmoothConst;
 
 $cnt1 = count($data[1]);
 for($i = 1; $i < $cnt1; $i++) {
@@ -124,6 +124,7 @@ for($i = 1; $i < $cnt1; $i++) {
 	$data['af'][$i] = $lineAF;
 
 	//essential to prevent spiky baro line
+	// NO LONGER NEEDED WITH VP2 SENSOR
 	$diff = $data[8][$i] - $data[8][$i-1];
 	if(abs($diff) > $baroSmoothDiff) {
 		$data[8][$i] = $data[8][$i-1] + $diff / $baroSmoothConst;
