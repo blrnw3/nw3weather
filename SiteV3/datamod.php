@@ -38,13 +38,7 @@ if(isset($_GET['cerealify'])) {
 	die();
 }
 
-for($i = 0; $i < 10; $i++) {
-	echo vidlink($i);
-}
-
-
 if(isset($_GET['dtm'])) { $dtm = $_GET['dtm']; } else { $dtm = 1; }
-
 
 echo "<br />Camlink: <a href='/highreswebcam.php?camtype=sky&light=day&width=6&freq=10'>Highres cam for today</a>";
 
@@ -129,6 +123,7 @@ if(isset($_POST['pwd'])) {
 			fputcsv($fildatm, $newlinem[$i]);
 		}
 		fclose($fildatm);
+		echo "<p>Saved!</p>";
 //		serialiseCSVm();
 
 //		exec('/usr/local/bin/php -q /var/www/html/cron_tags.php blr ftw > /dev/null &');
@@ -140,6 +135,13 @@ if(isset($_POST['pwd'])) {
 }
 
 //Form
+$flags = array();
+if($modline[$types["tmin"]] !== $modline[$types["nightmin"]]) {
+	$flags[$types["nightmin"]] = true;
+}
+if($modline[$types["tmax"]] !== $modline[$types["daymax"]]) {
+	$flags[$types["daymax"]] = true;
+}
 $modTimestamp = mkdate($dmonth,$dday-$dtm,$dyear);
 $target_st = date('Y', $modTimestamp) . '/stitchedmaingraph_';
 $target_en = date('Ymd', $modTimestamp) .'.png';
@@ -149,11 +151,13 @@ echo '<br />
 	<form method="post" action="">
 	<table border="1" cellpadding="4">';
 for($i = 0; $i < count($modline); $i++) {
-	echo '<tr>
-		<td>', $types_original[$i], '</td>
-		<td>', $modline[$i], ' </td>
+	if($i % 2 == 0) { $style = 'light'; } else { $style = 'dark'; }
+	$flagClass = $flags[$i] ? " style='font-weight:bold;font-size:110%;text-decoration:underline;'" : "";
+	echo '<tr class="row', $style ,'">
+		<td class="td', $nums_all[$i] + 10 ,'C">', $types_original[$i], '</td>
+		<td class="td', $nums_all[$i] + 10 ,'C"',$flagClass,'>', $modline[$i], ' </td>
 		<td><input type="text" name="', $types_original[$i], '" /> </td>
-		<td>', $modlinet[$i], ' </td>
+		<td class="td', $nums_all[$i] + 10 ,'C">', $modlinet[$i], ' </td>
 		<td><input type="text" name="', $types_original[$i], 't" /> </td>';
 		if($i==0) {
 			echo '<td align="center" rowspan=', count($modline), '">';
@@ -173,10 +177,16 @@ echo '</table>
 	<br />
 	<table border="1" cellpadding="5">';
 for($i = 0; $i < count($modlinem); $i++) {
-	echo '<tr><td>', $types_m_original[$i], '</td>
-		<td>', $modlinem[$i], ' </td>
-		<td><input type="text" name="', $types_m_original[$i], '" /> </td>
-		</tr>';
+	if($i % 2 == 0) { $style = 'light'; } else { $style = 'dark'; }
+	echo '<tr class="row', $style ,'"><td class="td', $data_m_num[$i] + 10 ,'C">', $types_m_original[$i], '</td>
+		<td class="td', $data_m_num[$i] + 10 ,'C">', $modlinem[$i], ' </td>
+		<td><input type="text" name="', $types_m_original[$i], '" /> </td>';
+	if($i==0) {
+		echo '<td align="center" rowspan=', count($modlinem), '">';
+		echo '<div><video id="tvid" width="640" height="480" controls><source src="/cam/timelapse/skycam_', date('Ymd', $modTimestamp) ,'.mp4" type="video/mp4"></video></div>';
+		echo '</td>';
+	}
+	echo '</tr>';
 }
 echo '</table><br />
 	<input type="text" name="user" />
@@ -189,15 +199,6 @@ echo '</table><br />
 	$graphres = $target_st .'small_'. $target_en;
 
 
-function vidlink($offset) {
-	global $dmonth, $dday, $dyear;
-	$dt = date("Ymd", mkdate($dmonth,$dday-$offset,$dyear));
-	$name = $dt . 'dayvideo.wmv';
-	if(file_exists($name)) {
-		return "<a href='/$name' title='Most recent full-day extended HQ timelapse'>$name</a>. ";
-	}
-	return $name;
-}
 ?>
 
 <img src="/<?php echo date("Y/Ymd", $modTimestamp); ?>dailywebcam.jpg" alt="daycamsum" />
