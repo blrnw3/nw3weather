@@ -48,7 +48,7 @@
 			heading = 'Annual - ' + yr;
 		}
 
-		var src = '/camchive/timelapse/skycam_' + vidname + '.mp4';
+		var src = '/cam/timelapse/skycam_' + vidname + '.mp4';
 		console.log("Loading " + src);
 		var vidBox = document.getElementById('timelapse');
 		vidBox.innerHTML = '<video id="timelapse-vid" width="640" height="480" controls><source src="' + src + '" type="video/mp4"></video>';

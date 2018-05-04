@@ -856,13 +856,13 @@ function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset =
 	global $lat, $lng, $zenith;
 
 	$months = $month ? array($month) : range(1, 12);
-	$src = "/var/www/html/camchive/$cam";
+	$src = ROOT."camchive/$cam";
 	if(is_null($name)) {
 		$period = is_null($twiset) ? "all" : "sun$twiset";
 		$name = "${cam}cam_test_${year}_m${month}_d${day}_f${freq}_p-${period}_r${frame_rate}";
 	}
-	$tmpdir = "/var/www/tmpdir/$name";
-	$outfile = "/var/www/html/camchive/timelapse/${name}.mp4";
+	$tmpdir = CAM_ROOT."tmpdir/$name";
+	$outfile = CAM_ROOT."timelapse/${name}.mp4";
 
 	echo shell_exec("mkdir $tmpdir");
 

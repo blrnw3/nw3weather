@@ -99,7 +99,7 @@ if($tstamp == $daily_proctime) {
 	quick_log( 'cronCamTimeDaily.txt', myround( microtime(get_as_float) - $t_start ) );
 }
 
-if(date('i') == '02') {
+if(date('i') == '31') {
 	// Videos
 	$FRAME_RATE = 24;
 	$CRF = 25;
@@ -107,10 +107,10 @@ if(date('i') == '02') {
 	$offset = date('H') == '00' ? 1 : 0;
 	$indate = date('Y/m/d',mkdate(date('n'),date('j')-$offset, date('Y')));
 	$outdate = date('Ymd',mkdate(date('n'),date('j')-$offset, date('Y')));
-	$inglob = "/var/www/html/camchive/sky/$indate/*.jpg";
-	$outfile = "/var/www/html/camchive/timelapse/skycam_$outdate.mp4";
-	$today = "/var/www/html/camchive/timelapse/skycam_today.mp4";
-	$yest = "/var/www/html/camchive/timelapse/skycam_yest.mp4";
+	$inglob = ROOT."camchive/sky/$indate/*.jpg";
+	$outfile = CAM_ROOT."timelapse/skycam_$outdate.mp4";
+	$today = CAM_ROOT."timelapse/skycam_today.mp4";
+	$yest = CAM_ROOT."timelapse/skycam_yest.mp4";
 	$cmd = "/usr/bin/ffmpeg -r $FRAME_RATE -pattern_type glob -y -i \"$inglob\" -crf $CRF $outfile";
 
 	if(date('H') == '01') {
