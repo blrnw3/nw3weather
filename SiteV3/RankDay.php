@@ -6,7 +6,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?php 
+<?php
 	$file = 41;
 	$isDaily = true;
 	$showMonth = true;
@@ -37,6 +37,7 @@
 	<div id="main">
 
 <?php
+$badCats = array('cloud','raina','sunhra','wethra');
 require('wxdatagen.php');
 
 function allDataToDateForMonth($data, $month) {
@@ -76,7 +77,7 @@ for ($i = 1; $i <= $rankSize; $i++) {
 	$dayRecL = array_search($lowest[$i], $datGood);
 	$lowest_day[$i] = today(true, true, true, null, daytotime($dayRecL), false, $fmat);
 	$datGood[$dayRecL] = -999; //prevent duplicated dates
-	$dow[today(true, true, true, null, daytotime($dayRecH), false, 'D')] += 1;   
+	$dow[today(true, true, true, null, daytotime($dayRecH), false, 'D')] += 1;
 
 	if($dayRecH === false || $dayRecL === false) { //all values from array put into high or low list, do not continue
 		$rankSize = $i-1;

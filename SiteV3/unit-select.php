@@ -163,15 +163,15 @@ if (isset($_GET['rankLimit'])) {
 function datx() {
 	global $DATA, $DATM;
 	$DATX = array();
-	for($i = 0; $i < 4; $i++) {
-		foreach ($DATA[0] as $year => $arr1) {
+	for($i = 0; $i < 4; $i++) { // $types_derived
+		foreach ($DATA[0] as $year => $arr1) { // Convenience for iterating through YMD
 			foreach ($arr1 as $month => $arr2) {
 				foreach ($arr2 as $day => $val) {
 					if($i < 3) {
 						$DATX[$i][$year][$month][$day] =
 							$DATA[$i*3+1][$year][$month][$day] - $DATA[$i*3][$year][$month][$day];
 					}
-					else {
+					else { // rain rate
 						$val = ($DATM[1][$year][$month][$day] > 0.4 && $DATA[13][$year][$month][$day] > 0.2) ?
 							$DATA[13][$year][$month][$day] / $DATM[1][$year][$month][$day] : '';
 						$DATX[$i][$year][$month][$day] = $val;
@@ -182,5 +182,45 @@ function datx() {
 		}
 	}
 	return $DATX;
+}
+
+function datAnom() {
+	global $types_anom, $types_all, $lta, $vars, $sumq_all;
+	$ltaRefDaily = ['tmina' => 0, 'tmaxa' => 1, 'tmeana' => 2, 'sunhrp' => 4];
+	$ltaRefMonthly = ['raina' => 4, 'wmeana' => 6, 'wethra' => 11, 'sunhra' => 12];
+
+	$res = array();
+	foreach($types_anom as $i => $varName) {
+		$originalVarNum = $types_all[substr($varName, 0, strlen($varName)-1)];  // e.g. tmina -> tmin
+		$originalSummable = $sumq_all[$originalVarNum];
+		$anomType = substr($varName, strlen($varName)-1, 1);  // a or p
+		$arr = varNumToDatArray($originalVarNum);
+
+		foreach ($arr as $year => $arr1) {
+			foreach ($arr1 as $month => $arr2) {
+				$daysInMonth = get_days_in_month($month, $year);
+				foreach ($arr2 as $day => $v) {
+					if(array_key_exists($varName, $ltaRefDaily)) {
+						$climVal = $lta[$ltaRefDaily[$varName]][date('z', mkdate($month, $day, $year))];
+					} elseif(array_key_exists($varName, $ltaRefMonthly)) {
+						$divisor = $originalSummable ? $daysInMonth : 1;
+						$climVal = $vars[$ltaRefMonthly[$varName]][$month-1] / $divisor;
+					} else {
+						$climVal = 24;
+					}
+					if($originalSummable) {
+						$val = $arr[$year][$month][$day] / $climVal * 100;
+					} else {
+						$val = $arr[$year][$month][$day] - $climVal;
+					}
+					if($val > 100 && $anomType === 'p') {
+						$val = 100;
+					}
+					$res[$varName][$year][$month][$day] = $val;
+				}
+			}
+		}
+	}
+	return $res;
 }
 ?>

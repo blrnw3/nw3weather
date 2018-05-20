@@ -5,7 +5,7 @@ require('unit-select.php'); ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?php 
+<?php
 	$file = 40;
 	$linkToOther = 'wxdataday';
 	$needValcolStyle = true;
@@ -69,7 +69,7 @@ class MonthlySummaryDataTables {
 	 */
 	public function makeTable($t, $heading) {
 		global $yr_yest, $mon_yest;
-		
+
 		$isAnom = $this->CVAR->isAnom;
 		$sumfix = ($this->CVAR->isSum && $t === 2) ? $this->valcolSumOffset : 1;
 		$isCount = ($t === 3);
@@ -88,7 +88,7 @@ class MonthlySummaryDataTables {
 
 		for ($y = date('Y'); $y >= DateConsts::$startYear; $y--) {
 			tr(null);
-			td($y, 'row' . colcol($y) . '" style="text-align:center; font-weight:bold');
+			td("<a href='./wxdataday.php?year=$y' title='View full data for year'>$y</a>", 'row' . colcol($y) . '" style="text-align:center; font-weight:bold');
 
 			for ($m = 1; $m <= 12; $m++) {
 				$cnt = count($this->DAT[$y][$m]);

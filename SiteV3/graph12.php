@@ -2,13 +2,12 @@
 require './chartgen.php';
 
 $length = isset($_GET['length']) ? (int) $_GET['length'] : 12;
-if($length > 100) {
-	$length = 100;
-}
+
+$goodIntervals = [1, 2, 3, 4, 6, 12];
 
 $avgType = isset($_GET['mmm']) ? $_GET['mmm'] : 2.2;
 $addTit = ($avgType == 2.2) ? $sumormean[$sumq_all[$types_all[$dtype]]] :
-	( ($avgType == 2.1) ? 'highest' : 'lowest' );
+	( ($avgType == 2.1) ? 'highest' : ( ($avgType == 2.3) ? 'count' : 'lowest' ) );
 
 if(isset($_GET['year'])) {
 	$yproc = (int)$_GET['year'];
@@ -18,8 +17,10 @@ if(isset($_GET['year'])) {
 }
 else {
 	$datay = graphMonthly($dtype, $length, $avgType);
-	$title = 'Last 12-months';
-	$interval = $datay[2];
+	$length = min($length, count($datay[0]));
+	$title = "Last $length-months";
+	$labelNum = 12;
+	$interval = find_nearest($length / $labelNum, $goodIntervals);
 }
 
 if($imperial) { $smin = 29; $smax = 30.5; }
@@ -36,7 +37,8 @@ $graph->xaxis->SetTextTickInterval($interval);
 
 $bplot = new BarPlot($datay[0]);
 
-$bplot->SetWidth(0.9);
+$width = ($length > 100) ? 1 : 0.9;
+$bplot->SetWidth($width);
 $graph->Add($bplot);
 
 $graph->title->Set($title .' monthly-'. $addTit .' '.
@@ -47,6 +49,8 @@ $graph->yaxis->title->SetFont(FF_FONT1,FS_BOLD);
 $graph->xaxis->title->SetFont(FF_FONT1,FS_BOLD);
 $graph->xaxis->SetFont(FF_FONT0,FS_BOLD);
 $bplot->SetFillColor($colours_all[$types_all[$dtype]]);
+$linCol = ($length > 100) ? $colours_all[$types_all[$dtype]] : "#c0c0c0";
+$bplot->setColor($linCol);
 // Display the graph
 $graph->Stroke($fileName);
 ?>

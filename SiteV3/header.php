@@ -2,7 +2,6 @@
 <div id="page">
 <?php
 require_once('functions.php');
-include_once('climavs.php');
 
 $timestampWD = sysWDtimes(false);
 if(strlen($timeRare) > 2) {

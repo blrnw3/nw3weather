@@ -19,8 +19,7 @@ if($showMonth && $month > 0) {
 }
 
 $typeNum = $types_all[$type];
-$hasToday = $typeNum <= 32; //Magic number of vars in datfuncdef which have values for the current day
-//$hasToday = $typeNum < count($types_original); //safe number of vars in datfuncdef which have values for the current day
+$hasToday = !(in_array($type, $types_m_original) || in_array($type, ['sunhra','sunhrp', 'wethra', 'wethrp']));
 $typeconvNum = $typeconvs_all[$typeNum];
 $isSum = $sumq_all[$typeNum];
 $isAnom = $anomq_all[$typeNum];
@@ -53,15 +52,15 @@ class CurrVar {
 
 
 //Logic for cycling of drop-downs
-//print_m($descriptions_all);
-$wxvarCount = count($categories, COUNT_RECURSIVE) - count($categories);
-$prevType = mod( $typeNum-1, $wxvarCount);
-$nextType = ($typeNum+1) % $wxvarCount;
+$catNum = array_search($type, $flatCats);
+$wxvarCount = count($flatCats);
+$prevType = $types_all[$flatCats[mod( $catNum-1, $wxvarCount)]];
+$nextType = $types_all[$flatCats[($catNum+1) % $wxvarCount]];
 $prevYear = mod( $year-1-$startYear, $dyear - $startYear+1 ) + $startYear;
 $nextYear = ( ($year+1-$startYear) % ($dyear - $startYear+1) ) + $startYear;
 $prevMonth = ($month == 0) ? 12 : mod( $month-1, 12 + 1 );
 $nextMonth = $month % 12 + 1;
-//echo "prevtype = $prevType, nextype = $nextType, prevyr = $prevYear, wxvarcnt = $wxvarCount";
+//echo "<br />CAT NUM: $catNum<br />";
 
 $currfilea = explode('/',$_SERVER['PHP_SELF']);
 $currfile = $currfilea[count($currfilea)-1];
@@ -80,6 +79,9 @@ $tchgvals = array(0.3,0.6,1, 1.5,2,2.5, 3,4,5);
 $hchgvals = array(2,5,10, 15,20,30, 40,50);
 $prngvals = array(1,2,3, 5,7,10, 15,20,25);
 $dhrsvals = array(0,0.3,0.5, 1,2,3, 5,7,9, 12,15);
+$pmaxvals = array(0,10,20, 25,35,50, 65,75,85, 90,95);
+$tanmvals = array(-10,-5, -2,0,2, 5,10,15,20);
+$percvals = array(25,50,75, 90,100,110, 125,150,175, 200,250);
 
 if($imperial) {
 	$tempvals = array(10,20,30, 40,50,60, 70,80,90);
@@ -92,15 +94,16 @@ elseif($metric) {
 	$windvals = array(2,3,5, 10,15,20, 30,45,70);
 }
 
-$valcol = array($tempvals,$humivals,$presvals, $windvals,$degrvals,$rainvals, $rtmxvals,$tchgvals,$hchgvals, $prngvals,$dhrsvals);
-$col_descrip = array('temp','humi','press', 'wind','degr','rain', 'rtmax','tchg','hchg', 'prng','dhrs');
+$valcol = array($tempvals,$humivals,$presvals, $windvals,$degrvals,$rainvals, $rtmxvals,$tchgvals, //7
+	$hchgvals, $prngvals,$dhrsvals,$pmaxvals,$tanmvals,$percvals); //13
+$col_descrip = array('temp','humi','press', 'wind','degr','rain', 'rtmax','tchg',
+	'hchg','prng','dhrs','dhrs','temp','dhrs');
 
 $valcolSumOffset = 250 / $valcol[$typevalcolNum][count($valcol[$typevalcolNum])-1];
 
 echo '<h1>'. $datgenHeading .' - ', $description,
 	 ' / ', $std_units[ $units_all[$types_all[$type]] ], '<br /></h1>';
 
-$badCats = array('cloud');
 $valcolConvert = !in_array($type, array('hail', 'thunder', 'wdir')); //don't convert textual values before entering valcol function
 
 //Main form for data type (and year)
@@ -121,22 +124,22 @@ echo '<div style="padding:10px">
 foreach ($categories as $cat => $subCats) {
 	echo '<optgroup label="'.$cat.'">';
 	foreach ($subCats as $subCat) {
-		if(!in_array($subCat, $badCats) || in_array($type, $badCats)) { //only show bad categories if selected
+		if(!in_array($subCat, $badCats) || $subCat === $type) { //only show bad categories if selected
 			$i = $types_all[$subCat];
-			$selected = ($type == $types_alltogether[$i]) ? selectHTML : '';
-			echo '<option value="'. $types_alltogether[$i] .'" '. $selected .'>'. $descriptions_all[$i] .'
+			$selected = ($type == $subCat) ? selectHTML : '';
+			echo '<option value="'. $subCat .'" '. $selected .'>'. $descriptions_all[$i] .'
 				</option>';
 		}
 	}
 	echo '</optgroup>';
 }
 echo '</select>';
-	dropdownCycle(false, 'vartype='. $types_alltogether[$prevType], $descriptions_all[$prevType] );
-dropdownCycle(true, 'vartype='. $types_alltogether[$nextType], $descriptions_all[$nextType] );
+	dropdownCycle(false, "year=$year&vartype=". $types_alltogether[$prevType], $descriptions_all[$prevType] );
+dropdownCycle(true, "year=$year&vartype=". $types_alltogether[$nextType], $descriptions_all[$nextType] );
 
 if($showYear) {
 	echo '<span style="padding-left:25px;padding-right:3px;" class="rep">Year</span>';
-	dropdownCycle(false, 'year='. $prevYear, $prevYear );
+	dropdownCycle(false, 'year='. $prevYear ."&vartype=$type", $prevYear );
 	echo '<select name="year" onchange="this.form.submit()">';
 	for($i = $startYear; $i <= $dyear; $i++) {
 		echo '<option value="' . $i . '"';
@@ -145,11 +148,11 @@ if($showYear) {
 			';
 	}
 	echo '</select>';
-	dropdownCycle(true, 'year='. $nextYear, $nextYear );
+	dropdownCycle(true, 'year='. $nextYear ."&vartype=$type", $nextYear );
 }
 if($showMonth) {
 	echo '<span style="padding-left:25px;padding-right:3px;" class="rep">Month</span>';
-	dropdownCycle(false, 'month='. $prevMonth, $months[$prevMonth-1] );
+	dropdownCycle(false, 'month='. $prevMonth ."&vartype=$type", $months[$prevMonth-1] );
 	echo '<select name="month" onchange="this.form.submit()">
 		<option value="0" ' . $isallCheck . '>All</option>';
 	for($i = 1; $i <= 12; $i++) {
@@ -159,7 +162,7 @@ if($showMonth) {
 			';
 	}
 	echo '</select>';
-	dropdownCycle(true, 'month='. $nextMonth, $months[$nextMonth-1] );
+	dropdownCycle(true, 'month='. $nextMonth ."&vartype=$type", $months[$nextMonth-1] );
 }
 if($showNum) {
 	echo '<span style="padding-left:25px" class="rep">Limit</span>

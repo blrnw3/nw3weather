@@ -18,7 +18,7 @@ $data_description = array('Minimum Temperature','Maximum Temperature','Mean Temp
 					'Max 10m Wind Speed', //28
 					'Minimum Feels-like', 'Maximum Feels-like', 'Mean Feels-like', //31
 					'Air-frost Hrs'); //32
-$data_unit = array(0,0,0, 4,4,4, 3,3,3, 2,2,2,5, 1,1,1,6, 0,0,0, 0,0, 0,0,4,0,0,4, 2, 0,0,0, 7); //Display correct unit (C,mm,mph...)
+$data_unit = array(0,0,0, 4,4,4, 3,3,3, 2,2,2,5, 1,1,1,6, 0,0,0, 0,0, 0,0,4,0,0,4, 2, 0,0,0, 7); //Display correct unit (C,mm,mph...) [see $std_units in unit-select]
 $data_num = array(4,4,4, 0,0,0, 6,6,6, 3,3,3,3, 2,2,2,2, 0,0,0, 4,4, 4,4,0,4,4,0, 3, 4,4,4, 4); //Apply correct CSS
 $typeconv = array(1,1,1, 5,5,5, 3,3,3, 4,4,4,4.5, 2,2,2,2.1, 1,1,1, 1,1, 1.1,1.1,5,1.1,1.1,5, 4, 1,1,1, 9); //For use in conv function
 $wxtable_colr = array(0,0,0, 1,1,1, 2,2,2, 3,3,3,4, 5,5,5,6, 0,0,0, 0,0, 7,7,8,7,7,8, 3, 0,0,0, 10); //For use in data-type tables to get correct ValueColour
@@ -43,52 +43,87 @@ $round_sizeix = array(10,10,1,0.2);
 $sumqx = array(false,false,false,false);
 $anomqx = array(true,false,false,false);
 
+//Anomaly daily quantities
+$types_anom = array('tmina','tmaxa','tmeana', 'raina', 'wmeana', 'sunhra','sunhrp', 'wethra', 'wethrp'); //8
+$typesa = array_flip($types_anom);
+$data_coloursa = array('#FFD750','#e59329','#e37349', '#5562ed', '#ff4769', '#f9ff5e','#ceca4a', '#0fe3ff','#1cbfbf');
+$data_descriptiona = array('Min Temp Anomaly','Max Temp Anomaly','Mean Temp Anom', 'Rain Anomaly', 'Wind Anomaly',
+	'Sun Anomaly','Sun % of max possible', 'Wet Anomaly', 'Wet % of day');
+$data_unita = array(0,0,0, 4, 2, 4,4, 4,4);
+$data_numa = array(4,4,4, 2, 3, 8,8, 8,8);
+$typeconva = array(1.1,1.1,1.1, 5, 4, 5,5, 5,5);
+$wxtable_colra = array(12,12,12, 13, 3, 13,11, 13,11);
+$round_sizea = array(5,5,5, 10, 2, 10,10, 10,10);
+$round_sizeia = array(10,10,10, 10, 2, 10,10, 10,10);
+$sumqa = array(false,false,false, false, false, false,false, false,false);
+$anomqa = array(false,false,false, false, false, false,false, false,false);
+
 //Manual-input daily variables
 $types_m_original = array('sunhr','wethr', 'cloud','snow','lysnw', 'hail','thunder','fog', 'comms','extra','issues','away','spare');
 $types_m = array_flip($types_m_original);
-$data_coloursm = array('yellow','aqua', 'black','black','black','black','black','black');
+$data_coloursm = array('yellow','aqua', 'black','black','black', 'black','black','black', 'black','black','black','black','black');
+$data_descriptionm = array('Sun Hours','Wet Hours', 'Cloud Cover','Falling Snow','Lying Snow', 'Hail','Thunder','Dense Fog',
+	'Comms','Comms+','Issues','Away','null');
+$data_unitm = array(7,7, 10,11,11, 10,10,10, 10,10,10,10,10);
+$data_m_num = array(8,9, 10,-6,-6, -6,-6,-6, -6,-6,-6,-6,-6);
+$typeconvm = array(9,9, false,6,6, 0.1,0.2,false, false,false,false,false,false);
+$wxtable_colrm = array(10,10, 10,10,10, 10,10,10, 10,10,10,10,10);
+$round_sizem = $round_sizeim = array(5,5, 1,1,1, 1,1,1, 1,1,1,1,1);
+$sumqm = array(true,true, true,true,true, true,true,true, false,false,false,false,false);
+$anomqm = array(true,true, false,false,false, false,false,false, false,false,false,false,false);
+
+// Separate usage
 $data_m_description = array('Sun Hours', 'Wet Hours', 'Cloud Cover', acronym('Possible events: Air frost, Dense fog, Snowfall, Lying Snow, Hail, Thunder(storm), Max sun.','Events',true),
 						'Comments', 'Extra Comments', 'Issues',	acronym('This tells whether I was absent from North London on the day. When absent I am unable to make detailed weather observations of any events such as fog, rain, snow and thunder,	instead using reports from fellow observers at nearby sites, webcam footage, or the observations of friends/family.',
 						'Observer Absent?', true));
-$data_descriptionm = array('Sun Hours', 'Wet Hours', 'Cloud Cover', 'Falling Snow', 'Lying Snow', 'Hail', 'Thunder', 'Dense Fog');
-$data_unitm = array(7,7, 10,11,11,10,10,10);
-$data_m_num = array(8,9, 10,-6,-6,-6,-6,-6);
-$typeconvm = array(9,9, false,6,6,0.1,0.2,false);
-$wxtable_colrm = array(10,10, 10,10,10,10,10,10);
-$round_sizem = $round_sizeim = array(5,5, 1,1,1, 1,1,1);
-$sumqm = array(true,true, true,true,true, true,true,true);
-$anomqm = array(true,true, false,false,false,false,false,false);
 
 //All daily
-$types_alltogether = array_merge($types_original,$types_derived,$types_m_original);
-$types_all = array_flip($types_alltogether);
-$colours_all = array_merge($data_colours, $data_coloursx, $data_coloursm);
-$descriptions_all = array_merge($data_description, $data_descriptionx, $data_descriptionm);
-$units_all = array_merge($data_unit, $data_unitx, $data_unitm);
-$nums_all = array_merge($data_num, $data_numx, $data_m_num);
-$typeconvs_all = array_merge($typeconv, $typeconvx, $typeconvm);
-$wxtablecols_all = array_merge($wxtable_colr, $wxtable_colrx, $wxtable_colrm);
-$roundsizes_all = array_merge($round_size, $round_sizex, $round_sizem);
-$roundsizeis_all = array_merge($round_sizei, $round_sizeix, $round_sizeim);
-$sumq_all = array_merge($sumq, $sumqx, $sumqm);
-$anomq_all = array_merge($anomq, $anomqx, $anomqm);
+$types_alltogether = array_merge($types_original,$types_derived,$types_m_original,$types_anom); // int -> str
+$types_all = array_flip($types_alltogether); // str -> int
+$colours_all = array_merge($data_colours, $data_coloursx, $data_coloursm, $data_coloursa);
+$descriptions_all = array_merge($data_description, $data_descriptionx, $data_descriptionm, $data_descriptiona);
+$units_all = array_merge($data_unit, $data_unitx, $data_unitm, $data_unita);
+$nums_all = array_merge($data_num, $data_numx, $data_m_num, $data_numa);
+$typeconvs_all = array_merge($typeconv, $typeconvx, $typeconvm, $typeconva);
+$wxtablecols_all = array_merge($wxtable_colr, $wxtable_colrx, $wxtable_colrm, $wxtable_colra);
+$roundsizes_all = array_merge($round_size, $round_sizex, $round_sizem, $round_sizea);
+$roundsizeis_all = array_merge($round_sizei, $round_sizeix, $round_sizeim, $round_sizeia);
+$sumq_all = array_merge($sumq, $sumqx, $sumqm, $sumqa);
+$anomq_all = array_merge($anomq, $anomqx, $anomqm, $anomqa);
+
+// Validation
+$allTheThings = array($types_alltogether, $colours_all, $descriptions_all, $units_all, $nums_all, $typeconvs_all,
+	$wxtablecols_all, $roundsizeis_all, $roundsizes_all, $sumq_all, $anomq_all);
+for($i = 0; $i < count($allTheThings)-1; $i++) {
+	if(count($allTheThings[$i]) !== count($allTheThings[$i+1])) {
+		var_dump($allTheThings[$i]);
+		var_dump("   --------------------------   ");
+		var_dump($allTheThings[$i+1]);
+		die("Counts are wrong for thing $i");
+	}
+}
 
 $mappingsToDailyDataKey = array('t' => 'temp', 'h' => 'humi', 'p' => 'pres', 'd' => 'dewp', 'w'=> 'wind', 'r' => 'rain', 'f' => 'feel');
 
 //groupings for use in colgroup drop-down
 $categories = array(
 	'Temperature' => array('tmin','tmax','tmean'),
+	'Rainfall' => array('rain','hrmax','10max','ratemax'),
+	'Wind' => array('wmean','wmax','gust','wdir'),
 	'Humidity' => array('hmin','hmax','hmean'),
 	'Pressure' => array('pmin','pmax','pmean'),
-	'Wind' => array('wmean','wmax','gust','wdir'),
-	'Rainfall' => array('rain','hrmax','10max','ratemax'),
 	'Dew Point' => array('dmin','dmax','dmean'),
 	'Change' => array('tc10max','tchrmax','hchrmax','tc10min','tchrmin','hchrmin'),
 	'Range' => array('trange','hrange','prange'),
 	'Observations' => array('sunhr','wethr','ratemean','cloud','snow','lysnw','hail','thunder','fog'),
+	'Anomalies' => array('tmina','tmaxa','tmeana', 'raina', 'sunhra','sunhrp', 'wethra', 'wethrp'),
 	'Misc.' => array('nightmin','daymax','w10max','afhrs'),
-	'Feels-like' => array('fmin','fmax','fmean')
+	'Feels-like' => array('fmin','fmax','fmean'),
 );
+$flatCats = array();
+foreach($categories as $k => $v) {
+	$flatCats = array_merge($flatCats, $v);
+}
 
 //Monthly quantities
 $types_monthly_original = array( 'af', 'windy', 'rainy', 'rainy+', 'rainmean');
@@ -129,12 +164,9 @@ function MDtoZ($arr) {
  * @return mixed 1D array of means/sums
  */
 function MDtoMsummary($arr, $sum = false, $type = 2) {
-	//var_dump($type); echo  ' ';
 	//WARNING: DO NOT MODIFY!!!!! Direct casting to int results in very weird bug (3 -> 2)
 	$type = round($type);
-	//var_dump($type); echo  ' ';
 	$type = (int)$type;
-	//var_dump($type); echo  ' ';
 	for($mon = 1; $mon <= count($arr); $mon++) {
 		$div = (!$sum) ? count($arr[$mon]) : 1;
 
@@ -199,14 +231,20 @@ function DATtoMDAT($arr) {
  * @return mixed
  */
 function varNumToDatArray($varNum) {
-	global $types, $types_derived, $types_m, $types_all;
+	global $types, $types_alltogether, $types_derived, $types_all, $types_anom;
 
+	$varName = $types_alltogether[$varNum];
 	if($varNum < count($types)) {
 		return $GLOBALS['DATA'][$varNum];
 	} elseif($varNum < count($types)+count($types_derived)) {
 		return $GLOBALS['DATX'][$varNum - count($types)];
+	} elseif(in_array($varName, $types_anom)) {
+		if(!isset($GLOBALS['DAT_ANOM'])) {
+			$GLOBALS['DAT_ANOM'] = datAnom();
+		}
+		return $GLOBALS['DAT_ANOM'][$varName];
 	} else {
-		return $GLOBALS['DATM'][$varNum - count($types_all) + count($types_m)];
+		return $GLOBALS['DATM'][$varNum - $types_all['sunhr']];
 	}
 }
 
@@ -221,10 +259,6 @@ function newData($variable, $year = null, $accumType = 1) {
 	global $dyear, $types_all, $sumq_all;
 
 	$varNum = $types_all[$variable];
-	//echo 'variable is ' . $variable;
-//	echo '<br />varnum is ' . $varNum;
-
-	//$quantity = ($quantity === null) ? 1 : $quantity;
 	$year = ($year === null) ? $dyear : $year;
 	$mmm = ( ($accumType-2)*10 );
 
@@ -242,8 +276,7 @@ function newData($variable, $year = null, $accumType = 1) {
 	if($accumType === 0) {
 		return $data[$year];
 	} else {
-		//die('mmm = '. $mmm);
-		return ($accumType === 1) ? MDtoZ($data[$y]) :
+		return ($accumType === 1) ? MDtoZ($data[$year]) :
 			MDtoMsummary($data[$year], $sumq_all[$varNum], $mmm);
 	}
 }
@@ -254,14 +287,26 @@ function typeToConvType($type) {
 
 function graphDaily($type, $len = 31) {
 	$data = newData($type, true);
-	$format = ($len > 50) ? 'd-M' : 'd';
-	for($d = 1; $d <= $len; $d++) {
-		$graph[$len-$d] = floatval( conv($data[count($data)-$d], typeToConvType($type), 0, 0, 1, 0, 0, true) );
-		$labels[$len-$d] = date( $format, mkday(DDAY - $d + 1) );
+	$format = ($len < 50) ? 'd' : ( ($len < 500) ? 'd-M' : 'M-y' );
+	$cnt = count($data);
+	$cap = min($len, $cnt);
+	for($d = 1; $d <= $cap; $d++) {
+		$graph[$cap-$d] = floatval( conv($data[$cnt-$d], typeToConvType($type), 0, 0, 1, 0, 0, true) );
+		$labels[$cap-$d] = date( $format, mkday(DDAY - $d + 1) );
 	}
-	$interval = round($len / 21);
-	return array($graph, $labels, $interval);
+	return array($graph, $labels);
 }
+
+function graphDailyYear($type, $year) {
+	$data = newData($type, $year, 1);
+	$format = 'd-M';
+	for($d = 0; $d < count($data); $d++) {
+		$graph[$d] = floatval( conv($data[$d], typeToConvType($type), 0, 0, 1, 0, 0, true) );
+		$labels[$d] = date( $format, mkz($d, $year) );
+	}
+	return array($graph, $labels);
+}
+
 /**
  * Daily chart data for a specified month
  */
@@ -283,13 +328,13 @@ function graphMonthly($type, $len = 12, $mmm = 2.2) {
 	$data = newData($type, true, $mmm);
 	$format = ($len > 18) ? 'M-y' : 'M';
 	$cnt = count($data);
-	for($mon = $cnt - $len; $mon < $cnt; $mon++) {
-		$base = $mon - ($cnt - $len); //re-index from 0
+	$cap = min($len, $cnt);
+	for($mon = $cnt - $cap; $mon < $cnt; $mon++) {
+		$base = $mon - ($cnt - $cap); //re-index from 0
 		$graph[$base] = conv($data[$mon], typeToConvType($type), 0,0,1,0,0, true);
 		$labels[$base] = date($format, monthtotime($mon));
 	}
-	$interval = round($len / 12);
-	return array($graph, $labels, $interval);
+	return array($graph, $labels);
 }
 function graphYear($type, $year, $mmm = 2.2) {
 	$test = array_merge( newData($type, $year, $mmm) );

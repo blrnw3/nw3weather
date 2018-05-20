@@ -1,5 +1,6 @@
 <?php
 include('datfuncdef.php');
+include_once('climavs.php');
 
 /**
  * Convert from UK units to US or EU, and neaten-up <br />
@@ -177,8 +178,7 @@ function array_dswap($arr) {
 }
 
 function clearblank($val) {
-	if($val == '' || $val == '-') { $b = false; } else { $b = true; }
-	return $b;
+	return !($val === '' || $val === '-' || $val === null);
 }
 function clearblank2($val) {
 	$b = floatval($val);

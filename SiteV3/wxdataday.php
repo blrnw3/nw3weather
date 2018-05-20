@@ -35,6 +35,7 @@ require('unit-select.php'); ?>
 	<div id="main">
 
 <?php
+$badCats = array('cloud','raina','sunhra','wethra');
 require('wxdatagen.php');
 
 $en_mon = isset($_GET['endmon']) ? $_GET['endmon'] : 12;
@@ -55,28 +56,21 @@ while($valid) {
 			$arrnum[$i] = $types_all[$dextra[$i]];
 
 			//Collect data
+			$allDat = varNumToDatArray($arrnum[$i]);
+			$data[$i] = array_merge($allDat[$endyr]);
 			if( $arrnum[$i] < count($types) ) {
-				if($styr != $endyr) {
+				if($styr != $endyr) {  // Deprecated feature
 					$data[$i] = array_merge($DATA[ $arrnum[$i] ][$styr], $DATA[ $arrnum[$i] ][$endyr]);
-				} else {
-					$data[$i] = array_merge($DATA[ $arrnum[$i] ][$endyr]);
 				}
-
 			}
 			elseif( $arrnum[$i] < count($types) + count($types_derived) ) {
 				if($styr != $endyr) {
 					$data[$i] = array_merge($DATX[ $arrnum[$i] - count($types) ][$styr], $DATX[ $arrnum[$i] - count($types) ][$endyr]);
-				} else {
-					$data[$i] = array_merge($DATX[ $arrnum[$i] - count($types) ][$endyr]);
 				}
+			} elseif(in_array( $dextra[$i], $types_anom)) {
+				// nothing
 			}
 			else {
-				if($styr != $endyr) {
-					$data[$i] = array_merge($DATM[ $arrnum[$i] - count($types_all) + count($types_m) ][$styr],
-						$DATM[ $arrnum[$i] - count($types_all) + count($types_m) ][$endyr]);
-				} else {
-					$data[$i] = array_merge($DATM[ $arrnum[$i] - count($types_all) + count($types_m) ][$endyr]);
-				}
 				$manual[$i] = true;
 				$lhm[2] = 'Total';
 				$adj[$i] = 1;
@@ -91,76 +85,16 @@ while($valid) {
 		}
 		$catcher++;
 	}
-	if($extra == 0) {
+	if($extra == 0) { // Non-multi mode
 		$key = $types_all[$type];
 		$_GET['vartype'.$key] = $types_alltogether[$key];
 	} else {
 		$valid = false;
 	}
-	if($catcher > 50) {
+	if($catcher > 5) {
 		$valid = false;
 	}
 }
-//print_m($arrnum);
-//print_m($dextra);
-//print_m($data);
-?>
-
-<!-- <form method="get" action="">
-<table width="95%" cellpadding="5"><tr><td>
-	<b>Graph Type: </b>
-	<?php
-	/*
-	unset($nums);
-	$nums = array(1,2,3,4,5,6,8,10,12,18,24);
-// 	$types_alltogether = array_merge(array_flip($types_alltogether));
-	if($gtype == 'y') { $chosen = ' checked="checked"'; } elseif($gtype == 'y2') { $chosen2 = ' checked="checked"'; } else { $chosen1 = ' checked="checked"'; }
-	echo '<input type="radio" name="altg" value="yA"', $chosen1, ' /> Autoscale (choose data types below) &nbsp;
-		<input type="radio" name="altg" value="y"', $chosen, ' /> Temp/Hum/Dew/Rain &nbsp;
-		<input type="radio" name="altg" value="y2"', $chosen2, ' /> Wind/Gust/Baro
-		</td></tr> <tr><td> <b>Autoscale Data Types: </b>';
-	for($t = 0; $t < count($types_alltogether); $t++) {
-// 		$find = array(' (10-min)', 'Direction', 'Wind Speed'); $repl = array('','Drctn','Speed');
-// 		$tvargv = explode('/',$daynames[$types_alltogether[$t-1]]); $datnam = str_replace($find,$repl,$tvargv[0]);
-		if(($types_alltogether[$t] == $dextra[$t]
-// 				|| (!$more && $t == 1)) && $gtype == 'yA'
-				)) {
-			$checked = 'checked="checked" ';
-		 } else { $checked = ''; }
-		echo '<input type="checkbox" name="vartype',$t,'" value="', $types_alltogether[$t], '" ', $checked, '/> ', $types_alltogether[$t], ' &nbsp;
-			';
-	}
-	echo '</td></tr><tr><td> <b>Months to show </b><select name="num">';
-	for($n = 0; $n < count($nums); $n++) {
-		if($num+1 == $nums[$n]) { $selected = 'selected="selected"'; } else { $selected = ''; }
-		echo '<option value="', $nums[$n], '" ', $selected, '>', $nums[$n], '</option>
-			';
-	}
-	echo '</select> &nbsp; &nbsp; <b>End Date </b>
-		<select name="endyr">';
-	for($y = 2009; $y <= $dyear; $y++) {
-		if($y == $endyr) { $selected = 'selected="selected"'; } else { $selected = ''; }
-		echo '<option value="', $y, '" ', $selected, '>', $y, '</option>
-			';
-	}
-	echo '</select>
-		<select name="endmon">';
-	for($m = 1; $m <= 12; $m++) {
-		if($m == $en_mon) { $selected = 'selected="selected"'; } else { $selected = ''; }
-		echo '<option value="', $m, '" ', $selected, '>', $months[$m-1], '</option>
-			';
-	}
-	echo '</select>
-		 &nbsp;';
-	 *
-	 */
-	?>
-	<input type="submit" value="Generate Table" /> &nbsp;
-	<a href="wxdatadayC.php" title="Reset all parameters to default"> <b>Reset</b> </a>
-</td></tr></table>
-</form>  -->
-
-<?php
 
 $dextra = array_merge($dextra);
 $arrnum = array_merge($arrnum);
@@ -179,17 +113,6 @@ for($m = $st_mon - 1; $m <= $st_mon - 1 + $num; $m++) {
 	td( $linked_mon, 'td4C', 8, $varNum );
 }
 tr_end();
-
-// if($varNum > 1) {
-// 	tr();
-// 	td('Measure', 'td4C');
-// 	for($m = $st_mon - 1; $m <= $st_mon - 1 + $num; $m++) {
-// 		for($i = 0; $i < $varNum; $i++) {
-// 			td($dextra[$i], 'td4C');
-// 		}
-// 	}
-// 	tr_end();
-// }
 
 if($extra > 1) {
 	tr();

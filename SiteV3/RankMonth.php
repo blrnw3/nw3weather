@@ -35,6 +35,7 @@
 	<div id="main">
 
 <?php
+$badCats = array('cloud');
 $datgenHeading = 'Historical Ranked Monthly-mean Data';
 require('wxdatagen.php');
 
@@ -50,7 +51,7 @@ function allDataToDateForMonth($data, $month) {
 
 $rankSize = $rankLimit;
 
-$isCountable = $typeNum >= count($sumq_all) - 3;
+$isCountable = in_array($type, ['cloud', 'hail', 'thunder']);
 
 //Data collection
 $datall1 = newData($type, true, ($isCountable) ? 2.3 : 2.2);

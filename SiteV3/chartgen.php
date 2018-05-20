@@ -1,10 +1,10 @@
 <?php
 $allDataNeeded = true;
-include('/var/www/html/basics.php');
+require('unit-select.php');
+
 require_once ($root.'jpgraph/src/jpgraph.php');
 require_once ($root.'jpgraph/src/jpgraph_bar.php');
-include($root.'unit-select.php');
-include($root.'functions.php');
+include('functions.php');
 
 $dtype = $_GET['type'];
 $test_type = $types_all[$dtype];
