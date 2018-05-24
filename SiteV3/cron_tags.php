@@ -5,9 +5,9 @@ ini_set("memory_limit","128M");
 $allDataNeeded = true;
 $root = '/var/www/html/';
 $t_start = microtime(get_as_float);
-include($fullpath . 'unit-select.php');
-include($fullpath . 'functions.php');
-include $fullpath . 'climavs.php';
+include_once($fullpath . 'unit-select.php');
+include_once($fullpath . 'functions.php');
+include_once($fullpath . 'climavs.php');
 
 echo "START: ". date('r'). "\n";
 

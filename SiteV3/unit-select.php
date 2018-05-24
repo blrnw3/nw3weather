@@ -208,6 +208,9 @@ function datAnom() {
 					} else {
 						$climVal = 24;
 					}
+					if($climVal == 0) {
+						error_log("YIKES! $climVal $year $month $day $varName");
+					}
 					if($originalSummable) {
 						$val = $arr[$year][$month][$day] / $climVal * 100;
 					} else {

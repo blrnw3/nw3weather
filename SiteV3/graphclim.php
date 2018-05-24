@@ -4,7 +4,7 @@ require_once ($root.'jpgraph/src/jpgraph.php');
 require_once ($root.'jpgraph/src/jpgraph_bar.php');
 include($fullpath.'unit-select.php');
 include($fullpath.'functions.php');
-include('climavs.php');
+include_once('climavs.php');
 
 if(isset($_GET['x'])) { $dimx = $_GET['x']; } else { $dimx = 850; }
 if(isset($_GET['y'])) { $dimy = $_GET['y']; } else { $dimy = 350; }
@@ -22,11 +22,11 @@ if(!$cnt) { $datay[0] = $vars[0]; $typeset[0] = true; $title = $clim_descrip[0];
 $graph = new Graph($dimx,$dimy);
 $graph->SetScale('textlin');
 $graph->SetShadow();
- 
+
 // Adjust the margin a bit to make more room for titles
 $graph->SetMargin(40,5,20,0);
 $graph->xaxis->SetTickLabels($months);
- 
+
 // Create a bar pot
 for($i = 0; $i < count($vars); $i++) {
 	if($typeset[$i]) { $bplot[$i] = new BarPlot($datay[$i]); if($cnt > 1) { $bplot[$i]->SetLegend($clim_descrip[$i]); } }
@@ -36,7 +36,7 @@ else { $splot = array_merge($bplot); $gbplot = $splot[0]; }
 
 $gbplot->SetWidth(.9);
 $graph->Add($gbplot);
- 
+
 // Setup the titles
 $graph->title->Set('LTA for ' . $title);
 //$graph->xaxis->title->Set('Day');

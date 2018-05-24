@@ -4,7 +4,7 @@ require_once ($root.'jpgraph/src/jpgraph.php');
 require_once ($root.'jpgraph/src/jpgraph_line.php');
 include($fullpath.'unit-select.php');
 include($fullpath.'functions.php');
-include($fullpath.'climavs.php');
+include_once($fullpath.'climavs.php');
 
 if(isset($_GET['x'])) { $dimx = $_GET['x']; } else { $dimx = 850; }
 if(isset($_GET['y'])) { $dimy = $_GET['y']; } else { $dimy = 350; }
@@ -23,7 +23,7 @@ if(!$cnt) { $datay[0] = $lta[0]; $typeset[0] = true; $title = $lta_descrip[0]; i
 $graph = new Graph($dimx,$dimy);
 $graph->SetScale('textint');
 $graph->SetShadow();
- 
+
 // Adjust the margin a bit to make more room for titles
 $graph->SetMargin(40,5,20,20);
 $graph->xaxis->SetTickLabels($days);

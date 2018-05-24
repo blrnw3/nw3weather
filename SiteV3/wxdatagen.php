@@ -124,7 +124,7 @@ echo '<div style="padding:10px">
 foreach ($categories as $cat => $subCats) {
 	echo '<optgroup label="'.$cat.'">';
 	foreach ($subCats as $subCat) {
-		if(!in_array($subCat, $badCats) || $subCat === $type) { //only show bad categories if selected
+		if($badCats && !in_array($subCat, $badCats) || $subCat === $type) { //only show bad categories if selected
 			$i = $types_all[$subCat];
 			$selected = ($type == $subCat) ? selectHTML : '';
 			echo '<option value="'. $subCat .'" '. $selected .'>'. $descriptions_all[$i] .'
