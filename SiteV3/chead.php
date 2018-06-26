@@ -52,11 +52,14 @@ if($needValcolStyle) { echo '
 <?php
 if($file <= 2) {
 	$camImg = '/currcam';
+	$camImgNew = '/skycam_small';
 	$camImg .= ($file === 1) ? '_small.jpg' : '.jpg';
+	$camImgNew .= ($file === 1) ? '_small.jpg' : '.jpg';
 	echo '
 <script type="text/javascript">
 //<![CDATA[
 	image = "'.$camImg .'"; //name of the image
+	imageNew = "'.$camImgNew .'"; //name of the image
 	function camRefesh() {
 		if(dateJS.getSeconds() < 15 && dateJS.getSeconds() >= 10) {
 			document.images["refresh"].src = image+"?"+timePHP;
@@ -64,6 +67,10 @@ if($file <= 2) {
 		}
 		setTimeout("camRefesh()", 5000);
 		//console.log("camrefresh call at second " + dateJS.getSeconds());
+	}
+	function camRefreshNew() {
+		document.images["refresh-new"].src = imageNew+"?"+timePHP;
+		setTimeout("camRefreshNew()", 10000);
 	}
 	//]]>
 </script>';

@@ -101,6 +101,10 @@ $col_descrip = array('temp','humi','press', 'wind','degr','rain', 'rtmax','tchg'
 
 $valcolSumOffset = 250 / $valcol[$typevalcolNum][count($valcol[$typevalcolNum])-1];
 
+if(!$badCats) {
+	$badCats = [];
+}
+
 echo '<h1>'. $datgenHeading .' - ', $description,
 	 ' / ', $std_units[ $units_all[$types_all[$type]] ], '<br /></h1>';
 
@@ -124,7 +128,7 @@ echo '<div style="padding:10px">
 foreach ($categories as $cat => $subCats) {
 	echo '<optgroup label="'.$cat.'">';
 	foreach ($subCats as $subCat) {
-		if($badCats && !in_array($subCat, $badCats) || $subCat === $type) { //only show bad categories if selected
+		if(!in_array($subCat, $badCats) || $subCat === $type) { //only show bad categories if selected
 			$i = $types_all[$subCat];
 			$selected = ($type == $subCat) ? selectHTML : '';
 			echo '<option value="'. $subCat .'" '. $selected .'>'. $descriptions_all[$i] .'

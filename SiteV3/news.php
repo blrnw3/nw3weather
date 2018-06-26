@@ -28,6 +28,54 @@
 	<h1>Site Blog and Weather Station news/updates</h1>
 
 	<table width="850">
+	<tr id="post-20180621"><td>
+		<h2>New high-res webcam</h2>
+
+		<p>
+			Last week during a trip back home to London I took the opportunity to upgrade my weather webcam.
+			I bought a Hikvision DS-2CD2055FWD-I IP camera (4mm focal length), which has an enormous resolution of 3072*2048 compared to
+			the meager 640*480 of my current 8-year old webcams. This is an incredible 20 times more pixels (6MP vs 0.3MP).
+			In fact, the resolution is so high, I've had to scale the images down to fit on the website.
+			I'm incredibly pleased with the quality of the images too, and the camera also gives very good nighttime images.
+			<br />
+			For now the camera is installed inside behind a window, but I have plans to place it outdoors (it's fully weatherproof),
+			which will help to reduce glare and give an even sharper image. Stay tuned for that.
+		</p>
+
+		<p>
+			I've been busy this week configuring the camera, setting it up to transmit images to my server,
+			and updating my webcam scripts and web pages to handle the new images. Work is mostly complete on that,
+			but some parts will be finished in the following week or so. One exciting new aspect of this camera is that
+			I've set it up to produce images every 10 seconds (the old cams are every minute), so now we can see the
+			weather in close to real-time. I may even boost that to every 5 seconds if my server can handle it.
+		</p>
+
+		<p><b>Weather station update</b>: all is working great with the new station (almost a year in). I've given it a
+		clean and finally painted the rain gauge. Plus I planted some flowers in the pot which houses the weather box,
+		to make it look even prettier (pictures below).</p>
+
+		<p>
+			By chance today is summer solstice so it's been a great opportunity to test out the new camera.
+			Here's a comparison to the old camera.<br /><br />
+			Old: <br />
+			<img src="/photos/1631sky.jpg" width="640" alt="Old cam" title="Old webcam 1631 21st June 2018" />
+			 <br />New: <br />
+			<img src="/photos/1630hik.jpg" width="876" alt="New Cam" title="New webcam 1630 21st June 2018" />
+		</p>
+		<p>
+			Weather station looking pretty: <br />
+			<img src="/photos/painted.jpg" width="430" alt="painted" title="Weather station flowers" />
+			<img src="/photos/flowers.jpg" width="430" alt="flowers" title="Newly-painted rain gauge" />
+		</p>
+		<p id="timelapse">
+			Summer solstice morning timelapse from the new camera: <br />
+			<video id="timelapse-vid" width="750" height="500" controls>
+				<source src="/solsticeam.mp4" type="video/mp4">
+			</video>
+		</p>
+
+		<p><span style="color:gray;font-style:italic">Posted: 21st Jun 2018</span></p>
+    </td></tr>
 	<tr id="post-20170906"><td>
 		<h2>New weather station</h2>
 

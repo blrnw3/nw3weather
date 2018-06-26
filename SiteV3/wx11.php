@@ -3,7 +3,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?php 
+<?php
 	$file = 2;
 	$subfile = true;
 ?>
@@ -18,7 +18,7 @@
 	<?php include_once("ggltrack.php") ?>
 </head>
 
-<body onload="camRefesh();">
+<body onload="camRefesh();camRefreshNew();">
 	<!-- ##### Header ##### -->
 	<?php require('header.php'); ?>
 	<!-- ##### Left Sidebar ##### -->

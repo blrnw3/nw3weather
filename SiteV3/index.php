@@ -56,9 +56,9 @@ function imgSwap(id) {
 
 var currCam = true;
 function camChange() {
-	var num1 = currCam ? '' : 'g';
-	var num2 = !currCam ? '' : 'g';
-	$("#cam").attr( 'src', $("#cam").attr('src').replace('curr'+num1, 'curr'+num2) );
+	var num1 = currCam ? 'skycam_small' : 'currgcam';
+	var num2 = !currCam ? 'skycam_small' : 'currgcam';
+	$("#cam").attr( 'src', $("#cam").attr('src').replace(num1, num2) );
 	currCam = !currCam;
 }
 
@@ -152,7 +152,7 @@ function pause() {
 </style>
 </head>
 
-<body onload="camRefesh();">
+<body onload="camRefreshNew();">
 	<!-- ##### Header ##### -->
 	<?php require('header.php'); ?>
 
@@ -169,7 +169,7 @@ function pause() {
 <div>
 <table width="99%" cellpadding="2" cellspacing="0" align="center" border="0" rules="none">
 <tr class="rowdarkmain">
-<td width="25%" align="center"><b><span style="color:#610B0B">Weather Report</span></b>
+<td width="19%" align="center"><b><span style="color:#610B0B">Weather Report</span></b>
 <br /><br /><?php //decode WD cond, using metar too
 $rnrt = $HR24['misc']['rnrate'];
 $nw3Raining = (($HR24['trendRn'][0] - $HR24['trendRn'][1]) > 0);
@@ -235,11 +235,10 @@ foreach ($METARcloudTypes as $i => $cloudSrch) {
 echo "<b>$weather</b>; ". acronym("Raw METAR: ". $METAR, $cloud);
 ?> </td>
 
-<td width="30%" rowspan="3" align="center"><b><span title="Clickable!" onclick="camChange();" style="color:#336666">Weathercam</span></b>
+<td width="36%" rowspan="3" align="center"><b><span title="Clickable!" onclick="camChange();" style="color:#336666">Weathercam</span></b>
 <br /><br />
-<?php $img = 'currcam_small.jpg'; ?>
-<a href="wx11.php">
-	<img id="cam" name="refresh" border="0" src="<?php echo $camImg; ?>" title="Click to enlarge" alt="Web cam" width="236" height="177" /></a>
+<a href="wx2.php">
+	<img id="cam" name="refresh-new" border="0" src="<?php echo $camImgNew; ?>" title="Click to enlarge" alt="Web cam" width="315" height="210" /></a>
 <br />
 <a href="wx2.php" title="Full webcam image and timelapses">See more</a>
 

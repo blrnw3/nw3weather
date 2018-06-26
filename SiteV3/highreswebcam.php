@@ -65,16 +65,31 @@ $cond2 = $sproc < mkdate($dmonth,$dday,$dyear);
 if(!$cond1) { echo '<b>Archive begins on 20th March 2012 (patchy until 27 Jun 2012)</b><br />'; }
 $is_today = (mkdate() === $sproc);
 
-if(isset($_GET['camtype']) && $_GET['camtype'] == "gnd") { $cam_type = "gnd"; $choseng = checkHTML; } else { $cam_type = "sky"; $chosens = checkHTML; }
+$height_mult = 0.75;
+if(isset($_GET['camtype']) && $_GET['camtype'] == "gnd") {
+	$cam_type = "gnd"; $choseng = checkHTML;
+} else if($_GET['camtype'] == "sky") {
+	$cam_type = "sky"; $chosens = checkHTML;
+} else {
+	$cam_type = "hik"; $chosenh = checkHTML; $height_mult = 0.666;
+}
 if(isset($_GET['light']) && $_GET['light'] == "day") { $light = "day"; $chosend = checkHTML; } else { $light = "all"; $chosena = checkHTML; }
 if(isset($_GET['width']) && $widths[(int)$_GET['width']] ) { $width_opt = (int)$_GET['width']; } else { $width_opt = 3; }
 if(isset($_GET['freq']) && in_array((int)$_GET['freq'], $freqs) ) { $freq = (int)$_GET['freq']; } else { $freq = $freqs[2]; }
 if(isset($_GET['frame']) && (int)$_GET['frame'] < 24) { $frame = intval($_GET['frame']); } else { $frame = $is_today ? (int)date("H") : 12; }
 
+if($cam_type === "hik" && $sproc <= mkdate(6, 20, 2018)) {
+	echo "<b>NB:</b> The experimental new high-res webcam was launched on 21st June 2018. Defaulted to legacy skycam<br />";
+	$cam_type = "sky"; $chosens = checkHTML; $height_mult = 0.75; $chosenh = null;
+}
+
 $qrand = date('dmYH');
 $width = $widths[$width_opt];
+if($width === 640 && $cam_type === "hik") {
+	$width = 870;
+}
 $padding = ($width < 200) ? 0 : 2;
-$height = 0.75 * $width;
+$height = $height_mult * $width;
 $font_size = ($width < 200) ? 80 : 100;
 
 if($freq === 1 && $sproc <= mkdate() - 10 * 24 * 3600) {
@@ -85,7 +100,6 @@ if($sproc <= mkdate(9, 24, 2016)) {
 	. "To view 30-min summaries, please <a href='./wcarchive.php'>visit the older archive</a>. <br />";
 	$freq = 180;
 }
-
 if($freq >= 5) {
 	$pframe = $frame; $nframe = $frame;
 	$prevs = $sproc - 3600*24; $nexts = $sproc + 3600*24;
@@ -131,7 +145,8 @@ for($i = 1; $i <= 31; $i++) {
 <?php
 echo '<b>Cam Type: </b>
 	<label><input type="radio" name="camtype" value="gnd" ', $choseng, ' /> Ground</label>
-	<label><input type="radio" name="camtype" value="sky" ', $chosens, ' /> <span class="rightPad">Sky</span></label>
+	<label><input type="radio" name="camtype" value="sky" ', $chosens, ' /> <span class="rightPad">Sky (legacy)</span></label>
+	<label><input type="radio" name="camtype" value="hik" ', $chosenh, ' /> <span class="rightPad">Sky (high-res)</span></label>
 	<span style="padding-left:0.7em"><b>Daylight only: </b></span>
 	<label><input type="radio" name="light" value="day" ', $chosend, ' /> <span class="rightPad">Yes</span></label>
 	<label><input type="radio" name="light" value="all" ', $chosena, ' /> <span class="rightPad">No</span></label>';

@@ -37,7 +37,7 @@ require('functions.php');
 		var src = '/cam/timelapse/' + vid + '.mp4';
 		console.log("Loading " + src);
 		var vidBox = document.getElementById('timelapse');
-		vidBox.innerHTML = '<video id="timelapse-vid" width="640" height="480" controls><source src="' + src + '" type="video/mp4"></video>';
+		vidBox.innerHTML = '<video id="timelapse-vid" width="864" height="576" controls><source src="' + src + '" type="video/mp4"></video>';
 
 		var vid = document.getElementById('timelapse-vid');
 		vid.currentTime = seek;
@@ -51,7 +51,7 @@ require('functions.php');
 <?php include_once('ggltrack.php') ?>
 </head>
 
-<body onload="camRefesh();">
+<body onload="camRefesh();camRefreshNew();">
 	<!-- ##### Header ##### -->
 	<?php require('header.php'); ?>
 
@@ -65,7 +65,18 @@ require('functions.php');
 
 <h1>Webcam</h1>
 
-<h3>Latest Skycam Image</h3>
+<h3>New High-res Skycam (experimental)</h3>
+
+<p>The camera is a Hikvision 5MP H.265+ DS-2CD2055FWD-I with 4mm focal length, and is looking NE over Hampstead Heath.</p>
+<img name="refresh-new" src="<?php echo $camImgNew; ?>" title="Latest new skycam" width="864" height="576" alt="skycam_new" />
+
+<noscript>JavaScript is required for the automatic updates</noscript>
+
+<p>The image is updated automatically every 10s, day and night, operating with a delay of about 20s.<br />
+	A reduced image size is shown here. Full-res image (3072x2048) coming soon
+<hr />
+
+<h3>Latest Skycam (legacy) Image</h3>
 
 <p>The camera is a Logitech C300 and is looking NE over Hampstead Heath (<a href="wx8.php#location" title="About page">see map</a>).</p>
 <img name="refresh" src="<?php echo $camImg; ?>" title="Latest skycam" width="640" height="480" alt="skycam" />
@@ -75,7 +86,7 @@ require('functions.php');
 <p>The image is updated automatically every minute, day and night, operating with a delay of about 70s.
 <br />
 <?php if($time < $sunrise || $time > $sunset) {
-		echo '<h3>Latest daylight webcam image</h3><img src="/sunsetcam.jpg" alt="Latest sunsetcam" width="640" height="480" /><br /><br />';
+		echo '<h3>Latest daylight webcam image</h3><img src="/skycam_sunset.jpg" alt="Latest sunsetcam" width="864" height="576" /><br /><br />';
 	} ?>
 
 A <a href="wx11.php" title="Contains skycam only">self-contained version</a> is also available.
@@ -93,7 +104,7 @@ A <a href="wx11.php" title="Contains skycam only">self-contained version</a> is 
 
 <h3>Skycam images from the last 24 hours</h3>
 <p>A <a href="highreswebcam.php" title="Full-resolution summary"><b>higher resolution version</b></a> is also available.</p>
-<img title="Last 24hrs summary" src="/dailywebcam.jpg" alt="Webcam summary, past 24hrs" width="864" height="1074" />
+<img title="Last 24hrs summary" src="/dailywebcam.jpg" alt="Webcam summary, past 24hrs" width="871" height="986" />
 <br />
 <a href="wcarchive.php" title="Webcam summary archive"><b>See full archive</b></a> (starting 01/08/10).
 
@@ -110,7 +121,7 @@ A <a href="wx11.php" title="Contains skycam only">self-contained version</a> is 
 	<span id="timelapse-5" onclick="loadVid('<?php echo "skycam_yearly_${lastyear}"; ?>', 0, 5)">Last year</span>
 </div>
 
-<div style="height: 490px" id="timelapse">Click on one of the options above to play</div>
+<div style="height: 586px" id="timelapse">Click on one of the options above to play</div>
 
 <p>Today's timelapse is updated hourly. Monthly and annual timelapses update daily.
 <br />

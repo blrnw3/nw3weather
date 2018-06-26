@@ -274,6 +274,7 @@ class Traffic {
 		In Feb '16 the wind sensor failed, followed by the T/H sensor in Sept '16 (replaced a month later),	and the rain sensor in March '17.
 		In Sept '17 I therefore <a href="./news.php#post-20170906" title="Full details in blog post">replaced the entire station</a> with a Davis VP2, a better model.
 	</p>
+	<p>In June 2018 I <a href="./news.php#post-20180621" title="Full details in blog post">installed a new high-resolution network camera</a> to replace the original webcam.</p>
 
 	<h3>Technical history</h3>
 	<ul>
