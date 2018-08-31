@@ -53,13 +53,14 @@ if($needValcolStyle) { echo '
 if($file <= 2) {
 	$camImg = '/currcam';
 	$camImgNew = '/skycam_small';
+	$camImgLarge = '/skycam.jpg';
 	$camImg .= ($file === 1) ? '_small.jpg' : '.jpg';
 	$camImgNew .= ($file === 1) ? '_small.jpg' : '.jpg';
 	echo '
 <script type="text/javascript">
-//<![CDATA[
 	image = "'.$camImg .'"; //name of the image
 	imageNew = "'.$camImgNew .'"; //name of the image
+	imageLarge = "'.$camImgLarge .'"; //name of the image
 	function camRefesh() {
 		if(dateJS.getSeconds() < 15 && dateJS.getSeconds() >= 10) {
 			document.images["refresh"].src = image+"?"+timePHP;
@@ -68,10 +69,25 @@ if($file <= 2) {
 		setTimeout("camRefesh()", 5000);
 		//console.log("camrefresh call at second " + dateJS.getSeconds());
 	}
-	function camRefreshNew() {
-		document.images["refresh-new"].src = imageNew+"?"+timePHP;
-		setTimeout("camRefreshNew()", 10000);
+	function camFreshify(name, img) {
+		if(document.images[name]) {
+			document.images[name].src = img+"?"+timePHP;
+		}
 	}
+	function refreshAll() {
+		if(!document.hidden) {
+			camFreshify("refresh-new", imageNew);
+			camFreshify("refresh-home", imageNew);
+			camFreshify("refresh-lg", imageLarge);
+		}
+	}
+	function camRefresher() {
+		refreshAll();
+		setTimeout("camRefresher()", 10000);
+	}
+
+	document.addEventListener("visibilitychange", refreshAll, false);
+	camRefresher();
 	//]]>
 </script>';
 }

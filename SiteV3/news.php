@@ -70,7 +70,7 @@
 		<p id="timelapse">
 			Summer solstice morning timelapse from the new camera: <br />
 			<video id="timelapse-vid" width="750" height="500" controls>
-				<source src="/solsticeam.mp4" type="video/mp4">
+				<source src="/cam/timelapse/solsticeam.mp4" type="video/mp4">
 			</video>
 		</p>
 

@@ -51,7 +51,7 @@ require('functions.php');
 <?php include_once('ggltrack.php') ?>
 </head>
 
-<body onload="camRefesh();camRefreshNew();">
+<body>
 	<!-- ##### Header ##### -->
 	<?php require('header.php'); ?>
 
@@ -73,7 +73,7 @@ require('functions.php');
 <noscript>JavaScript is required for the automatic updates</noscript>
 
 <p>The image is updated automatically every 10s, day and night, operating with a delay of about 20s.<br />
-	A reduced image size is shown here. Full-res image (3072x2048) coming soon
+<a href="./skycam.php">Check out an even higher resolution version here</a>
 <hr />
 
 <h3>Latest Skycam (legacy) Image</h3>

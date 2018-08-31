@@ -18,7 +18,7 @@
 	<?php include_once("ggltrack.php") ?>
 </head>
 
-<body onload="camRefesh();camRefreshNew();">
+<body>
 	<!-- ##### Header ##### -->
 	<?php require('header.php'); ?>
 	<!-- ##### Left Sidebar ##### -->

@@ -221,9 +221,9 @@ function cam_table($imgs, $heading, $day_offset) {
 		echo "<tr>";
 		foreach($img_row as $img) {
 			$dir = date('Y/m/d', $sproc + 24 * 3600 * $day_offset);
-			$src = "/camchive/$cam_type/$dir/$img$cam_type.jpg";
-			if(file_exists($root.$src)) {
-				echo '<td align="center"><img src="', $src, '?', $qrand ,'" alt="webcam" width="', $width, '" height="', $height, '" /></td>';
+			$src = "camchive/$cam_type/$dir/$img$cam_type.jpg";
+			if(file_exists(CAM_ROOT.$src)) {
+				echo '<td align="center"><img src="/', $src, '?', $qrand ,'" alt="webcam" width="', $width, '" height="', $height, '" /></td>';
 			} else {
 				echo '<td align="center">No image</td>';
 			}

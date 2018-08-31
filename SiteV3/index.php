@@ -37,7 +37,9 @@ $(document).ready(function() {
 	timeWD = $("#WDtime").val();
 	timeServer = $("#Servertime").val();
 	updater();
+	document.addEventListener("visibilitychange", resume, false);
 });
+
 
 function refreshImage(id) {
 	var patt = new RegExp("currid=[0-9]+");
@@ -64,6 +66,9 @@ function camChange() {
 
 var cnt = 0;
 function newify() {
+	if(document.hidden) {
+		return;
+	}
 	wxvars = JSON.parse( $("#newData").val() );
 //	console.log($("#newData").val());
 	 $.ajax({
@@ -152,7 +157,7 @@ function pause() {
 </style>
 </head>
 
-<body onload="camRefreshNew();">
+<body>
 	<!-- ##### Header ##### -->
 	<?php require('header.php'); ?>
 
@@ -238,7 +243,7 @@ echo "<b>$weather</b>; ". acronym("Raw METAR: ". $METAR, $cloud);
 <td width="36%" rowspan="3" align="center"><b><span title="Clickable!" onclick="camChange();" style="color:#336666">Weathercam</span></b>
 <br /><br />
 <a href="wx2.php">
-	<img id="cam" name="refresh-new" border="0" src="<?php echo $camImgNew; ?>" title="Click to enlarge" alt="Web cam" width="315" height="210" /></a>
+	<img id="cam" name="refresh-home" border="0" src="<?php echo $camImgNew; ?>" title="Click to enlarge" alt="Web cam" width="315" height="210" /></a>
 <br />
 <a href="wx2.php" title="Full webcam image and timelapses">See more</a>
 
@@ -322,7 +327,7 @@ echo '<img src="/static-images/'.$icon.'_lg.png" style="background-color:#CCCEEC
 <p>
 <h2>Weather cam timelapse for 2017 (9am - 3pm)</h2>
 <video width="640" height="480" controls>
-  <source src="/camchive/skycam_2017_9to3.mp4" type="video/mp4">
+  <source src="/cam/timelapse/skycam_2017_9to3.mp4" type="video/mp4">
 Your browser does not support the video tag.
 </video>
 <br />

@@ -97,7 +97,7 @@
 <p>
 <h2>Weather cam timelapse for 2017</h2>
 <video width="640" height="480" controls>
-  <source src="/camchive/skycam_2017_9to3.mp4" type="video/mp4">
+  <source src="/cam/timelapse/skycam_2017_9to3.mp4" type="video/mp4">
 Your browser does not support the video tag.
 </video>
 </p>

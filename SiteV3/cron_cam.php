@@ -68,15 +68,15 @@ $sky_freq = 5;
 $gnd_freq = 30;
 $dstamp = date('Y/m/d');
 $stamp = date('Y/m/d/Hi');
-mkdir($root . 'camchive/sky/'. $dstamp, 0775, true);
-mkdir($root . 'camchive/gnd/'. $dstamp, 0775, true);
-mkdir($root . 'camchive/hik/'. $dstamp, 0775, true);
-copy($root.'currcam.jpg', $root .'camchive/sky/'. $stamp .'sky.jpg');
-copy($root.'currgcam.jpg', $root .'camchive/gnd/'. $stamp .'gnd.jpg');
+mkdir(CAM_ROOT . 'camchive/sky/'. $dstamp, 0775, true);
+mkdir(CAM_ROOT . 'camchive/gnd/'. $dstamp, 0775, true);
+mkdir(CAM_ROOT . 'camchive/hik/'. $dstamp, 0775, true);
+copy($root.'currcam.jpg', CAM_ROOT .'camchive/sky/'. $stamp .'sky.jpg');
+copy($root.'currgcam.jpg', CAM_ROOT .'camchive/gnd/'. $stamp .'gnd.jpg');
 
 // New cam
 $src = "skycam.jpg";
-copy($root.$src, $root .'camchive/hik/'. $stamp .'hik.jpg');
+copy($root.$src, CAM_ROOT .'camchive/hik/'. $stamp .'hik.jpg');
 
 
 $daily_proctime = ( $tstamp == '2357' && !file_exists($root . date('Y/Ymd') . 'dailywebcam.jpg') ) ? '2357' : '2354';
@@ -91,7 +91,7 @@ if($tstamp == $daily_proctime) {
 	$minfreq_to_keep = 5;
 	$stamp = date("Y/m/d", mkdate($dmonth, $dday-$highfreq_keep_days, $dyear));
 	foreach(["sky", "gnd", "hik"] as $cam_type) {
-		$camdir = "$root/camchive/$cam_type/$stamp/";
+		$camdir = CAM_ROOT . "camchive/$cam_type/$stamp/";
 		for($i = 0; $i < 1440; $i++) {
 			$f = $camdir . date("Hi", mktime(0, $i, 0)) . "$cam_type.jpg";
 			if($i % $minfreq_to_keep !== 0 && file_exists($f)) {
@@ -117,10 +117,10 @@ if(date('i') == '39') {
 	$offset = date('H') == '00' ? 1 : 0;
 	$indate = date('Y/m/d',mkdate(date('n'),date('j')-$offset, date('Y')));
 	$outdate = date('Ymd',mkdate(date('n'),date('j')-$offset, date('Y')));
-	$inglob = ROOT."camchive/hik/$indate/*.jpg";
-	$outfile = CAM_ROOT."timelapse/skycam_$outdate.mp4";
-	$today = CAM_ROOT."timelapse/skycam_today.mp4";
-	$yest = CAM_ROOT."timelapse/skycam_yest.mp4";
+	$inglob = CAM_ROOT."camchive/hik/$indate/*.jpg";
+	$outfile = VID_ROOT."timelapse/skycam_$outdate.mp4";
+	$today = VID_ROOT."timelapse/skycam_today.mp4";
+	$yest = VID_ROOT."timelapse/skycam_yest.mp4";
 	$cmd = "/usr/bin/ffmpeg -r $FRAME_RATE -pattern_type glob -y -i \"$inglob\" -crf $CRF -vf scale=$SCALE $outfile";
 
 	if(date('H') == '01') {
@@ -137,7 +137,7 @@ if($tstamp == '0107') {
 	// Monthly timelapse
 	$freq = 10;
 	$twiset = 90;
-	$cam = "sky";  // TODO
+	$cam = "hik";  // TODO
 	$rate = 18;
 	$qual = 24;
 	$mon_yest_zero = zerolead($mon_yest);
@@ -251,8 +251,8 @@ function webcam_summary($frac, $w, $dest, $cam_type = "hik", $offset = 0, $wo = 
 }
 
 function cam_location($cam_type, $offset, $stamp) {
-	global $root, $dmonth, $dday;
+	global $dmonth, $dday;
 	$ymd = date("Y/m/d", mktime(12, 0, 0, $dmonth, $dday - $offset));
-	return "$root/camchive/$cam_type/$ymd/$stamp$cam_type.jpg";
+	return CAM_ROOT."camchive/$cam_type/$ymd/$stamp$cam_type.jpg";
 }
 ?>

@@ -37,8 +37,10 @@ if($image_raw) {
 	imagecopyresampled($image_small, $image_raw, 0, 0, 0, 0, $wtm, $htm, $w, $h);
 	imagestring($image_small, 4, 10, $htm - 20, $str, $col);
 	imagestring($image_small, 4, $wtm - 90, $htm - 20, $copystr, $col);
-	imagejpeg($image_small, $root.'skycam_small.jpg', 65);
-	if(date('H:i') == $sunset) { imagejpeg($image_small, $root.'skycam_sunset.jpg'); }
+	safe_cam_save($image_small, $root.'skycam_small.jpg', 65);
+	if(date('H:i') == $sunset) {
+		copy($root.'skycam_small.jpg', $root.'skycam_sunset.jpg');
+	}
 
 	// HD for saving
 	$image_hd = imagecreatetruecolor($wt, $ht);
@@ -46,7 +48,7 @@ if($image_raw) {
 	imagecopyresampled($image_hd, $image_raw, 0, 0, 0, 0, $wt, $ht, $w, $h);
 	imagettftext($image_hd, 20, 0, 15, $ht - 30, $col3, $FONT, $str);
 	imagettftext($image_hd, 20, 0, $wt - 210, $ht - 30, $col3, $FONT, $copystr);
-	imagejpeg($image_hd, $root.'skycam.jpg', 65);
+	safe_cam_save($image_hd, $root.'skycam.jpg', 65);
 
 	// Really small
 	$image_vsmall = imagecreatetruecolor($wts, $hts);
@@ -54,7 +56,7 @@ if($image_raw) {
 	imagecopyresampled($image_vsmall, $image_raw, 0, 0, 0, 0, $wts, $hts, $w, $h);
 	imagestring($image_vsmall, 1, 4, $hts - 10, $datestr, $col2);   // Full $str doesn't fit
 	imagestring($image_vsmall, 1, $wts - 60, $hts - 10, $copystr, $col2);
-	imagejpeg($image_vsmall, $root.'skycam_small_small.jpg', 60);
+	safe_cam_save($image_vsmall, $root.'skycam_small_small.jpg', 60);
 
 	imagedestroy($image_raw);
 	imagedestroy($image_hd);
@@ -67,5 +69,11 @@ if($image_raw) {
 $phpload = myround(microtime(get_as_float) - $scriptbeg, 3);
 echo "END: ". date('r'). "\n";
 echo "Runtime: $phpload s";
+
+function safe_cam_save($img, $dst, $q) {
+	$tmp = $dst .'.temp';
+	imagejpeg($img, $tmp, $q);
+	rename($tmp, $dst);
+}
 
 ?>

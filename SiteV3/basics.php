@@ -2,7 +2,8 @@
 date_default_timezone_set('Europe/London');
 
 const ROOT = '/var/www/html/';
-const CAM_ROOT = '/mnt/nw3-vol1/html/';
+const VID_ROOT = '/mnt/nw3-vol1/html/';
+const CAM_ROOT = '/mnt/webcam/html/';
 const IMG_ROOT = '/static-images/';
 $root = ROOT;
 
