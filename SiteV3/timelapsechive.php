@@ -51,7 +51,7 @@
 		var src = '/cam/timelapse/skycam_' + vidname + '.mp4';
 		console.log("Loading " + src);
 		var vidBox = document.getElementById('timelapse');
-		vidBox.innerHTML = '<video id="timelapse-vid" width="640" height="480" controls><source src="' + src + '" type="video/mp4"></video>';
+		vidBox.innerHTML = '<video id="timelapse-vid" width="864" height="576" controls><source src="' + src + '" type="video/mp4"></video>';
 
 		var vid = document.getElementById('timelapse-vid');
 		vid.currentTime = seek;
@@ -118,7 +118,7 @@
 </div>
 <h2 id="heading">Annual - <?php echo $dyear ?></h2>
 
-<div style="height: 490px" id="timelapse">Click on one of the options above to play</div>
+<div style="height: 590px" id="timelapse">Click on one of the options above to play</div>
 
 <b>NB:</b> Before 24th Sep 2016, daily timelapses are unavailable <br />
 </div>

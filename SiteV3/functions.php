@@ -852,7 +852,7 @@ function listdir($dir) {
 	return array_diff(scandir($dir), array('.', '..'));
 }
 
-function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset = null, $cam = "sky", $frame_rate = 24, $crf = 25, $name = null) {
+function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset = null, $cam = "sky", $frame_rate = 24, $crf = 25, $name = null, $scale = "1080x720") {
 	global $lat, $lng, $zenith;
 
 	$months = $month ? array($month) : range(1, 12);
@@ -892,7 +892,7 @@ function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset =
 			}
 		}
 	}
-	$cmd = "/usr/bin/ffmpeg -r $frame_rate -pattern_type glob -y -i \"$tmpdir/*.jpg\" -crf $crf $outfile";
+	$cmd = "/usr/bin/ffmpeg -r $frame_rate -pattern_type glob -y -i \"$tmpdir/*.jpg\" -crf $crf -vf scale=$scale $outfile";
 	echo $cmd . "\n";
 
 	echo shell_exec("ls $tmpdir");

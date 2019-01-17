@@ -8,14 +8,6 @@ include('/var/www/html/basics.php');
 
 echo "START: ". date('r'). "\n";
 
-//Move clientraw from the wrong directory (stupid WD).
-$badCRpath = 'clientraw.txt';
-if(file_exists($badCRpath)) {
-	copy($badCRpath, LIVE_DATA_PATH);
-	unlink($badCRpath);
-	file_put_contents(ROOT."Logs/stupidWD.txt", date("H:i:s d/m/Y") . "\r\n", FILE_APPEND);
-}
-
 //Now call this, which generates the mainData
 include(ROOT.'functions.php');
 
@@ -34,12 +26,12 @@ $goodlog_backup = ROOT.'logfiles/backup/goodlog_'. $tstamp .'.txt';
 //Rebuild 24hr and today data logs, plus neaten.
 //Do 10-minutely (on top of after downtime) just for extra security, and in case the cron missed an append
 $recentWDdowntime = time() - filemtime(ROOT. "Logs/WDuploadReallyBad.txt") < 1200;
-if($tstamp != '0000' && (date('i') % 10 == 0 || $recentWDdowntime)) {
+if(false && $tstamp != '0000' && (date('i') % 10 == 1 || $recentWDdowntime)) {
 	$fsize = filesize(ROOT.'customtextout.txt');
 	$fage = time() - filemtime(ROOT.'customtextout.txt');
 	if($fsize > 61000 && $fsize < 75000) { //probably valid
 		if($fage < 500) { // probably new
-		   # TODO: check data integrity: are all hours in the file 
+		   # TODO: check data integrity: are all hours in the file
 			copy($goodlog, $goodlog_backup);
 			logneatenandrepair();
 		} else {
@@ -183,10 +175,11 @@ if($tstamp == '0700') {
 
  //check for file issues
 if(date('i') % 15 == 1) {
-	$ageC = time() - filemtime(LIVE_DATA_PATH);
-	if($ageC > 500) {
-		mail("alerts@nw3weather.co.uk","Old live data","Alert! live data not updating. Act NOW!");
-		quick_log("WDuploadReallyBad.txt", $ageC);
+	if($OUTAGE || $ALT_OUTAGE) {
+		quick_log("outage.txt", "Outage: $OUTAGE ($diff s), alt-outage: $ALT_OUTAGE ($alt_true_age s)");
+		if($diff < 1800) {
+			mail("alerts@nw3weather.co.uk","Old live data","Alert! live data not updating. Act NOW!");
+		}
 	}
 }
 
@@ -221,7 +214,7 @@ if($tstamp % 100 == 0) {
 }
 
 // External clientraw grab and save
-if($NO_WIND_DATA) {
+if($OUTAGE) {
 	// $path = 'http://www.tottenhamweatheronline.co.uk/clientraw.txt';
 	$path = 'http://www.harpendenweather.co.uk/live/clientraw.txt';
 	//$path = 'http://www.sandhurstweather.org.uk/clientraw.txt';
@@ -232,8 +225,7 @@ if($NO_WIND_DATA) {
 		quick_log("HarpendenBadData.txt", $harpendenData[0]);
 	}
 }
-$no_thr_data = false;
-if($no_thr_data) {
+if($OUTAGE) {
 	//$path2 = "http://weather.casa.ucl.ac.uk/realtime.txt";
 	//$path2 = "http://www.lambethmeters.co.uk/weather/clientraw.txt";
 	$path2 = "http://weather.bencook.net/clientraw.txt";
@@ -308,19 +300,15 @@ if($tstamp == '2359') {
 }
 
 // CHECK for data flat-lining
-$lastChange = 0;
-$tn = $temp;
+$same = true;
 foreach($HR24['trend'] as $ti => $trend) {
-        //echo  $ti . $trend['temp'] . '<br />';
-        if($trend['temp'] != $temp) {
-	        $lastChange = $ti;
-                break;
-        }
+	if($trend['temp'] != $temp || $trend['humi'] != $humi) {
+		$same = false;
+		break;
+	}
 }
-echo 'LAST CHANGE: ' . $lastChange . '<br />';
-if($lastChange == 120) {
-        echo 'NOOOOOOO';
-	mail("alerts@nw3weather.co.uk","Data is flat-lining","Alert! Temperature is stuck at $temp");
+if($same && (date('i') % 10 == 1)) {
+	mail("alerts@nw3weather.co.uk","Data is flat-lining","Alert! Temperature/Hum is stuck at $temp / $humi");
 }
 
 ///////END OF SCRIPT////////END OF SCRIPT///////////////////////////////////////////////////////////################

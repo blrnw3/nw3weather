@@ -3,7 +3,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?php 
+<?php
 	$file = 0; ?>
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -29,13 +29,20 @@
 
 <h1>Contact Information</h1>
 
-If you have any queries regarding anything on this site or concerning my weather station, please don't hesitate to contact me via email.
-I also welcome general feedback, bug reports, and feature suggestions for the next site version.
+<div style="margin:3em">
+
+<p>
+	If you have any queries regarding anything on this site or concerning my weather station, please don't hesitate to contact me via email.
+	I also welcome general feedback, bug reports, and feature suggestions for the next site version.</p>
+
+<p>I can also provide data, on request, for use in non-commercial applications. I have CSVs since 2009 for all weather variables at hourly and daily intervals</p>
+
 <p>My address is: &nbsp <span style="color:blue"> blr[at]nw3weather.co.uk</span></p>
 
 <br />
+</div>
 
-<p>Alternatively, you may use the form below to send short comments or queries.</p>
+<!--<p>Alternatively, you may use the form below to send short comments or queries.</p>
 
 <form name="htmlform" method="post" action="contact.php?saved=1">
 <table width="450px">
@@ -55,11 +62,11 @@ I also welcome general feedback, bug reports, and feature suggestions for the ne
 <td colspan="2" style="text-align:center">  <input type="submit" value="Submit"> </td>
 </tr>
 </table>
-</form>
+</form>-->
 
 <?php
 $saved = $_REQUEST['saved'];
-if ($saved == 1) {
+if (false && $saved == 1) {
 
 	$email_to = "blr@nw3weather.co.uk";
 	$email_subject = "nw3weather form submission";

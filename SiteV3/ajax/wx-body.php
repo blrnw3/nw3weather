@@ -1,5 +1,5 @@
 <?php
-$siteRoot = '/home/nwweathe/public_html/';
+$siteRoot = '/var/www/html/';
 require_once($siteRoot.'unit-select.php');
 require_once($siteRoot.'functions.php');
 include_once(ROOT.'RainTags.php');

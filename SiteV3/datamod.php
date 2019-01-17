@@ -183,7 +183,7 @@ for($i = 0; $i < count($modlinem); $i++) {
 		<td><input type="text" name="', $types_m_original[$i], '" /> </td>';
 	if($i==0) {
 		echo '<td align="center" rowspan=', count($modlinem), '">';
-		echo '<div><video id="tvid" width="640" height="480" controls><source src="/cam/timelapse/skycam_', date('Ymd', $modTimestamp) ,'.mp4" type="video/mp4"></video></div>';
+		echo '<div><video id="tvid" width="864" height="650" controls><source src="/cam/timelapse/skycam_', date('Ymd', $modTimestamp) ,'.mp4" type="video/mp4"></video></div>';
 		echo '</td>';
 	}
 	echo '</tr>';

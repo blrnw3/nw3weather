@@ -102,7 +102,7 @@ if($tstamp == $daily_proctime) {
 	}
 
 	webcam_summary($frac, 6, date('Y/Ymd') . 'dailywebcam.jpg', $cam_type = "hik", $offset = 0, $wo, $ho);
-	webcam_summary(0.2, 6, date('Y/Ymd') . 'dailywebcam_large.jpg');
+//	webcam_summary(0.22, 6, date('Y/Ymd') . 'dailywebcam_sky.jpg');
 	//webcam_summary(.22, 6, date('Y/Ymd', true) . '/dailygwebcam.jpg');
 	//webcam_summary(.4, 6, date('Y/Ymd', true) . '/dailygwebcam_large.jpg');
 	quick_log( 'cronCamTimeDaily.txt', myround( microtime(get_as_float) - $t_start ) );
@@ -135,9 +135,9 @@ if(date('i') == '39') {
 
 if($tstamp == '0107') {
 	// Monthly timelapse
-	$freq = 10;
+	$freq = 15;
 	$twiset = 90;
-	$cam = "hik";  // TODO
+	$cam = "hik";
 	$rate = 18;
 	$qual = 24;
 	$mon_yest_zero = zerolead($mon_yest);
@@ -150,7 +150,7 @@ if($tstamp == '0112') {
 	// Yearly timelapse
 	$freq = 120;
 	$twiset = -30;
-	$cam = "sky";
+	$cam = "hik";
 	$rate = 15;
 	$qual = 24;
 	$name = "skycam_yearly_${yr_yest}";
@@ -158,11 +158,11 @@ if($tstamp == '0112') {
 	quick_log( 'timelapse.txt', myround( microtime(get_as_float) - $t_start ) ." YEARLY ". $filf);
 }
 
-if($tstamp == '0117') {
+if($tstamp == '0118') {
 	// Yearly midday timelapse
 	$freq = 720;
 	$twiset = 0;
-	$cam = "sky";
+	$cam = "hik";
 	$rate = 6;
 	$qual = 24;
 	$name = "skycam_yearly_midday_${yr_yest}";

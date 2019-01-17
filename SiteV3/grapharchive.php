@@ -1,5 +1,5 @@
 <?php require('unit-select.php');
-	
+
 	$file = 3;
 	$subfile = true;
 ?>
@@ -85,9 +85,8 @@ if(file_exists($root.'logfiles/daily/'.$datetag. 'log.txt')) {
 		 <img title="graph for ', $datedescrip, '" alt="Daily graph3" src="/graphdayA.php?x=800&amp;y=150&amp;type=wdir&amp;date=',  $datetag, '" />';
 }
 else {
-	echo 'Daily graph not available for this day'; if(preg_match('/^66\.249/',$_SERVER['REMOTE_ADDR']) == 0) {
-	mail("blr@nw3weather.co.uk","Graph not found","Notice! Graph requested but not available. File: ".$datetag.".gif; User: ".
-	$_SERVER['REMOTE_ADDR']. ' '.$_SERVER['HTTP_USER_AGENT']); }
+	echo 'Daily graph not available for this day';
+	log_events("no_graph.txt","File: ".$datetag.".gif");
 }
 ?>
 

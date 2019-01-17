@@ -1,15 +1,4 @@
 <?php
-
-if($mainDataCritical) {
-	$crsize1 = filesize(LIVE_DATA_PATH);
-	$crmoddiff1 = time() - filemtime(LIVE_DATA_PATH);
-	if($crmoddiff1 <= 1 && $crsize1 == 0) { // stalled/mid upload
-		sleep(1); //should fix things; not too critical anyway
-		$scriptbeg -= 1.0;
-		clearstatcache(); //has resolved issue?
-		$slept = true;
-	}
-}
 $crsizeFinal = filesize(LIVE_DATA_PATH);
 
 //Select appropriate file to use
@@ -41,11 +30,17 @@ $w10m = $mainData[158] * $kntsToMph;
 $wdir = $mainData[3];
 
 // Time variables
-$unix = filemtime(LIVE_DATA_PATH);
+$unix = mktime(intval($mainData[29]), intval($mainData[30]), intval($mainData[31]),
+		intval($mainData[36]), intval($mainData[35]), intval($mainData[141]));
 
-// Derived current weather variables
-$dewp = dewPoint($temp, $humi);
-$feel = feelsLike($temp, $gust, $dewp);
+$diff = time() - $unix;
+$OUTAGE = $diff > 3600;
+$ALT_OUTAGE = false;
+$alt_ready = false;
+if($OUTAGE) {
+	$alt_age = time() - filemtime(LIVE_DATA_PATH_ALT);
+	$alt_ready = $alt_age < 300;
+}
 
 // Other multi-use weather vars
 $maxgsthr = $HR24['misc']['maxhrgst'];
@@ -53,10 +48,9 @@ $maxgstToday = $NOW['max']['gust'];
 $maxavgToday = $maxavgspd;
 
 // No wind data - use Harpenden wind data from their clientraw (cached by cron_main)
-$NO_WIND_DATA = false;
-if($NO_WIND_DATA) {
+if($OUTAGE && $alt_ready) {
 	$extClient = file(ROOT.'EXTclientraw.txt');
-	$extOffset = 0.91; // 0.91; //1.3 - tott;
+	$extOffset = 0.99; // 0.91; //1.3 - tott;
 	$extData = explode(" ", $extClient[0]);
 	$wind = $extData[1] * $kntsToMph * $extOffset;
 	$gust = $extData[140] * $kntsToMph * $extOffset; //actually the max 1-min gust
@@ -77,7 +71,6 @@ if(false && $extData[3] === "101") { // CASA rules whilst Harpenden is down ;(
 	$w10m = $extData[5] * $extOffset;
 	$wdir = $extData[7];
 
-	$feel = feelsLike($temp, $gust, $dewp);
 	$maxavgToday = $NOW['max']['wind'];
 }
 if(false && $temp == 16.9) {
@@ -86,8 +79,6 @@ if(false && $temp == 16.9) {
 	$extData2 = explode(" ", $extClient2[0]);
 	$temp = $extData2[2] - 0.7;
 	$humi = $extData2[3] + 1;
-	$dewp = dewPoint($temp, $humi);
-	$feel = feelsLike($temp, $gust, $dewp);
 }
 if(false && $temp == 16.9) {
 	// StAlbans
@@ -95,8 +86,6 @@ if(false && $temp == 16.9) {
 	$extData2 = explode(" ", $extClient2[0]);
 	$temp = $extData2[4] + 0.3;
 	$humi = $extData2[5] - 1;
-	$dewp = dewPoint($temp, $humi);
-	$feel = feelsLike($temp, $gust, $dewp);
 }
 
 if(false && $rain == 0 && date("Hi") > "0009") {
@@ -106,12 +95,31 @@ if(false && $rain == 0 && date("Hi") > "0009") {
 	$rain = $extData2[9];
 }
 
-if(false && $rain == 0 && date("Hi") > "0009") {
-	// Bencook/brixton rain
-	$extClient2 = file(ROOT.'EXTclientraw2.txt');
+if($OUTAGE && $alt_ready) {
+	$extClient2 = file(LIVE_DATA_PATH_ALT);
 	$extData2 = explode(" ", $extClient2[0]);
-	$rain = $extData2[7];
+
+	$unix = mktime(intval($extData[29]), intval($extData[30]), intval($extData[31]),
+		intval($extData[36]), intval($extData[35]), intval($extData[141])) - 50;
+
+	$alt_true_age = time() - $unix;
+
+	if($alt_true_age < 1200) {
+		// Bencook temp/humi/rain/pres
+		$rain = (date('Ymd') === "20180923") ? 11.0 : $extData2[7];
+		$temp = $extData2[4] + 0.0;
+		$humi = $extData2[5] + 0;
+		$pres = $extData[6] + 0.0;
+		if(date("Hi") <= "0009") {
+			$rain = 0;
+		}
+	} else {
+		$ALT_OUTAGE = true;
+	}
 }
 
+// Derived current weather variables
+$dewp = dewPoint($temp, $humi);
+$feel = feelsLike($temp, $gust, $dewp);
 
 ?>

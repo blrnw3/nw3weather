@@ -3,8 +3,9 @@
 <?php
 require_once('functions.php');
 
-$timestampWD = sysWDtimes(false);
-if(strlen($timeRare) > 2) {
+//$timestampWD = sysWDtimes(false);
+$timestampWD = $unix;
+if(strlen($timeRare) > 2 && $file > 1) {
 	$dateaRare = explode("/", $dateRare);
 	$dateGoodRare = date('Y-m-d', mkdate($dateaRare[1],$dateaRare[0],$dateaRare[2]));
 	$timestampWDRare = strtotime("$timeRare $dateGoodRare");
