@@ -59,23 +59,23 @@ $sumqa = array(false,false,false, false, false, false,false, false,false);
 $anomqa = array(false,false,false, false, false, false,false, false,false);
 
 //Manual-input daily variables
-$types_m_original = array('sunhr','wethr', 'cloud','snow','lysnw', 'hail','thunder','fog', 'comms','extra','issues','away','spare');
+$types_m_original = array('sunhr','wethr', 'cloud','snow','lysnw', 'hail','thunder','fog', 'comms','extra','issues','away','pond','spare');
 $types_m = array_flip($types_m_original);
-$data_coloursm = array('yellow','aqua', 'black','black','black', 'black','black','black', 'black','black','black','black','black');
+$data_coloursm = array('yellow','aqua', 'black','black','black', 'black','black','black', 'black','black','black','black','orange','black');
 $data_descriptionm = array('Sun Hours','Wet Hours', 'Cloud Cover','Falling Snow','Lying Snow', 'Hail','Thunder','Dense Fog',
-	'Comms','Comms+','Issues','Away','null');
-$data_unitm = array(7,7, 10,11,11, 10,10,10, 10,10,10,10,10);
-$data_m_num = array(8,9, 10,-6,-6, -6,-6,-6, -6,-6,-6,-6,-6);
-$typeconvm = array(9,9, false,6,6, 0.1,0.2,false, false,false,false,false,false);
-$wxtable_colrm = array(10,10, 10,10,10, 10,10,10, 10,10,10,10,10);
-$round_sizem = $round_sizeim = array(5,5, 1,1,1, 1,1,1, 1,1,1,1,1);
-$sumqm = array(true,true, true,true,true, true,true,true, false,false,false,false,false);
-$anomqm = array(true,true, false,false,false, false,false,false, false,false,false,false,false);
+	'Comms','Comms+','Issues','Away','Pond Temperature', 'null');
+$data_unitm = array(7,7, 10,11,11, 10,10,10, 10,10,10,10,0,10);
+$data_m_num = array(8,9, 10,-6,-6, -6,-6,-6, -6,-6,-6,-6,4,-6);
+$typeconvm = array(9,9, false,6,6, 0.1,0.2,false, false,false,false,false,1,false);
+$wxtable_colrm = array(10,10, 10,10,10, 10,10,10, 10,10,10,10,0,10);
+$round_sizem = $round_sizeim = array(5,5, 1,1,1, 1,1,1, 1,1,1,1,5,1);
+$sumqm = array(true,true, true,true,true, true,true,true, false,false,false,false,false,false);
+$anomqm = array(true,true, false,false,false, false,false,false, false,false,false,false,false,false);
 
 // Separate usage
 $data_m_description = array('Sun Hours', 'Wet Hours', 'Cloud Cover', acronym('Possible events: Air frost, Dense fog, Snowfall, Lying Snow, Hail, Thunder(storm), Max sun.','Events',true),
 						'Comments', 'Extra Comments', 'Issues',	acronym('This tells whether I was absent from North London on the day. When absent I am unable to make detailed weather observations of any events such as fog, rain, snow and thunder,	instead using reports from fellow observers at nearby sites, webcam footage, or the observations of friends/family.',
-						'Observer Absent?', true));
+						'Observer Absent?', true), 'Pond Temperature (Heath)');
 
 //All daily
 $types_alltogether = array_merge($types_original,$types_derived,$types_m_original,$types_anom); // int -> str
@@ -115,7 +115,7 @@ $categories = array(
 	'Dew Point' => array('dmin','dmax','dmean'),
 	'Change' => array('tc10max','tchrmax','hchrmax','tc10min','tchrmin','hchrmin'),
 	'Range' => array('trange','hrange','prange'),
-	'Observations' => array('sunhr','wethr','ratemean','cloud','snow','lysnw','hail','thunder','fog'),
+	'Observations' => array('sunhr','wethr','ratemean','cloud','snow','lysnw','hail','thunder','fog','pond'),
 	'Anomalies' => array('tmina','tmaxa','tmeana', 'raina', 'sunhra','sunhrp', 'wethra', 'wethrp'),
 	'Misc.' => array('nightmin','daymax','w10max','afhrs'),
 	'Feels-like' => array('fmin','fmax','fmean'),
@@ -409,6 +409,7 @@ function wdirMean($wdir, $speed) {
  * @return array of data for the chosen daily logfile
  */
 function dailyData($procfil = 'today') {
+	global $yr_yest;
 	$datt = $dat = array();
 	for($t = 6; $t < 10; $t++) {
 		$datt[$t]['max'] = -99999999;
@@ -417,7 +418,7 @@ function dailyData($procfil = 'today') {
 	$round_pt = array(0,0,0,1,0,0, 2,1,1,2);
 	$trendKeys = array('wind', 'gust', 'wdir', 'temp', 'humi', 'pres', 'dewp');
 	$daytypes = array_flip(array('temp' => 6, 'humi' => 7, 'dewp' => 9, 'rain' => 10, 'pres' => 8, 'wdir' => 5, 'gust' => 4, 'wind' => 3));
-	$rntipmm = 0.2; //constant
+	$rntipmm = 0.22; //constant
 	$RATE_THRESH = 0.3; //Two tips' worth
 
 	$daymax1 = $daymax2 = -99;
@@ -428,12 +429,15 @@ function dailyData($procfil = 'today') {
 	$rncum = $w10 = 0;
 	$mins = $maxs = $means = $timesMin = $timesMax = array();
 
+	$windDirs = [];
+
 	$filcust = file(ROOT. "logfiles/daily/" . $procfil . 'log.txt');
 	$end = count($filcust); //should be 1440
 
 	for($i = 0; $i < $end; $i++) {
 		$custl = explode(',', $filcust[$i]);
-		$custmin[$i] = intval($custl[1]); $custhr[$i] = intval($custl[0]);
+		$custmin[$i] = intval($custl[1]);
+		$custhr[$i] = intval($custl[0]);
 
 		for($t = 0; $t < $lineLength; $t++) {
 			$dat[$t][$i] = floatval($custl[$t]);
@@ -514,6 +518,10 @@ function dailyData($procfil = 'today') {
 //			$w60 -= $dat[3][$i-60]/60;
 			$rn60[$i] = $dat[10][$i] - $dat[10][$i-60];
 		}
+
+		// Wdir
+		$dir_quantised = floor(($dat[5][$i] + 11.25) / 22.5) % 16;
+		$windDirs[$dir_quantised][floor($dat[3][$i])]++;
 	}
 
 	//Trends
@@ -699,6 +707,16 @@ function dailyData($procfil = 'today') {
 		}
 	}
 
+	// Pond temp
+	if($procfil === "today" || $procfil == date('Ymd')) {
+		$fildatm = file(ROOT."datm$yr_yest.csv");
+		$last_line_raw = $fildatm[count($fildatm) - 1];
+		$last_line = split(',', $last_line_raw);
+		$pond_temp = $last_line[12];
+	} else {
+		$pond_temp = null;
+	}
+
 	$frosthrs = round($frostMins / 60, (int)($frostMins < 10) + 1);
 	$rnDuration = roundToDp($duration / 60, 1);
 
@@ -706,8 +724,10 @@ function dailyData($procfil = 'today') {
 				"trend" => $trends, "trendRn" => $rnCums, "changeHr" => $hrChanges, "changeDay" => $hr24Changes,
 				"misc" => array("frosthrs" => $frosthrs, "rnrate" => $currRate, "rnduration" => $rnDuration,
 								"rnlast" => $lastRnFull, "wethrs" => $wethrs, "maxhrgst" => $maxhrgst, "cnt" => $end,
-								"prevRn" => date('r', $prevRn), "prevRnOld" => date('r', $prevRnOld)
-							)
+								"prevRn" => date('r', $prevRn), "prevRnOld" => date('r', $prevRnOld),
+								"pondTemp" => $pond_temp
+							),
+				"windDirs" => $windDirs
 			);
 }
 

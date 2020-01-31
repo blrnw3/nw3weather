@@ -43,6 +43,10 @@ if(false && $tstamp != '0000' && (date('i') % 10 == 1 || $recentWDdowntime)) {
 }
 
 //Prepare data for appending logs
+// Fix weird bug
+if($tstamp == '0107') {
+	$gust = $wind;
+}
 $lineVars = array($wind, $gust, $wdir, $temp, $humi, $pres, $dewp, $rain);
 $isBadLineData = ($pres == 0);
 $newLine = date('H,i,d,');
@@ -95,7 +99,8 @@ file_put_contents( ROOT.'serialised_datHr24.txt', serialize( dailyData( date('Ym
 if($tstamp == $sunGrabTime) {
 	$sunhrs = getSunHrs();
 	$wethrs = file_get_contents(ROOT."wethrs.txt");
-	$listm = array($sunhrs,$wethrs,'u','','','','','','blr','','','','\n');
+	$pond_temp_yest = $newNOW["misc"]["pondTemp"];
+	$listm = array($sunhrs,$wethrs,'u','','','','','','blr','','','',$pond_temp_yest,'\n');
 	$fildatm = fopen(ROOT."datm" . $yr_yest . ".csv", "a");
 	fputcsv($fildatm, $listm);
 	fclose($fildatm);
@@ -204,7 +209,10 @@ if(date('i') % 30 == 28) {
 }
 
 //WU forecast retrieve
-if($tstamp % 100 == 0) {
+// API key is dead
+// New URL: https://api.weather.com/v3/wx/forecast/daily/5day?postalKey=NW3%202:GB&units=h&language=en-US&format=json&apiKey=d5fedde5c6ae4eabbedde5c6aeaeab51
+// it's json so need to parse it
+if(false && $tstamp % 100 == 0) {
 	$xml = getXml('http://api.wunderground.com/api/46272bfe75051ab1/forecast/q/UK/EGLL.xml');
 	if($xml !== false) { //grab the data if available
 		$condition = $xml->forecast->simpleforecast->forecastdays->forecastday->conditions;
@@ -226,10 +234,10 @@ if($OUTAGE) {
 	}
 }
 if($OUTAGE) {
-	//$path2 = "http://weather.casa.ucl.ac.uk/realtime.txt";
+//	$path2 = "http://weather.casa.ucl.ac.uk/realtime.txt";
 	//$path2 = "http://www.lambethmeters.co.uk/weather/clientraw.txt";
-	$path2 = "http://weather.bencook.net/clientraw.txt";
-	//$path2 = "http://www.jon00.me.uk/clientraw.txt";
+//	$path2 = "http://weather.bencook.net/clientraw.txt";
+	$path2 = "http://www.jon00.me.uk/clientraw.txt"; // src: http://www.jon00.me.uk/FreshWDL.shtml
 	//$path2 = "http://www.snglinks.com/wx/spiel/clientraw.txt";
 	$casaData = urlToArray($path2);
 	if($casaData[0] && count($casaData) === 1) {
@@ -523,14 +531,20 @@ function serialiseCSVm() {
 			$cnt1 = count($raw);
 			for($i = 1; $i < $cnt1; $i++) {
 				$rawa = explode(',', $raw[$i]);
-				for($j = 0; $j < 8; $j++) { //up-to and including fog
+				for($j = 0; $j <= 12; $j++) { //up-to and including fog, plus pond
+					if($j >= 8 && $j < 12) {
+						continue;
+					}
 					$day = date('j', strtotime('Jan 1st '. (string)$year . ' + ' . (string)($i-1) . ' days'));
 					$month = date('n', strtotime('Jan 1st '. (string)$year . ' + ' . (string)($i-1) . ' days'));
-					if($j >= 3 && $rawa[$j] == '') {
+					if($j >= 3 && $j !== 12 && $rawa[$j] == '') {
 						$rawa[$j] = '0';
 					}
 					if($j === 3) { //falling snow
 						$rawa[$j] = ($rawa[$j] == 'y') ? $DATA[13][$year][$month][$day] + 0.01 : $rawa[$j];
+					}
+					if($j === 12 && $year < 2019) {
+						$rawa[$j] = '';
 					}
 					$data[$j][$year][$month][$day] = $rawa[$j];
 				}

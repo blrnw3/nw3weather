@@ -162,6 +162,7 @@ require('unit-select.php'); ?>
 				</option><option value="hail" >Hail
 				</option><option value="thunder" >Thunder
 				</option><option value="fog" >Dense Fog
+				</option><option value="pond" >Pond Temperature
 				</option>
 			</optgroup>
 			<optgroup label="Anomalies"><option value="tmina">Min Temp Anomaly

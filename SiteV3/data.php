@@ -58,6 +58,10 @@ $fildatt = fopen(ROOT."datt" . $yr_yest . ".csv","a");
 fputcsv($fildatt, $listt);
 fclose($fildatt);
 
+// Wdir write
+$yestNow["windDirs"]["dt"] = $yr_yest;
+file_put_contents(ROOT."datwdirdaily.dat", serialize($yestNow["windDirs"]) . "\r\n", FILE_APPEND);
+
 //Set-up for first day of new year
 if(date('n') == 1 && date('j') == 1) {
 	$fildat = fopen(ROOT."dat" . date('Y') . ".csv","w");

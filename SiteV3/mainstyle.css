@@ -225,6 +225,10 @@ dl {
 	margin: 0.7em;
 }
 
+li {
+	margin: 0.2em 0;
+}
+
 button {
 	margin: 0.6em;
 	display: block;
@@ -263,7 +267,10 @@ select {
 	color: #99910A;
 }
 .snow {
-	color: #68acbd
+	color: #68acbd;
+}
+.wind {
+	color: #ff3322;
 }
 
 .table-top {
