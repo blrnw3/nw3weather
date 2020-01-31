@@ -17,11 +17,11 @@ $timestampCrontags = filemtime(ROOT.'RainTags.php');
 $timeStampBest = min($timestampCrontags, $dateTimeStamp); //oldest
 echo "<!-- WDtimestamp: $dateTimeStamp, CrontagsTimestamp: $timestampCrontags -->";
 
-if($file == 20): $shr = 'Last Updated: 28 Sep 2012'; //climate
-elseif($file == 7 && !$subfile): $shr = 'Last Upload: 06 September 2017';
+if($file == 20): $shr = 'Last Updated: Sep 2012'; //climate
+elseif($file == 7 && !$subfile): $shr = 'Last Upload: Sep 2017';
 elseif($file == 7 && $subfile): $shr = 'Uploaded on ' . $uploadDate;
-elseif($file == 8): $shr = 'Last Updated: Sep 2016';
-elseif($file == 9): $shr = 'Page Last Updated: 29 Mar 2013';
+elseif($file == 8): $shr = 'Last Updated: Jan 2020';
+elseif($file == 9): $shr = 'Page Last Updated: Mar 2013';
 elseif($file == 0): $shr = ''; //blank for generic e.g. error pages
 else: $shr = 'Last Full Update: '. date('d M Y, H:i ', $timeStampBest) . $dst;
 endif;

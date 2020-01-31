@@ -272,9 +272,10 @@ echo '<img '.$click.'id="graph1" src="'.$img1.'&amp;currid='. time().'" alt="Las
 <td align="center"><b><span style="color:#6A4EC6">Local Forecast</span></b>
 <br /><br />
 <?php
-$fcast = file_get_contents("WUforecast.txt");
+// WU scraper is dead
+$fcast = strtolower($vpforecasttext); //file_get_contents("WUforecast.txt");
 $icon = 'cloudy';
-$forecastTerms = array('Rain', 'Clear', 'Partly', 'Thunderstorm', 'Snow');
+$forecastTerms = array('precipitation', 'clear', 'clouds', 'thunderstorm', 'snow');
 $forecastIcons = array('rain', 'clear', 'partlycloudy', 'tstorms', 'snow');
 for($i = 0; $i < count($forecastIcons); $i++) {
 	if(strpos($fcast, $forecastTerms[$i]) !== false) {
@@ -282,12 +283,13 @@ for($i = 0; $i < count($forecastIcons); $i++) {
 		break;
 	}
 }
-if($i <= count($forecastIcons) && strpos($fcast, "Chance") !== false) {
+if($i <= count($forecastIcons) && strpos($fcast, "possible") !== false) {
 	$icon .= '_showers';
 }
 elseif( $time > $sunset && ($icon == 'clear' || $icon == 'partlycloudy') ) {
 	$icon = 'nt_'. $icon;
 }
+
 echo '<img src="/static-images/'.$icon.'_lg.png" style="background-color:#CCCEEC;" title="'.$fcast.'" width="83" height="81" alt="London Forecast icon" />';
 ?>
 <br />
@@ -310,43 +312,57 @@ echo '<img src="/static-images/'.$icon.'_lg.png" style="background-color:#CCCEEC
 
 	<noscript><p><b>Warning:</b> Javascript must be enabled for live updates to function</p></noscript>
 </div>
-<span id="pauser" style="color:#3a5;" onclick="pause();">
-	Pause live updates
-</span>
-<p>Live pressure-based <a href="/wx5.php" title="View detailed forecasts">forecast</a>: <?php echo $vpforecasttext; ?></p>
+<!--<p>Live pressure-based <a href="/wx5.php" title="View detailed forecasts">forecast</a>: <?php echo $vpforecasttext; ?></p>-->
 
-<!--
-<h1 id="2017-review">2017 Weather Report</h1>
-<p style="margin-bottom: 0.5em;" id="report-2017">
+<p>Latest Hampstead Heath pond temperature: <?php echo conv($HR24["misc"]["pondTemp"], 1); ?>
+	&nbsp; <a href="http://nw3weather.co.uk/wxdataday.php?vartype=pond">see temperature history</a></p>
 
+<p style="font-size: 120%; font-weight: bold;" id="report-2019">
+<a href="/repyear.php">View nw3weather's full 2019 Annual Report</a>
+</p>
+
+<h2>Key data for 2019</h2>
 <p>
-<a href="/TablesDataMonth.php?vartype=rain" title="Monthly Rain Records">
-	These pages are useful for comparing all aspects of the weather across the years
-</a>.
+<dl>
+	<dt class="temp">Temperature</dt>
+	<dd>Mean <b>11.7 C</b> [+1.0 C from the <abbr title="Long-term average">LTA</abbr>].
+		Absolute Min and Max: <b>-4.6 C</b> (31st Jan), and <b>36.8 C</b> (25th Jul). <br />
+		Air frosts: <b>14</b>. Ice days: <b>0</b>. Days above 30C: <b>7</b>. Max feels-like: <b>45 C</b>.
+	</dd>
+	<dt class="rain">Rainfall</dt>
+	<dd>Total: <b>618 mm</b> [-1%] across <b>174</b> days (48%) of <abbr title="=0.2mm">recordable rain</abbr>. <br />
+		Highest daily (starting at midnight) total: <b>~32 mm</b> (24th Sept). <br />
+		Wettest Month: <b>93 mm</b> [+65%] (Dec). Most rainy: <b>26 days</b> (Nov). <br />
+		Driest: <b>12 mm</b> [-75%] (April). Fewest days: <b>9 days</b> in Feb. <br />
+		Most rain in an hour: <b>~11 mm</b>, from a thunderstorm on the <a href="/wxhistday.php?year=2019&month=10&day=1">1st of Oct</a>
+	</dd>
+	<dt class="sun">Sunshine</dt>
+	<dd>Total: <b>1594 hrs</b> [+8%] from a possible 4045. (39%) <br />
+		Days with more than a minute of sunshine: <b>314</b> days (86%). <br />
+		Days with at least 95% of their maximum possible sun: <b>32</b> (9%). <br />
+		Sunniest month: <b>205 hrs</b> [+13%] (Aug). Most sunnier than avg: <b>+66%</b> in Feb. Dullest than avg: <b>-19%</b> in June.
+	</dd>
+	<dt class="snow">Winter Events</dt>
+	<dd>There were <b>five</b> days with lying snow (max: <b>5 cm</b> on 1st Feb), and <b>4</b> with falling snow (giving <b>17 cm</b> worth),
+		as well as <b>14</b> air frosts [-12] (we had <b>84</b> total hrs below zero, the majority in Jan).
+		The minimum wind chill was <b>-7C</b> on Feb 1st.
+	</dd>
+	<dt class="wind">Wind</dt>
+	<dd>The maximum wind gust was <b>48 mph</b> on Aug 10th, and the maximum 1-min-avg wind was <b>32 mph</b> <br />
+		The windiest day was the 16th of Mar with a mean of <b>12.8 mph</b>. March was also the windiest month at 6.4 [+1.2 mph].
+	</dd>
+	<dt>Other Events</dt>
+	<dd>There were <b>0</b> known days of hail, <b>7</b> with thunder (4 in Jul), and <b>7</b> days with fog at 9am. <br />
+	</dd>
+	</dl>
 </p>
-<p>
-<h2>Weather cam timelapse for 2017 (9am - 3pm)</h2>
-<video width="640" height="480" controls>
-  <source src="/cam/timelapse/skycam_2017_9to3.mp4" type="video/mp4">
-Your browser does not support the video tag.
-</video>
-<br />
-<a href="/repyear.php">Report is also archived along with previous years' reports</a>
-</p>
-</p>
-<span style="color:#555; font-size: 90%">
-	Produced: 15th Jan 2018
-</span>
--->
 
-<a href="/repyear.php">View nw3weather's 2017 Annual Report</a>
-
-<h1>Latest Monthly Weather Report</h1>
+<!--<h1>Latest Monthly Weather Report</h1>-->
 <?php
 $repStamp = mkdate($dmonth-1, 1);
 $repMonth = date('n', $repStamp);
 $repYear = date('Y', $repStamp);
-displayMonthlyReport($repMonth, $repYear);
+//displayMonthlyReport($repMonth, $repYear);
 ?>
 
 <div id="twitter-feed" style="margin: 2em">

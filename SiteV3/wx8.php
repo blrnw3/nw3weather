@@ -78,7 +78,7 @@ $file = 8;
 
 <?php
 class Traffic {
-	public static $annual = [
+	public $annual = [
 		2011 => [ // Based on 01 Sep - End
 			'sum' => 7000,
 			'mean' => 57,
@@ -150,6 +150,15 @@ class Traffic {
 			'max' => 1256,
 			'min_date' => '22 Dec',
 			'max_date' => '28 Feb'
+		],
+		2019 => [
+			'sum' => 143000,
+			'mean' => 393,
+			'median' => 338,
+			'min' => 193,
+			'max' => 1661,
+			'min_date' => '23 Mar',
+			'max_date' => '25 Jul'
 		]
 	];
 
@@ -161,7 +170,11 @@ class Traffic {
 	];
 
 	function prepare_annual_data_table() {
-		foreach (self::$annual as $year => $data) {
+		foreach ($this->annual as $yr => $data) {
+			if($yr > 2012) {
+				$last = $this->annual[$yr - 1]['sum'];
+				$this->annual[$yr]['yoy'] = "+ ". round(($data['sum'] - $last) / $last * 100) ."%";
+			}
 			$this->annual_summary['sum'] += $data['sum'];
 			$this->annual_summary['mean'] += $data['mean'];
 			if($data['min'] < $this->annual_summary['min']) {
@@ -172,8 +185,8 @@ class Traffic {
 			}
 		}
 		// 2011 is an incomplete year so adjust count
-		$this->annual_summary['mean'] = round($this->annual_summary['mean'] / (count(self::$annual) - 0.6 ));
-		$this->annual_summary['median'] = 199; // TODO: keep updated
+		$this->annual_summary['mean'] =  "";  # round($this->annual_summary['mean'] / (count(self::$annual) - 0.6 ));
+//		$this->annual_summary['median'] = 199; // TODO: keep updated
 	}
 }
 ?>
@@ -368,15 +381,17 @@ class Traffic {
 	<?php
 $traffic = new Traffic();
 $traffic->prepare_annual_data_table();
+//var_dump($traffic->annual);
 ?>
 	<table class="table1 aboutTbl">
 		<thead>
 			<tr class="table-head">
-				<td class="td12" style="padding: 0.5em" colspan="6">Nw3weather Annual Traffic</td>
+				<td class="td12" style="padding: 0.5em" colspan="7">Nw3weather Annual Traffic</td>
 			</tr>
 			<tr class="table-top">
 				<td>Year</td>
 				<td>Total Visits</td>
+				<td>growth</td>
 				<td>Mean</td>
 				<td>Median</td>
 				<td>Max</td>
@@ -387,6 +402,7 @@ $traffic->prepare_annual_data_table();
 			<tr>
 				<td>Total</td>
 				<td><?php echo number_format($traffic->annual_summary['sum']) ?></td>
+				<td><?php echo $traffic->annual_summary['yoy'] ?></td>
 				<td><?php echo $traffic->annual_summary['mean'] ?></td>
 				<td><?php echo $traffic->annual_summary['median'] ?></td>
 				<td><?php echo $traffic->annual_summary['max'] ?></td>
@@ -394,10 +410,11 @@ $traffic->prepare_annual_data_table();
 			</tr>
 		</tfoot>
 		<tbody>
-			<?php foreach (Traffic::$annual as $year => $data): ?>
+			<?php foreach ($traffic->annual as $year => $data): ?>
 			<tr>
 				<td><?php echo $year ?></td>
 				<td><?php echo number_format($data['sum']); if($year == $dyear) echo "+ (to ${data['TO']})"; ?></td>
+				<td><?php echo $data['yoy'] ?></td>
 				<td><?php echo $data['mean'] ?></td>
 				<td><?php echo $data['median'] ?></td>
 				<td><?php echo $data['max'] ?> (<?php echo $data['max_date'] ?>)</td>
@@ -407,10 +424,11 @@ $traffic->prepare_annual_data_table();
 		</tbody>
 	</table>
 	<p>Additionally, it is found that, as expected, traffic is higher on days of precipitation - particularly snowfall, which can drive traffic up by more than 500% -
-		record site traffic was over 1500 visits on <a href='/wxhistday.php?year=2013&amp;month=1&amp;day=18' title='daily weather breakdown'>18th Jan 2013</a>.
+		record site traffic for a long time was over 1500 visits on <a href='/wxhistday.php?year=2013&amp;month=1&amp;day=18' title='daily weather breakdown'>18th Jan 2013</a>.
+		This was only surpassed in 2019 with  <a href='/wxhistday.php?year=2019&amp;month=7&amp;day=25' title='weather for 25 jul 2019'>a day of record-breaking heat</a> bringing 1661 visits.
 	</p>
 
-	<?php img("/static-images/traffic.PNG", "nw3weather site traffic - sessions", 0.9, "nw3weather daily site visits, 2012-2018", 822, 459); ?>
+	<?php img("/static-images/traffic.PNG", "nw3weather site traffic - sessions", 0.9, "nw3weather daily site visits, 2012-2019", 830, 467); ?>
 
 	<h2>Acknowledgements</h2>
 	<p>
@@ -486,12 +504,17 @@ $traffic->prepare_annual_data_table();
 		I enjoy extremes of weather, whether that be cold, heat, rain, dry, sun, cloud, snow, storms, hail, heavy showers, sleet, fog...
 	</p>
 	<p>
-		I studied Physics and Computer Science, both of which I was largely motivated to study by my love of the weather, and
-		currently live and work in New York, having <a href="/news.php#post-20151107">moved here</a> from London in late 2015.
+		I studied Physics and Computer Science, both of which I was largely motivated to study by my love of the weather, and went on
+		to work as a software engineer.
+		In 2015 I left London and <a href="/news.php#post-20151107">moved to New York</a>. I currently live and work in the suburbs of San Francisco, California.
+		The weather station back home in London is lovingly cared for by my mother and other relatives, and me when I come back every 6 months or so.
 	</p>
 	<p>
 		For more insight into the world of a weather hobbyist,
-		<a href="news.php#post-20141116">take a look at the article on me in the local paper</a>.
+		<a href="news.php#post-20141116">take a look at the article on me in the local paper</a>. <br />
+		I was featured <a href="https://www.hamhigh.co.uk/news/environment/hampstead-weather-station-owner-ben-lee-rodgers-1-6192043">
+		  in another article</a>, about the July 2019 heatwave, five years later.
+
 	</p>
 
 </div>
