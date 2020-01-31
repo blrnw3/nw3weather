@@ -63,7 +63,7 @@ table_end();
 ?>
 
 
-<p align="center"> <i>&copy; Ben Lee-Rodgers</i></p>
+<p align="center"> <i>&copy; Ben A. L. Masschelein-Rodgers</i></p>
 
 <br />
 

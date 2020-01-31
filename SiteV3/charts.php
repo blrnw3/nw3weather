@@ -33,7 +33,7 @@ require('unit-select.php'); ?>
 		/**
 		 * Changes chart based on dynamic input
 		 * @returns {undefined}
-		 * @author &copy; Ben Lee-Rodgers, nw3weather, April 2013
+		 * @author &copy; Ben Masschelein-Rodgers, nw3weather, April 2013
 		 */
 		function changeChart() {
 			var extras = '';

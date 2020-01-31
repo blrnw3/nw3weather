@@ -1,5 +1,5 @@
 <?php require('unit-select.php');
-		
+
 		$file = 31;
 ?>
 
@@ -21,7 +21,7 @@
 		 * Changes chart based on dynamic input
 		 * @returns {undefined}
 		 * @param {bool} show show or hide, innit
-		 * @author &copy; Ben Lee-Rodgers, nw3weather, April 2013
+		 * @author &copy; Ben Masschelein-Rodgers, nw3weather, April 2013
 		 */
 		function autoscale(show) {
 			if(show)
