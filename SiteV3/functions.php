@@ -75,12 +75,12 @@ function degname($winddegree) {
  * @return string bft-descrip + bft-force
  */
 function bft($mph) {
-	$bftscale = array(0,1,3,7,12,17,24,30,38,46,54,63,73,99);
+	$bftscale = array(1,3,7, 12,17,24, 30,38,46, 54,63,73, 99);
 	$bftword = array('Calm', 'Light air', 'Light breeze', 'Gentle breeze', 'Moderate breeze', 'Fresh breeze', 'Strong breeze', 'Near gale', 'Gale',
 			'Severe gale', 'Storm', 'Violent storm', 'Hurricane');
 	$cnt = 0;
 	foreach ($bftscale as $value) {
-		if((int)$mph <= $value) {
+		if($mph <= $value) {
 			return $bftword[$cnt] . " (F$cnt)";
 		}
 		$cnt++;

@@ -21,9 +21,14 @@
 //$statusMessage = '<p><b>UPDATE 9pm 14th Apr: nw3weather is back! Updates to follow.</b><br /><b>'. date('d M: ', mktime(6,52,0,4,12,2016)) . '</b>'. 'All sensors are currently not functioning. No live data is available.<br />Meantime, data is being served from nearby weather stations, <a href="http://www.harpendenweather.co.uk">Harpenden weather</a> for wind  <a href="http://weather.casa.ucl.ac.uk">UCL casa</a>data, and <a href="http://weather.casa.ucl.ac.uk">UCL casa</a> for the rest.</p>';
 //$statusMessage = '<b>15th Apr</b>: ALL sensors at nw3weather are now reporting correctly. <a href="news.php">Read more about the downtime</a>';
 //$statusMessage = '<b>5th Sep 2017, New weather station</b>: <a href="/news.php" title="Read more">Data is now coming from the new sensors I installed on 4th Sep</a>. Enjoy. <a href="/wx_albgen.php?albnum=6&view=Full">See photos</a>';
-$statusMessage = '<b>'. date('H:i d M: ', mktime(12,30,0,3,29,2018)) . '</b>'. 'Having some weather server problems today. Slow updates, no webcam, some missing data. Will investigate tonight';
-$showMessage = false;
-$isBad = true;
+//$statusMessage = '<b>'. date('H:i d M: ', mktime(12,30,0,3,29,2018)) . '</b>'. 'Having some weather server problems today. Slow updates, no webcam, some missing data. Will investigate tonight';
+//$statusMessage = '<b>'. date('d M: ', mktime(1,1,1,9,22,2018)) . '</b>'. 'The local weather server (a micro PC) has failed after over eight years of continuous operation.<br />The weather station is still working but can\'t send its data to the web server. Only the new IP camera is working as it is directly linked.<br />I am working on getting a replacement PC, ETA 2 weeks. In the meantime, data is being sourced from other local weather stations.';
+//$statusMessage = '<b>'. date('d M: ', mktime(1,1,1,10,3,2018)) . '</b>'. 'We are back in business. New PC is fully operational and all data is being transmitted normally';
+$statusMessage = '<b>'. date('d M: ', mktime(1,1,1,9,24,2019)) . ' Rain gauge offline.</b>'. ' As of this morning the rain gauge has sadly stopped working and no rain is being recorded. I am looking into the problem but a fix may be slow to emerge. In the meantime I will be sourcing rain data from other London stations.';
+$statusMessage = '<b>'. date('d M: ', mktime(1,1,1,9,27,2019)) . ' Rain gauge FIXED.</b>'. ' As of 4pm the rain guage is back online and working. Thank you Judy for fixing it in my absence!';
+//$statusMessage = '<b>'. date('d M: ', mktime(1,1,1,1,8,2019)) . '</b>'. '<a href="/repyear.php">nw3weather 2018 year in review is now available; click to see my weather highlights and station news</a>';
+$showMessage = true;
+$isBad = false;
 // echo "<div class='statusBox info'><b>10am, Mon 16th May</b>: The thermo/hygro sensor is functioning again</div>";
 //echo "<div class='statusBox warning' style='background-color: #fc5;'>nw3weather is undergoing server maintenance this weekend. The site may be down for several hours at a minimum. <br />I am moving from a shared hosted solution to a cheaper, more powerful and more flexible cloud VM host</div>";
 //echo "<div class='statusBox info'><b>10pm, 8th May</b>: Server maintenance has completed successfully.<br />I have moved from a shared hosting solution to a cheaper, more powerful and more flexible cloud VM host<br /><a href='/contact.php'>Please do report any issues that may have resulted from this</a></div>";
@@ -155,7 +160,7 @@ echo "<!-- WDAge: $diff -->";
 $planned = false; //Change to true if maintenance planned
 if($planned) { showStatusDiv($message2); }
 
-if(!$planned && $diff > 900) { // 15mins downtime before alert message is triggered
+if(false && !$planned && $diff > 900) { // 15mins downtime before alert message is triggered
 	showStatusDiv( $message .' &nbsp;
 	   System time: '. date('d/m/y, H:i T', $timestampWD) .
 	   '; &nbsp; Server time: '. date('d/m/y, H:i T') .

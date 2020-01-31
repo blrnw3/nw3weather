@@ -172,7 +172,7 @@ function datx() {
 							$DATA[$i*3+1][$year][$month][$day] - $DATA[$i*3][$year][$month][$day];
 					}
 					else { // rain rate
-						$val = ($DATM[1][$year][$month][$day] > 0.4 && $DATA[13][$year][$month][$day] > 0.2) ?
+						$val = ($DATM[1][$year][$month][$day] > 0.4 && $DATA[13][$year][$month][$day] >= 0.4) ?
 							$DATA[13][$year][$month][$day] / $DATM[1][$year][$month][$day] : '';
 						$DATX[$i][$year][$month][$day] = $val;
 

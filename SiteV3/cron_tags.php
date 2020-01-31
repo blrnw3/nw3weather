@@ -90,7 +90,7 @@ for ($i = 0; $i < $rainallCnt; $i++) {
 		}
 		$drylength = 0;
 	}
-	if ($rainall[$i] > 0.2) {
+	if ($rainall[$i] >= 0.2) {
 		$wetlength += 1;
 		$rndays_all++;
 	} else {
@@ -169,7 +169,7 @@ for ($i = $rainallCnt - 1; $i >= $endday - 50; $i--) {
 		}
 		$drylength = 0;
 	}
-	if ($rainall[$i] > 0.2) {
+	if ($rainall[$i] >= 0.2) {
 		$wetlength += 1;
 	} else {
 		if ($wetlength > $yrecwetlength && ($i + $wetlength + 1) > $endday) {
@@ -199,7 +199,7 @@ for ($i = $rainallCnt - 1; $i >= $endday - 50; $i--) {
 		}
 		$drylength = 0;
 	}
-	if ($rainall[$i] > 0.2) {
+	if ($rainall[$i] >= 0.2) {
 		$wetlength += 1;
 		if ($rainall[$rainallCnt - 1] == 0 && $i == $rainallCnt - 2) {
 			$dayswithrain = -1;
@@ -239,7 +239,7 @@ $yestrn = $ystdrain = $rain2[$yr_yest][$dz_yest];
 $rndays_week = 0;
 for ($d = 1; $d <= 7; $d++) {
 	$rainweekVals[$d] = $rain365a[date('z', mkday($dday - $d)) + 1];
-	if ($rainweekVals[$d] > 0.2) {
+	if ($rainweekVals[$d] >= 0.2) {
 		$rndays_week++;
 	}
 }
@@ -317,7 +317,7 @@ for ($y = 2009; $y <= $dyear; $y++) {
 	$recorddailyraindatea[$y] = array_search($recorddailyraina[$y], $rain2[$y]);
 	for ($m = 1; $m <= count($rains[$y]); $m++) {
 		for ($d = 1; $d <= count($rains[$y][$m]); $d++) {
-			if ($rains[$y][$m][$d] > 0.2) {
+			if ($rains[$y][$m][$d] >= 0.2) {
 				$rndays[$y][$m] += 1;
 				$rndays2[$m][$y] += 1;
 			}

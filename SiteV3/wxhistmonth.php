@@ -140,7 +140,7 @@ foreach ($mdatm[3] as $d => $sn) {
 	$snowfall += (float)($sn == 'y') ? $mdat[13][$d] : $sn;
 }
 if($daysofRn[2] > 0) {
-	$misc[0] = 'Mean rainfall for days with >0.2mm: '. conv($msdat[13][2]*$dim / $daysofRn[2], 2);
+	$misc[0] = 'Mean rainfall for days with >0.3mm: '. conv($msdat[13][2]*$dim / $daysofRn[2], 2);
 	$misc[1] = 'Total snowfall: '. conv($snowfall, 6) .' - '. percent($snowfall, $msdat[13][2]*$dim, 0, true, false) .' of the total precipitation';
 	$misc[2] = 'Total lying snow: '. conv(array_sum($mdatm[4]), 6);
 } else {

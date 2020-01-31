@@ -186,7 +186,7 @@ $sunMax = $dsun[date('z',$sproc)];
 if($ddatm[0] == 'b') { $ddatm[0] = 0; }
 if($ddatm[0]/$sunMax > 0.95) { $maxsunevent = true; }
 $ddatm[0] .= ' [' . acronym('Out of ' . conv($sunMax,0,0) . ' hrs possible', round($ddatm[0]/$sunMax*100) . '%',true) . ']';
-if($ddatm[1] > 0 && $ddat[13] > 0.2) { $ddatm[1] .=  '<br />[Mean rain rate: '. conv($ddat[13]/$ddatm[1],2.1) . ']'; }
+if($ddatm[1] > 0.4 && $ddat[13] >= 0.4) { $ddatm[1] .=  '<br />[Mean rain rate: '. conv($ddat[13]/$ddatm[1],2.1) . ']'; }
 $mcdatm[0] = roundi($mcdatm[0]) . ' hrs ' . percent($mcdatm[0],$mcsanom) . ' ['. acronym('Of a possible '. roundi($maxsuntd),roundi(100*$mcdatm[0]/$maxsuntd),true) . '%]';
 $mcdatm[1] = roundi($mcdatm[1]) . ' hrs ' . percent($mcdatm[1],$wetav[$mproc-1]*$dproc/date('t',$sproc)) . ' ['. acronym('Of a possible '. 24*$dproc,roundi(100*$mcdatm[1]/$dproc/24),true) . '%]';
 $him[0] .= ' [' . acronym('Out of ' . conv($sunMax,0,0) . ' hrs possible', percent($him[0],$sunMax,0,1,0),true) . ']';
@@ -281,6 +281,7 @@ $finds2 = array('"','?'); $repls2 = array('',',');
 $ddatm[6] = str_replace($finds2,$repls2,$ddatm[10]);
 if($ddatm[11] == 1) { $ddatm[7] = 'Yes - observations may be unreliable'; } else { $ddatm[7] = 'No'; }
 if(strlen($ddatm[6]) < 3) { $ddatm[6] = 'None known'; }
+$ddatm[8] = ($ddatm[12] !== '') ? conv($ddatm[12], 1) : 'n/a';
 
 //Other touch-up work
 $mcdat[12] = $mcdat[14] = $mcdat[15] = $mcdat[16] = $mcdatm[2] = $mcdatm[3] = $mcdatm[4] = $mcdatm[5] = $mcdatm[6] = $hi[12] = $hiY[12] = $lo[12] = $loY[12] = '';
@@ -441,6 +442,19 @@ if($todcond) {
 	if(file_exists($root. $pastcamstamp. 'webcam.'.$endtag)) { echo '<img src="/', $pastcamstamp, 'webcam.',$endtag,'" alt="daycamsum" />'; }
 	else { echo '<br />Webcam summary not available for this day'; }
 	if($endtag == 'gif' && file_exists($root. $pastcamstamp. 'webcam2.gif')) { echo '<img src="/', $pastcamstamp, 'webcam2.gif" alt="daycamsum2" />'; }
+	if($sproc > mkdate(6,20,2018)) {
+		echo '<a href="/highreswebcam.php?year='.$yproc.'&month='.$mproc.'&day='.$dproc.'&camtype=hik&light=all&width=3&freq=30&frame=1&cycle">Full resolution individual images at up-to 5 minute intervals</a><br />';
+	} else {
+		if(file_exists($root. $pastcamstamp. 'webcam_large.'.$endtag)) {
+			echo '<a href="/', $pastcamstamp, 'webcam_large.',$endtag,'">Large resolution version</a><br />';
+		}
+	}
+	if($sproc > mkdate(9,23,2016)) {
+		$w = 864; $h = 576;
+		echo '<div style="height: 586px; margin:0.6em">'
+		. '<video id="tvid" width="'.$w.'" height="'.$h.'" controls><source src="/cam/timelapse/skycam_', date('Ymd', $sproc) ,'.mp4" type="video/mp4"></video>'
+			. '</div>';
+	}
 }
 else { echo 'Daily breakdown not available until 09:07, when a partial report will be generateable.'; }
 ?>

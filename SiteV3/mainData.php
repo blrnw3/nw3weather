@@ -88,11 +88,11 @@ if(false && $temp == 16.9) {
 	$humi = $extData2[5] - 1;
 }
 
-if(false && $rain == 0 && date("Hi") > "0009") {
+if(false && date("Hi") > "0009") {
 	// Casa rain
 	$extClient2 = file(ROOT.'EXTclientraw2.txt');
 	$extData2 = explode(" ", $extClient2[0]);
-	$rain = $extData2[9];
+	$rain = $extData2[7];
 }
 
 if($OUTAGE && $alt_ready) {

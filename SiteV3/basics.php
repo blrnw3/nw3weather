@@ -88,13 +88,13 @@ const JQUERY = '<script type="text/javascript" src="http://ajax.googleapis.com/a
 const GRAPH_DIMS_LARGE = ' height="1017" width="850" ';
 const GRAPH_DIMS_SMALL = ' height="619" width="542" ';
 
-$sunGrabTime = '0833'; // When to scrape Wonline for EGLL Sun Hrs
+$sunGrabTime = '0653'; // When to scrape Wonline for EGLL Sun Hrs
 
 /*
  * ###### BUGS #####
  *
  * ######  WD dependendecy reduction  #####
- * webcam timelapses (v. difficult in PHP, but could do ffmpeg locally
+ * DONE: webcam timelapses (v. difficult in PHP, but could do ffmpeg locally
  * wind rose
  *
  * ##### Site switch ######

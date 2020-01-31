@@ -3,7 +3,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?php 
+<?php
 	$file = 16; ?>
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -28,6 +28,7 @@
 <div id="main">
 <?php require('site_status.php'); ?>
 
+	<h1>Detailed Pressure Data</h1>
 <?php
 require './detailDataModules.php';
 
@@ -39,7 +40,7 @@ if($pwType == 'baro') {
 	$pwLabel = 'Barometric Pressure (MSL adjusted)';
 	$mainTables = new DetailedDataModule("baro");
 	$measures = array('Pressure','Pressure Trend','24hr Mean Pressure');
-	$values = array($baro,conv($HR24['changeHr']['baro'],3,1,1) . ' /hr',$last24houravbaro);
+	$values = array($pres,conv($HR24['changeHr']['pres'],3,1,1) . ' /hr',$last24houravbaro);
 	$conv = array(3,false,3);
 } else {
 	require $root.'WindTags.php';
@@ -85,7 +86,7 @@ $mainTables->rankTables();
 <ul>
 	<li>Valid Pressure records began in January 2009</li>
 	<li>All figures, unless specified, relate to the period midnight-midnight, this being when daily extremes are reset</li>
-	<li>All values are accurate to &plusmn;3 mb (though most to within 1) due to inaccuracies in this station's barometer.</li>
+	<li>All values are accurate to &plusmn;0.2 mb since Sept 2017; before that, to within &plusmn;2 mb</li>
 </ul>
 
 </div>
