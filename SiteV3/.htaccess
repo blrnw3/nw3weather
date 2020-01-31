@@ -98,6 +98,7 @@ redirect 301 /wxhistyear.php /oldSites/sitev2/wxhistyear.php
 redirect 301 /Historical.php /oldSites/sitev2/Historical.php
 redirect 301 /sitemap.php /
 redirect 301 /sitev3 /
+redirect 301 /wx100.php /wx10.php?humtype=dew
 
 RewriteCond %{HTTP_HOST} ^.*$
 RewriteRule ^Beaufort\ Scale.html$ /BeaufortScale.php [R=301,L]

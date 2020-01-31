@@ -23,6 +23,7 @@ $widths = array(0,  6, 15, 24, 21, 20, 14);
 
 $images = array('thermom8', 'humidity', 'dewy', 'pressure2', 'windy', 'rain2');
 $measures = array('Temperature', 'Relative Humidity', 'Dew Point', 'Pressure', 'Wind', 'Rainfall');
+$wx = array(14, 10, 100, 16, 13, 12);
 $convs = array(1, 5, 1, 3, 4, 2);
 
 table('table-main', null, 10);
@@ -77,7 +78,7 @@ for($i = 0; $i < count($measures); $i++) {
 	tr( "row".colcol($i) );
 
 	td( '<img src="/static-images/'. $images[$i] .'_small.png" alt="icon'.$var1Names[$i].'" width="40" height="40" />', 'tdmain' );
-	td( '<b>'. $measures[$i] .'</b>', 'tdmain' );
+	td( '<b><a class="hidden-link" href="/wx'. $wx[$i] .'.php" title="View detailed '. $measures[$i] .' data">'. $measures[$i] .'</a></b>', 'tdmain' );
 	td( '<b><span id="var'.$i.'" style="">'. conv($liveData[$i], $convs[$i]) ."</span></b>  &nbsp; ". $arrow . $extra1, 'tdmain' );
 	td( $extra2a . conv($NOW['max'][$vars2a[$i]], $convs[$i] + (($i === 5) ? 0.1 : 0)) . $t1 .'<br />'. $extra2b . conv($vars2b[$i], $convs[$i]) . $t2, 'tdmain' );
 	td( $extra3a . conv($vars3a[$i], $convs[$i] + 0.1, true, $cond) . $ratehr .'<br />'.
