@@ -408,21 +408,22 @@ for($r = 0; $r < count($measures); $r++) {
 ?>
 </table>
 
-<hr />
-<table cellpadding="5" cellspacing="5" align="center">
-<tr>
-<td class="td-center"><h4><?php echo date("F Y",mkday($dday-1,$dyear)); ?> Windrose</h4></td>
-<td width="10%"></td><td class="td-center"><h4><?php echo date("Y",mkday($dday-1,$dyear)); ?> Windrose</h4></td></tr>
-<tr><td class="td-center"><img src="/<?php if($firstday) { echo date("Yn",mkday($dday-1,$dyear)); } ?>windrose.gif"
-	alt="windrose month" title="Current month-to-date windrose" /></td>
-<td width="10%"></td>
-<td class="td-center"><img src="/windrose<?php if(date('n') > 1) { echo 'year'; } ?>.gif" alt="windrose year" title="Current year-to-date windrose" /></td></tr>
-</table>
-
 <p align="center"><b>NB: </b>Daily wind speed maxima &amp; averages for the current year (and all other years on record) can be viewed
 <a href="wxdataday.php?vartype=wmean" title="<?php echo $year; ?> windspeeds"> here</a></p>
 
-<img src="graph31.php?type=wmean&amp;x=800&amp;y=400" alt="31-day wind speed graph" />
+<hr />
+<h2>Wind roses and graphs</h2>
+
+<img src="/rose_month.png" alt="windrose month" title="Current month-to-date windrose" width="432" height="460" />
+<img src="/rose_year.png" alt="windrose year" title="Current year-to-date windrose" width="432" height="460" />
+<p align="center"><a href="/windrose_viewer.php">See wind roses for all months, days and years</a></p>
+
+<h3>Latest wind charts</h3>
+<img src="graph31.php?type=wmean&amp;x=800&amp;y=400" alt="31-day wind speed graph" width="800" height="400" />
+<img style="margin:5px" src="graphdayA.php?type1=wind&type2=wdir&amp;x=800&amp;y=400" alt="Last 24hrs wind speed and direction" width="800" height="400" />
+
+<h3>All time wind rose for nw3</h3>
+<img style="margin:8px" src="/rose_all.png" alt="windrose all time" title="All-time-to-date windrose" width="800" height="820" />
 
 </div>
 

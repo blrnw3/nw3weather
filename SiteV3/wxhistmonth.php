@@ -406,7 +406,8 @@ if($sproc1 < mkdate($dmonth,$dday+1,$dyear) && $sproc > mkdate(2,0,2009) && !$to
 			<button style="margin:1em;" onclick="loadGraphs();">Load detailed graphs</button>
 			<noscript>Javascript required to view graphs</noscript>
 		</div>
-	<a href="wxhistday.php?day=1&amp;month=',$mproc,'&amp;year=',$yproc,'" title="Daily report for 1st', monthfull($mproc), ' ', $yproc,'">View daily breakdown</a>
+		<h2>Wind rose</h2> <p><img src="/windrose.php?st='. $yproc . zerolead($mproc) .'01&en=month" /></p>
+	<a href="wxhistday.php?day=1&amp;month=',$mproc,'&amp;year=',$yproc,'" title="Daily report for 1st ', monthfull($mproc), ' ', $yproc,'">View daily breakdown for month</a>
 	';
 
 }

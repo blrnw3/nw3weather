@@ -905,5 +905,14 @@ function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset =
 	return $outfile;
 }
 
+/**
+ * Convert a YYYYMMDD string to a unix timestamp
+ * @param type $stamp
+ * @return type
+ */
+function datestamp_to_ts($stamp) {
+	return mkdate(substr($stamp,4,2),substr($stamp,6,2),  substr($stamp,0,4));
+}
+
 require_once 'mainData.php';
 ?>

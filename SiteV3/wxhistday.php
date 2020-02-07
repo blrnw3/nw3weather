@@ -56,6 +56,7 @@ if($mproc < 1 || $mproc > 12 || $yproc < 2009 || $yproc > $dyear || $dproc < 1 |
 	}
 }
 $sproc = mkdate($mproc,$dproc,$yproc); // safe
+$stamp = date("Ymd", $sproc);
 //re-evaluate in case semi-dodgy date, e.g. 31st April, 30th Feb etc.
 $mproc = (int)date('n', $sproc);
 $dproc = (int)date('j', $sproc);
@@ -455,6 +456,7 @@ if($todcond) {
 		. '<video id="tvid" width="'.$w.'" height="'.$h.'" controls><source src="/cam/timelapse/skycam_', date('Ymd', $sproc) ,'.mp4" type="video/mp4"></video>'
 			. '</div>';
 	}
+	echo "<h2>Wind rose</h2> <img src='/windrose.php?st=$stamp&en=$stamp' />";
 }
 else { echo 'Daily breakdown not available until 09:07, when a partial report will be generateable.'; }
 ?>

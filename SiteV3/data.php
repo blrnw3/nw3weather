@@ -1,7 +1,8 @@
 <?php
 $t_start = microtime(get_as_float);
 
-$yestNow = dailyData( date('Ymd', time() - 12 * 3600) ); // works for midnight process, and any backup up to midday
+$stamp = date('Ymd', time() - 22 * 3600); // works for midnight process, and any backup til eve
+$yestNow = dailyData($stamp);
 
 $list = array(
 	$yestNow['min']['temp'], $yestNow['max']['temp'], $yestNow['mean']['temp'],
@@ -59,7 +60,7 @@ fputcsv($fildatt, $listt);
 fclose($fildatt);
 
 // Wdir write
-$yestNow["windDirs"]["dt"] = $yr_yest;
+$yestNow["windDirs"]["dt"] = $stamp;
 file_put_contents(ROOT."datwdirdaily.dat", serialize($yestNow["windDirs"]) . "\r\n", FILE_APPEND);
 
 //Set-up for first day of new year
@@ -83,8 +84,8 @@ copy(ROOT.'datt' . $yr_yest . '.csv', ROOT.'backup/datt' . $yr_yest.'-'.$day_yes
 $vid_dtd = $root . date('Ymd', mkdate(date('n'),date('j')-10)) . 'dayvideo.wmv';
 if(file_exists($vid_dtd)) { unlink($vid_dtd); }
 //delete dailywebcam.gif
-$cam_dtd1 = $root . date('Ymd', mkdate(date('n'),date('j')-1)) . 'dailywebcam.gif';
-$cam_dtd2 = $root . date('Ymd', mkdate(date('n'),date('j')-1)) . 'dailywebcam2.gif';
+$cam_dtd1 = $root . $stamp . 'dailywebcam.gif';
+$cam_dtd2 = $root . $stamp . 'dailywebcam2.gif';
 if(file_exists($cam_dtd1)) { unlink($cam_dtd1); }
 if(file_exists($cam_dtd2)) { unlink($cam_dtd2); }
 

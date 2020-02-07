@@ -3,7 +3,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?php 
+<?php
 	$file = 3; ?>
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -58,18 +58,19 @@ if(!$ukUnits) {
 <p>To view different timescales, use the <a href="graphviewer.php">Custom Graphs</a> page.</p>
 
 <h2>31-Day Trends</h2>
-<img src="./graph31.php?type=tmean&amp;x=430" alt="31-Day temp Trends" /> <img src="./graph31.php?type=rain&amp;x=430" alt="31-Day rain Trends" />
-<img src="./graph31.php?type=wmean&amp;x=430" alt="31-Day wind Trends" /> <img src="./graph31.php?type=pmean&amp;x=430" alt="31-Day pressure Trends" />
+<img src="./graph31.php?type=tmean&amp;x=430" alt="31-Day temp Trends" width="430" height="200" /> <img src="./graph31.php?type=rain&amp;x=430" alt="31-Day rain Trends" width="430" height="200" />
+<img src="./graph31.php?type=wmean&amp;x=430" alt="31-Day wind Trends" width="430" height="200" /> <img src="./graph31.php?type=pmean&amp;x=430" alt="31-Day pressure Trends" width="430" height="200" />
 
 <h2>12-Month Trends</h2>
-<img src="./graph12.php?type=tmean&amp;x=430" alt="12-Month temp Trends" /> <img src="./graph12.php?type=rain&amp;x=430" alt="12-Month rain Trends" />
-<img src="./graph12.php?type=wmean&amp;x=430" alt="12-Month wind Trends" /> <img src="./graph12.php?type=pmean&amp;x=430" alt="12-Month pressure Trends" />
+<img src="./graph12.php?type=tmean&amp;x=430" alt="12-Month temp Trends" width="430" height="200" /> <img src="./graph12.php?type=rain&amp;x=430" alt="12-Month rain Trends" width="430" height="200" />
+<img src="./graph12.php?type=wmean&amp;x=430" alt="12-Month wind Trends" width="430" height="200" /> <img src="./graph12.php?type=pmean&amp;x=430" alt="12-Month pressure Trends" width="430" height="200" />
 <p>More data types available on the <a href="charts.php">Charts</a> page.</p>
 
-<table cellpadding="26" width="98%">
-<tr> <td align="center"><h2>12-hr Wind Direction Plot</h2></td> <td align="center"><h2>Monthly Wind Rose</h2></td> </tr>
-<tr> <td align="right"> <img src="/dirplot.gif" alt="12-hr wind direction radar plot" /> </td> <td><img src="/windrose.gif" alt="Latest month windrose" /> </td> </tr>
+<table cellpadding="1" width="100%">
+<tr> <td align="center"><h2>Last 24hrs wind rose</h2></td> <td align="center"><h2>Monthly Wind Rose</h2></td> </tr>
+<tr> <td align="right"> <img src="/rose_24hrs.png" alt="24-hr wind rose" width="432" height="460" /> </td> <td><img src="/rose_month.png" alt="Latest month wind rose" width="432" height="460" /> </td> </tr>
 </table>
+<a href="windrose_viewer.php" title="Wind roses for all months and years and days">View historical and all-time wind roses</a>
 
 <br />
 <a href="grapharchive.php" title="Daily graph archive starting Feb 2009">View archive of 24hr daily graphs</a>

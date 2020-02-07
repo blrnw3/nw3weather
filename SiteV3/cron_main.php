@@ -132,6 +132,11 @@ if($fiveMinutely) {
 			copy('main'.$i.'.png', 'html/mainGraph'.$i.'.png');
 		}
 	}
+	// windroses - 24hr, month and year
+	$rose_types = ["24hrs", "month", "year"];
+	foreach($rose_types as $roset) {
+		exec(EXEC_PATH. "windrose.php $roset html/rose_$roset.png");
+	}
 }
 
 //More midnight procedures
@@ -144,10 +149,9 @@ if($tstamp == '0000') {
 
 }
 
-// WU view count
+// All-time windrose
 if($tstamp == '2358') {
-	$wuvu = get_wuvu_cnt();
-	quick_log('WU_counts', $wuvu);
+	exec(EXEC_PATH. "windrose.php now html/rose_all.png");
 }
 
 //serialise time data when modifications occur
