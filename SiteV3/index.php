@@ -274,22 +274,20 @@ echo '<img '.$click.'id="graph1" src="'.$img1.'&amp;currid='. time().'" alt="Las
 <?php
 // WU scraper is dead
 $fcast = strtolower($vpforecasttext); //file_get_contents("WUforecast.txt");
-$icon = 'cloudy';
-$forecastTerms = array('precipitation', 'clear', 'clouds', 'thunderstorm', 'snow');
-$forecastIcons = array('rain', 'clear', 'partlycloudy', 'tstorms', 'snow');
-for($i = 0; $i < count($forecastIcons); $i++) {
-	if(strpos($fcast, $forecastTerms[$i]) !== false) {
-		$icon = $forecastIcons[$i];
-		break;
+$icon = "clear";
+if(strContains($fcast, ["precipitation", "snow", "rain", "shower", "storm"])) {
+	$icon = strContains($fcast, ["snow"]) ? "snow" : "rain";
+	if(strContains($fcast, ["possible"])) {
+		$icon .= '_showers';
 	}
+} elseif(strContains($fcast, ["cloud"])) {
+	$icon = strContains($fcast, ["part"]) ? "partlycloudy" : "cloudy";
+} elseif(strContains($fcast, ["fog", "mist"])) {
+	$icon = "fog";
 }
-if($i <= count($forecastIcons) && strpos($fcast, "possible") !== false) {
-	$icon .= '_showers';
-}
-elseif( $time > $sunset && ($icon == 'clear' || $icon == 'partlycloudy') ) {
+if( $time > $sunset && ($icon == 'clear' || $icon == 'partlycloudy') ) {
 	$icon = 'nt_'. $icon;
 }
-
 echo '<img src="/static-images/'.$icon.'_lg.png" style="background-color:#CCCEEC;" title="'.$fcast.'" width="83" height="81" alt="London Forecast icon" />';
 ?>
 <br />
@@ -317,44 +315,47 @@ echo '<img src="/static-images/'.$icon.'_lg.png" style="background-color:#CCCEEC
 <p>Latest Hampstead Heath pond temperature: <?php echo conv($HR24["misc"]["pondTemp"], 1); ?>
 	&nbsp; <a href="http://nw3weather.co.uk/wxdataday.php?vartype=pond">see temperature history</a></p>
 
-<p style="font-size: 120%; font-weight: bold;" id="report-2019">
-<a href="/repyear.php">View nw3weather's full 2019 Annual Report</a>
+
+<p style="font-size: 120%; font-weight: bold;" id="report-2020">
+<a href="/repyear.php">View nw3weather's full 2020 Annual Report</a>
 </p>
 
-<h2>Key data for 2019</h2>
+<h2>Key data for 2020</h2>
 <p>
 <dl>
+	<dt>Headline</dt>
+	<dd>Warm, very sunny spring; record October rain; least wintry since 2014; 7th year with above avg temperature.</dd>
 	<dt class="temp">Temperature</dt>
-	<dd>Mean <b>11.7 C</b> [+1.0 C from the <abbr title="Long-term average">LTA</abbr>].
-		Absolute Min and Max: <b>-4.6 C</b> (31st Jan), and <b>36.8 C</b> (25th Jul). <br />
-		Air frosts: <b>14</b>. Ice days: <b>0</b>. Days above 30C: <b>7</b>. Max feels-like: <b>45 C</b>.
+	<dd>Mean <b>12.2 C</b> [+1.3 C from the <abbr title="Long-term average">LTA</abbr>].
+		Absolute Min and Max: <b>-1.8 C</b> (31st Dec), and <b>36.2 C</b> (31st Jul). <br />
+		Air frosts: <b>8</b>. Ice days: <b>0</b>. Days above 30C: <b>10</b>. Max feels-like: <b>42 C</b>.
 	</dd>
 	<dt class="rain">Rainfall</dt>
-	<dd>Total: <b>618 mm</b> [-1%] across <b>174</b> days (48%) of <abbr title="=0.2mm">recordable rain</abbr>. <br />
-		Highest daily (starting at midnight) total: <b>~32 mm</b> (24th Sept). <br />
-		Wettest Month: <b>93 mm</b> [+65%] (Dec). Most rainy: <b>26 days</b> (Nov). <br />
-		Driest: <b>12 mm</b> [-75%] (April). Fewest days: <b>9 days</b> in Feb. <br />
-		Most rain in an hour: <b>~11 mm</b>, from a thunderstorm on the <a href="/wxhistday.php?year=2019&month=10&day=1">1st of Oct</a>
+	<dd>Total: <b>640 mm</b> [+6%] across <b>172</b> days (47%) of <abbr title="=0.2mm">recordable rain</abbr>. <br />
+		Highest daily (starting at midnight) total: <b>~34 mm</b> (3rd Oct). <br />
+		Wettest Month: <b>166 mm</b> [+144%] (Oct). Most rainy: <b>24 days</b> (Oct). <br />
+		Driest: <b>5 mm</b> [-89%] (May). Fewest days: <b>2 days</b> in May. <br />
+		Most rain in an hour: <b>~10 mm</b>, from a thunderstorm on the <a href="/wxhistday.php?year=2020&month=08&day=16">16th of Aug</a>
 	</dd>
 	<dt class="sun">Sunshine</dt>
-	<dd>Total: <b>1594 hrs</b> [+8%] from a possible 4045. (39%) <br />
-		Days with more than a minute of sunshine: <b>314</b> days (86%). <br />
-		Days with at least 95% of their maximum possible sun: <b>32</b> (9%). <br />
-		Sunniest month: <b>205 hrs</b> [+13%] (Aug). Most sunnier than avg: <b>+66%</b> in Feb. Dullest than avg: <b>-19%</b> in June.
+	<dd>Total: <b>1730 hrs</b> [+16%] from a possible 4045. (43%) <br />
+		Days with more than a minute of sunshine: <b>312</b> days (85%). <br />
+		Days with at least 95% of their maximum possible sun: <b>36</b> (10%). <br />
+		Sunniest month: <b>306 hrs</b> [+72%] (May). Dullest than avg: <b>-36%</b> in Oct.
 	</dd>
 	<dt class="snow">Winter Events</dt>
-	<dd>There were <b>five</b> days with lying snow (max: <b>5 cm</b> on 1st Feb), and <b>4</b> with falling snow (giving <b>17 cm</b> worth),
-		as well as <b>14</b> air frosts [-12] (we had <b>84</b> total hrs below zero, the majority in Jan).
-		The minimum wind chill was <b>-7C</b> on Feb 1st.
+	<dd>There were <b>zero</b> days with lying snow, and just <b>1</b> with falling snow (giving <b>3 cm</b> worth),
+		as well as <b>8</b> air frosts [-18] (we had <b>36</b> total hrs below zero, the majority in Dec).
+		The minimum wind chill was <b>-7C</b> on Dec 31st.
 	</dd>
 	<dt class="wind">Wind</dt>
-	<dd>The maximum wind gust was <b>48 mph</b> on Aug 10th, and the maximum 1-min-avg wind was <b>32 mph</b> <br />
-		The windiest day was the 16th of Mar with a mean of <b>12.8 mph</b>. March was also the windiest month at 6.4 [+1.2 mph].
+	<dd>The maximum wind gust was <b>58 mph</b> on Feb 9th, and the maximum 1-min-avg wind was <b>34 mph</b> <br />
+		The windiest day was the 9th Feb with a mean of <b>16 mph</b>. Feb was also the windiest month at 8.7 [+3.6 mph].
 	</dd>
 	<dt>Other Events</dt>
-	<dd>There were <b>0</b> known days of hail, <b>7</b> with thunder (4 in Jul), and <b>7</b> days with fog at 9am. <br />
+	<dd>There were <b>2</b> known days of hail, <b>11</b> with thunder (5 in Aug), and <b>8</b> days with fog at 9am.<br />
 	</dd>
-	</dl>
+</dl>
 </p>
 
 <!--<h1>Latest Monthly Weather Report</h1>-->

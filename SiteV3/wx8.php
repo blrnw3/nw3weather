@@ -17,36 +17,6 @@ $file = 8;
 		<?php require('chead.php'); ?>
 		<?php include('ggltrack.php') ?>
 
-		<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDwThmJT7UIczMkMIEq9CkaZ-mYoEhur58&amp;sensor=false"></script>
-		<script type="text/javascript">
-			//<![CDATA[
-			function initialise() {
-				var mapOptions = {
-					center: new google.maps.LatLng(51.557, -0.156),
-					zoom: 12,
-					mapTypeId: google.maps.MapTypeId.ROADMAP
-				};
-				map = new google.maps.Map(document.getElementById("map"),
-					mapOptions);
-
-				var homeMarker = new google.maps.Marker({
-					position: map.getCenter(),
-					map: map,
-					title: 'nw3weather home',
-					icon: '/favicon.ico'
-				});
-				var nw3Bubble = new google.maps.InfoWindow({
-					content: '<div style="width: 270px; padding-right: 20px; height: 125px"><h2>nw3weather base!</h2>\n\
-						<img src="/static-images/gmaps3.jpg" alt="pic">'
-				});
-				google.maps.event.addListener(homeMarker, 'click', function() {
-					nw3Bubble.open(map, homeMarker);
-					map.setCenter(homeMarker.getPosition());
-				});
-			}
-			//]]>
-		</script>
-
 		<style type="text/css">
 			.aboutTbl {
 				margin: 0.7em;
@@ -159,7 +129,16 @@ class Traffic {
 			'max' => 1661,
 			'min_date' => '23 Mar',
 			'max_date' => '25 Jul'
-		]
+		],
+		2020 => [
+			'sum' => 184000,
+			'mean' => 504,
+			'median' => 429,
+			'min' => 224,
+			'max' => 1917,
+			'min_date' => '12 Sep',
+			'max_date' => '04 Oct'
+		],
 	];
 
 	public $annual_summary = [
@@ -232,14 +211,13 @@ class Traffic {
 	<a name="location"></a>
 	<h2>Location</h2>
 	<p>
-		The nw3weather station is situated on the south-eastern edge of London's Hampstead Heath, a
-		<a href="http://hampsteadheath.net/" title="External Link">790 acre ancient park</a> just a few miles north of central London.<br />
-		Nearby areas include Hampstead village to the North-West, Highgate to the North, Belsize Park to the South-West, and Kentish Town to the SE.</p>
-	<div id="map" style="width: 500px; height: 300px">
-		<noscript>Javascript required to display map<br /></noscript>
-		Google maps placeholder
+		The nw3weather station is situated on the south-eastern edge of London's Hampstead Heath,
+		a 790 acre ancient park just a few miles north of central London.
+		Nearby areas include Hampstead village to the west, Highgate to the north, Belsize Park to the south-west, and Kentish Town to the south.</p>
+	<div id="map">
+		<?php img("/static-images/nw3wxhq.jpg", "Map of nw3 hq within London", 0.5, "Wind Sensors close-up", 784, 816); ?>
 	</div>
-	<p>The station co-ordinates are approx. 51.556, -0.155, which is ~57m (195ft) above mean sea level.</p>
+	<p>The station co-ordinates are approx. <a href="https://www.google.com/maps/@51.556,-0.155,15z" title="Google Maps">51.556, -0.155</a>, which is ~57m (195ft) above mean sea level.</p>
 
 	<h2>Setup</h2>
 	The station comprises several sensors:
@@ -323,7 +301,7 @@ class Traffic {
 		but other modern browsers have been tested and found to display most things correctly (no guarantee for old ones, though - especially the horror show that is MSIE).
 		<br /><code>nw3weather.co.uk</code> launched on 10th September 2010, I having acquired the domain name soon after moving here in July.
 		The most recent version (v3) launched on 22nd May 2013. <br />
-		Within 24hrs or so, I submit manual observations for the previous day to the system, as well as fixing glitches and correcting misreads.
+		Within a month or so, I submit manual observations for prior days to the system, as well as fixing glitches and correcting misreads.
 		These changes are reflected on the site almost immediately.
 	</p>
 
@@ -425,10 +403,11 @@ $traffic->prepare_annual_data_table();
 	</table>
 	<p>Additionally, it is found that, as expected, traffic is higher on days of precipitation - particularly snowfall, which can drive traffic up by more than 500% -
 		record site traffic for a long time was over 1500 visits on <a href='/wxhistday.php?year=2013&amp;month=1&amp;day=18' title='daily weather breakdown'>18th Jan 2013</a>.
-		This was only surpassed in 2019 with  <a href='/wxhistday.php?year=2019&amp;month=7&amp;day=25' title='weather for 25 jul 2019'>a day of record-breaking heat</a> bringing 1661 visits.
+		This was only surpassed in 2019 with  <a href='/wxhistday.php?year=2019&amp;month=7&amp;day=25' title='weather for 25 jul 2019'>a day of record-breaking heat</a> bringing 1661 visits,
+		then again in 2020 with a record-breaking 3-day rain storm in early Oct.
 	</p>
 
-	<?php img("/static-images/traffic.PNG", "nw3weather site traffic - sessions", 0.9, "nw3weather daily site visits, 2012-2019", 830, 467); ?>
+	<?php img("/static-images/sessions2011to2020.jpg", "nw3weather site traffic - sessions", 0.9, "nw3weather daily site visits, 2012-2020", 827, 460); ?>
 
 	<h2>Acknowledgements</h2>
 	<p>
@@ -507,7 +486,7 @@ $traffic->prepare_annual_data_table();
 		I studied Physics and Computer Science, both of which I was largely motivated to study by my love of the weather, and went on
 		to work as a software engineer.
 		In 2015 I left London and <a href="/news.php#post-20151107">moved to New York</a>. I currently live and work in the suburbs of San Francisco, California.
-		The weather station back home in London is lovingly cared for by my mother and other relatives, and me when I come back every 6 months or so.
+		The weather station back home in London is lovingly cared for by my mother and other relatives, and me when I come back every 6 months or so (pandemics-permitting).
 	</p>
 	<p>
 		For more insight into the world of a weather hobbyist,
