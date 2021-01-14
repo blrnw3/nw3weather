@@ -39,8 +39,13 @@ if(isset($_GET['cerealify'])) {
 }
 
 if(isset($_GET['dtm'])) { $dtm = $_GET['dtm']; } else { $dtm = 1; }
+$mod_timestamp = mkdate(date('n'),date('j')-$dtm, date('Y'));
 
-echo "<br />Camlink: <a href='/highreswebcam.php?camtype=sky&light=day&width=6&freq=10'>Highres cam for today</a>";
+$sunrise_time = date_sunrise($mod_timestamp, SUNFUNCS_RET_STRING, $lat, $lng, $zenith, date('I'));
+$sunset_time = date_sunset($mod_timestamp, SUNFUNCS_RET_STRING, $lat, $lng, $zenith, date('I'));
+
+echo "Sunrise: $sunrise_time. Sunset: $sunset_time.<br />";
+echo "Camlink: <a href='/highreswebcam.php?camtype=sky&light=day&width=6&freq=10'>Highres cam for today</a>";
 
 //If less than sunhrs scrape time... WARN
 if(date('Hi') < $sunGrabTime) {
@@ -55,7 +60,7 @@ echo '<br /><a href="http://www.wunderground.com/history/airport/EGLC/',
 echo 'datt size in B: ', filesize($fullpath."datt" . date('Y',mktime(1,1,1,date('n'),date('j')-$dtm,date('Y'))) . ".csv"), '<br />';
 if(!isset($_POST['pwd'])) {
 	$sun = file(ROOT.'maxsun.csv');
-	echo '<br />Max sun for this day: ', $sun[date('z',mkdate(date('n'),date('j')-$dtm, date('Y')))], ' hours';
+	echo '<br />Max sun for this day: ', $sun[date('z',$mod_timestamp)], ' hours';
 }
 echo '<br /><a href="datamod.php?dtm=', $dtm, '">Self link</a>';
 

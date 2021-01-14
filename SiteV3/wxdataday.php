@@ -316,9 +316,6 @@ if($isAnom) {
 if($endyr == $dyear) {
 	echo "<br />
 		Values for recent days are subject to quality control and may be adjusted at any time.";
-	if(!$hasToday) {
-		echo '<br />Values for the current day normally become available on the following Sunday, when manual observations for the week are input.';
-	}
 }
 echo '</p>';
 

@@ -87,15 +87,15 @@ $wo = 1650; $ho = 1100; // slighlty reduced from original to truncate extraneous
 
 if($tstamp == $daily_proctime) {
 	// High-freq cam-save cleanup
-	$highfreq_keep_days = 10;
-	$minfreq_to_keep = 5;
-	$stamp = date("Y/m/d", mkdate($dmonth, $dday-$highfreq_keep_days, $dyear));
-	foreach(["sky", "gnd", "hik"] as $cam_type) {
+	$conf = ["sky" => [60, 3], "gnd" => [60, 3], "hik" => [5, 14]];
+	foreach($conf as $cam_type => $settings) {
+		$keep_freq = $settings[0];
+		$keep_days = $settings[1];
+		$stamp = date("Y/m/d", mkdate($dmonth, $dday-$keep_days, $dyear));
 		$camdir = CAM_ROOT . "camchive/$cam_type/$stamp/";
 		for($i = 0; $i < 1440; $i++) {
 			$f = $camdir . date("Hi", mktime(0, $i, 0)) . "$cam_type.jpg";
-			if($i % $minfreq_to_keep !== 0 && file_exists($f)) {
-				echo "$f <br />";
+			if($i % $keep_freq !== 0 && file_exists($f)) {
 				unlink($f);
 			}
 		}

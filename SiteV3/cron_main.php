@@ -150,7 +150,7 @@ if($tstamp == '0000') {
 }
 
 // All-time windrose
-if($tstamp == '2358') {
+if($tstamp == '1656') {
 	exec(EXEC_PATH. "windrose.php now html/rose_all.png");
 }
 
@@ -186,7 +186,7 @@ if($tstamp == '0700') {
 if(date('i') % 15 == 1) {
 	if($OUTAGE || $ALT_OUTAGE) {
 		quick_log("outage.txt", "Outage: $OUTAGE ($diff s), alt-outage: $ALT_OUTAGE ($alt_true_age s)");
-		if($diff < 1800) {
+		if($diff < 5000) {
 			mail("alerts@nw3weather.co.uk","Old live data","Alert! live data not updating. Act NOW!");
 		}
 	}
@@ -226,7 +226,7 @@ if(false && $tstamp % 100 == 0) {
 }
 
 // External clientraw grab and save
-if($OUTAGE) {
+if(true || $OUTAGE) {
 	// $path = 'http://www.tottenhamweatheronline.co.uk/clientraw.txt';
 	$path = 'http://www.harpendenweather.co.uk/live/clientraw.txt';
 	//$path = 'http://www.sandhurstweather.org.uk/clientraw.txt';
@@ -237,11 +237,11 @@ if($OUTAGE) {
 		quick_log("HarpendenBadData.txt", $harpendenData[0]);
 	}
 }
-if($OUTAGE) {
+if(false && $OUTAGE) {
 //	$path2 = "http://weather.casa.ucl.ac.uk/realtime.txt";
 	//$path2 = "http://www.lambethmeters.co.uk/weather/clientraw.txt";
 //	$path2 = "http://weather.bencook.net/clientraw.txt";
-	$path2 = "http://www.jon00.me.uk/clientraw.txt"; // src: http://www.jon00.me.uk/FreshWDL.shtml
+	$path2 = "http://www.jon00.me.uk/clientraw.txt"; // MY SERVER IP BLOCKED src: http://www.jon00.me.uk/FreshWDL.shtml
 	//$path2 = "http://www.snglinks.com/wx/spiel/clientraw.txt";
 	$casaData = urlToArray($path2);
 	if($casaData[0] && count($casaData) === 1) {
@@ -576,6 +576,9 @@ function getSunHrs() {
 	}
 	fclose($hand);
 	quick_log("sunHrs.txt", $i ." / ". $len);
+	if($i === $len) {
+		mail("alerts@nw3weather.co.uk", "Failed to get sunhrs!", "Get on it");
+	}
 	return "$sunHrs";
 }
 

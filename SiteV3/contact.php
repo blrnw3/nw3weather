@@ -33,11 +33,12 @@
 
 <p>
 	If you have any queries regarding anything on this site or concerning my weather station, please don't hesitate to contact me via email.
-	I also welcome general feedback, bug reports, and feature suggestions for the next site version.</p>
+	I also welcome general feedback, bug reports, and feature suggestions for the website.</p>
 
-<p>I can also provide data, on request, for use in non-commercial applications. I have CSVs since 2009 for all weather variables at hourly and daily intervals</p>
+<p>I can also provide data, on request, for use in non-commercial applications.
+	I have a very basic API for current data, as well as CSVs since 2009 for all weather variables at hourly and daily intervals.</p>
 
-<p>My address is: &nbsp <span style="color:blue"> blr[at]nw3weather.co.uk</span></p>
+<p>My address is: &nbsp <span style="color:blue"> bmr[at]nw3weather.co.uk</span></p>
 
 <br />
 </div>

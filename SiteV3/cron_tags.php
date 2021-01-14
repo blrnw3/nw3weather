@@ -128,6 +128,22 @@ for ($i = 0; $i < $rainallCnt; $i++) {
 		$driest365 = $cumrn365;
 		$driest365_end = $i;
 	}
+	$cumrn7 += floatval($rainall[$i]);
+	if ($i >= 7) {
+		$cumrn7 -= floatval($rainall[$i - 7]);
+	}
+	if ($cumrn7 > $wettest7) {
+		$wettest7 = $cumrn7;
+		$wettest7_end = $i;
+	}
+	$cumrn3 += floatval($rainall[$i]);
+	if ($i >= 3) {
+		$cumrn3 -= floatval($rainall[$i - 3]);
+	}
+	if ($cumrn3 > $wettest3) {
+		$wettest3 = $cumrn3;
+		$wettest3_end = $i;
+	}
 }
 
 //deal with final day (today) being a record-breaker - loop to set record would not be entered so need the lines below
@@ -152,6 +168,8 @@ $recwetlengthdate = date('jS M', daytotime($recwetlengths_end - $recwetlength + 
 $recdrylength_currdate = date('jS M', daytotime($recdrylengths_curr_end - $recdrylength_curr + 1)) . ' - ' . today(true, true, true, true, daytotime($recdrylengths_curr_end));
 $recwetlength_currdate = date('jS M', daytotime($recwetlengths_curr_end - $recwetlength_curr + 1)) . ' - ' . today(true, true, true, true, daytotime($recwetlengths_curr_end));
 
+$wettest3date = 'Ending ' . today(true, true, true, null, daytotime($wettest3_end));
+$wettest7date = 'Ending ' . today(true, true, true, null, daytotime($wettest7_end));
 $wettest31date = 'Ending ' . today(true, true, true, null, daytotime($wettest31_end));
 $driest31date = 'Ending ' . today(true, true, true, null, daytotime($driest31_end));
 $wettest365date = 'Ending ' . today(true, true, true, null, daytotime($wettest365_end));
@@ -389,7 +407,7 @@ $mrecorddailyraindate = today(null, null, $maxrainMDdatea[$dyear]);
 //Wettest Days
 $rain_sort = $rainall;
 sort($rain_sort);
-$ranknum = 12;
+$ranknum = 15;
 for ($i = 1; $i <= $ranknum; $i++) {
 	$wettest[$i] = $rain_sort[count($rain_sort) - $i];
 	$dayRec = array_search($wettest[$i], $rainall);
@@ -399,7 +417,7 @@ for ($i = 1; $i <= $ranknum; $i++) {
 //Wettest & Driest Months
 $rain_sortM = $rainallM;
 sort($rain_sortM);
-$ranknumM = 7;
+$ranknumM = 10;
 for ($i = 1; $i <= $ranknumM; $i++) {
 	$wettestM[$i] = $rain_sortM[count($rain_sortM) - $i];
 	$wetMnum = array_search($wettestM[$i], $rainallM);
@@ -604,6 +622,8 @@ $rndays_maxdate = \'' . $rndays_maxdate . '\';
 $rndays_mindate = \'' . $rndays_mindate . '\';
 $wettestyr = \'' . $wettestyr . '\';
 $driestyr = \'' . $driestyr . '\';
+$wettest3 = \'' . $wettest3 . '\';
+$wettest7 = \'' . $wettest7 . '\';
 $wettest31 = \'' . $wettest31 . '\';
 $driest31 = \'' . $driest31 . '\';
 $wettest365 = \'' . $wettest365 . '\';
@@ -611,6 +631,8 @@ $driest365 = \'' . $driest365 . '\';
 $record24hrrain = \'' . $record24hrrain . '\';
 $wettestyrdate = \'' . $wettestyrdate . '\';
 $driestyrdate = \'' . $driestyrdate . '\';
+$wettest3date = \'' . $wettest3date . '\';
+$wettest7date = \'' . $wettest7date . '\';
 $wettest31date = \'' . $wettest31date . '\';
 $driest31date = \'' . $driest31date . '\';
 $wettest365date = \'' . $wettest365date . '\';

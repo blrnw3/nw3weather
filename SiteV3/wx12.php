@@ -168,10 +168,12 @@ if($rn24 > 54.2) {
 	$record24hrrain = 54.2;
 	$rn24Recorddate = 'Ending 14:08, 2nd May 2010';
 }
-$measures = array('Wettest Year','Driest Year','Wettest 31 days','Driest 31 days','Wettest 365 days','Driest 365 days','Wettest 24hrs');
-$order = array(0,1,4,5,2,3,6); $conv = array(2,2,2,2,2,2,2);
-$values = array($wettestyr, $driestyr, $wettest31, $driest31, $wettest365, $driest365, $record24hrrain);
-$times = array($wettestyrdate, $driestyrdate, $wettest31date, $driest31date, $wettest365date, $driest365date, $rn24Recorddate);
+$measures = array('Wettest Year','Driest Year','Wettest 31 days','Driest 31 days','Wettest 365 days',
+	'Driest 365 days','Wettest 7 days','Wettest 3 days','Wettest 24hrs');
+$order = array(0,1,4,5,2,3,6,7,8); $conv = array(2,2,2,2,2,2,2,2,2);
+$values = array($wettestyr, $driestyr, $wettest31, $driest31, $wettest365, $driest365, $wettest7, $wettest3, $record24hrrain);
+$times = array($wettestyrdate, $driestyrdate, $wettest31date, $driest31date, $wettest365date, $driest365date,
+	$wettest7date, $wettest3date, $rn24Recorddate);
 for($r = 0; $r < count($measures); $r++) {
 	if($r % 2 == 0) { $colcol = 'light'; } else { $colcol = 'dark'; }
 	echo '<tr class="row', $colcol, '">
@@ -187,7 +189,7 @@ for($r = 0; $r < count($measures); $r++) {
 tableHead("Wettest Months");
 tr();
 echo '<td class="td12" colspan="1">Rank</td><td class="td12" colspan="1">Value</td><td class="td12" colspan="1">Date</td></tr>';
-for($i = 1; $i <= $ranknumM; $i++) {
+for($i = 1; $i <= 8; $i++) {
 	$style = colcol($i);
 	$curr_hlite = ($wettest_dayM[$i] == 'current') ? ' style="font-weight:bold"' : '';
 	echo '<tr class="row', $style, '"', $curr_hlite,'>
@@ -230,7 +232,7 @@ tableHead("Driest Months");
 tr();
 echo '<td class="td12" colspan="1">Rank</td><td class="td12" colspan="1">Value</td><td class="td12" colspan="1">Date</td></tr>';
 
-for($i = 1; $i <= $ranknumM; $i++) {
+for($i = 1; $i <= 8; $i++) {
 	$style = colcol($i);
 	$curr_hlite = ($driest_dayM[$i] == 'Current') ? ' style="font-weight:bold"' : '';
 	echo '<tr class="row', $style, '"', $curr_hlite,'>

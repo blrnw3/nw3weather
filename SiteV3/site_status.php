@@ -27,7 +27,7 @@
 $statusMessage = '<b>'. date('d M: ', mktime(1,1,1,9,24,2019)) . ' Rain gauge offline.</b>'. ' As of this morning the rain gauge has sadly stopped working and no rain is being recorded. I am looking into the problem but a fix may be slow to emerge. In the meantime I will be sourcing rain data from other London stations.';
 $statusMessage = '<b>'. date('d M: ', mktime(1,1,1,9,27,2019)) . ' Rain gauge FIXED.</b>'. ' As of 4pm the rain guage is back online and working. Thank you Judy for fixing it in my absence!';
 //$statusMessage = '<b>'. date('d M: ', mktime(1,1,1,1,8,2019)) . '</b>'. '<a href="/repyear.php">nw3weather 2018 year in review is now available; click to see my weather highlights and station news</a>';
-$showMessage = true;
+$showMessage = false;
 $isBad = false;
 // echo "<div class='statusBox info'><b>10am, Mon 16th May</b>: The thermo/hygro sensor is functioning again</div>";
 //echo "<div class='statusBox warning' style='background-color: #fc5;'>nw3weather is undergoing server maintenance this weekend. The site may be down for several hours at a minimum. <br />I am moving from a shared hosted solution to a cheaper, more powerful and more flexible cloud VM host</div>";
@@ -37,8 +37,11 @@ $isBad = false;
 if($showMessage) {
 	showStatusDiv($statusMessage, $isBad);
 }
+if($OUTAGE) {
+	showStatusDiv("<b>". date('H:m d M: ', $unix - $diff) . "Weather server outage detected automatically</b>.<br /> Data is being served from nearby stations. Site admin has been notified. Problem age: " . $diff . " s", true);
+}
 //echo "<div class='statusBox info' style=''><b>Weather station replacement</b>: This weekend I am replacing the weather station with an entirely new one, a Davis VP2. This will improve reliabilty and data quality. Note well that during the upgrade, data may not be accurate.<br /><b>UPDATE 9pm Sunday</b>: Data from the new weather station is now LIVE. Enjoy. <br />I will post pics of the process and of the new hardware tomorrowish.</div>";
-//if ($file == 13) echo "<div class='statusBox warning'><b>Broken sensor</b>: As of 8th Feb 2016 the wind sensor is broken. In its long absence, wind data is being served from a nearby weather station, <a href='http://www.harpendenweather.co.uk'>Harpenden weather</a>.</div>";
+if ($file == 13) echo "<div class='statusBox warning'><b>Faulty sensor</b>: As of 26th Oct the wind sensor is not functioning normally. Until I can fix it (post-covid unless I find two local able helpers), wind data is being served from a nearby weather station, <a href='http://www.harpendenweather.co.uk'>Harpenden weather</a>.</div>";
 # if ($file == 12) echo "<div class='statusBox warning'><b>Phantom rain</b>: The rain sensor appears to be intermittently misreporting rainfall. These phantom readings started in Jan '17 and appear to be getting worse. I will correct any misreadings as soon as I spot them.</div>";
 //if ($file == 12) echo "<div class='statusBox warning'><b>Broken sensor</b>: The rain sensor has ceased to function as of approx 12 March. I aim to replace it in September. Meantime, data is served from nearby Bloomsbury, courtesy of <a href='http://weather.casa.ucl.ac.uk'>UCL casa</a>.</div>";
 

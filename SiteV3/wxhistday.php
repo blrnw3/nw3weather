@@ -408,8 +408,9 @@ if($todcond) {
 				<dt>Notes</dt>
 				<dd>Times of extremes are computed using the midpoint of the longest continuous period at that extreme value. <br />
 				Cumulative anomalies are reported according to the expected value for the month-to-date rather than month-end. <br />
-				Sun hrs, Wet hrs, Cloud cover and Events are based on manual equipment/observations (entered with a delay of 1-10 days); their reliablity is questionable and they
-				are provided for interest only.</dd>
+				Sun hrs are initially pulled from the official weather station at Heathrow, and later adjusted by hand to reflect local conditions based on webcam observations.
+				Wet hrs are dervied algorithmically from rainfall data, though may be adjusted manually.
+				Cloud cover and Events are manually reported, often with multi-week delays.</dd>
 			</dl>';
 	}
 	if($nmint) { echo '* Recorded in previous 24hr period<br />

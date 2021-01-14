@@ -17,7 +17,7 @@ if($dyear < 2000) { //some sort of non-inclusion
 		<a href="http://nw3weather.co.uk" title="Browse to homepage">Home</a>
 	</div>
 	<div>
-		&copy; 2010-<?php echo $dyear; ?>, Ben L. Masschelein-Rodgers<span> | Site version 3</span>
+		&copy; 2010-<?php echo $dyear; ?>, Ben Masschelein-Rodgers<span> | Site version 3</span>
 	</div>
 	<div>
 		<?php echo $message; ?>
