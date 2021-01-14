@@ -418,8 +418,8 @@ function dailyData($procfil = 'today') {
 	$round_pt = array(0,0,0,1,0,0, 2,1,1,2);
 	$trendKeys = array('wind', 'gust', 'wdir', 'temp', 'humi', 'pres', 'dewp');
 	$daytypes = array_flip(array('temp' => 6, 'humi' => 7, 'dewp' => 9, 'rain' => 10, 'pres' => 8, 'wdir' => 5, 'gust' => 4, 'wind' => 3));
-	$rntipmm = 0.22; //constant
-	$RATE_THRESH = 0.3; //Two tips' worth
+	$rntipmm = 0.24; //constant
+	$RATE_THRESH = 0.4; //Two tips' worth
 
 	$daymax1 = $daymax2 = -99;
 	$nightmin1 = $nightmin2 = $nightmin1T = $nightmin2T = 99;

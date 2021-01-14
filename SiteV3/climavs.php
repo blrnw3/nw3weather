@@ -4,20 +4,20 @@ $clim_descrip = array('Min Temp','Max Temp','Mean Temp','Temp Range', 'Rainfall'
 $clim_unit = array(1,1,1,1, 2,false, 4, false,false,false,false, false,false,false);
 $clim_colours = array('blue','orange','blueviolet','green', 'cadetblue3','cadetblue4', 'brown3', 'darkblue','darkgoldenrod1','cyan','cyan3', 'aquamarine4','gold','gold3');
 
-$sunav = array(46,75,105,137,190,191,185,182,138,106,68,48);
+$sunav = array(60,75,106,148,178,179,187,187,135,109,74,57);
 $maxsun = array(233,249,331,376,440,452,454,410,342,295,237,219);
 $wetav = array(67,52,53,46,40,37,34,38,41,49,63,62);
-$rainav = array(55,40,44,49,51,55,42,53,57,65,56,56);
-$rdaysav = array(11,9,10,10,9,9,7,8,9,10,10,11);
+$rainav = array(55,41,42,44,49,45,45,50,49,68,60,55);
+$rdaysav = array(11,9,10,10,9,9,8,8,9,11,10,11);
 $windav = array(5.2,5.1,5.2,4.9,4.7,4.4,4.3,4.0,3.9,4.1,4.6,5.1);
-$tdatav['min'] = array(2.4,2.2,3.6,5.0,8.3,11.1,13.4,13.2,11.1,8.8,5.0,3.2);
-$tdatav['max'] = array(7.0,7.6,10.4,12.8,16.7,20.2,22.4,22.2,18.7,14.6,10.2,7.8);
+$tdatav['min'] = array(2.6,2.2,3.8,5.6,8.8,11.6,14.2,14.1,11.7,8.9,5.1,2.7);
+$tdatav['max'] = array(6.9,7.5,10.5,13.1,16.7,20.1,22.3,21.8,18.6,14.2,10.2,7.6);
 for($m = 0; $m < 12; $m++) {
 	$tdatav['mean'][$m] = ($tdatav['min'][$m]+$tdatav['max'][$m])/2;
 	$tdatav['range'][$m] = $tdatav['max'][$m]-$tdatav['min'][$m];
 	$rateav[$m] = $rainav[$m] / $wetav[$m];
 }
-$AFav = array(7,7,3,1,0.1,0,0,0,0,0.2,2,6);
+$AFav = array(7,7,3,1,0.1,0,0,0,0,0.2,1,7);
 $TSav = array(0.4,0.3,0.6,1.0,2.0,3.0,2.5,2.5,2.0,1.0,0.4,0.3);
 $LSav = array(2.5,2.5,0.4,0.2,0,0,0,0,0,0,0.3,1);
 $FSav = array(5,5,4,2,0,0,0,0,0,0,1,3);

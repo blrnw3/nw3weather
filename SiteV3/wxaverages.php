@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?php 
+<?php
 	$file = 20;
 ?>
 
@@ -47,11 +47,9 @@
 
 <p>
 	These are estimates for the long-term average weather conditions, i.e. the climate, at NW3.
-	<br /> They were derived from data for the period 1971-2000 - the <acronym title="World Meteorological Organisation">WMO</acronym>
-	 standard reference period - from nearby official Met Office sites.
-	 (Mostly the one at Whitestone Pond (see above), which although less than a couple of miles away, is some <?php echo conv(80,7); ?>
-	 higher up in terms of elevation.)<br />Some adjustments have therefore been made to reflect the different siting conditions.
-	 Rainfall values were updated in Sep 2012 to reflect more accurate analysis of nearby station data.
+	<br /> They were derived from data for the period 1981-2010 - the <acronym title="World Meteorological Organisation">WMO</acronym>
+	 standard reference period - from nearby official Met Office sites
+	 (Heathrow and Northolt) by comparing observed data for recent years and adjusting accordingly.
 </p>
 
 <table class="table1" width="100%" cellpadding="2" cellspacing="0">
