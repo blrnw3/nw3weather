@@ -8,7 +8,7 @@ use nw3\data\Climate;
 
 class Importmonthlylogs {
 
-	const PATH = 'C:\Users\Ben\Documents\Weather\Backup\CurrentWebsiteBackup\MonthlyLogs\dat';
+	const PATH = '/var/www/html/dat';
 
 	function import_upto($year) {
 		for($y = 2009; $y <= $year; $y++) {
@@ -27,9 +27,9 @@ class Importmonthlylogs {
 			'tchrmax', 'hchrmax', 'tc10min', 'tchrmin', 'hchrmin', 'w10max', 'fmin', 'fmax', 'fmean', 'afhrs',
 			'sunhr', 'wethr', 'cloud', 'snow', 'lysnw', 'hail', 'thunder', 'fog',
 			'comms', 'extra', 'issues', 'away',
-			't_t24min', 't_t24max', 't_hmax', 't_hmin', 't_pmax', 't_pmin', 't_wmax', 't_gust',
-			't_hrmax', 't_10max', 't_ratemax', 't_dmax', 't_dmin', 't_tmax', 't_tmin', 't_tchrmax',
-			't_tchrmin', 't_tc10max', 't_tc10min', 't_hchrmax', 't_hchrmin', 't_w10max', 't_fmax', 't_fmin',
+			't_t24min', 't_t24max', 't_hmin', 't_hmax', 't_pmin', 't_pmax', 't_wmax', 't_gust', 't_hrmax',
+			't_r10max', 't_ratemax', 't_dmin', 't_dmax', 't_tmin', 't_tmax', 't_tc10max',
+			't_tchrmax', 't_hchrmax', 't_tc10min', 't_tchrmin', 't_hchrmin', 't_w10max', 't_fmin', 't_fmax',
 			'a_wmean', 'a_rain', 'a_tmin', 'a_tmax', 'a_sunhr', 'a_wethr'
 		);
 
@@ -139,6 +139,8 @@ class Importmonthlylogs {
 		foreach ($vars as $d => &$var) {
 			$var = array_merge($var, $anoms[$d]);
 		}
+
+		var_dump($vars);
 
 		unset($core_handle, $time_handle, $extra_handle, $var);
 

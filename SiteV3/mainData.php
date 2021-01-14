@@ -38,7 +38,7 @@ $OUTAGE = $diff > 3600;
 $ALT_OUTAGE = false;
 $alt_ready = false;
 if($OUTAGE) {
-	$alt_age = time() - filemtime(LIVE_DATA_PATH_ALT);
+	$alt_age = time() - filemtime(ROOT.'EXTclientraw.txt');
 	$alt_ready = $alt_age < 300;
 }
 
@@ -48,6 +48,16 @@ $maxgstToday = $NOW['max']['gust'];
 $maxavgToday = $maxavgspd;
 
 // No wind data - use Harpenden wind data from their clientraw (cached by cron_main)
+if($wind < 10) { // wind issue Nov 2020
+	$extClient = file(ROOT.'EXTclientraw.txt');
+	$extOffset = 0.99; // 0.91; //1.3 - tott;
+	$extData = explode(" ", $extClient[0]);
+	$wind = $extData[1] * $kntsToMph * $extOffset;
+	$gust = $extData[140] * $kntsToMph * $extOffset; //actually the max 1-min gust
+	$gustRaw = $extData[2] * $kntsToMph * $extOffset; //true 14s gust
+	$w10m = $extData[158] * $kntsToMph * $extOffset;
+	$wdir = $extData[3];
+}
 if($OUTAGE && $alt_ready) {
 	$extClient = file(ROOT.'EXTclientraw.txt');
 	$extOffset = 0.99; // 0.91; //1.3 - tott;
@@ -57,6 +67,15 @@ if($OUTAGE && $alt_ready) {
 	$gustRaw = $extData[2] * $kntsToMph * $extOffset; //true 14s gust
 	$w10m = $extData[158] * $kntsToMph * $extOffset;
 	$wdir = $extData[3];
+
+	$temp = $extData[4];
+	$humi = $extData[5];
+
+	$pres = $extData[6];
+	$rain = $extData[7];
+
+	$unix = mktime(intval($extData[29]), intval($extData[30]), intval($extData[31]),
+		intval($extData[36]), intval($extData[35]), intval($extData[141])) - 50;
 
 	$feel = feelsLike($temp, $gust, $dewp);
 	$maxavgToday = $NOW['max']['wind'];
@@ -95,7 +114,7 @@ if(false && date("Hi") > "0009") {
 	$rain = $extData2[7];
 }
 
-if($OUTAGE && $alt_ready) {
+if(false && $OUTAGE && $alt_ready) {
 	$extClient2 = file(LIVE_DATA_PATH_ALT);
 	$extData2 = explode(" ", $extClient2[0]);
 

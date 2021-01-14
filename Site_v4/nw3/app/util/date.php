@@ -32,10 +32,11 @@ class Date {
 //		$debug_offset = self::secs_DAY * 218; //When testing, it could be useful to change this
 //		$now = time() - $debug_offset;
 		$debug_date = new \DateTime();
-		$debug_date->setDate(2013, 11, 9);
+		$debug_date->setDate(2018, 5, 24);
 //		$debug_date->setTime(6, 0, 0);
 		$now = $debug_date->getTimestamp();
 		define('D_now', $now);
+//		define('D_now', time());
 
 		//Define (globally) some of the most useful date-based pseudo-constants
 		define('D_monthname', date('F', $now));

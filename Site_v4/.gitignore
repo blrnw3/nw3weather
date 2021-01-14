@@ -4,6 +4,7 @@ static/js/lib/
 nw3/log/*
 nw3/lib/Twig
 nw3/data/live/*
+config.php
 
 
 nw3/lib/jpgraph/*

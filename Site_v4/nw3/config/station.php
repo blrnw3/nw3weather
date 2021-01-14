@@ -17,7 +17,7 @@ class Station {
 	const ALTITUDE = 55;
 
 	/** * Tip quantity, in mm, of the electronic rain gauge */
-	const RAIN_TIP = 0.3;
+	const RAIN_TIP = 0.2;
 
 	/** * IP Address */
 	const IP = '217.155.197.157';

@@ -8,11 +8,12 @@
 class Config {
 
 	/** * File root - absolute path of the project directory */
-	const ROOT = 'C:\Users\Ben\Documents\SiteDevelopment\Site_v4\\';
+//	const ROOT = 'C:\Users\Ben\Documents\SiteDevelopment\Site_v4\\';
+	const ROOT = '/var/www/html/oldSites/Site_v4/';
 	/** * PHP root */
-	const PHP_ROOT = '/Site_v4/';
+	const PHP_ROOT = '/oldSites/Site_v4/';
 	/** * URL root */
-	const HTML_ROOT = '/Site_v4/';
+	const HTML_ROOT = '/oldSites/Site_v4/';
 	const EXEC_PATH = '/usr/local/bin/php -q /home/dev';
 
 //	public static $rareTags = ROOT.'rareTags.php';
@@ -22,8 +23,8 @@ class Config {
 
 	public static $db = array (
 		//Basic db settings
-		'username' => 'root',
-		'password' => '',
+		'username' => 'nwweathe_blr',
+		'password' => 'uclgc02appwx',
 		'database' => 'nw3wx_4',
 		'host' => '127.0.0.1',
 		'port' => '3306',
@@ -34,9 +35,8 @@ class Config {
 	);
 
 	public static $install = array (
-		'directory_nesting_level' => 1
+		'directory_nesting_level' => 2
 	);
 
 }
-
 ?>
