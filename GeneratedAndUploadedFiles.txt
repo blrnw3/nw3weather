@@ -1,0 +1,151 @@
+# Uploaded files:
+## public_html
+clientraw.txt
+customtextout.txt
+
+jpgwebcam.jpg
+jpggroundcam.jpg
+metar.gif
+dirplot.gif
+extrarealtime.gif
+hidden.gif
+windrose.gif
+windroseyear.gif
+
+videolastday.wmv
+videolasthour.wmv
+yesterday.wmv
+YYYYMMDDdayvideo.wmv
+
+rareTags.php
+
+## Other
+oldSites/xxx (moved by cron job nightly)
+oldSites/sitev2/xxx (moved by cron 5-minutely)
+
+YYYY/YYYYMMDD.gif (moved by cron nightly)
+
+
+# Database files
+# Root
+lastrn
+
+## public_html
+datYYYY.csv
+dattYYYY.csv
+datmYYYY.csv
+
+sunsetcam.jpg
+
+nmin.txt
+wethrs.txt
+goodlog.txt
+
+## logfiles/daily
+*
+
+
+# Generated files
+## Root
+hrlogOutput.html
+
+1.png
+1s.png
+2.png
+2s.png
+3.png
+3s.png
+main1.png
+main2.png
+main3.png
+main4.png
+
+## public_html
+todaywebcam.jpg
+dailywebcam.jpg
+currcam.jpg
+currcam_small.jpg
+stitchedmaingraph.png
+stitchedmaingraph_small.png
+mainGraph1.png
+mainGraph2.png
+mainGraph3.png
+mainGraph4.png
+
+serialised_dat.txt
+serialised_datt.txt
+serialised_datm.txt
+serialised_datHr24.txt
+serialised_datNow.txt
+WUforecast.txt
+METAR.txt
+
+sunhrs_raw.htm
+
+WindTags.php
+RainTags.php
+Rain2Tags.php
+TemperatureTags.php
+HumidityTags.php
+FeelTags.php
+PressureTags.php
+SunTags.php
+
+## YYYY
+* [All files]
+YYYYMMDDdailywebcam.jpg
+YYYYMMDDdailywebcam_large.jpg
+stichedmaingraph_YYYYMMDD.png
+stichedmaingraph_small_YYYYMMDD.png
+
+## backup
+*
+[dat(|t|m) backups. Not important]
+
+## CP_Solutions
+updated.txt
+WxApp/visitLog.txt
+WxApp/visitStatsLog.txt
+
+## currcam
+*
+## currgcam
+*
+## img-save
+*
+## imgCache
+* [tempDir, not currently used]
+## logfiles
+*
+## Logs
+*
+
+## wxapp
+* [mostly]
+
+
+# Static Dirs
+ajax
+bestcam
+jpgraph
+iwdl
+new
+photos
+Self
+Site_v4
+static-images
+
+
+## Sub-dirs
+oldSites/sitev0
+oldSites/sitev1
+CP_Solutions/BeachWebApp
+CP_Solutions/coursework
+CP_Solutions/CP1
+CP_Solutions/CP2
+CP_Solutions/CP4
+CP_Solutions/MscProject
+CP_Solutions/MultimediaCswk
+CP_Solutions/nw3beaches
+
+
