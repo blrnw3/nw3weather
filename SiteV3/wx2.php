@@ -65,7 +65,7 @@ require('functions.php');
 
 <h1>Webcam</h1>
 
-<h3>New High-res Skycam (experimental)</h3>
+<h3>High-resolution Skycam</h3>
 
 <p>The camera is a Hikvision 5MP H.265+ DS-2CD2055FWD-I with 4mm focal length, and is looking NE over Hampstead Heath.</p>
 <img name="refresh-new" src="<?php echo $camImgNew; ?>" title="Latest new skycam" width="864" height="576" alt="skycam_new" />
@@ -76,31 +76,12 @@ require('functions.php');
 <a href="./skycam.php">Check out an even higher resolution version here</a>
 <hr />
 
-<h3>Latest Skycam (legacy) Image</h3>
-
-<p>The camera is a Logitech C300 and is looking NE over Hampstead Heath (<a href="wx8.php#location" title="About page">see map</a>).</p>
-<img name="refresh" src="<?php echo $camImg; ?>" title="Latest skycam" width="640" height="480" alt="skycam" />
-
-<noscript>JavaScript is required for the automatic updates</noscript>
-
-<p>The image is updated automatically every minute, day and night, operating with a delay of about 70s.
 <br />
 <?php if($time < $sunrise || $time > $sunset) {
 		echo '<h3>Latest daylight webcam image</h3><img src="/skycam_sunset.jpg" alt="Latest sunsetcam" width="864" height="576" /><br /><br />';
 	} ?>
 
-A <a href="wx11.php" title="Contains skycam only">self-contained version</a> is also available.
 </p>
-
-<hr />
-
-<h3>Latest Groundcam Image</h3>
-<p>The camera is a Microsoft Lifecam VX-2000 and is looking NNE over Hampstead Heath (see <a href="wx8.php#location" title="About page">map</a>).</p>
-<img src="/currgcam.jpg" alt="Latest Groundcam" width="512" height="384" />
-<br />
-<p>The image updates every 5 minutes, 24 hours a day.</p>
-
-<hr />
 
 <h3>Skycam images from the last 24 hours</h3>
 <p>A <a href="highreswebcam.php" title="Full-resolution summary"><b>higher resolution version</b></a> is also available.</p>

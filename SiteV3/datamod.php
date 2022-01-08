@@ -183,9 +183,10 @@ echo '</table>
 	<table border="1" cellpadding="5">';
 for($i = 0; $i < count($modlinem); $i++) {
 	if($i % 2 == 0) { $style = 'light'; } else { $style = 'dark'; }
+	$val_tag = ($types_m_original[$i] == "away") ? 'value="1"' : "";
 	echo '<tr class="row', $style ,'"><td class="td', $data_m_num[$i] + 10 ,'C">', $types_m_original[$i], '</td>
 		<td class="td', $data_m_num[$i] + 10 ,'C">', $modlinem[$i], ' </td>
-		<td><input type="text" name="', $types_m_original[$i], '" /> </td>';
+		<td><input type="text" ', $val_tag ,' name="', $types_m_original[$i], '" /> </td>';
 	if($i==0) {
 		echo '<td align="center" rowspan=', count($modlinem), '">';
 		echo '<div><video id="tvid" width="864" height="650" controls><source src="/cam/timelapse/skycam_', date('Ymd', $modTimestamp) ,'.mp4" type="video/mp4"></video></div>';

@@ -227,7 +227,7 @@ if(false && $tstamp % 100 == 0) {
 
 // External clientraw grab and save
 if(true || $OUTAGE) {
-	// $path = 'http://www.tottenhamweatheronline.co.uk/clientraw.txt';
+	// $path = 'http://diong.co.uk/clientraw.txt';  // new tottenham wx link
 	$path = 'http://www.harpendenweather.co.uk/live/clientraw.txt';
 	//$path = 'http://www.sandhurstweather.org.uk/clientraw.txt';
 	$harpendenData = urlToArray($path);
@@ -237,17 +237,18 @@ if(true || $OUTAGE) {
 		quick_log("HarpendenBadData.txt", $harpendenData[0]);
 	}
 }
-if(false && $OUTAGE) {
+if(true) {
+	$path2 = "http://www.brettoliver.org.uk/clientraw.txt";
 //	$path2 = "http://weather.casa.ucl.ac.uk/realtime.txt";
 	//$path2 = "http://www.lambethmeters.co.uk/weather/clientraw.txt";
 //	$path2 = "http://weather.bencook.net/clientraw.txt";
-	$path2 = "http://www.jon00.me.uk/clientraw.txt"; // MY SERVER IP BLOCKED src: http://www.jon00.me.uk/FreshWDL.shtml
+//	$path2 = "http://www.jon00.me.uk/clientraw.txt"; // MY SERVER IP BLOCKED src: http://www.jon00.me.uk/FreshWDL.shtml
 	//$path2 = "http://www.snglinks.com/wx/spiel/clientraw.txt";
-	$casaData = urlToArray($path2);
-	if($casaData[0] && count($casaData) === 1) {
-		file_put_contents(ROOT.'EXTclientraw2.txt', $casaData[0]);
+	$secondaryData = urlToArray($path2);
+	if($secondaryData[0] && count($secondaryData) === 1) {
+		file_put_contents(ROOT.'EXTclientraw2.txt', $secondaryData[0]);
 	} else {
-		quick_log("CasaBadData.txt", $casaData[0]);
+		quick_log("CasaBadData.txt", $secondaryData[0]);
 	}
 }
 

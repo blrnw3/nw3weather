@@ -34,7 +34,7 @@ $unix = mktime(intval($mainData[29]), intval($mainData[30]), intval($mainData[31
 		intval($mainData[36]), intval($mainData[35]), intval($mainData[141]));
 
 $diff = time() - $unix;
-$OUTAGE = $diff > 3600;
+$OUTAGE = $diff > 7200;
 $ALT_OUTAGE = false;
 $alt_ready = false;
 if($OUTAGE) {
@@ -58,6 +58,19 @@ if($wind < 10) { // wind issue Nov 2020
 	$w10m = $extData[158] * $kntsToMph * $extOffset;
 	$wdir = $extData[3];
 }
+//$wind = $extData[1];
+// Harpenden down ;(
+if($extData[1] == "14.4") {
+	$extClient = file(ROOT.'EXTclientraw2.txt');
+	$extOffset = 0.95; // 0.91; //1.3 - tott;
+	$extData = explode(" ", $extClient[0]);
+	$wind = $extData[1] * $kntsToMph * $extOffset;
+	$gust = $extData[140] * $kntsToMph * $extOffset; //actually the max 1-min gust
+	$gustRaw = $extData[2] * $kntsToMph * $extOffset; //true 14s gust
+	$w10m = $extData[158] * $kntsToMph * $extOffset;
+	$wdir = $extData[3];
+}
+
 if($OUTAGE && $alt_ready) {
 	$extClient = file(ROOT.'EXTclientraw.txt');
 	$extOffset = 0.99; // 0.91; //1.3 - tott;

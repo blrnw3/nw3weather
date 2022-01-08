@@ -16,6 +16,9 @@ if($dyear < 2000) { //some sort of non-inclusion
 		<a href="mob.php" title="Very basic mobile browsing">Mobile</a> |
 		<a href="http://nw3weather.co.uk" title="Browse to homepage">Home</a>
 	</div>
+		<div>
+		&#9728; Sister station: <a href="https://rwcweather.com" target="_blank" title="Redwood City Weather, CA">RWC Weather</a>
+	</div>
 	<div>
 		&copy; 2010-<?php echo $dyear; ?>, Ben Masschelein-Rodgers<span> | Site version 3</span>
 	</div>
@@ -24,13 +27,12 @@ if($dyear < 2000) { //some sort of non-inclusion
 	</div>
 	<div>
 		<span style="font-size:85%">
-			<a href="http://validator.w3.org/check?uri=referer" title="check the W3C validity of this page">XHTML and CSS valid</a> |
 			<?php
 			echo 'PHP executed '. acronym('Session count: '. $_SESSION['count'][$file], 'in ') . $phpload .'s';
 			if($me) {
 				$mem_usage = round(memory_get_usage() / 1024 / 1024, 1);
 				$mem_peak = round(memory_get_peak_usage() / 1024 / 1024, 1);
-				echo "<br />Mem: $mem_usage, Peak mem: $mem_peak";
+				echo "&nbsp; Mem: $mem_usage, Peak mem: $mem_peak";
 			}	?>
 		</span>
 	</div>
