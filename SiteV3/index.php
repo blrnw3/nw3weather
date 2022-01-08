@@ -316,55 +316,53 @@ echo '<img src="/static-images/'.$icon.'_lg.png" style="background-color:#CCCEEC
 	&nbsp; <a href="http://nw3weather.co.uk/wxdataday.php?vartype=pond">see temperature history</a></p>
 
 
-<p style="font-size: 120%; font-weight: bold;" id="report-2020">
-<a href="/repyear.php">View nw3weather's full 2020 Annual Report</a>
+<p style="font-size: 120%; font-weight: bold;" id="report-2021">
+<a href="/repyear.php">View nw3weather's full 2021 Annual Report</a>
 </p>
 
-<h2>Key data for 2020</h2>
+<h2>Key data for 2021</h2>
 <p>
 <dl>
 	<dt>Headline</dt>
-	<dd>Warm, very sunny spring; record October rain; least wintry since 2014; 7th year with above avg temperature.</dd>
+	<dd>Coolest in eight years, dullest in 13, wettest since 2014, good thunderstorms in July.</dd>
 	<dt class="temp">Temperature</dt>
-	<dd>Mean <b>12.2 C</b> [+1.3 C from the <abbr title="Long-term average">LTA</abbr>].
-		Absolute Min and Max: <b>-1.8 C</b> (31st Dec), and <b>36.2 C</b> (31st Jul). <br />
-		Air frosts: <b>8</b>. Ice days: <b>0</b>. Days above 30C: <b>10</b>. Max feels-like: <b>42 C</b>.
+	<dd>Mean <b>11.3 C</b> [-0.1 C from the <abbr title="Long-term climate average">LTA</abbr>].
+		Absolute Min and Max: <b>-3.9 C</b> (Feb 13), and <b>31.7 C</b> (Jul 20). <br />
+		Air frosts: <b>27</b>. Ice days: <b>2</b>. Days above 30C: <b>3</b>. Max feels-like: <b>39 C</b>.
 	</dd>
 	<dt class="rain">Rainfall</dt>
-	<dd>Total: <b>640 mm</b> [+6%] across <b>172</b> days (47%) of <abbr title="=0.2mm">recordable rain</abbr>. <br />
-		Highest daily (starting at midnight) total: <b>~34 mm</b> (3rd Oct). <br />
-		Wettest Month: <b>166 mm</b> [+144%] (Oct). Most rainy: <b>24 days</b> (Oct). <br />
-		Driest: <b>5 mm</b> [-89%] (May). Fewest days: <b>2 days</b> in May. <br />
-		Most rain in an hour: <b>~10 mm</b>, from a thunderstorm on the <a href="/wxhistday.php?year=2020&month=08&day=16">16th of Aug</a>
+	<dd>Total: <b>676 mm</b> [+10%] across <b>159</b> days (44%) of <abbr title="=0.2mm">recordable rain</abbr>. <br />
+		Highest daily (starting at midnight) total: <b>42 mm</b> (Jul 12). <br />
+		Wettest Month: <b>123 mm</b> [+168%] (Jul). Most rainy: <b>19 days</b> (Jan). <br />
+		Driest: <b>3 mm</b> [-93%] (Apr). Fewest days: <b>4 days</b> in Apr. <br />
+		Most rain in an hour: <b>~20 mm</b>, from a thunderstorm on the <a href="/wxhistday.php?year=2021&month=07&day=12">12th of July</a>
 	</dd>
 	<dt class="sun">Sunshine</dt>
-	<dd>Total: <b>1730 hrs</b> [+16%] from a possible 4045. (43%) <br />
-		Days with more than a minute of sunshine: <b>312</b> days (85%). <br />
-		Days with at least 95% of their maximum possible sun: <b>36</b> (10%). <br />
-		Sunniest month: <b>306 hrs</b> [+72%] (May). Dullest than avg: <b>-36%</b> in Oct.
+	<dd>Total: <b>1323 hrs</b> [-17%] from a possible 4045. (33%) <br />
+		Days with more than a minute of sunshine: <b>294</b> days (80%). <br />
+		Days with at least 95% of their maximum possible sun: <b>19</b> (5%). <br />
+		Sunniest month: <b>200 hrs</b> [+24%] (Apr). Dullest than avg: <b>-56%</b> in Dec.
 	</dd>
 	<dt class="snow">Winter Events</dt>
-	<dd>There were <b>zero</b> days with lying snow, and just <b>1</b> with falling snow (giving <b>3 cm</b> worth),
-		as well as <b>8</b> air frosts [-18] (we had <b>36</b> total hrs below zero, the majority in Dec).
-		The minimum wind chill was <b>-7C</b> on Dec 31st.
-	</dd>
-	<dt class="wind">Wind</dt>
-	<dd>The maximum wind gust was <b>58 mph</b> on Feb 9th, and the maximum 1-min-avg wind was <b>34 mph</b> <br />
-		The windiest day was the 9th Feb with a mean of <b>16 mph</b>. Feb was also the windiest month at 8.7 [+3.6 mph].
+	<dd>There were <b>6</b> days with lying snow, and <b>7</b> with falling snow (giving <b>10 cm</b> worth in aggregate),
+		as well as <b>249</b> total hrs when the temperature was below zero, the majority in Feb.
+		The minimum wind chill was <b>-12C</b> on Feb 13.
 	</dd>
 	<dt>Other Events</dt>
-	<dd>There were <b>2</b> known days of hail, <b>11</b> with thunder (5 in Aug), and <b>8</b> days with fog at 9am.<br />
+	<dd>There was <b>1</b> know days of hail, <b>5</b> with thunder (3 Jul, 2 May), and <b>4</b> days with dense fog at 9am.<br />
 	</dd>
 </dl>
 </p>
 
-<!--<h1>Latest Monthly Weather Report</h1>-->
+<!--
+<h1>Latest Monthly Weather Report</h1>
 <?php
 $repStamp = mkdate($dmonth-1, 1);
 $repMonth = date('n', $repStamp);
 $repYear = date('Y', $repStamp);
-//displayMonthlyReport($repMonth, $repYear);
+displayMonthlyReport($repMonth, $repYear);
 ?>
+-->
 
 <div id="twitter-feed" style="margin: 2em">
 	<a class="twitter-timeline"

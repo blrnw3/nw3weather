@@ -139,6 +139,15 @@ class Traffic {
 			'min_date' => '12 Sep',
 			'max_date' => '04 Oct'
 		],
+		2021 => [
+			'sum' => 183000,
+			'mean' => 503,
+			'median' => 435,
+			'min' => 215,
+			'max' => 1552,
+			'min_date' => '25 Sep',
+			'max_date' => '18 Jun'
+		],
 	];
 
 	public $annual_summary = [
