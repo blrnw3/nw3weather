@@ -38,6 +38,8 @@ require('unit-select.php'); ?>
 		function changeChart() {
 			var extras = '';
 			var len;
+			var lta;
+			var mnth;
 
 			var type = $("#type").val();
 			var yr = $("#year").val();
@@ -48,22 +50,37 @@ require('unit-select.php'); ?>
 			if(type == 31) {
 				$("#lengthM").hide();
 				$("#lengthD").show();
+				$("#lta").hide();
 				len = $("#lengthD").val();
 
 				if(yr > 0) {
 					$("#month").show();
 					$("#lengthD").val(31);
 					$("#lengthD").prop('disabled', 'disabled');
+					mnth = $("#month").val();
 					extras += '&year='+ yr;
-					extras += '&month='+ $("#month").val();
+					extras += '&month='+ mnth;
+					if(mnth == 0) {
+						type = "_daily_trend";
+					}
 				} else {
 					$("#month").hide();
 					$("#lengthD").prop('disabled', false);
 				}
 			} else {
+				lta = $("#lta").val();
+				if(lta === "on") {
+					extras += "&lta";
+				}
+
 				$("#lengthD").hide();
 				$("#month").hide();
 				$("#lengthM").show();
+				if(type == 2.2) {
+					$("#lta").show();
+				} else {
+					$("#lta").hide();
+				}
 				len = $("#lengthM").val();
 
 				extras += '&mmm=' + type;
@@ -82,7 +99,7 @@ require('unit-select.php'); ?>
 
 			$("#chart").one("load", function() {
 				$("#loader").html("OK").css({"color": "green"});
-			}).attr('src', 'graph' + type + '.php?x=845&y=450&type='+ wxvar + extras);
+			}).attr('src', 'graph' + type + '.php?x=860&y=460&type='+ wxvar + extras);
 
 			$("#heading").text('Daily Data Charts - ' + $("#wxvar option:selected").text());
 		}
@@ -237,6 +254,11 @@ require('unit-select.php'); ?>
 			<option value="96">8 yrs</option>
 			<option value="120">10 yrs</option>
 			<option value="9999">All</option>
+		</select>
+
+		<select style="display:none; margin-left:2em" size="2" id="lta" onchange="changeChart();">
+			<option value="on" selected="selected">Show Normals</option>
+			<option value="off">Off</option>
 		</select>
 
 	</form>

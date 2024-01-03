@@ -24,6 +24,16 @@ $FSav = array(5,5,4,2,0,0,0,0,0,0,1,3);
 
 $vars = array($tdatav['min'], $tdatav['max'], $tdatav['mean'], $tdatav['range'],
 	$rainav,$rdaysav,$windav, $AFav,$TSav,$LSav, $FSav,$wetav,$sunav, $maxsun,$rateav); //14
+$vars_to_climav = [
+	"tmin" => $tdatav['min'],
+	"tmax" => $tdatav['max'],
+	"tmean" => $tdatav['mean'],
+	"trange" => $tdatav['range'],
+	"rain" => $rainav,
+	"rdays" => $rdaysav,
+	"wmean" => $windav,
+	"sunhr" => $sunav
+];
 $sumorno = array(false,false,false,false,
 	true,true,false, true,true,true, true,true,true, true,true);
 
@@ -46,11 +56,16 @@ $dtfanomcc = file(ROOT . 'tminmaxav.csv');
 $dsuncc = file(ROOT . 'maxsun.csv');
 for($z = 0; $z <= 365; $z++) {
 	$dtanomcc = explode(',', $dtfanomcc[$z]);
-	$lta[0][$z] = $dtanomcc[0];
-	$lta[1][$z] = $dtanomcc[1];
+	$lta[0][$z] = floatval($dtanomcc[0]);
+	$lta[1][$z] = floatval($dtanomcc[1]);
 	$lta[2][$z] = ($dtanomcc[1] + $dtanomcc[0])/2;
 	$lta[3][$z] = $dtanomcc[1] - $dtanomcc[0];
 	$lta[4][$z] = $dsuncc[$z];
+	$month_idx = date('n', mkdate(1, min($z+1, 365), 2023)) - 1;
+	$month_days = date('t', mkdate(1, min($z+1, 365), 2023));
+	$lta["rain"][$z] = $rainav[$month_idx] / $month_days;
+	$lta["sunhr"][$z] = $sunav[$month_idx] / $month_days;
+	$lta["wmean"][$z] = $windav[$month_idx];
 }
 $lta_type = array(12,14,16,10,18);
 $lta_unit = array(1,1,1,1.1,0);
@@ -61,6 +76,16 @@ $unitconvs = array('',$unitT,$unitR,$unitP,$unitW);
 $dbi = count($types);
 $mdi = $dbi + count($types_derived);
 $maptoClimavs = array_flip( array(0,1,2,$dbi, 13,99,9, 99,99,99, 99,$mdi+1,$mdi, 99,$dbi+3) );
+
+$vars_to_climav_daily = [
+	"tmin" => $lta[0],
+	"tmax" => $lta[1],
+	"tmean" => $lta[2],
+	"trange" => $lta[3],
+	"sunhr" => $lta["sunhr"],
+	"rain" => $lta["rain"],
+	"wmean" => $lta["wmean"],
+];
 
 /**
  * Long-term climate averages for all available types, by month, season and year (and day if temp or sun)

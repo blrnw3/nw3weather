@@ -244,6 +244,7 @@ class DetailedDataModule {
 	}
 
 	function graph12Dump() {
+		global $yr_yest;
 		echo '<p align="center">View daily tables of
 			<a href="wxdataday.php?vartype='.$this->letter.'min">min</a> /
 			<a href="wxdataday.php?vartype='.$this->letter.'max">max</a> /
@@ -255,10 +256,21 @@ class DetailedDataModule {
 			 '.$this->label.' data for all months in the station history.
 			</p>
 
-			<img src="graphdayA.php?type='.$this->type.'&amp;x=430&amp;y=275" alt="Last 24hrs  London'.$this->label.'" />
-			<img src="graph12.php?type='.$this->letter.'mean&amp;x=430&amp;y=275" alt="12month mean  London'.$this->label.'" />
-			<img src="graph12.php?type='.$this->letter.'min&amp;x=430&amp;y=275" alt="12month min  London'.$this->label.'" />
-			<img src="graph12.php?type='.$this->letter.'max&amp;x=430&amp;y=275" alt="12month max  London'.$this->label.'" />';
+			<h2>Latest charts and graphs of '. $this->label.'</h2>
+
+			<h4>Past 24hrs and past 12 months trends for '. $this->label.'</h4>
+			<img width="430" height="275" src="graphdayA.php?type='.$this->type.'&amp;x=430&amp;y=275" alt="Last 24hrs London '.$this->label.'" />
+			<img width="430" height="275" src="graph12.php?type='.$this->letter.'mean&amp;x=430&amp;y=275&amp;lta" alt="12 month mean London '.$this->label.'" />
+			<img width="430" height="275" src="graph12.php?type='.$this->letter.'min&amp;x=430&amp;y=275" alt="12month min London '.$this->label.'" />
+			<img width="430" height="275" src="graph12.php?type='.$this->letter.'max&amp;x=430&amp;y=275" alt="12month max London '.$this->label.'" />
+			<h4>Current year vs last year daily trends for '. $this->label.'</h4>
+			<img width="865" height="475" src="graph_daily_trend.php?type='.$this->letter.'mean&amp;x=865&amp;y=475&amp;multiyr=last" alt="Daily London mean '.$this->label.' vs climate normals" />
+			<h4>This year min/max daily trends in detail for '. $this->label.'</h4>
+			<img width="430" height="290" src="graph_daily_trend.php?type='.$this->letter.'min&amp;x=430&amp;y=290&amp;year='.$yr_yest.'" alt="Current year daily London min '.$this->label.' vs climate normals" />
+			<img width="430" height="290" src="graph_daily_trend.php?type='.$this->letter.'max&amp;x=430&amp;y=290&amp;year='.$yr_yest.'" alt="Current year daily London max '.$this->label.' vs climate normals" />
+			<p><a href="charts.php">View more '.$this->label.' charts</a></p>
+';
+
 	}
 
 	function recordPeriodAvgs($wid = 98) {

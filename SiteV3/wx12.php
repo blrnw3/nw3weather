@@ -100,7 +100,7 @@ for($r = 0; $r < count($measures); $r++) {
 ?>
 </table>
 
-<img style="margin:5px" src="graph31.php?type=rain&amp;x=565&amp;y=300" width="565" height="300" alt="31dayrain" />
+<img style="margin:5px" src="graph31.php?type=rain&amp;x=565&amp;y=300" width="565" height="300" alt="Last 31 days rainfall in London NW3" />
 
 <br /><br />
 
@@ -272,7 +272,11 @@ for($i = 0; $i < 4; $i++) {
 
 <br />
 
-<img style="margin:5px" src="graph12.php?type=rain&amp;x=600&amp;y=300" alt="12monthrain" />
+<img style="margin:5px 1px" width="860" height="400" src="graph12.php?type=rain&amp;x=860&amp;y=400&lta" alt="Last 12 months rainfall total in London" />
+<img style="margin:5px 1px" width="860" height="460" src="graph_daily_trend.php?x=860&y=460&type=rain&cume&year=<?php echo $yr_yest ?>" alt="cumulative rainfall total this year vs climate normal average so far in London" />
+<img style="margin:5px 1px" width="860" height="470" src="graph_daily_trend.php?x=860&y=470&type=rain&cume&multiyr=2014,2011" alt="cumulative rainfall total last year vs climate normals and extreme years" />
+
+<p><a href="charts.php?dtype=rain">View more rain charts</a></p>
 
 <p><b>Note 1:</b> Rain records began in February 2009<br />
 <b>Note 2:</b> The minimum recordable rain (the rain gauge resolution) is <?php if($unitT == 'C') { echo '0.2 mm'; } else { echo '0.01 in'; } ?><br />
@@ -280,7 +284,7 @@ for($i = 0; $i < 4; $i++) {
 <b>Note 4:</b> Rain rate records are manually checked, and changed if necessary, due to occasional lag in data transmission. Initial high readings may well be corrected at a later date.<br />
 </p>
 
-<p><a href="wxdataday.php?vartype=rain" title="<?php echo $year; ?>daily rain totals"><b>View daily totals for the past year</b></a></p>
+<p><a href="wxdataday.php?vartype=rain" title="<?php echo $dyear; ?>daily rain totals"><b>View daily totals for the past year</b></a></p>
 
 <?php if($rn24 > 0) { echo '<img style="margin:5px" src="graphdayA.php?type1=rain&amp;x=800&amp;y=400" alt="Last 24hrs Rainfall" />'; } ?>
 

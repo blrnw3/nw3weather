@@ -66,14 +66,14 @@ $yearwd = mean($wind2[$dyear]);
 $yestwd = $ystdwind = $wind2[$yr_yest][$dz_yest+1];
 
 $wmindailywind = 99;
-for($d = 1; $d <= 7; $d++) {
+for($d = 0; $d < 7; $d++) {
 	$avwindweek += $windall[$totCnt-1-$d]/7;
 	if($windall[$totCnt-1-$d] > $wmaxdailywind) { $wmaxdailywind = $windall[$totCnt-1-$d];
-	$wmaxdailywinddate = today(null,true,true,null,mkday($dday-$d+1)); }
+	$wmaxdailywinddate = today(null,true,true,null,mkday($dday-$d)); }
 	if($windall[$totCnt-1-$d] < $wmindailywind) { $wmindailywind = $windall[$totCnt-1-$d];
-	$wmindailywinddate = today(null,true,true,null,mkday($dday-$d+1)); }
+	$wmindailywinddate = today(null,true,true,null,mkday($dday-$d)); }
 }
-for($d = 1; $d <= 31; $d++) { $wind31 += $windall[$totCnt-1-$d]/31; }
+for($d = 0; $d < 31; $d++) { $wind31 += $windall[$totCnt-1-$d]/31; }
 $wind365 = mean($wind365a);
 //for($d = 1; $d <= count($winds[$dyear][$dmonth]); $d++) { if($winds[$dyear][$dmonth][$d] > 0.1) { $winddays_month += 1; } }
 //for($d = 1; $d <= count($wind2[$dyear]); $d++) { if($wind2[$dyear][$d] > 0.1) { $winddays_year += 1; } }
@@ -365,7 +365,7 @@ table_end();
 
 <table width="69%" align="center" cellpadding="15" cellspacing="0">
 <tr><td>
-<img align="right" src="graph12.php?type=wmean&amp;x=550&amp;y=320" width="550" height="320" alt="12monthwind" />
+<img align="right" src="graph12.php?type=wmean&amp;x=550&amp;y=320&amp;lta" width="550" height="320" alt="12monthwind" />
 </td></tr>
 
 <tr><td align="center">
@@ -421,6 +421,7 @@ for($r = 0; $r < count($measures); $r++) {
 <h3>Latest wind charts</h3>
 <img src="graph31.php?type=wmean&amp;x=800&amp;y=400" alt="31-day wind speed graph" width="800" height="400" />
 <img style="margin:5px" src="graphdayA.php?type1=wind&type2=wdir&amp;x=800&amp;y=400" alt="Last 24hrs wind speed and direction" width="800" height="400" />
+<img style="margin:5px" src="graph_daily_trend.php?x=845&y=450&type=wmean&year=<?php echo $yr_yest ?>" alt="daily wind speed this year" />
 
 <h3>All time wind rose for nw3</h3>
 <img style="margin:8px" src="/rose_all.png" alt="windrose all time" title="All-time-to-date windrose" width="800" height="820" />

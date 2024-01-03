@@ -297,14 +297,23 @@ function graphDaily($type, $len = 31) {
 	return array($graph, $labels);
 }
 
-function graphDailyYear($type, $year) {
+function graphDailyYear($type, $year, $lta_all, $cume = false) {
 	$data = newData($type, $year, 1);
 	$format = 'd-M';
+	$ltas = [];
+	$c = 0;
+	$clta = 0;
 	for($d = 0; $d < count($data); $d++) {
-		$graph[$d] = floatval( conv($data[$d], typeToConvType($type), 0, 0, 1, 0, 0, true) );
+		$val = floatval( conv($data[$d], typeToConvType($type), 0, 0, 1, 0, 0, true) );
+		$c += $val;
+		$graph[$d] = $cume ? $c : $val;
 		$labels[$d] = date( $format, mkz($d, $year) );
+		if($lta_all) {
+			$clta += $lta_all[$d];
+			$ltas[$d] = $cume ? $clta : $lta_all[$d];
+		}
 	}
-	return array($graph, $labels);
+	return array($graph, $labels, $ltas);
 }
 
 /**
