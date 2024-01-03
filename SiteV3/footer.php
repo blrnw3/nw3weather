@@ -59,11 +59,16 @@ if( !file_exists($wcimg) && date('H') < 1 ) {
 	mail("alerts@nw3weather.co.uk","Old WC image","Warning! Latest webcam image summary not created! Act now!");
 }
 if($_SESSION['count'][$file] == 20 && $phpload < 100 && !$is_bot && !$me) {
-	log_events("session_counts.txt", "");
+//	log_events("session_counts.txt", "");
 }
 
-if($phpload > 1 && !$is_bot && !$me) {
+if($phpload > 2 && !$is_bot && !$me) {
 	log_events("process_times.txt", $phpload);
+}
+
+$ref = filter_input(INPUT_SERVER, "HTTP_REFERER", FILTER_SANITIZE_URL);
+if($ref != "" && !strContains($ref, ["http://nw3weather.co.uk", "https://www.google", "https://www.bing.com"])) {
+	log_events("external_refer.txt", $ref);
 }
 
 if($mailBufferCount > 0) {
@@ -76,7 +81,7 @@ function spam_hack_request() {
 	//Empty user-agent string
 	$no_uas = (strlen($_SERVER['HTTP_USER_AGENT']) === 0);
 	if($no_uas) {
-		return true;
+//		return true;
 	}
 	//Hacky request
 	$bad_words = array('register', 'login', 'editor', 'admin', 'session', 'forum', 'board', 'join', 'config');

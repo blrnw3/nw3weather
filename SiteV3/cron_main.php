@@ -100,7 +100,7 @@ if($tstamp == $sunGrabTime) {
 	$sunhrs = getSunHrs();
 	$wethrs = file_get_contents(ROOT."wethrs.txt");
 	$pond_temp_yest = $newNOW["misc"]["pondTemp"];
-	$listm = array($sunhrs,$wethrs,'u','','','','','','blr','','','',$pond_temp_yest,'\n');
+	$listm = array($sunhrs,$wethrs,'u','','','','','','blr','','','1',$pond_temp_yest,'\n');
 	$fildatm = fopen(ROOT."datm" . $yr_yest . ".csv", "a");
 	fputcsv($fildatm, $listm);
 	fclose($fildatm);
@@ -197,9 +197,9 @@ $HR24 = unserialize(file_get_contents(ROOT. 'serialised_datHr24.txt'));
 $rn24hrs = $HR24['trendRn'][0];
 if( $rn24hrs > 20 && $rn24hrs > $rain && ($HR24['trendRn'][0] - $HR24['trendRn']['10m'] > 0) ) {
 	quick_log('rain_excess.txt', $rn24hrs);
-	if(date('i') % 10 == 0) {
-		mail("blr@nw3weather.co.uk","Rain excess","Notice! More than 20 mm of rain (" . $rn24hrs . ") has fallen in the past 24 hrs");
-	}
+//	if(date('i') % 10 == 0) {
+//		mail("blr@nw3weather.co.uk","Rain excess","Notice! More than 20 mm of rain (" . $rn24hrs . ") has fallen in the past 24 hrs");
+//	}
 }
 //record 24hr rain is v. close (54.2 is actual)
 if($rn24hrs > 54) {
@@ -226,7 +226,7 @@ if(false && $tstamp % 100 == 0) {
 }
 
 // External clientraw grab and save
-if(true || $OUTAGE) {
+if(false || $OUTAGE) {
 	// $path = 'http://diong.co.uk/clientraw.txt';  // new tottenham wx link
 	$path = 'http://www.harpendenweather.co.uk/live/clientraw.txt';
 	//$path = 'http://www.sandhurstweather.org.uk/clientraw.txt';
@@ -237,7 +237,7 @@ if(true || $OUTAGE) {
 		quick_log("HarpendenBadData.txt", $harpendenData[0]);
 	}
 }
-if(true) {
+if(false || $OUTAGE ) {
 	$path2 = "http://www.brettoliver.org.uk/clientraw.txt";
 //	$path2 = "http://weather.casa.ucl.ac.uk/realtime.txt";
 	//$path2 = "http://www.lambethmeters.co.uk/weather/clientraw.txt";
@@ -560,7 +560,9 @@ function serialiseCSVm() {
 }
 
 function getSunHrs() {
-	$fileSun = urlToArray("http://www.weatheronline.co.uk/weather/maps/current?CONT=ukuk&TYP=sonne&ART=tabelle", 7);
+	$ts = mktime(12, 0, 0, date('n'),date('j')-1, date('Y'));
+	$url = "http://www.weatheronline.co.uk/weather/maps/current?CONT=ukuk&TYP=sonne&ART=tabelle&DATE=${ts}&";
+	$fileSun = urlToArray($url, 20);
 	if(!$fileSun) return "0";
 	$len = count($fileSun);
 	$sunHrs = 0;
@@ -578,7 +580,7 @@ function getSunHrs() {
 	fclose($hand);
 	quick_log("sunHrs.txt", $i ." / ". $len);
 	if($i === $len) {
-		mail("alerts@nw3weather.co.uk", "Failed to get sunhrs!", "Get on it");
+		mail("alerts@nw3weather.co.uk", "Failed to get sunhrs!", "Get on it. URL was $url");
 	}
 	return "$sunHrs";
 }

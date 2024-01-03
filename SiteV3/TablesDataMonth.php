@@ -6,7 +6,7 @@ require('unit-select.php'); ?>
    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <?php
-	$file = 40;
+	$file = 40.1;
 	$linkToOther = 'wxdataday';
 	$needValcolStyle = true;
 	$datgenHeading = 'Monthly Data Tables';

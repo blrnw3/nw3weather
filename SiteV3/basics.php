@@ -29,7 +29,7 @@ $dst = date("I") ? "BST" : "GMT";
 $dday = date('j'); $dmonth = date('n'); $dyear = date('Y'); $dz = date('z'); $dhr = date('H'); $dt = date('t');
 define('DDAY', $dday);
 $da = array('j' => $dday, 'n' => $dmonth, 'Y' => $dyear);
-$lyNum = 3; //number of leap years since 2009
+$lyNum = 4; //number of leap years since 2009 (only used for ranking Feb days)
 
 $lat = 51.556;
 $lng = -0.154;
@@ -88,14 +88,14 @@ const JQUERY = '<script type="text/javascript" src="http://ajax.googleapis.com/a
 const GRAPH_DIMS_LARGE = ' height="1017" width="850" ';
 const GRAPH_DIMS_SMALL = ' height="619" width="542" ';
 
-$sunGrabTime = '1023'; // When to scrape Wonline for EGLL Sun Hrs
+$sunGrabTime = '0836'; // When to scrape Wonline for EGLL Sun Hrs
 
 /*
  * ###### BUGS #####
  *
  * ######  WD dependendecy reduction  #####
  * DONE: webcam timelapses (v. difficult in PHP, but could do ffmpeg locally
- * wind rose
+ * DONE: wind rose
  *
  * ##### Site switch ######
  * contact casa about clientraw backup

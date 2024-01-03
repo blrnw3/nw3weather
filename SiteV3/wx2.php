@@ -85,9 +85,11 @@ require('functions.php');
 
 <h3>Skycam images from the last 24 hours</h3>
 <p>A <a href="highreswebcam.php" title="Full-resolution summary"><b>higher resolution version</b></a> is also available.</p>
-<img title="Last 24hrs summary" src="/dailywebcam.jpg" alt="Webcam summary, past 24hrs" width="871" height="986" />
+<img title="Last 24hrs summary" src="/dailywebcam.jpg" alt="Webcam summary, past 24hrs" width="875" height="941" />
 <br />
 <a href="wcarchive.php" title="Webcam summary archive"><b>See full archive</b></a> (starting 01/08/10).
+<br />
+<a href="highreswebcam.php" title="Full-resolution summary"><b>See full-resolution version</b></a>
 
 <hr />
 

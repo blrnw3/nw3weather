@@ -155,13 +155,13 @@ if ($wetlength > $recwetlength_curr && date('n', daytotime($i - 1 - floor($wetle
 	$recwetlength_curr = $wetlength;
 	$recwetlengths_curr_end = $i - 1;
 }
-if ($wetlength > $recwetlength) {
-	$recwetlength = $wetlength;
-	$recwetlengths_end = $i - 1;
+if ($drylength > $recdrylength) {
+	$recdrylength = $drylength;
+	$recdrylengths_end = $i - 1;
 }
-if ($wetlength > $recwetlength_curr && date('n', daytotime($i - 1 - floor($wetlength / 2))) == $dmonth) {
-	$recwetlength_curr = $wetlength;
-	$recwetlengths_curr_end = $i - 1;
+if ($drylength > $recdrylength_curr && date('n', daytotime($i - 1 - floor($drylength / 2))) == $dmonth) {
+	$recdrylength_curr = $drylength;
+	$recdrylengths_curr_end = $i - 1;
 }
 $recdrylengthdate = date('jS M', daytotime($recdrylengths_end - $recdrylength + 1)) . ' - ' . today(true, true, true, true, daytotime($recdrylengths_end));
 $recwetlengthdate = date('jS M', daytotime($recwetlengths_end - $recwetlength + 1)) . ' - ' . today(true, true, true, true, daytotime($recwetlengths_end));

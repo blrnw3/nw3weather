@@ -1,9 +1,19 @@
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-8T6HT9SEHY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-8T6HT9SEHY');
+</script>
+
 <?php
 if( $me || $nw3 ||
 	($auto && $metaRefreshable && $_SESSION['count'][$file] > 2) ) {
 		echo '<!--'; $skip = true;
 }
 ?>
+
 
 <script type="text/javascript">
   var _gaq = _gaq || [];

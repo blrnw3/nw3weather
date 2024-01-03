@@ -314,8 +314,8 @@ function monthtotime($mon) {
  * @return int timestamp
  */
 function daytotimeCM($day) {
-	global $dmonth, $dyear, $lyNum;
-	$nly = ($dmonth == 2 && $day > 111) ? $lyNum : 0; //leap-yr fix (111 is num days from 01 feb 2009 to 28 feb 2012)
+	global $dmonth, $lyNum;
+	$nly = ($dmonth == 2 && $day > 111) ? $lyNum : 0; //leap-yr fix (111 is num feb days from 01 feb 2009 to 28 feb 2012)
 	$dim = get_days_in_month($dmonth); //non-leap year
 	$year = 2009 + floor(($day - $nly) / $dim); //$day starts from 0 so no offset needed
 	$trueDay = $day - ($dim * ($year - 2009)) - $nly + 1; //offset now needed
@@ -455,9 +455,11 @@ function log_events($txtname, $content = "") {
 
 	$file_1 = fopen(ROOT.'Logs/'.$txtname, "a");
 	fwrite( $file_1, date("H:i:s d/m/Y") . "\t" . $content .
-		str_subpad( $_SERVER['REQUEST_URI'], 50 ) .
-		str_pad($_SERVER['REMOTE_ADDR'], 16) .
-		substr(str_replace("Mozilla/5.0 (","",$_SERVER['HTTP_USER_AGENT']), 0, 100) . "\r\n" );
+		str_subpad( filter_input(INPUT_SERVER, "REQUEST_URI", FILTER_SANITIZE_URL), 100 ) .
+		str_subpad(filter_input(INPUT_SERVER, "HTTP_REFERER", FILTER_SANITIZE_URL), 120) .
+		str_pad(filter_input(INPUT_SERVER, "REMOTE_ADDR", FILTER_SANITIZE_STRING), 16) .
+		substr(str_replace("Mozilla/5.0 (","",filter_input(INPUT_SERVER, "HTTP_USER_AGENT", FILTER_SANITIZE_STRING)), 0, 80) .
+		"\r\n" );
 	fclose($file_1);
 }
 
@@ -888,7 +890,11 @@ function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset =
 				$num = intval($hr) * 60 + intval($min);
 				if($num % $freq == 0 && $num > $sunrise && $num < $sunset) {
 					$trgt = "$tmpdir/$year$m${d}_$c";
-					copy($dbase . $c, $trgt);
+					if(file_exists($dbase . $c) && filesize($dbase . $c) > 1024) {
+						copy($dbase . $c, $trgt);
+					} else {
+						echo "$c missing or empty \n";
+					}
 				}
 			}
 		}

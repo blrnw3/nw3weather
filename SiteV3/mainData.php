@@ -48,7 +48,7 @@ $maxgstToday = $NOW['max']['gust'];
 $maxavgToday = $maxavgspd;
 
 // No wind data - use Harpenden wind data from their clientraw (cached by cron_main)
-if($wind < 10) { // wind issue Nov 2020
+if(false) { // wind issue Nov 2020
 	$extClient = file(ROOT.'EXTclientraw.txt');
 	$extOffset = 0.99; // 0.91; //1.3 - tott;
 	$extData = explode(" ", $extClient[0]);
@@ -60,7 +60,7 @@ if($wind < 10) { // wind issue Nov 2020
 }
 //$wind = $extData[1];
 // Harpenden down ;(
-if($extData[1] == "14.4") {
+if(false && $extData[1] == "14.4") {
 	$extClient = file(ROOT.'EXTclientraw2.txt');
 	$extOffset = 0.95; // 0.91; //1.3 - tott;
 	$extData = explode(" ", $extClient[0]);
@@ -71,7 +71,7 @@ if($extData[1] == "14.4") {
 	$wdir = $extData[3];
 }
 
-if($OUTAGE && $alt_ready) {
+if(false && $OUTAGE && $alt_ready) {
 	$extClient = file(ROOT.'EXTclientraw.txt');
 	$extOffset = 0.99; // 0.91; //1.3 - tott;
 	$extData = explode(" ", $extClient[0]);

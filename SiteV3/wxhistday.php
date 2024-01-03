@@ -325,6 +325,7 @@ Next Day&gt;&gt;<?php if($c2) { echo '</a>'; } ?></td>
 </tr></table>
 
 <?php
+$dstring = date('jS F Y', $sproc);
 $w1 = 22; $w2 = 23; $w3 = 8; $w4 = 17; $w5 = 15; $w6 = 15;
 if($todcond) {
 	 //standard
@@ -390,12 +391,14 @@ if($todcond) {
 		<td class="td4" width="',$w4,'%">Month cumul.</td> <td class="td4" width="',$w5,'%">Record High</td> <td class="td4" width="',$w6,'%">Record Low</td> </tr>';
 
 		for($i = 0; $i < count($data_m_description); $i++) {
+			$obsVal = $ddatm[$i];
 			if($i % 2 == 0) { $style = 'light'; } else { $style = 'dark'; }
 			if($i > 1) { $cspm = 5; } else { $cspm = 2; }
+			if($i === 4 && $obsVal === "blr") { $obsVal = "data is awaiting quality control from site operator"; }
 
 			echo '<tr class="row', $style, '">
 				<td width="',$w1,'%" class="td', $data_m_num[$i]+10, 'C">', $data_m_description[$i], '</td>
-				<td width="',$w2+$w3,'%" colspan="', $cspm, '" class="td', $data_m_num[$i]+10, 'C">', $ddatm[$i], '</td>';
+				<td width="',$w2+$w3,'%" colspan="', $cspm, '" class="td', $data_m_num[$i]+10, 'C">', $obsVal, '</td>';
 			if($i < 2) {
 				echo '<td width="',$w4,'%" class="td', $data_m_num[$i]+10, 'C">', $mcdatm[$i], '</td>
 					<td width="',$w5,'%" class="td', $data_m_num[$i]+10, 'C" style="font-size:85%">', $him[$i], $hiYm[$i], '</td>
@@ -406,11 +409,15 @@ if($todcond) {
 		echo '</table>
 			<dl>
 				<dt>Notes</dt>
-				<dd>Times of extremes are computed using the midpoint of the longest continuous period at that extreme value. <br />
+				<dd>Detailed daily weather report for Hampstead nw3 in London on ', $dstring, '. <br />
+				Times of extremes are computed using the midpoint of the longest continuous period at that extreme value. <br />
 				Cumulative anomalies are reported according to the expected value for the month-to-date rather than month-end. <br />
-				Sun hrs are initially pulled from the official weather station at Heathrow, and later adjusted by hand to reflect local conditions based on webcam observations.
-				Wet hrs are dervied algorithmically from rainfall data, though may be adjusted manually.
-				Cloud cover and Events are manually reported, often with multi-week delays.</dd>
+				Sun hrs are derived based on analysis of webcam observations, but may use data from our closest site, Heathrow, when needed.<br/ >
+				Wet hrs are dervied algorithmically from rainfall data, though may be adjusted manually. <br />
+				Rainfall totals may be manually adjusted after the fact to correct delayed or erroneous data. <br/ >
+				Cloud cover and Events are manually reported, often with multi-week delays. <br />
+				Data is generally reliable and accurate but should always be viewed with some quantity of salt to hand.
+				</dd>
 			</dl>';
 	}
 	if($nmint) { echo '* Recorded in previous 24hr period<br />

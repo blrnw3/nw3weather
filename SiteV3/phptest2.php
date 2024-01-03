@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?php 
+<?php
 	$file = 112; ?>
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -28,32 +28,25 @@
 
 <div id="main">
 <?php
-if(!$nw3) {
+if(!$me) {
 	echo 'Not allowed on this ip. Admin only!';
 	die();
 }
 ?>
 
 <h1>PHP test page 2</h1>
-<form method="get" action="">
-<select name="31type" onchange='this.form.submit()'>
-<?php
-$typegraph31 = 'rain';
-if(isset($_GET['31type'])) { $typegraph31 = $_GET['31type']; }
-for($i = 0; $i < count($types); $i++) {
-	echo '<option value="', $types_original[$i], '"';
-	if($typegraph31 == $types_original[$i]) { echo ' selected="selected"'; }
-	echo '>', $data_description[$i], '</option>
-	';
-} ?>
-</select>
-</form>
 <a href="phptest2.php">Self link</a>
+<pre>
+<?php
+var_dump($vars_to_climav_daily["tmean"]);
+?>
+</pre>
 <?php
 //for($day = 0; $day < 31; $day++) { echo $day, ': ', $graph[$day], '<br />'; }
-echo '<img src="graph31.php?type=' . $typegraph31 . '" alt="Last 31 days graph" /><br />';
+//echo '<img src="graph31.php?type=' . $typegraph31 . '" alt="Last 31 days graph" /><br />';
+//
+//echo "Daytotime 40: " . date('d M Y', daytotimeCM(40));
 
-echo "Daytotime 40: " . date('d M Y', daytotimeCM(40));
 
 //webcam_summary(.6, 4, 'dailywebcam.jpg');
 //webcam_summary(.3, 7, 'dailygwebcam.jpg', true);
@@ -133,21 +126,21 @@ print_r(datt('ratemax', 2012, null, true, true));
 				// $tchangehrmax, $tchangehrmaxt, $hchangehrmax, $hchangehrmaxt, $tchangehrmin, $tchangehrmint, $hchangehrmin, $hchangehrmint, $rn10maxt,
 				// $nmint, $daymaxt, $avminTime, $avmaxTime, $mins, $maxs, $means, $rnend, $dat, $rn60maxt, $maxgust, $maxgustt, $ttmax, $rrmax, $rrmaxt';
 // print_r($custom);
-
-$mon_st = 10; $mon_en = 12; $day_st = 1; $day_en = 31;
-
-for($m = $mon_st; $m <= $mon_en; $m++) {
-	echo '<br />', $months[$m-1], '<br />';
-
-	for($i = $day_st; $i <= $day_en; $i++) {
-		$name = $root.date('Y/Ymd', mkdate($m,$i,2012)) . 'dailywebcam';
-		if(file_exists($name.'.gif')) {
-			unlink($name.'.gif');
-			unlink($name.'2.gif');
-			echo $name . ' deleted <br />';
-		}
-	}
-}
+//
+//$mon_st = 10; $mon_en = 12; $day_st = 1; $day_en = 31;
+//
+//for($m = $mon_st; $m <= $mon_en; $m++) {
+//	echo '<br />', $months[$m-1], '<br />';
+//
+//	for($i = $day_st; $i <= $day_en; $i++) {
+//		$name = $root.date('Y/Ymd', mkdate($m,$i,2012)) . 'dailywebcam';
+//		if(file_exists($name.'.gif')) {
+//			unlink($name.'.gif');
+//			unlink($name.'2.gif');
+//			echo $name . ' deleted <br />';
+//		}
+//	}
+//}
 
 
 //copy('http://nw3weather.co.uk/wx14.php',$fullpath.'test14.html');

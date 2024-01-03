@@ -316,40 +316,35 @@ echo '<img src="/static-images/'.$icon.'_lg.png" style="background-color:#CCCEEC
 	&nbsp; <a href="http://nw3weather.co.uk/wxdataday.php?vartype=pond">see temperature history</a></p>
 
 
-<p style="font-size: 120%; font-weight: bold;" id="report-2021">
-<a href="/repyear.php">View nw3weather's full 2021 Annual Report</a>
+<p style="font-size: 120%; font-weight: bold;" id="report-2023">
+<a href="/repyear.php">View nw3weather's full 2023 Annual Report</a>
 </p>
 
-<h2>Key data for 2021</h2>
+<h2>Key data for 2023</h2>
 <p>
 <dl>
 	<dt>Headline</dt>
-	<dd>Coolest in eight years, dullest in 13, wettest since 2014, good thunderstorms in July.</dd>
+	<dd>Warm and sunny June & Sept, wet end, minimal snow.</dd>
 	<dt class="temp">Temperature</dt>
-	<dd>Mean <b>11.3 C</b> [-0.1 C from the <abbr title="Long-term climate average">LTA</abbr>].
-		Absolute Min and Max: <b>-3.9 C</b> (Feb 13), and <b>31.7 C</b> (Jul 20). <br />
-		Air frosts: <b>27</b>. Ice days: <b>2</b>. Days above 30C: <b>3</b>. Max feels-like: <b>39 C</b>.
+	<dd>Mean <b>12.1 C</b> [+0.7 C from the <abbr title="Long-term climate average">LTA</abbr>].
+		Absolute Min and Max: <b>-4.9 C</b> (Jan 23), and <b>31.7 C</b> (Sep 9). <br />
+		Air frosts: <b>29</b>. Ice days: <b>1</b>. Days above 30C: <b>6</b>. Max feels-like: <b>40 C</b>.
 	</dd>
 	<dt class="rain">Rainfall</dt>
-	<dd>Total: <b>676 mm</b> [+10%] across <b>159</b> days (44%) of <abbr title="=0.2mm">recordable rain</abbr>. <br />
-		Highest daily (starting at midnight) total: <b>42 mm</b> (Jul 12). <br />
-		Wettest Month: <b>123 mm</b> [+168%] (Jul). Most rainy: <b>19 days</b> (Jan). <br />
-		Driest: <b>3 mm</b> [-93%] (Apr). Fewest days: <b>4 days</b> in Apr. <br />
-		Most rain in an hour: <b>~20 mm</b>, from a thunderstorm on the <a href="/wxhistday.php?year=2021&month=07&day=12">12th of July</a>
+	<dd>Total: <b>647 mm</b> [+5%] across <b>159</b> days (44%) of <abbr title="=0.2mm">recordable rain</abbr>. <br />
+		Highest daily (starting at midnight) total: <b>21 mm</b> (Sep 20). <br />
+		Wettest Month: <b>94 mm</b> [+45%] (Oct). Most rainy: <b>23 days</b> (Mar). <br />
+		Driest: <b>4 mm</b> [-91%] (Feb). Fewest days: <b>4 days</b> in Feb, 8 hrs total. <br />
+		Most rain in an hour: <b>~14 mm</b>, from a thunderstorm on the <a href="/wxhistday.php?year=2023&month=06&day=12">12th of Jun</a>
 	</dd>
 	<dt class="sun">Sunshine</dt>
-	<dd>Total: <b>1323 hrs</b> [-17%] from a possible 4045. (33%) <br />
-		Days with more than a minute of sunshine: <b>294</b> days (80%). <br />
-		Days with at least 95% of their maximum possible sun: <b>19</b> (5%). <br />
-		Sunniest month: <b>200 hrs</b> [+24%] (Apr). Dullest than avg: <b>-56%</b> in Dec.
+	<dd>Total: <b>1504 hrs</b> [-6%] from a possible 4045. (37%) <br />
+		Days with more than a minute of sunshine: <b>322</b> days (88%). <br />
+		Sunniest month: <b>253 hrs</b> [+31%] (Jun). Dullest than avg: <b>-60%</b> in Mar.
 	</dd>
 	<dt class="snow">Winter Events</dt>
-	<dd>There were <b>6</b> days with lying snow, and <b>7</b> with falling snow (giving <b>10 cm</b> worth in aggregate),
-		as well as <b>249</b> total hrs when the temperature was below zero, the majority in Feb.
-		The minimum wind chill was <b>-12C</b> on Feb 13.
-	</dd>
-	<dt>Other Events</dt>
-	<dd>There was <b>1</b> know days of hail, <b>5</b> with thunder (3 Jul, 2 May), and <b>4</b> days with dense fog at 9am.<br />
+	<dd>
+		Minimal. A few cm of snow fell early on Mar 8th and settled. Otherwise a trace of snow on March 6 and 10, and on Dec 1st.
 	</dd>
 </dl>
 </p>

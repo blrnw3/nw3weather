@@ -29,25 +29,25 @@
 <h1>Climate of NW3</h1>
 
 <p>
-	Much like the rest of London, this is a function of its proximity to the European continent, positioning close to the North Atlantic
+	Much like the rest of London, NW3's climate is a function of its proximity to the European continent, positioning close to the North Atlantic
 	and the North Sea, and to some extent the Urban Heat Island effect and London's rather northerly latitude.
-	The direction of the wind (or more precisely the air mass this brings) is largely responsible for which of these sources most influences the day-to-day weather.
-	With the prevailing wind being broadly south-westerly (bringing tropical maritime air), this gives London its climate of consistent rainfall throughout the year,
+	The direction of the wind and the air mass this brings is largely responsible for which of these sources most influences the day-to-day weather.
+	With the prevailing wind being broadly south-westerly, bringing tropical maritime air, this gives London its climate of consistent rainfall throughout the year,
 	relatively low sunshine total and few snow days, as well as a lack of extremes of temperature,	those generally coming when the wind switches away from this direction
 	-  to the Arctic north or Polar north-east for cold, and to the Continental south or south east for heat.
 </p>
 <p>
 	Thunderstorms are not frequent, and generally comparatively weak
-	compared to those of the near continent. Days of strong winds do occasionally occur, and along with the odd short-lived heat wave or icy cold snap,
-	are the only real hazards in NW3, flooding not being a problem to this hilly area of London, home to inner London's highest point (Whitestone Pond,
-	<?php echo conv(134,7); ?>).
+	compared to those of the near continent. The main weather hazards in NW3 are strong winds, dense fog, and the odd heat wave or icy cold snap.
+	Although not subject to river flooding since we are home to inner London's highest point (Whitestone Pond, <?php echo conv(134,7); ?>),
+	we have also experienced occasional brief flash flooding, typically from localised slow-moving thunderstorms.
 </p>
 
 <h1>Long-term Climate Averages</h1>
 
 <p>
 	These are estimates for the long-term average weather conditions, i.e. the climate, at NW3.
-	<br /> They were derived from data for the period 1981-2010 - the <acronym title="World Meteorological Organisation">WMO</acronym>
+	<br /> They were derived from data for the period 1991-2020 - the <acronym title="World Meteorological Organisation">WMO</acronym>
 	 standard reference period - from nearby official Met Office sites
 	 (Heathrow and Northolt) by comparing observed data for recent years and adjusting accordingly.
 </p>

@@ -3,7 +3,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<?php 
+<?php
 	$file = 20;
 	$subfile = true;
 ?>
@@ -32,8 +32,14 @@
 <acronym title="Central England Temperature: The CET series is the longest continuous temperature record in the world">CET</acronym>
 figures from the last hundred years. The data has been deliberately smoothed to provide a more realistic basis for anomalies.<br />
 The raw CET data can be viewed here: <a href="/CETanalysis.xls" title="Excel 2003 spreadsheet with raw CET data from 1900-2010">CETanalysis</a> (.xls, 2.70 MB).
-<br /> <br />
-<a href="#graph" title="Click to view graph"> Jump to summary graph</a></p>
+
+<p style="margin: 10px 0px;">
+<a name="graph" />
+<img src="graphclim365.php?type0&amp;type1" alt="graph year 1" />
+<img src="graphclim365.php?type2&amp;type3" alt="graph year 1" />
+<img src="graphclim365.php?type4" alt="graph year 1" />
+
+
 
 <table class="table1" width="500" cellpadding="1" cellspacing="0">
 
@@ -65,12 +71,6 @@ for($m = 0; $m < 12; $m++) {
 }
 ?>
 </table>
-<br /><br />
-
-<a name="graph" />
-<img src="graphclim365.php?type0&amp;type1" alt="graph year 1" />
-<img src="graphclim365.php?type2&amp;type3" alt="graph year 1" />
-<img src="graphclim365.php?type4" alt="graph year 1" />
 
 </div>
 

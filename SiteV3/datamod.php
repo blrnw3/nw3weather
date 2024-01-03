@@ -53,9 +53,9 @@ if(date('Hi') < $sunGrabTime) {
 }
 
 //Link to EGLC pressure
-echo '<br /><a href="http://www.wunderground.com/history/airport/EGLC/',
-	date('Y/n/d',mktime(1,1,1,date('n'),date('d')-$dtm)),
-	'/DailyHistory.html">EGLC History for yesterday</a><br />';
+echo '<br /><a href="https://www.wunderground.com/history/daily/gb/london/EGLC/date/',
+	date('Y-n-d',mktime(1,1,1,date('n'),date('d')-$dtm)),
+	'</a><br />';
 
 echo 'datt size in B: ', filesize($fullpath."datt" . date('Y',mktime(1,1,1,date('n'),date('j')-$dtm,date('Y'))) . ".csv"), '<br />';
 if(!isset($_POST['pwd'])) {

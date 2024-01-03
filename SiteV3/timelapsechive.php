@@ -120,7 +120,7 @@
 
 <div style="height: 590px" id="timelapse">Click on one of the options above to play</div>
 
-<b>NB:</b> Before 24th Sep 2016, daily timelapses are unavailable <br />
+<b>NB:</b> Daily timelapses are only available online for the past few years. Please contact me for older ones back to 2010 <br />
 </div>
 
 <!-- ##### Footer ##### -->
