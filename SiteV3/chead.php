@@ -1,4 +1,6 @@
 <?php
+require_once('functions.php');
+
 //Bot dealings
 $browser = $_SERVER['HTTP_USER_AGENT'];
 $find_bot = array('bot', 'crawl', 'wise', 'search', 'validator', 'lipperhey', 'spider', 'http', 'java', 'www');
@@ -93,4 +95,25 @@ if($file <= 2) {
 }
 ?>
 
-
+<?php if($SHOW_TABS) { echo JQUERY; } ?>
+<script type="text/javascript">
+	//<![CDATA[
+	/**
+	 * Changes tab based on dynamic input
+	 * @param n sets the summary_type tab to show
+	 * @returns {undefined}
+	 * @author &copy; Ben Masschelein-Rodgers, nw3weather, Feb 2024
+	 */
+	function changeTab(n) {
+		$(".rank-tab-button").prop("disabled", false);
+		$("#rank-btn-" + n).prop("disabled", "disabled");
+		$(".rank-tab").hide();
+		$("#rank-" + n).show();
+		$("#summary-type-input").val(n);
+		$(".arrow").each(function() {
+			$(this).attr("href", $(this).attr("href").replace(/(summary_type=)\d+/, 'summary_type=' + n));
+		});
+		history.pushState(null, null, window.location.href.replace(/(summary_type=)\d+/, 'summary_type=' + n));
+	}
+	//]]>
+</script>

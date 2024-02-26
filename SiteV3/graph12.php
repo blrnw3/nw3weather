@@ -1,23 +1,41 @@
 <?php
 require './chartgen.php';
 
+function graphMonthlyRecent($type, $len, $summary_type) {
+	$graph = $labels = [];
+	$format = ($len > 18) ? 'M-y' : 'M';
+	$monthly_data = getMonthlyData($type, $summary_type, $GLOBALS["dyear"] - intval($len / 12) - 1, $GLOBALS["yr_yest"]);
+	foreach ($monthly_data as $y => $months) {
+		foreach ($months as $m => $v) {
+			$graph[] = floatval( conv($v, typeToConvType($type), 0, 0, 1, 0, 0, true) );
+			$labels[] = date($format, mkdate($m, 3, $y));
+		}
+	}
+	return [array_slice($graph, -$len), array_slice($labels, -$len)];
+}
+
+function graphMonthlyYear($type, $year, $summary_type) {
+	$data = getMonthlyData($type, $summary_type, $year, $year);
+	$graph = [];
+	foreach ($data[$year] as $v) {
+		$graph[] = conv($v, typeToConvType($type), 0, 0, 1,0,0, true);
+	}
+	return array($graph, $GLOBALS['months']);
+}
+
 $length = isset($_GET['length']) ? (int) $_GET['length'] : 12;
 
 $goodIntervals = [1, 2, 3, 4, 6, 12];
 
-$avgType = isset($_GET['mmm']) ? $_GET['mmm'] : 2.2;
-$addTit = ($avgType == 2.2) ? $sumormean[$sumq_all[$types_all[$dtype]]] :
-	( ($avgType == 2.1) ? 'highest' : ( ($avgType == 2.3) ? 'count' : 'lowest' ) );
-
 if(isset($_GET['year'])) {
 	$yproc = (int)$_GET['year'];
-	$datay = graphYear($dtype, $yproc, $avgType);
+	$datay = graphMonthlyYear($dtype, $yproc, $summary_type);
 	$title = $yproc;
 	$interval = 1;
 	$length = 12;
 }
 else {
-	$datay = graphMonthly($dtype, $length, $avgType);
+	$datay = graphMonthlyRecent($dtype, $length, $summary_type);
 	$length = min($length, count($datay[0]));
 	$title = "Last $length-months";
 	$labelNum = 12;
@@ -35,7 +53,7 @@ else { $graph->SetScale('textlin'); }
 
 $mainPlot = new BarPlot($datay[0]);
 
-if(isset($_GET['lta']) && array_key_exists($dtype, $vars_to_climav) && $avgType == 2.2) {
+if(isset($_GET['lta']) && array_key_exists($dtype, $vars_to_climav) && $summary_type <= 1) {
 	$lta_on = true;
 	$lta_str = " vs avg";
 	include_once('climavs.php');
@@ -68,7 +86,7 @@ $width = ($length > 100) ? 1 : 0.9;
 $bplot->SetWidth($width);
 $graph->Add($bplot);
 
-$graph->title->Set($title .' monthly-'. $addTit .' '.
+$graph->title->Set($title .' monthly-'. $SUMMARY_NAMES[$summary_type] .' '.
 	$descriptions_all[$types_all[$dtype]] . $lta_str . ' / ' . $std_units[$units_all[$types_all[$dtype]]]);
 
 $graph->title->SetFont(FF_FONT1,FS_BOLD);

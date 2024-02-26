@@ -1,9 +1,11 @@
 <?php
 $year = isset($_SESSION['year']) ? $_SESSION['year'] : $yr_yest;
 $month = isset($_SESSION['month']) ? $_SESSION['month'] : 0;
+$startYrReport = isset($_SESSION['start_year_rep']) ? (int)$_SESSION['start_year_rep'] : 2009;
 
-$ranknumOptions = array(5,10,15,20,25,50,100);
-$rankLimit = isset($_SESSION['rankLimit']) ? $_SESSION['rankLimit'] : 20;
+$ranknumOptions = array(10,25,50,100,250);
+$startYearOptions = [$yr_yest-1, 2020, 2009];
+$rankLimit = isset($_SESSION['rankLimit']) ? $_SESSION['rankLimit'] : 25;
 if(!in_array($rankLimit, $ranknumOptions)) {
 	$rankLimit = 25;
 }
@@ -24,8 +26,50 @@ $typeconvNum = $typeconvs_all[$typeNum];
 $isSum = $sumq_all[$typeNum];
 $isAnom = $anomq_all[$typeNum];
 $typevalcolNum = $wxtablecols_all[$typeNum];
-$description = $descriptions_all[$types_all[$type]];
-$isNotSummarisable = in_array($type, array('wdir', 'cloud', 'hail', 'thunder'));
+$description = $descriptions_all[$typeNum];
+$startYear = $start_year_all[$typeNum];
+$isNotSummarisable = in_array($type, ['wdir', 'cloud']);
+$IS_COUNT_ONLY = in_array($type, ['thunder', 'hail', 'fog']);
+$AVAIL_SUMMARY_TYPES = $IS_COUNT_ONLY ? [2] : [(int)$isSum];
+if($isSum && !$IS_COUNT_ONLY) {
+	$AVAIL_SUMMARY_TYPES[] = 2;
+}
+array_push($AVAIL_SUMMARY_TYPES, 3, 4);
+
+// This is a GET because it should not persist outside of the page
+$GET_SUMMARY_TYPE = isset($_GET['summary_type']) ? (int)$_GET['summary_type'] : 0;
+if($GET_SUMMARY_TYPE < 0 || $GET_SUMMARY_TYPE > 4) {
+	$GET_SUMMARY_TYPE = 0;
+}
+if($GET_SUMMARY_TYPE <= 1) {
+	$GET_SUMMARY_TYPE = (int)$isSum;
+}
+if(!in_array($GET_SUMMARY_TYPE, $AVAIL_SUMMARY_TYPES)) {
+	$GET_SUMMARY_TYPE = $AVAIL_SUMMARY_TYPES[0];
+}
+
+if($startYear < 2009) {
+	array_push($startYearOptions, 2000, 1990, 1980, 1970, 1950);
+}
+if($startYear < 1949) {
+	array_push($startYearOptions, 1910);
+}
+if($startYear < 1910) {
+	array_push($startYearOptions, $startYear);
+}
+if($file === 40 && $year < $startYear || $file !== 40 && $startYrReport < $startYear) {
+	$year = $startYear;
+	$startYrReport = $startYearOptions[count($startYearOptions)-1];
+	echo "<p style='font-weight:bold;font-size:130%;color:#9f9500;margin-left:2em;'>NB: Data for $description begins in $year</p>";
+}
+if(!in_array($startYrReport, $startYearOptions)) {
+	foreach($startYearOptions as $opt) {
+		if($opt < $startYrReport) {
+			$startYrReport = $opt;
+			break;
+		}
+	}
+}
 
 $CVARS = array( $typeNum, $hasToday, $typeconvNum, $isSum, $isAnom, $typevalcolNum, $description, $isNotSummarisable);
 class CurrVar {
@@ -49,7 +93,6 @@ class CurrVar {
 		$this->isNotSummarisable = $vars[7];
 	}
 }
-
 
 //Logic for cycling of drop-downs
 $catNum = array_search($type, $flatCats);
@@ -138,25 +181,25 @@ foreach ($categories as $cat => $subCats) {
 	echo '</optgroup>';
 }
 echo '</select>';
-	dropdownCycle(false, "year=$year&vartype=". $types_alltogether[$prevType], $descriptions_all[$prevType] );
-dropdownCycle(true, "year=$year&vartype=". $types_alltogether[$nextType], $descriptions_all[$nextType] );
+dropdownCycle(false, buildSlug("vartype", $types_alltogether[$prevType]), $descriptions_all[$prevType] );
+dropdownCycle(true,  buildSlug("vartype", $types_alltogether[$nextType]), $descriptions_all[$nextType] );
 
 if($showYear) {
 	echo '<span style="padding-left:25px;padding-right:3px;" class="rep">Year</span>';
-	dropdownCycle(false, 'year='. $prevYear ."&vartype=$type", $prevYear );
+	dropdownCycle(false,  buildSlug("year", $prevYear), $prevYear );
 	echo '<select name="year" onchange="this.form.submit()">';
-	for($i = $startYear; $i <= $dyear; $i++) {
+	for($i = $dyear; $i >= $startYear; $i--) {
 		echo '<option value="' . $i . '"';
 		if($i == $year) { echo ' selected="selected"'; }
 		echo '>', $i, '</option>
 			';
 	}
 	echo '</select>';
-	dropdownCycle(true, 'year='. $nextYear ."&vartype=$type", $nextYear );
+	dropdownCycle(true, buildSlug("year", $nextYear), $nextYear );
 }
 if($showMonth) {
 	echo '<span style="padding-left:25px;padding-right:3px;" class="rep">Month</span>';
-	dropdownCycle(false, 'month='. $prevMonth ."&vartype=$type", $months[$prevMonth-1] );
+	dropdownCycle(false, buildSlug("month", $prevMonth), $months[$prevMonth-1] );
 	echo '<select name="month" onchange="this.form.submit()">
 		<option value="0" ' . $isallCheck . '>All</option>';
 	for($i = 1; $i <= 12; $i++) {
@@ -166,24 +209,46 @@ if($showMonth) {
 			';
 	}
 	echo '</select>';
-	dropdownCycle(true, 'month='. $nextMonth ."&vartype=$type", $months[$nextMonth-1] );
+	dropdownCycle(true, buildSlug("month", $nextMonth), $months[$nextMonth-1] );
 }
-if($showNum) {
-	echo '<span style="padding-left:25px" class="rep">Limit</span>
-		<select name="rankLimit" onchange="this.form.submit()">';
-	for($i = 0; $i < count($ranknumOptions); $i++) {
-		echo '<option value="' . $ranknumOptions[$i] . '"';
-		if($ranknumOptions[$i] == $rankLimit) { echo ' selected="selected"'; }
-		echo '>', $ranknumOptions[$i], '</option>
+if($showStartYearSelect) {
+	echo '<span style="padding-left:25px" class="rep">Start Year</span>
+		<select name="start_year_rep" onchange="this.form.submit()">';
+	for($i = 0; $i < count($startYearOptions); $i++) {
+		echo '<option value="' . $startYearOptions[$i] . '"';
+		if($startYearOptions[$i] == $startYrReport) { echo ' selected="selected"'; }
+		echo '>', $startYearOptions[$i], '</option>
 			';
 	}
 	echo '</select>';
 }
+
+// Hidden summary_type input
+echo '<input id="summary-type-input" type="hidden" name="summary_type" value="'. $GET_SUMMARY_TYPE .'" />';
+
 echo '</form>';
 
 echo '</div>
 	<a name="start"> </a>';
 
+if($SHOW_TABS) {
+	echo "<div class='rank-tab-buttons'>";
+	foreach( $AVAIL_SUMMARY_TYPES as $smry_type ) {
+		$extraClass = ($smry_type === $GET_SUMMARY_TYPE) ? disableHTML : "";
+		echo '<button id="rank-btn-'. $smry_type .'" class="rank-tab-button" '.$extraClass .'" onclick="changeTab('. $smry_type .')">Monthly '. $SUMMARY_NAMES[$smry_type] .'</button>';
+	}
+	echo "</div>";
+}
+
+function historical_info($year) {
+	if($GLOBALS["startYear"] < 2009 && $year < 2009) {
+		echo '<p>*Data from before 2009 are mostly from the historical site at Whitestone Pond in Hampstead. '
+		. 'Where data from that record is missing, other nearby sites were used, including St James Park, Heathrow, and Kew Gardens (pre-1910). '
+		. 'Best efforts have been made to adjust for site differences, but uncertainties are somewhat greater for this data. '
+			. 'I am grateful to the Met Office for making this data available for free through the '
+			. '<a href="https://data.ceda.ac.uk/badc/ukmo-midas-open/">MIDAS Open database</a>.</p>';
+	}
+}
 
 function valcolr($value, $num, $countable = false) {
 	global $valcol, $col_descrip;
@@ -194,21 +259,6 @@ function valcolr($value, $num, $countable = false) {
 		if($value <= $values[$i]) { return 'level'.$level_type.'_'.$i;	}
 	}
 	return 'level'.$level_type.'_'.$i;
-}
-
-function finalConv($val, $type) {
-	if($type == 'hail') {
-		return hailname($val);
-	} else {
-		return thundername($val);
-	}
-}
-
-function yr_togg($value, $year) {
-	global $hide, $m, $r;
-	if($hide == 1) { echo '<b>', $value, '</b><br />', $year, '</a>'; }
-	else { echo '<acronym style="border-bottom-width: 0" title="',$year,'">
-	',	$value, '</a>'; }
 }
 
 function rankTable($values, $dates, $conv, $colour, $absfix, $rankNum, $title, $alignLeft, $showToday, $showFoot, $isDaily = true, $sumfix = 1, $isCount = false) {
@@ -248,20 +298,31 @@ function rankTable($values, $dates, $conv, $colour, $absfix, $rankNum, $title, $
 			td( conv($values['today'], $conv, false), valcolr( conv($values['today'] / $sumfix, $conv, false, false, false, $absfix), $colour, $isCount) );
 			td($today);
 			tr_end();
-
-			$yestRank = $dates['yest'];
-			$yestVal = $values['yest'];
-		} else {
-			$yestRank = $dates['today'];
-			$yestVal = $values['today'];
 		}
-		tr("tblfoot");
-		td($yestRank);
-		td( conv($yestVal, $conv, false), valcolr( conv($yestVal / $sumfix, $conv, false, false, false, $absfix), $colour, $isCount) );
-		td($yest);
-		tr_end();
+		if($values["yest"] !== null) {
+			tr("tblfoot");
+			td($dates['yest']);
+			td( conv($values['yest'], $conv, false), valcolr( conv($values["yest"] / $sumfix, $conv, false, false, false, $absfix), $colour, $isCount) );
+			td($yest);
+			tr_end();
+		}
 	}
 
 	table_end();
 }
+
+function rankLimitForm() {
+	global $ranknumOptions, $rankLimit;
+
+	echo '<form method="get" action=""><span style="padding-left:25px" class="rep">Limit</span>
+	<select name="rankLimit" onchange="this.form.submit()">';
+	for($i = 0; $i < count($ranknumOptions); $i++) {
+		echo '<option value="' . $ranknumOptions[$i] . '"';
+		if($ranknumOptions[$i] == $rankLimit) { echo ' selected="selected"'; }
+		echo '>', $ranknumOptions[$i], '</option>
+			';
+	}
+	echo '</select></form>';
+}
+
 ?>

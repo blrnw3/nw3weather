@@ -67,7 +67,7 @@ if($phpload > 2 && !$is_bot && !$me) {
 }
 
 $ref = filter_input(INPUT_SERVER, "HTTP_REFERER", FILTER_SANITIZE_URL);
-if($ref != "" && !strContains($ref, ["http://nw3weather.co.uk", "https://www.google", "https://www.bing.com"])) {
+if($ref != "" && !strContains($ref, ["http://nw3weather.co.uk", "https://www.google", "https://www.bing.com", "duckduckgo", "baidu", "raindrop.io", "search.yahoo", "com.google"])) {
 	log_events("external_refer.txt", $ref);
 }
 

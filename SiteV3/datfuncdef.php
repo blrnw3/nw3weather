@@ -28,6 +28,8 @@ $sumq = array(false,false,false, false,false,false, false,false,false, false,fal
 			false,false,false, false,false, false,false,false,false,false,false, false, false,false,false, true);
 $anomq = array(true,true,true, false,false,false, false,false,false, true,false,false,false, true,false,false,false, //Does anomaly exist (e.g. rain)
 		 	false,false,false, false,false, false,false,false,false,false,false, false, false,false,false, false);
+$start_years = [1881,1881,1881, 2009,2009,2009, 2009,2009,2009, 1949,2009,1959,2009, 1871,2009,2009,2009,
+				2009,2009,2009, 1881,1881, 2009,2009,2009,2009,2009,2009, 2009, 2009,2009,2009, 2009];
 
 //Derived daily quantities
 $types_derived = array('trange','hrange','prange','ratemean');
@@ -42,6 +44,7 @@ $round_sizex = array(5,10,5,2);
 $round_sizeix = array(10,10,1,0.2);
 $sumqx = array(false,false,false,false);
 $anomqx = array(true,false,false,false);
+$start_yearsx = [1881,2009,2009,2009];
 
 //Anomaly daily quantities
 $types_anom = array('tmina','tmaxa','tmeana', 'raina', 'wmeana', 'sunhra','sunhrp', 'wethra', 'wethrp'); //8
@@ -57,6 +60,7 @@ $round_sizea = array(5,5,5, 10, 2, 10,10, 10,10);
 $round_sizeia = array(10,10,10, 10, 2, 10,10, 10,10);
 $sumqa = array(false,false,false, false, false, false,false, false,false);
 $anomqa = array(false,false,false, false, false, false,false, false,false);
+$start_yearsa = [1881,1881,1881, 1871, 1949, 1910,1910, 2009,2009];
 
 //Manual-input daily variables
 $types_m_original = array('sunhr','wethr', 'cloud','snow','lysnw', 'hail','thunder','fog', 'comms','extra','issues','away','pond','spare');
@@ -69,8 +73,9 @@ $data_m_num = array(8,9, 10,-6,-6, -6,-6,-6, -6,-6,-6,-6,4,-6);
 $typeconvm = array(9,9, false,6,6, 0.1,0.2,false, false,false,false,false,1,false);
 $wxtable_colrm = array(10,10, 10,10,10, 10,10,10, 10,10,10,10,0,10);
 $round_sizem = $round_sizeim = array(5,5, 1,1,1, 1,1,1, 1,1,1,1,5,1);
-$sumqm = array(true,true, true,true,true, true,true,true, false,false,false,false,false,false);
+$sumqm = array(true,true, true,true,true, true,true,true, false,false,false,true,false,false);
 $anomqm = array(true,true, false,false,false, false,false,false, false,false,false,false,false,false);
+$start_yearsm = [1910,2009, 2009,1959,1949, 2009,1949,2009, 2009,2009,2009,2009,2009,2009];
 
 // Separate usage
 $data_m_description = array('Sun Hours', 'Wet Hours', 'Cloud Cover', acronym('Possible events: Air frost, Dense fog, Snowfall, Lying Snow, Hail, Thunder(storm), Max sun.','Events',true),
@@ -90,10 +95,11 @@ $roundsizes_all = array_merge($round_size, $round_sizex, $round_sizem, $round_si
 $roundsizeis_all = array_merge($round_sizei, $round_sizeix, $round_sizeim, $round_sizeia);
 $sumq_all = array_merge($sumq, $sumqx, $sumqm, $sumqa);
 $anomq_all = array_merge($anomq, $anomqx, $anomqm, $anomqa);
+$start_year_all = array_merge($start_years, $start_yearsx, $start_yearsm, $start_yearsa);
 
 // Validation
 $allTheThings = array($types_alltogether, $colours_all, $descriptions_all, $units_all, $nums_all, $typeconvs_all,
-	$wxtablecols_all, $roundsizeis_all, $roundsizes_all, $sumq_all, $anomq_all);
+	$wxtablecols_all, $roundsizeis_all, $roundsizes_all, $sumq_all, $anomq_all, $start_year_all);
 for($i = 0; $i < count($allTheThings)-1; $i++) {
 	if(count($allTheThings[$i]) !== count($allTheThings[$i+1])) {
 		var_dump($allTheThings[$i]);
@@ -113,9 +119,9 @@ $categories = array(
 	'Humidity' => array('hmin','hmax','hmean'),
 	'Pressure' => array('pmin','pmax','pmean'),
 	'Dew Point' => array('dmin','dmax','dmean'),
-	'Change' => array('tc10max','tchrmax','hchrmax','tc10min','tchrmin','hchrmin'),
+	'Observations' => array('sunhr','wethr','ratemean','snow','lysnw','hail','thunder','fog','pond'),
 	'Range' => array('trange','hrange','prange'),
-	'Observations' => array('sunhr','wethr','ratemean','cloud','snow','lysnw','hail','thunder','fog','pond'),
+	'Change' => array('tc10max','tchrmax','hchrmax','tc10min','tchrmin','hchrmin'),
 	'Anomalies' => array('tmina','tmaxa','tmeana', 'raina', 'sunhra','sunhrp', 'wethra', 'wethrp'),
 	'Misc.' => array('nightmin','daymax','w10max','afhrs'),
 	'Feels-like' => array('fmin','fmax','fmean'),
@@ -134,8 +140,6 @@ $units_monthly = array(9,9,9,9,1);
 $nums_monthly = array(4,3,2,2,2);
 $typeconvs_monthly = array(8,8,8,8,2);
 $wxtablecols_monthly = array(10,10,10,10,5);
-
-$sumormean = array('mean', 'total');
 
 $ccd = array('c' => 'Sunny', 'f' => 'Mostly Sunny', 'p' => 'Partly Cloudy', 'b' => 'Mostly Cloudy', 'o' => 'Overcast', '-' => 'transitioned to', ';' => 'with periods of',
 			'/' => 'or', 'h' => 'Hazy', 'u' => 'unknown');
@@ -177,182 +181,220 @@ function MDtoMsummary($arr, $sum = false, $type = 2) {
 	return $summary;
 }
 
-function minMaxMeanSumCount($arr, $type, $morx) {
-	$min = PHP_INT_MAX;
-	$max = PHP_INT_MIN;
-	$sum = 0;
-	$count = 0;
+function datAnom($varName, $sourceData, $originalVarNum) {
+	global $lta, $vars, $sumq_all;
 
-	$validCnt = 0;
-	foreach($arr as $val) {
-		if(!isBlank($val)) {
-			$val = floatval($val);
-			$validCnt++;
+	$ltaRefDaily = ['tmina' => 0, 'tmaxa' => 1, 'tmeana' => 2, 'sunhrp' => 4];
+	$ltaRefMonthly = ['raina' => 4, 'wmeana' => 6, 'wethra' => 11, 'sunhra' => 12];
 
-			if($val < $min) { $min = $val; }
-			if($val > $max) { $max = $val; }
-			$sum += $val;
-			$count += (int)($val > 0);
-		}
-	}
-	if($validCnt === 0)
-		return null;
+	$originalSummable = $sumq_all[$originalVarNum];
+	$anomType = substr($varName, strlen($varName)-1, 1);  // a or p
 
-	$summable = ($type === 13 || $morx); //rain, sun, wet
-
-	$sum /= $summable ? 1 : $validCnt; //only one of mean or sum is required
-
-	return $summable ?
-		array($min, $max, $sum, $count) :
-		array($min, $max, $sum);
-}
-/**
- * Converts DATA, DATX, or DATM to monthly equivalent
- * @param mixed $arr one of above
- * @return mixed monthly array indexed in same way but without day, and with:
- * 0:min, 1:max, 2:mean/sum, [3:count (if countable)]
- */
-function DATtoMDAT($arr) {
-	$mdat = array();
-	$morx = count($arr) > 5 && count($arr) < 20; //datm
-	foreach ($arr as $type => $arr0) {
-		foreach ($arr0 as $year => $arr1) {
-			foreach ($arr1 as $month => $arr2) {
-				$mdat[$type][$year][$month] = minMaxMeanSumCount($arr2, $type, $morx);
+	$res = [];
+	foreach ($sourceData as $year => $arr1) {
+		foreach ($arr1 as $month => $arr2) {
+			$daysInMonth = get_days_in_month($month, $year);
+			foreach ($arr2 as $day => $v) {
+				if(array_key_exists($varName, $ltaRefDaily)) {
+					$climVal = $lta[$ltaRefDaily[$varName]][date('z', mkdate($month, $day, $year))];
+				} elseif(array_key_exists($varName, $ltaRefMonthly)) {
+					$divisor = $originalSummable ? $daysInMonth : 1;
+					$climVal = $vars[$ltaRefMonthly[$varName]][$month-1] / $divisor;
+				} else {
+					$climVal = 24;
+				}
+				if($originalSummable) {
+					$val = $v / $climVal * 100;
+				} else {
+					$val = $v - $climVal;
+				}
+				if($val > 100 && $anomType === 'p') {
+					$val = 100;
+				}
+				$res[$year][$month][$day] = $val;
 			}
 		}
 	}
-	return $mdat;
+	return $res;
 }
 
+function datDerived($varName, $include_historic) {
+	global $types_all;
+
+	$srcMap = ["ratemean" => ["rain", "wethr"], "trange" => ["tmin", "tmax"], "hrange" => ["hmin", "hmax"], "prange" => ["pmin", "pmax"]];
+	$src = $srcMap[$varName];
+	$var1 = varNumToDatArray($types_all[$src[0]], $include_historic);
+	$var2 = varNumToDatArray($types_all[$src[1]], $include_historic);
+
+	$res = [];
+	foreach ($var1 as $year => $arr1) {
+		foreach ($arr1 as $month => $arr2) {
+			foreach ($arr2 as $day => $val) {
+				if($varName === "ratemean") {
+					$res[$year][$month][$day] = ($var2[$year][$month][$day]  > 0.4 && $val > 0.3) ?
+						$val / $var2[$year][$month][$day] : null;
+				}
+				else {
+					$res[$year][$month][$day] = $var2[$year][$month][$day] - $val;
+				}
+			}
+		}
+	}
+	return $res;
+}
+
+$CACHE_DAT = [];
+$CACHE_DAT_HIST = [];
+
 /**
- * Gets data from the right global ALL array (DATA, DATAM, DATAX).
- * @param mixed $varNum
+ * Gets data from the right global ALL array (DATA, DATAM), or derives it (anoms, ranges, rates).
+ * @param int $varNum
+ * @param mixed $include_historic false to exclude, int to set start year for historic data, true to include all
  * @return mixed
  */
-function varNumToDatArray($varNum) {
-	global $types, $types_alltogether, $types_derived, $types_all, $types_anom;
+function varNumToDatArray($varNum, $include_historic = false) {
+	global $types, $types_alltogether, $types_derived, $types_all, $types_anom, $start_year_all, $CACHE_DAT, $CACHE_DAT_HIST;
 
 	$varName = $types_alltogether[$varNum];
-	if($varNum < count($types)) {
-		return $GLOBALS['DATA'][$varNum];
-	} elseif($varNum < count($types)+count($types_derived)) {
-		return $GLOBALS['DATX'][$varNum - count($types)];
-	} elseif(in_array($varName, $types_anom)) {
-		if(!isset($GLOBALS['DAT_ANOM'])) {
-			$GLOBALS['DAT_ANOM'] = datAnom();
-		}
-		return $GLOBALS['DAT_ANOM'][$varName];
-	} else {
-		return $GLOBALS['DATM'][$varNum - $types_all['sunhr']];
+	$isAnom = in_array($varName, $types_anom);
+	if($isAnom) {
+		$anomVarName = $varName;
+		$varNum = $types_all[substr($varName, 0, strlen($varName)-1)];  // e.g. tmina -> 0
+		$varName = $types_alltogether[$varNum];
 	}
+	if(in_array($varName, $types_derived)) {
+		return datDerived($varName, $include_historic);
+	}
+	if($varNum < count($types)) {
+		if (!array_key_exists($varName, $CACHE_DAT)) {
+			$CACHE_DAT[$varName] = unserialize(file_get_contents(ROOT . "serialised_dat_$varNum.txt"));
+		}
+	} else {
+		if (!array_key_exists($varName, $CACHE_DAT)) {
+			$idx = $varNum - $types_all['sunhr'];
+			$CACHE_DAT[$varName] = unserialize(file_get_contents(ROOT . "serialised_datm_$idx.txt"));
+		}
+	}
+	$arr = $CACHE_DAT[$varName];
+	if($include_historic !== false && $start_year_all[$varNum] < 2009) {
+		if($include_historic < 2009) {
+			// Populate cache
+			if (!array_key_exists($varName, $CACHE_DAT_HIST)) {
+				$CACHE_DAT_HIST[$varName] = unserialize(file_get_contents(ROOT."serialised_historical_$varName.txt"));
+			}
+			$arr = $CACHE_DAT_HIST[$varName] + $arr;
+		}
+	}
+	if($isAnom) {
+		// NB: passing the original varname
+		return datAnom($anomVarName, $arr, $varNum);
+	}
+	return $arr;
 }
 
+const SUMMARY_MEAN = 0;
+const SUMMARY_SUM = 1;
+const SUMMARY_COUNT = 2;
+const SUMMARY_MIN = 3;
+const SUMMARY_MAX = 4;
+
+$SUMMARY_NAMES = ["mean", "total", "count", "lowest", "highest"];
+$SUMMARY_EXPLAIN = ["monthly average", "monthly total", "number of non-zero days",  "lowest <b>daily</b> value in each month",  "highest <b>daily</b> value in each month"];
+
+function summarize($arr, $summary_type) {
+	if($summary_type === SUMMARY_MEAN) {
+		return mean($arr);
+	}
+	if($summary_type === SUMMARY_SUM) {
+		return mean($arr, 1);
+	}
+	if($summary_type === SUMMARY_COUNT) {
+		return sum_cond($arr, true, 0);
+	}
+	if($summary_type === SUMMARY_MIN) {
+		return mymin($arr);
+	}
+	if($summary_type === SUMMARY_MAX) {
+		return mymax($arr);
+	}
+}
+function summarize2D($arr2D, $summary_type) {
+	$summary = [];
+	foreach($arr2D as $k => $arr) {
+		$summary[$k] = summarize($arr, $summary_type);
+	}
+	return $summary;
+}
+
+
+// GLOBAL DATA ACCESS FUNCTIONS
 /**
- * Gets useful data from the right global ALL array (DATA, DATAM, DATAX).
- * @param string $variable
- * @param mixed $year Pass true to get all years or specify an integer single year. Defaults to current year.
- * @param float $accumType [=1] re-order data: 0 does nothing, 1 applies MDtoZ, 2.x applies MDtoSummary [.x for min/max/mean/count]
- * @return mixed array required
+ * Returns array[year][month][day] = val
+ * @param type $var
+ * @param type $start_year
+ * @return type
  */
-function newData($variable, $year = null, $accumType = 1) {
-	global $dyear, $types_all, $sumq_all;
-
-	$varNum = $types_all[$variable];
-	$year = ($year === null) ? $dyear : $year;
-	$mmm = ( ($accumType-2)*10 );
-
-	$data = varNumToDatArray($varNum);
-
-	if($year === true) { //all years desired
-		$all = array();
-		for($y = 2009; $y <= $dyear; $y++) { //Rain tags
-			$all = array_merge($all, ($accumType === 1) ? MDtoZ($data[$y]) :
-				MDtoMsummary($data[$y], $sumq_all[$varNum], $mmm));
+function getDailyData($var, $start_year) {
+	$data = [];
+	foreach( varNumToDatArray($GLOBALS["types_all"][$var], $start_year) as $y => $dat ) {
+		if($y >= $start_year) {
+			$data[$y] = $dat;
 		}
-		return $all;
 	}
-
-	if($accumType === 0) {
-		return $data[$year];
-	} else {
-		return ($accumType === 1) ? MDtoZ($data[$year]) :
-			MDtoMsummary($data[$year], $sumq_all[$varNum], $mmm);
+	return $data;
+}
+/**
+ * Returns array[month][day] = val
+ * @param type $var
+ * @param type $year
+ * @return type
+ */
+function getDailyDataForYear($var, $year) {
+	$data = varNumToDatArray($GLOBALS["types_all"][$var], $year);
+	return $data[$year];
+}
+/**
+ * Returns array[year][month] = summary_val
+ * @param type $var
+ * @param type $summary_type
+ * @param type $start_year
+ * @param type $end_year
+ * @return type
+ */
+function getMonthlyData($var, $summary_type, $start_year, $end_year) {
+	$data = [];
+	foreach (varNumToDatArray($GLOBALS["types_all"][$var], $start_year) as $year => $months) {
+		if($year >= $start_year && $year <= $end_year) {
+			$data[$year] = summarize2D($months, $summary_type);
+		}
 	}
+	return $data;
+}
+/**
+ * Returns array[year] = summary_val
+ * @param type $var
+ * @param type $summary_type
+ * @param type $start_year
+ * @param type $end_year
+ * @return type
+ */
+function getAnnualData($var, $summary_type, $start_year, $end_year) {
+	$data = [];
+	foreach (varNumToDatArray($GLOBALS["types_all"][$var], $start_year) as $year => $months) {
+		if($year >= $start_year && $year <= $end_year) {
+			$dat = [];
+			foreach($months as $daily) {
+				$dat = array_merge($dat, $daily);
+			}
+			$data[$year] = summarize($dat, $summary_type);
+		}
+	}
+	return $data;
 }
 
 function typeToConvType($type) {
 	return $GLOBALS['typeconvs_all'][$GLOBALS['types_all'][$type]];
 }
-
-function graphDaily($type, $len = 31) {
-	$data = newData($type, true);
-	$format = ($len < 50) ? 'd' : ( ($len < 500) ? 'd-M' : 'M-y' );
-	$cnt = count($data);
-	$cap = min($len, $cnt);
-	for($d = 1; $d <= $cap; $d++) {
-		$graph[$cap-$d] = floatval( conv($data[$cnt-$d], typeToConvType($type), 0, 0, 1, 0, 0, true) );
-		$labels[$cap-$d] = date( $format, mkday(DDAY - $d + 1) );
-	}
-	return array($graph, $labels);
-}
-
-function graphDailyYear($type, $year, $lta_all, $cume = false) {
-	$data = newData($type, $year, 1);
-	$format = 'd-M';
-	$ltas = [];
-	$c = 0;
-	$clta = 0;
-	for($d = 0; $d < count($data); $d++) {
-		$val = floatval( conv($data[$d], typeToConvType($type), 0, 0, 1, 0, 0, true) );
-		$c += $val;
-		$graph[$d] = $cume ? $c : $val;
-		$labels[$d] = date( $format, mkz($d, $year) );
-		if($lta_all) {
-			$clta += $lta_all[$d];
-			$ltas[$d] = $cume ? $clta : $lta_all[$d];
-		}
-	}
-	return array($graph, $labels, $ltas);
-}
-
-/**
- * Daily chart data for a specified month
- */
-function graphMonth($type, $month, $year) {
-	$datay = newData($type, $year, 0);
-	$data = $datay[$month]; unset($datay);
-	$len = count($data);
-	for($d = 0; $d < $len; $d++) {
-		$graph[$d] = conv($data[$d+1], typeToConvType($type), 0, 0, 1, 0, 0, true);
-		$labels[$d] = $d+1;
-	}
-	return array($graph, $labels);
-}
-/**
- * Monthly chart data for a specified period up to present
- * @param enum $mmm [=2.2] mean/max/min/count
- */
-function graphMonthly($type, $len = 12, $mmm = 2.2) {
-	$data = newData($type, true, $mmm);
-	$format = ($len > 18) ? 'M-y' : 'M';
-	$cnt = count($data);
-	$cap = min($len, $cnt);
-	for($mon = $cnt - $cap; $mon < $cnt; $mon++) {
-		$base = $mon - ($cnt - $cap); //re-index from 0
-		$graph[$base] = conv($data[$mon], typeToConvType($type), 0,0,1,0,0, true);
-		$labels[$base] = date($format, monthtotime($mon));
-	}
-	return array($graph, $labels);
-}
-function graphYear($type, $year, $mmm = 2.2) {
-	$test = array_merge( newData($type, $year, $mmm) );
-	for ($mon = 0; $mon < count($test); $mon++) {
-		$new[$mon] = conv($test[$mon], typeToConvType($type), 0, 0, 1,0,0, true);
-	}
-	return array($new, $GLOBALS['months']);
-}
-
 
 $daytypes = array('temp' => 6, 'hum' => 7, 'dew' => 9, 'rain' => 10, 'baro' => 8, 'wdir' => 11, 'gust' => 4, 'wind' => 3);
 $daycols = array('temp' => 'orange', 'hum' => 'darkgreen', 'dew' => 'chartreuse', 'rain' => 'blue', 'baro' => 'darkred', 'wdir' => 'red', 'gust' => 'palevioletred1', 'wind' => 'darkblue');

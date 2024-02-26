@@ -359,15 +359,10 @@ displayMonthlyReport($repMonth, $repYear);
 ?>
 -->
 
-<div id="twitter-feed" style="margin: 2em">
-	<a class="twitter-timeline"
-		href="https://twitter.com/nw3weather"
-		data-widget-id="650374428325474304"
-		data-chrome="nofooter transparent">
-		Tweets by @nw3weather
+<div id="twitter-feed" style="margin: 2em 1em">
+	<a href="https://twitter.com/nw3weather">
+		Check tweets from @nw3weather
 	</a>
-	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
-
 </div>
 
 <p style="margin-top: 2em;">This weather station has been recording data for

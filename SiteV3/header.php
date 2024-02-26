@@ -1,8 +1,6 @@
 <div id="background">
 <div id="page">
 <?php
-require_once('functions.php');
-
 //$timestampWD = sysWDtimes(false);
 $timestampWD = $unix;
 if(strlen($timeRare) > 2 && $file > 1) {

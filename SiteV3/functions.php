@@ -215,7 +215,7 @@ function isNotBlank($val) {
  * @return string the formatted date or message
  */
 function today($year = false, $month = false, $day = false, $current = false, $tstamp = false, $debug = false, $format = 'jS M Y') {
-	global $dyear, $dmonth, $dday;
+	global $dyear, $dmonth, $dday, $dtstamp;
 
 	if($current) { $message = 'Current'; } else { $message = 'Today'; }
 	if($tstamp) {
@@ -232,7 +232,7 @@ function today($year = false, $month = false, $day = false, $current = false, $t
 		echo date(' H:i, d m Y ',$record), ' xxx ', date(' H:i, d m Y ',mktime(0,0,0)), '<br />';
 		echo '<br />', $year_new, ' ', $month_new, ' ', $day_new, ' ', $message;
 	}
-	if( $record == mktime(0,0,0) ) {
+	if( $record == $dtstamp ) {
 		return '<span style="color:red">'.$message.'</span>';
 	}
 	else {
@@ -309,19 +309,22 @@ function monthtotime($mon) {
 
 /**
  * Converts an offset from 1st [curr_month] 2009 to a timestamp, where the offset is an index of
- * an array of all days for [curr_month] in the history.
- * @param int $day offset in days
+ * a zero-based array of all days for [curr_month] in the history.
+ * @param int $days offset in days
  * @return int timestamp
  */
-function daytotimeCM($day) {
-	global $dmonth, $lyNum;
-	$nly = ($dmonth == 2 && $day > 111) ? $lyNum : 0; //leap-yr fix (111 is num feb days from 01 feb 2009 to 28 feb 2012)
-	$dim = get_days_in_month($dmonth); //non-leap year
-	$year = 2009 + floor(($day - $nly) / $dim); //$day starts from 0 so no offset needed
-	$trueDay = $day - ($dim * ($year - 2009)) - $nly + 1; //offset now needed
-//	$stuff = array($dmonth, $dyear, $lyNum, $nly, $dim, $year, $trueDay);
-//	print_m($stuff);
-	return mkdate($dmonth, $trueDay, $year);
+function daytotimeCM($days) {
+	$days++; // Convert to 1-based
+	$y = 2009; $m = $GLOBALS["dmonth"];
+	while ($days > 0) {
+		$dim = get_days_in_month($m, $y);
+		if($days <= $dim) {
+			break;
+		}
+		$days -= $dim;
+		$y++;
+	}
+	return mkdate($m, $days, $y);
 }
 
 function rate_fix($rate) {
@@ -527,10 +530,6 @@ function mymax($arr, $debug = false) {
 			//$badarr = true;
 		}
 	}
-//	if($badarr && $debug) {
-//		print_r($arr);
-//		debug_print_backtrace();
-//	}
 	if($max == -1 * PHP_INT_MAX) return null;
 	return $max;
 }
@@ -725,6 +724,17 @@ function dropdownCycle($dir, $href, $title, $disabled = false) {
 		</a>
 	';
 			//<button style="color:#6f6; background-color:#bbd;" title="'. $title .'">&'. $lg .'t;</button>
+}
+
+function buildSlug($key, $val) {
+	$form_params = ["vartype" => $GLOBALS["type"], "year" => $GLOBALS['year'], "month" => $GLOBALS['month'],
+		"summary_type" => $GLOBALS['GET_SUMMARY_TYPE'], "start_year_rep" => $GLOBALS["startYrReport"]];
+	$form_params[$key] = $val;
+	$slug = "";
+	foreach ($form_params as $k => $v) {
+		$slug .= "&$k=$v";
+	}
+	return $slug;
 }
 
 /**

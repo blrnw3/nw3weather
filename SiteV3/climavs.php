@@ -37,6 +37,9 @@ $vars_to_climav = [
 $sumorno = array(false,false,false,false,
 	true,true,false, true,true,true, true,true,true, true,true);
 
+$annualsum = array();
+$annualav = array();
+$annualrange = array();
 for($v = 0; $v < count($vars); $v++) {
 	//Seasonal
 	if($sumorno[$v]) { $divorno = 1; } else { $divorno = 3; }
@@ -50,6 +53,16 @@ for($v = 0; $v < count($vars); $v++) {
 	$annualav[$v] = round(mean($vars[$v]),1);
 	$annualrange[$v] = max($vars[$v]) - min($vars[$v]);
 }
+$vars_to_climav_annual = [
+	"tmin" => $annualav[0],
+	"tmax" => $annualav[1],
+	"tmean" => $annualav[2],
+	"trange" => $annualav[3],
+	"rain" => $annualsum[4],
+	"rdays" => $annualsum[5],
+	"wmean" => $annualav[6],
+	"sunhr" =>$annualsum[12],
+];
 
 //365-day clim avs
 $dtfanomcc = file(ROOT . 'tminmaxav.csv');

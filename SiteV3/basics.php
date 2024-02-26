@@ -27,9 +27,9 @@ $date = date('d M Y');
 $time = date('H:i');
 $dst = date("I") ? "BST" : "GMT";
 $dday = date('j'); $dmonth = date('n'); $dyear = date('Y'); $dz = date('z'); $dhr = date('H'); $dt = date('t');
+$dtstamp = mktime(0, 0, 0);
 define('DDAY', $dday);
 $da = array('j' => $dday, 'n' => $dmonth, 'Y' => $dyear);
-$lyNum = 4; //number of leap years since 2009 (only used for ranking Feb days)
 
 $lat = 51.556;
 $lng = -0.154;
@@ -37,10 +37,11 @@ $zenith = 90.2;
 $sunrise = date_sunrise(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenith, date('I'));
 $sunset = date_sunset(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenith, date('I'));
 
-$yr_yest = date('Y',mktime(0,0,0,date('n'),date('j')-1, date('Y')));
-$mon_yest = date('n',mktime(0,0,0,date('n'),date('j')-1, date('Y')));
-$day_yest = date('j',mktime(0,0,0,date('n'),date('j')-1, date('Y')));
-$dz_yest = date('z',mktime(0,0,0,$dmonth,$dday-1,$dyear));
+$dtstamp_yest = mktime(0, 0, 0, $dmonth, $dday-1, $dyear);
+$yr_yest = date('Y',$dtstamp_yest);
+$mon_yest = date('n',$dtstamp_yest);
+$day_yest = date('j',$dtstamp_yest);
+$dz_yest = date('z',$dtstamp_yest);
 
 $firstday = (date('j') == 1);
 $too_early = $dday < 15;
@@ -62,7 +63,6 @@ $rankNumM = 10;
 $rankNumCM = 5;
 
 $temp_styr = 2009;
-$startYear = 2009;
 
 $pgather = array(7,31,365);
 

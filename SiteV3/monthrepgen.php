@@ -33,6 +33,53 @@ function pluralFix($val, $wereWas = false, $unit = 'day') {
 		"<b>$val</b> $str";
 }
 
+function minMaxMeanSumCount($arr, $type, $morx) {
+	$min = PHP_INT_MAX;
+	$max = PHP_INT_MIN;
+	$sum = 0;
+	$count = 0;
+
+	$validCnt = 0;
+	foreach($arr as $val) {
+		if(!isBlank($val)) {
+			$val = floatval($val);
+			$validCnt++;
+
+			if($val < $min) { $min = $val; }
+			if($val > $max) { $max = $val; }
+			$sum += $val;
+			$count += (int)($val > 0);
+		}
+	}
+	if($validCnt === 0)
+		return null;
+
+	$summable = ($type === 13 || $morx); //rain, sun, wet
+
+	$sum /= $summable ? 1 : $validCnt; //only one of mean or sum is required
+
+	return $summable ?
+		array($min, $max, $sum, $count) :
+		array($min, $max, $sum);
+}
+/**
+ * Converts DATA, DATX, or DATM to monthly equivalent
+ * @param mixed $arr one of above
+ * @return mixed monthly array indexed in same way but without day, and with:
+ * 0:min, 1:max, 2:mean/sum, [3:count (if countable)]
+ */
+function DATtoMDAT($arr) {
+	$mdat = array();
+	$morx = count($arr) > 5 && count($arr) < 20; //datm
+	foreach ($arr as $type => $arr0) {
+		foreach ($arr0 as $year => $arr1) {
+			foreach ($arr1 as $month => $arr2) {
+				$mdat[$type][$year][$month] = minMaxMeanSumCount($arr2, $type, $morx);
+			}
+		}
+	}
+	return $mdat;
+}
 function monthlyReport($repMonth, $repYear) {
 	include_once('climavs.php');
 
@@ -122,7 +169,7 @@ function monthlyReport($repMonth, $repYear) {
 		?>';
 
 	file_put_contents(ROOT.$repYear."/report$repMonth.php", $output);
-	return " 
+	return "
 date array(repMonth, repYear),
 temp array(tempComparator, tempAv, tempAnom, tempLo, tempHi),
 rain array(rainComparator, rainAv, rainAnom, rainCnt, rainHi, rainYr, rainYrAnom, rainYrCnt),

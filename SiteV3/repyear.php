@@ -51,10 +51,10 @@
 
 	<div style="margin-left: 0.1em">
 		<h3>Monthly charts</h3>
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmax&mmm=2.2&year=2023" />
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=rain&mmm=2.2&year=2023" />
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmaxa&mmm=2.2&year=2023" />
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=sunhr&mmm=2.2&year=2023" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmax&summary_type=0&year=2023" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=rain&summary_type=0&year=2023" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmaxa&summary_type=0&year=2023" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=sunhr&summary_type=0&year=2023" />
 		<h3>Daily charts</h3>
 		<div style="margin:1em"></div>
 		<img height="240" width="436" src="/graph_daily_trend.php?type=tmax&x=436&y=240&year=2023" />
@@ -145,10 +145,10 @@ Your browser does not support the video tag.
 
 	<div style="margin-left: 0.1em">
 		<h3>Monthly charts</h3>
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmax&mmm=2.2&year=2022" />
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=rain&mmm=2.2&year=2022" />
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmaxa&mmm=2.2&year=2022" />
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=sunhr&mmm=2.2&year=2022" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmax&summary_type=0&year=2022" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=rain&summary_type=0&year=2022" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmaxa&summary_type=0&year=2022" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=sunhr&summary_type=0&year=2022" />
 		<h3>Daily charts</h3>
 		<div style="margin:1em"></div>
 		<img height="240" width="436" src="/graph31.php?x=436&y=240&type=tmax&year=2022&month=0" />
@@ -252,10 +252,10 @@ Your browser does not support the video tag.
 
 	<div style="margin-left: 0.1em">
 		<h3>Monthly charts</h3>
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmax&mmm=2.2&year=2021" />
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=rain&mmm=2.2&year=2021" />
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmaxa&mmm=2.2&year=2021" />
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=sunhr&mmm=2.2&year=2021" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmax&summary_type=0&year=2021" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=rain&summary_type=0&year=2021" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmaxa&summary_type=0&year=2021" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=sunhr&summary_type=0&year=2021" />
 		<h3>Daily charts</h3>
 		<div style="margin:1em"></div>
 		<img height="240" width="436" src="/graph31.php?x=436&y=240&type=tmax&year=2021&month=0" />
@@ -367,10 +367,10 @@ Furthermore I applied an additional +10% ongoing correction to the rain gauge it
 
 	<div style="margin-left: 0.1em">
 		<h3>Monthly charts</h3>
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmean&mmm=2.2&year=2020" />
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=rain&mmm=2.2&year=2020" />
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmeana&mmm=2.2&year=2020" />
-		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=sunhr&mmm=2.2&year=2020" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmean&summary_type=0&year=2020" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=rain&summary_type=0&year=2020" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=tmeana&summary_type=0&year=2020" />
+		<img height="240" width="436" src="/graph12.php?x=436&y=240&type=sunhr&summary_type=0&year=2020" />
 		<h3>Daily charts</h3>
 		<div style="margin:1em"></div>
 		<img height="240" width="436" src="/graph31.php?x=436&y=240&type=tmax&year=2020&month=0" />

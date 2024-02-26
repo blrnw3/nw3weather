@@ -165,7 +165,7 @@ html > body {
 	margin-left:120px;
 	padding: 3px 2px 2px 7px;
 	background-color:#F2FAFD;
-	min-height: 800px;
+	min-height: 840px;
 }
 
 #main a {
@@ -538,4 +538,35 @@ select.timelapse {
 
 #footer a:hover {
 	text-decoration: none;
+}
+
+/* Tabs */
+.rank-tab-buttons {
+    display: flex;
+    justify-content: center;
+}
+
+.rank-tab-button {
+    background-color: #f2f2f2;
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.rank-tab-button:hover {
+    background-color: #ddd;
+}
+
+.rank-tab {
+    padding: 2px;
+}
+
+.sticky-head {
+	position: sticky;
+	top: 0;
+	background-color: #c4e3ff;
+}
+.rank-tab.scroll {
+	max-height: 75vh;
+	overflow-y: auto
 }

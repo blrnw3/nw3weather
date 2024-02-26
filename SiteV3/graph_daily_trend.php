@@ -57,7 +57,7 @@ elseif(isset($_GET['year'])) {
 		$mainLegend = $yr;
 	} else {
 		$title = $months[$mon-1] . ' '. $yr .' ';
-		$datay = graphMonth($dtype, $mon, $yr);
+		$datay = graphDailyMonth($dtype, $mon, $yr);
 		$interval = 1;
 	}
 } else {

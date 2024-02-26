@@ -18,7 +18,7 @@ if(isset($_GET['year'])) {
 		$length = count($datay[0]);
 	} else {
 		$title = $months[$mon-1] . ' '. $yr .' ';
-		$datay = graphMonth($dtype, $mon, $yr);
+		$datay = graphDailyMonth($dtype, $mon, $yr);
 		$interval = 1;
 	}
 } else {

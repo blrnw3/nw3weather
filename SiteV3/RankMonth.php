@@ -1,5 +1,4 @@
 <?php
-	$allDataNeeded = true;
 	require('unit-select.php');
 ?>
 
@@ -9,9 +8,10 @@
 <?php
 	$file = 42;
 	$showMonth = true;
-	$showNum = true;
+	$showStartYearSelect = true;
 	$linkToOther = 'RankDay';
 	$needValcolStyle = true;
+	$SHOW_TABS = true;
 ?>
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -26,84 +26,72 @@
 </head>
 
 <body>
-	<!-- ##### Header ##### -->
 	<?php require('header.php'); ?>
-	<!-- ##### Left Sidebar ##### -->
 	<?php require('leftsidebar.php'); ?>
-
-	<!-- ##### Main Copy ##### -->
 	<div id="main">
-
 <?php
 $badCats = array('cloud');
-$datgenHeading = 'Historical Ranked Monthly-mean Data';
+$datgenHeading = 'Historical Ranked Monthly Data';
 require('wxdatagen.php');
 
-function allDataToDateForMonth($data, $month) {
-	$monthData = array();
-	foreach ($data as $key => $value) {
-		if(date('n', monthtotime($key)) == $month) {
-			$monthData[$key] = $value;
+function getMonthlyRanked($varName, $summary_type, $month, $startY, $endY) {
+	$ranked = [];
+	foreach (getMonthlyData($varName, $summary_type, $startY, $endY) as $y => $months) {
+		foreach ($months as $m => $v) {
+			if($month === 0 || $m === $month) {
+				$ranked[] = [$v, mkdate($m, 1, $y)];
+			}
 		}
 	}
-	return $monthData;
+	sort($ranked);
+	return $ranked;
 }
 
-$rankSize = $rankLimit;
+$footCond = $month === 0 || $month == $dmonth;
+$year_secs = 86400 * 365;
 
-$isCountable = in_array($type, ['cloud', 'hail', 'thunder']);
+foreach( $AVAIL_SUMMARY_TYPES as $smry_type ) {
+	$ranked = getMonthlyRanked($type, $smry_type, $month, $startYrReport, $dyear);
+	$sortLen = count($ranked);
 
-//Data collection
-$datall1 = newData($type, true, ($isCountable) ? 2.3 : 2.2);
-$end = count($datall1);
-$datall = ($month > 0) ? allDataToDateForMonth($datall1, $month) : $datall1;
-$datallCnt = count($datall);
-
-//Extreme Daily Ranked
-$datGood = array_filter($datall, 'isNotBlank');
-$len = count($datGood);
-$data_sort = $datGood;
-sort($data_sort, SORT_NUMERIC);
-$sortLen = count($data_sort);
-
-for ($i = 1; $i <= $rankSize; $i++) {
-	$highest[$i] = $data_sort[$sortLen - $i];
-	$dayRecH = array_search($highest[$i], $datGood);
-	$stampH = monthtotime($dayRecH);
-	$highest_day[$i] = today(date('Y', $stampH), date('n', $stampH), false, true);
-	$datGood[$dayRecH] = -999; //prevent duplicated dates
-	$lowest[$i] = $data_sort[$i - 1];
-	$dayRecL = array_search($lowest[$i], $datGood);
-	$stampL = monthtotime($dayRecL);
-	$lowest_day[$i] = today(date('Y', $stampL), date('n', $stampL), false, true);
-	$datGood[$dayRecL] = -999; //prevent duplicated dates
-
-	if($dayRecH === false || $dayRecL === false) { //all values from array put into high or low list, do not continue
-		$rankSize = $i-1;
+	$limit = ($sortLen / 2 < $rankLimit) ? 1 + (int)($sortLen / 2) : $rankLimit;
+	for ($i = 1; $i <= $limit; $i++) {
+		$highest[$i] = $ranked[$sortLen - $i][0];
+		$ts = $ranked[$sortLen - $i][1]; $yr = date('Y', $ts);
+		$highest_day[$i] = today($yr, date('n', $ts), false, true) . (($yr < 2009) ? "*" : "");
+		if( ($dtstamp - $ts) < $year_secs ) { $highest_day[$i] = "<b>$highest_day[$i]</b>"; }
+		$lowest[$i] = $ranked[$i - 1][0];
+		$ts = $ranked[$i - 1][1]; $yr = date('Y', $ts);
+		$lowest_day[$i] = today($yr, date('n', $ts), false, true) . (($yr < 2009) ? "*" : "");
+		if( ($dtstamp - $ts) < $year_secs ) { $lowest_day[$i] = "<b>$lowest_day[$i]</b>"; }
 	}
+
+	// Ranking of curr/last month
+	foreach( $ranked as $rnk => $val ) {
+		if($val[1] === mkdate($dmonth, 1, $dyear)) {
+			$highest['today'] = $lowest['today'] = $val[0];
+			$lowest_day['today'] = $rnk + 1;
+			$highest_day['today'] = $sortLen - $rnk;
+		}
+		if($val[1] === mkdate($dmonth-1, 1, $dyear)) {
+			$highest['yest'] = $lowest['yest'] = $val[0];
+			$lowest_day['yest'] = $rnk + 1;
+			$highest_day['yest'] = $sortLen - $rnk;
+		}
+	}
+	$sumfix = $smry_type === 1 ? $valcolSumOffset : 1;
+	$extraMon = ($month === 0) ? "" : ' for '. $months3[$month-1];
+	$hideTab = ($smry_type === $GET_SUMMARY_TYPE) ? "" : "style='display:none'";
+	echo "<div id='rank-$smry_type' class='rank-tab' $hideTab>";
+	rankTable($highest, $highest_day, $typeconvNum, $typevalcolNum, $valcolAbsfix, $limit, "Top monthly-$SUMMARY_NAMES[$smry_type]", true, true, $footCond, false, $sumfix, $smry_type === 2);
+	rankTable($lowest, $lowest_day, $typeconvNum, $typevalcolNum, $valcolAbsfix, $limit, "Bottom monthly-$SUMMARY_NAMES[$smry_type]", false, true, $footCond, false, $sumfix, $smry_type === 2);
+	echo "<p>$description monthly extremes: ${SUMMARY_EXPLAIN[$smry_type]}<br />";
+	echo "For $description, there are<b> $sortLen </b>valid months for the chosen period from $startYrReport to present$extraMon in London, nw3.</p>";
+	echo "</div>";
 }
+rankLimitForm();
 
-$highest['today'] = $lowest['today'] = $datall[$end-1];
-$highest['yest'] = $lowest['yest'] = $datall[$end-2];
-$lowest_day['today'] = array_search($lowest['today'], $data_sort) + 1;
-$lowest_day['yest'] = array_search($lowest['yest'], $data_sort) + 1;
-$highest_day['today'] = $sortLen - $lowest_day['today'] + 1;
-$highest_day['yest'] = $sortLen - $lowest_day['yest'] + 1;
-
-$footCond = $month === 0;
-$sumfix = $isSum ? $valcolSumOffset : 1;
-rankTable($highest, $highest_day, $typeconvNum, $typevalcolNum, $valcolAbsfix, $rankSize, "Highest monthly-$meanOrTotal[$isSum]", true, true, $footCond, false, $sumfix, $isCountable);
-rankTable($lowest, $lowest_day, $typeconvNum, $typevalcolNum, $valcolAbsfix, $rankSize, "Lowest monthly-$meanOrTotal[$isSum]", false, true, $footCond, false, $sumfix);
-
-if($month === 0) {
-	$stMon = 'Jan';
-} else {
-	$stMon = $months3[$month-1];
-	$extraMon = ' in '. $stMon;
-}
-
-echo "<p>Ranked monthly data from $stMon 2009 to present. For $description, there are<b> $sortLen </b>valid months from a possible $datallCnt$extraMon.</p>";
-
+historical_info($startYrReport);
 
 ?>
 </div>

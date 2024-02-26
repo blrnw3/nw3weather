@@ -166,6 +166,11 @@ if(time() - filemtime(ROOT.'datm'.$yr_yest.'.csv') < 65) {
 	exec(EXEC_PATH. 'cron_tags.php blr ftw > log/cronsuntaglog.txt &');
 }
 
+//serialise historical data when modifications occur
+if(time() - filemtime(ROOT.'historical.csv') < 60) {
+	serializeHistoricalData();
+}
+
 // Monthly report
 if($firstday && $fiveMinutely && time() - filemtime(ROOT.'datm'.$yr_yest.'.csv') < 303) {
 	require ('monthrepgen.php');
@@ -468,7 +473,7 @@ function serialiseCSV($csv, $today = true) {
 
 	$data = array();
 
-	for($year = 2008; $year <= $dyear; $year++) {
+	for($year = 2009; $year <= $dyear; $year++) {
 		$yrfil = $siteRoot.$csv.$year.'.csv';
 		if(file_exists($yrfil)) {
 			$raw = file($yrfil);
@@ -522,6 +527,12 @@ function serialiseCSV($csv, $today = true) {
 		}
 	}
 	file_put_contents( ROOT.'serialised_'.$csv.'.txt', serialize($data) );
+	// For perf, serialize each var too
+	if($csv === "dat") {
+		foreach ($data as $var => $dat) {
+			file_put_contents( ROOT."serialised_dat_$var.txt", serialize($dat) );
+		}
+	}
 }
 
 function serialiseCSVm() {
@@ -557,6 +568,10 @@ function serialiseCSVm() {
 		}
 	}
 	file_put_contents( ROOT.'serialised_datm.txt', serialize($data) );
+	// For perf, serialize each var too
+	foreach ($data as $var => $dat) {
+		file_put_contents( ROOT."serialised_datm_$var.txt", serialize($dat) );
+	}
 }
 
 function getSunHrs() {
@@ -623,6 +638,34 @@ function getXml($url){
 	}
 	else {
 		return false;
+	}
+}
+
+function serializeHistoricalData() {
+	$raw = file(ROOT."historical.csv");
+	$header = explode(',', trim($raw[0]));
+	$col_count = count($header);
+	$cnt = count($raw);
+	$data = array();
+	for($i = 1; $i < $cnt; $i++) {
+		$rawa = explode(',', trim($raw[$i]));
+		$dp = explode("-", $rawa[0]);
+		$year = (int)($dp[0]);
+		$month = (int)($dp[1]);
+		$day = (int)($dp[2]);
+		for($j = 1; $j < $col_count; $j++) {
+			if($rawa[$j] !== "") {
+				$data[$header[$j]][$year][$month][$day] = (float)$rawa[$j];
+			}
+		}
+		if($rawa[10] !== "" && $rawa[11] !== "") {
+			$data["tmean"][$year][$month][$day] = ($rawa[10] + $rawa[11]) / 2;
+			$data["trange"][$year][$month][$day] = $rawa[11] - $rawa[10];
+		}
+	}
+	// Split by var for perf
+	foreach ($data as $var => $dat) {
+		file_put_contents( ROOT."serialised_historical_$var.txt", serialize($dat) );
 	}
 }
 

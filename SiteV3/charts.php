@@ -7,9 +7,6 @@ require('unit-select.php'); ?>
 
 <?php
 	$file = 32;
-	//$showMonth = true;
-	//$showYear = true;
-	$showNum = true;
 	$isDaily = true;
 	$linkToOther = 'chartMonthly';
 	$datgenHeading = 'Daily Data Charts';
@@ -36,36 +33,94 @@ require('unit-select.php'); ?>
 		 * @author &copy; Ben Masschelein-Rodgers, nw3weather, April 2013
 		 */
 		function changeChart() {
-			var extras = '';
 			var len;
 			var lta;
-			var mnth;
+			var extras = '';
 
 			var type = $("#type").val();
 			var yr = $("#year").val();
 			var wxvar = $("#wxvar").val();
+			var mnth = $("#month").val();
+			var start = $("#start-year").val();
+			var end = $("#end-year").val();
+
+			var startYear = 2009;
+			if (wxvar === "rain") {
+				startYear = 1871;
+			} else if (["tmin", "tmax", "tmean", "tmina", "tmaxa", "tmeana", "nightmin", "daymax", "trange"].includes(wxvar)) {
+				startYear = 1881;
+			} else if (wxvar === "sunhr") {
+				startYear = 1910;
+			} else if (["wmean", "lysnw", "thunder"].includes(wxvar)) {
+				startYear = 1949;
+			} else if (["snow", "gust"].includes(wxvar)) {
+				startYear = 1959;
+			}
 
 			$("#loader").html("Loading...").css({"color": "red"});
+
+			$("#year").find("option").each(function() {
+				let v = parseInt($(this).val());
+				$(this).prop("disabled", v !== 0 && v < startYear);
+            });
+			$("#start-year").find("option").each(function() {
+				let v = parseInt($(this).val());
+				$(this).prop("disabled", v !== 0 && v < (startYear-10));
+            });
+			$("#end-year").find("option").each(function() {
+				let v = parseInt($(this).val());
+				$(this).prop("disabled", v !== 0 && v < (startYear-10));
+            });
+
+			if(yr != 0 && yr < startYear) {
+				yr = startYear;
+				$("#year").val(yr);
+			}
+			if(yr != 0 && yr < startYear) {
+				yr = startYear;
+				$("#year").val(yr);
+			}
+
+			$("#disclaimer").hide();
+			$("#start-year").hide();
+			$("#end-year").hide();
+			$("#lta").hide();
 
 			if(type == 31) {
 				$("#lengthM").hide();
 				$("#lengthD").show();
-				$("#lta").hide();
+				$("#thisyr").hide();
+				$("#year").show();
 				len = $("#lengthD").val();
 
 				if(yr > 0) {
 					$("#month").show();
 					$("#lengthD").val(31);
 					$("#lengthD").prop('disabled', 'disabled');
-					mnth = $("#month").val();
 					extras += '&year='+ yr;
 					extras += '&month='+ mnth;
 					if(mnth == 0) {
 						type = "_daily_trend";
 					}
+					if(yr < 2009) {
+						$("#disclaimer").show();
+					}
 				} else {
 					$("#month").hide();
 					$("#lengthD").prop('disabled', false);
+				}
+				extras += '&length=' + len;
+			} else if(type[0] === "y") {
+				$("#lengthD").hide();
+				$("#month").show();
+				$("#lengthM").hide();
+				$("#start-year").show();
+				$("#end-year").show();
+				$("#year").hide();
+				extras += '&lta&summary_type=' + type.slice(1) + "&month=" + mnth + "&start=" + start + "&end=" + end;
+				type = "_annual";
+				if(start < 2009) {
+					$("#disclaimer").show();
 				}
 			} else {
 				lta = $("#lta").val();
@@ -74,29 +129,27 @@ require('unit-select.php'); ?>
 				}
 
 				$("#lengthD").hide();
+				$("#year").show();
 				$("#month").hide();
 				$("#lengthM").show();
-				if(type == 2.2) {
+				if(type == 0) {
 					$("#lta").show();
-				} else {
-					$("#lta").hide();
 				}
-				len = $("#lengthM").val();
-
-				extras += '&mmm=' + type;
+				extras += '&summary_type=' + type;
 
 				if(yr > 0) {
 					extras += '&year='+ yr;
 					$("#lengthM").val(12);
 					$("#lengthM").prop('disabled', 'disabled');
+					if(yr < 2009) {
+						$("#disclaimer").show();
+					}
 				} else {
 					$("#lengthM").prop('disabled', false);
 				}
 				type = '12';
+				extras += '&length=' + $("#lengthM").val();;
 			}
-
-			extras += '&length=' + len;
-
 			$("#chart").one("load", function() {
 				$("#loader").html("OK").css({"color": "green"});
 			}).attr('src', 'graph' + type + '.php?x=860&y=460&type='+ wxvar + extras);
@@ -108,12 +161,9 @@ require('unit-select.php'); ?>
 </head>
 
 <body>
-	<!-- ##### Header ##### -->
 	<?php require('header.php'); ?>
-	<!-- ##### Left Sidebar ##### -->
 	<?php require('leftsidebar.php'); ?>
 
-	<!-- ##### Main Copy ##### -->
 	<div id="main">
 
 <h1 id="heading">Daily Data Charts - Mean Temperature<br /></h1>
@@ -121,7 +171,7 @@ require('unit-select.php'); ?>
 <h2>Select Weather Variable, Chart Type, Period, and Period Length</h2>
 <div style="padding:10px">
 	<form method="get" action="" style="display:block">
-		<select id="wxvar" size="20" style="margin-right:2em;" onchange="changeChart();" >
+		<select id="wxvar" size="25" style="margin-right:2em;" onchange="changeChart();" >
 			<optgroup label="Temperature">
 				<option value="tmin" >Minimum Temperature
 				</option><option value="tmax" >Maximum Temperature
@@ -158,19 +208,6 @@ require('unit-select.php'); ?>
 				</option><option value="dmean" >Mean Dew Point
 				</option>
 			</optgroup>
-			<optgroup label="Change"><option value="tc10max" >Max 10m Temp Rise
-				</option><option value="tchrmax" >Max 1hr Temp Rise
-				</option><option value="hchrmax" >Max 1hr Hum Rise
-				</option><option value="tc10min" >Max 10m Temp Fall
-				</option><option value="tchrmin" >Max 1hr Temp Fall
-				</option><option value="hchrmin" >Max 1hr Hum Fall
-				</option>
-			</optgroup>
-			<optgroup label="Range"><option value="trange" >Temperature Range
-				</option><option value="hrange" >Humidity Range
-				</option><option value="prange" >Pressure Range
-				</option>
-			</optgroup>
 			<optgroup label="Observations"><option value="sunhr" >Sun Hours
 				</option><option value="wethr" >Wet Hours
 				</option><option value="ratemean" >Mean Rain Rate
@@ -180,6 +217,19 @@ require('unit-select.php'); ?>
 				</option><option value="thunder" >Thunder
 				</option><option value="fog" >Dense Fog
 				</option><option value="pond" >Pond Temperature
+				</option>
+			</optgroup>
+			<optgroup label="Range"><option value="trange" >Temperature Range
+				</option><option value="hrange" >Humidity Range
+				</option><option value="prange" >Pressure Range
+				</option>
+			</optgroup>
+			<optgroup label="Change"><option value="tc10max" >Max 10m Temp Rise
+				</option><option value="tchrmax" >Max 1hr Temp Rise
+				</option><option value="hchrmax" >Max 1hr Hum Rise
+				</option><option value="tc10min" >Max 10m Temp Fall
+				</option><option value="tchrmin" >Max 1hr Temp Fall
+				</option><option value="hchrmin" >Max 1hr Hum Fall
 				</option>
 			</optgroup>
 			<optgroup label="Anomalies"><option value="tmina">Min Temp Anomaly
@@ -197,22 +247,23 @@ require('unit-select.php'); ?>
 			</optgroup>
 		</select>
 
-		<select id="type" size="5" style="margin-right:2em;" onchange="changeChart();" >
+		<select id="type" size="9" style="margin-right:2em;" onchange="changeChart();" >
 			<option value="31" selected="selected">Daily</option>
-			<option value="2.2">Monthly-mean</option>
-			<option value="2.0">Monthly-low</option>
-			<option value="2.1">Monthly-high</option>
-			<option value="2.3">Monthly-count</option>
+			<option value="0">Monthly-mean</option>
+			<option value="3">Monthly-low</option>
+			<option value="4">Monthly-high</option>
+			<option value="2">Monthly-count</option>
+			<option value="y0">Annual-mean</option>
+			<option value="y3">Annual-low</option>
+			<option value="y4">Annual-high</option>
+			<option value="y2">Annual-count</option>
 		</select>
 
 		<?php
-//		var_dump(newData("tmina", 2018, 0));
 		//year select
-		echo '<select style="margin-right:0.5em;" size="'.
-			($dyear-$startYear+2) .'" id="year" onchange="changeChart();">
+		echo '<select style="margin-right:0.5em;" size="25" id="year" onchange="changeChart();">
 				<option selected="selected" value="0">Current</option>';
-
-		for($i = $dyear; $i >= $startYear; $i--) {
+		for($i = $yr_yest; $i >= 1881; $i--) {
 			echo '<option value="'. $i .'">'. $i .'</option>
 				';
 		}
@@ -240,20 +291,16 @@ require('unit-select.php'); ?>
 			<option value="1461">4 yrs</option>
 			<option value="1826">5 yrs</option>
 			<option value="2922">8 yrs</option>
-			<option value="3652">10 yrs</option>
-			<option value="99999">All</option>
+			<option value="3653">10 yrs</option>
 		</select>
 
 		<select style="display:none; margin-left:2em" size="9" id="lengthM" onchange="changeChart();">
 			<option value="12" selected="selected">12</option>
-			<option value="18">18</option>
-			<option value="24">24</option>
+			<option value="24">2 yrs</option>
 			<option value="36">3 yrs</option>
-			<option value="48">4 yrs</option>
 			<option value="60">5 yrs</option>
-			<option value="96">8 yrs</option>
 			<option value="120">10 yrs</option>
-			<option value="9999">All</option>
+			<option value="240">20 yrs</option>
 		</select>
 
 		<select style="display:none; margin-left:2em" size="2" id="lta" onchange="changeChart();">
@@ -261,11 +308,38 @@ require('unit-select.php'); ?>
 			<option value="off">Off</option>
 		</select>
 
+		<select style="display:none; margin-left:2em" size="10" id="start-year" onchange="changeChart();"> <?php
+		$start_opts = [1871, 1910, 1930, 1950, 1970, 1980, 1990, 2000, 2010, 2020];
+		foreach($start_opts as $y) {
+			echo '<option value="' . $y . '"';
+			if($y === 2010) { echo ' selected="selected"'; }
+			echo '>Start: ', $y, '</option>
+				';
+		}
+	?></select>
+		<select style="display:none; margin-left:2em" size="11" id="end-year" onchange="changeChart();"> <?php
+		$end_opts = [1910, 1930, 1950, 1970, 1980, 1990, 2000, 2010, 2020, $yr_yest-1, $yr_yest];
+		foreach($end_opts as $y) {
+			echo '<option value="' . $y . '"';
+			if($y === $yr_yest) { echo ' selected="selected"'; }
+			echo '>End: ', $y, '</option>
+				';
+		}
+	?></select>
+
 	</form>
 	<div style="margin-top:0.5em" id="loader">OK</div>
 </div>
 
 <img id="chart" src="graph31.php?x=840&amp;y=440&amp;type=tmean&amp;length=31" alt="Chart" />
+
+<p id="disclaimer" style="display:none">
+	Data from before 2009 are mostly from the historical site at Whitestone Pond in Hampstead.
+	Where data from that record is missing, other nearby sites were used, including St James Park, Heathrow, and Kew Gardens (pre-1910).
+	Best efforts have been made to adjust for site differences, but uncertainties are somewhat greater for this data.
+	I am grateful to the Met Office for making this data available for free through the
+	<a href="https://data.ceda.ac.uk/badc/ukmo-midas-open/">MIDAS Open database</a>.
+</p>
 
 </div>
 

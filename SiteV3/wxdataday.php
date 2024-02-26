@@ -1,5 +1,4 @@
 <?php
-$allDataNeeded = true;
 require('unit-select.php'); ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -56,25 +55,8 @@ while($valid) {
 			$arrnum[$i] = $types_all[$dextra[$i]];
 
 			//Collect data
-			$allDat = varNumToDatArray($arrnum[$i]);
-			$data[$i] = array_merge($allDat[$endyr]);
-			if( $arrnum[$i] < count($types) ) {
-				if($styr != $endyr) {  // Deprecated feature
-					$data[$i] = array_merge($DATA[ $arrnum[$i] ][$styr], $DATA[ $arrnum[$i] ][$endyr]);
-				}
-			}
-			elseif( $arrnum[$i] < count($types) + count($types_derived) ) {
-				if($styr != $endyr) {
-					$data[$i] = array_merge($DATX[ $arrnum[$i] - count($types) ][$styr], $DATX[ $arrnum[$i] - count($types) ][$endyr]);
-				}
-			} elseif(in_array( $dextra[$i], $types_anom)) {
-				// nothing
-			}
-			else {
-				$manual[$i] = true;
-				$lhm[2] = 'Total';
-				$adj[$i] = 1;
-			}
+			$allDat = getDailyDataForYear($dextra[$i], $year);
+			$data[$i] = array_merge($allDat);
 			if( $dextra[$i] == 'rain') {
 				$lhm[2] = 'Total';
 			}
@@ -95,6 +77,11 @@ while($valid) {
 		$valid = false;
 	}
 }
+
+//if($me) {
+//	var_dump($allDat);
+//	var_dump($data);
+//}
 
 $dextra = array_merge($dextra);
 $arrnum = array_merge($arrnum);
@@ -141,7 +128,7 @@ for($day = 1; $day <= 31; $day++) {
 			if( $maxdays[$m] < $day) { //no such day (e.g. 30th Feb)
 				$class = 'noday';
 				$finalVal = '&nbsp;';
-			} elseif( $endyr == $dyear && mkdate($m + 1, $day, $styr) > mkdate($dmonth,$dday-$adj[$arrnum[$i]]) ) {
+			} elseif( $endyr == $dyear && mkdate($m_true, $day, $styr) > mkdate($dmonth,$dday, $dyear) ) {
 				//default for day not arrived (e.g. 7th April 2045)
 			} elseif( isBlank($data[ $arrnum[$i] ][$m][$day]) ) {
 //				echo $data[ $arrnum[$i] ][$m][$day], ',';
@@ -304,9 +291,9 @@ function anomMonthCum($value, $type, $month) {
 $descripDeets = $isNotSummarisable ? '.' : ' along with monthly summary:
 	lowest, highest'.$meanTotalCount.', and the cumulative value for the year to the month\'s end.';
 echo '<p>';
-echo $description .' for every available day of '. $year . $descripDeets;
+echo $description .' in London, nw3, for every available day of '. $year . $descripDeets;
 if($isAnom) {
-	echo '<br />Figures in brackets refer to departure from
+	echo '<br />Figures in brackets refer to departure from <strong>recent</strong> 
 		<a href="wxaverages.php" title="Long-term NW3 climate averages">average conditions</a>';
 	if($endyr == $dyear) {
 		echo " (note that the anomaly for the current month is unadjusted for the month's degree of completeness)";
@@ -318,6 +305,8 @@ if($endyr == $dyear) {
 		Values for recent days are subject to quality control and may be adjusted at any time.";
 }
 echo '</p>';
+
+historical_info($year);
 
 ?>
 </div>

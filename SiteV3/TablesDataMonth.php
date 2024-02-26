@@ -1,5 +1,4 @@
 <?php
-$allDataNeeded = true;
 require('unit-select.php'); ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -10,6 +9,8 @@ require('unit-select.php'); ?>
 	$linkToOther = 'wxdataday';
 	$needValcolStyle = true;
 	$datgenHeading = 'Monthly Data Tables';
+	$showStartYearSelect = true;
+	$SHOW_TABS = true;
 ?>
 
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -24,12 +25,8 @@ require('unit-select.php'); ?>
 </head>
 
 <body>
-	<!-- ##### Header ##### -->
 	<?php require('header.php'); ?>
-	<!-- ##### Left Sidebar ##### -->
 	<?php require('leftsidebar.php'); ?>
-
-	<!-- ##### Main Copy ##### -->
 	<div id="main">
 
 <?php require('wxdatagen.php');
@@ -42,7 +39,6 @@ if($type == 'wdir' || $type == 'cloud') {
 }
 
 class MonthlySummaryDataTables {
-
 	const edgeStyle = "border-left: 5px solid #565";
 	private $DAT;
 	private $CVAR;
@@ -52,11 +48,12 @@ class MonthlySummaryDataTables {
 	private $climateMapping;
 	private $countable;
 
-	function __construct($data, $cvar, $valcolSumOffset, $climData, $climMap) {
+	function __construct($data, $cvar, $valcolSumOffset, $climData, $climMap, $startYr) {
 		$this->DAT = $data;
 		$this->valcolSumOffset = $valcolSumOffset;
 		$this->CVAR = new CurrVar($cvar);
 		$this->CLIMATE = new Climate($climMap, $climData);
+		$this->startYr = $startYr;
 
 		$this->climateConvType = ($this->CVAR->typeconvNum == 1) ? 1.1 : $this->CVAR->typeconvNum;
 		$this->climateMapping = $this->CLIMATE->mapping[$this->CVAR->typeNum];
@@ -79,14 +76,14 @@ class MonthlySummaryDataTables {
 		tableHead($heading . ' ' . $this->CVAR->description, 14);
 
 		tr();
-		td('Month', 'td4C', '7%');
+		td('', 'td4C sticky-head', '7%');
 		for ($m = 1; $m <= 12; $m++) {
-			td(DateConsts::$months3[$m - 1], 'td4C', '7%');
+			td(DateConsts::$months3[$m - 1], 'td4C sticky-head', '7%');
 		}
-		td('Year', 'td4" style="' . self::edgeStyle, '9%');
+		td('Year', 'td4 sticky-head" style="' . self::edgeStyle, '9%');
 		tr_end();
 
-		for ($y = date('Y'); $y >= DateConsts::$startYear; $y--) {
+		for ($y = $GLOBALS["yr_yest"]; $y >= $this->startYr; $y--) {
 			tr(null);
 			td("<a href='./wxdataday.php?year=$y' title='View full data for year'>$y</a>", 'row' . colcol($y) . '" style="text-align:center; font-weight:bold');
 
@@ -121,7 +118,7 @@ class MonthlySummaryDataTables {
 					}
 				}
 				$lnk = "/wxhistmonth.php?year=$y&month=$m";
-				$linked_val = ($y < $yr_yest || $m <= $mon_yest) ? '<a class="hidden-link" href="'. $lnk .'" title="View detailed report for month">'. $value .'</a>' : $value;
+				$linked_val = ($y >= 2009 && ($y < $yr_yest || $m <= $mon_yest)) ? '<a class="hidden-link" href="'. $lnk .'" title="View detailed report for month">'. $value .'</a>' : $value;
 				td($linked_val . $anom, $class);
 			}
 
@@ -140,6 +137,14 @@ class MonthlySummaryDataTables {
 			td($valyr . $anom, self::getColourClass($yrMin[$y] / $sumfix / $cntM) . '" style="' . self::edgeStyle);
 			tr_end();
 		}
+
+		tr();
+		td('', 'td4C', '7%');
+		for ($m = 1; $m <= 12; $m++) {
+			td(DateConsts::$months3[$m - 1], 'td4C', '7%');
+		}
+		td('Year', 'td4" style="' . self::edgeStyle, '9%');
+		tr_end();
 
 		//Monthly summary
 		for($mm = 0; $mm < 3; $mm++) {
@@ -189,38 +194,29 @@ class MonthlySummaryDataTables {
 
 }
 
-if($isSum) {
-	$lhmFull[2] = 'Total';
+$DAT = varNumToDatArray($typeNum, $startYrReport);
+
+$tables = new MonthlySummaryDataTables($DAT, $CVARS, $valcolSumOffset, $vars, $maptoClimavs, $startYrReport);
+
+$new_to_old_smry_types = [2, 2, 3, 0, 1];
+foreach( $AVAIL_SUMMARY_TYPES as $smry_type ) {
+	$hideTab = ($smry_type === $GLOBALS["GET_SUMMARY_TYPE"]) ? "" : "style='display:none'";
+	echo "<div id='rank-$smry_type' class='rank-tab scroll' $hideTab>";
+	$tables->makeTable($new_to_old_smry_types[$smry_type], 'Monthly-'. $SUMMARY_NAMES[$smry_type]);
+	echo "<p>$description: ${SUMMARY_EXPLAIN[$smry_type]} for all months since $startYrReport in London, nw3<br />";
+	echo "</div>";
 }
 
-$DAT = varNumToDatArray($typeNum);
-
-$tables = new MonthlySummaryDataTables($DAT, $CVARS, $valcolSumOffset, $vars, $maptoClimavs);
-
-if(!$isNotSummarisable && $type != 'fog') { // mean and count are indistinguisable for fog (binary daily quantity)
-	$tables->makeTable(2, 'Monthly-'. $lhmFull[2]);
-}
-if($isSum) {
-	$tables->makeTable(3, "Days of (non-zero)");
-}
-if(!$isSum) {
-	$tables->makeTable(0, "Lowest");
-}
-$tables->makeTable(1, "Highest");
-
-echo '<p>';
-echo $description .' data for every available month in the weather station history, along with overall
-	(lowest, highest, and mean), and annual (min/max or mean) summaries.
-	<br />';
 if($isAnom) {
-	echo 'Figures in brackets refer to departure from
+	echo '<p>Figures in brackets refer to departure from <strong>recent</strong> 
 		<a href="wxaverages.php" title="Long-term NW3 climate averages">average conditions</a>';
 	if($endyr == $dyear) {
 		echo " (note that the anomaly for the current month is unadjusted for the month's degree of completeness)";
 	}
-	echo '.';
+	echo '.</p>';
 }
-echo '</p>';
+
+historical_info($startYrReport);
 
 function isClassless($val) {
 	return isBlank($val) || $val === 'null';

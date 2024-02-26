@@ -14,18 +14,12 @@ require('unit-select.php');
 	<meta http-equiv="content-type" content="application/xhtml+xml; charset=ISO-8859-1" />
 	<link rel="stylesheet" type="text/css" href="widestyle.css" media="screen" title="screen" />
 
-	<?php include_once("ggltrack.php"); ?>
+	<?php require('chead.php'); ?>
 </head>
 
 <body>
-	<!-- ##### Header ##### -->
 	<?php require('header.php'); ?>
-
-	<!-- ##### Left Sidebar ##### -->
 	<?php require('leftsidebar.php'); ?>
-
-	<!-- ##### Main Copy ##### -->
-
 <div id="main">
 
 <?php
