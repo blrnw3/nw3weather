@@ -38,6 +38,18 @@ if($tstamp == $daily_proctime) {
 			}
 		}
 	}
+	// 5-min cleanup
+	$timestamps = ["05", "25", "35", "55"];
+	$stamp = date("Y/m/d", mkdate($dmonth, $dday-200, $dyear));
+	for($h = 0; $h < 24; $h++) {
+		foreach($timestamps as $ts) {
+			$hh = zerolead($h);
+			$f = CAM_ROOT . "camchive/hik/$stamp/${hh}${ts}hik.jpg";
+			if(file_exists($f)) {
+				unlink($f);
+			}
+		}
+	}
 
 	webcam_summary($frac, 6, date('Y/Ymd') . 'dailywebcam.jpg', $cam_type = "hik", $offset = 0, $wo, $ho);
 	//webcam_summary(.22, 6, date('Y/Ymd', true) . '/dailygwebcam.jpg');

@@ -353,7 +353,12 @@ for ($y = 2009; $y <= $dyear; $y++) {
 }
 
 $wettestyr = max($wettestyra);
-$wettestyrdate = array_search($wettestyr, $wettestyra);
+if($yearrn > $wettestyr) {
+	$wettestyr = $yearrn;
+	$wettestyrdate = $dyear;
+} else {
+	$wettestyrdate = array_search($wettestyr, $wettestyra);
+}
 $driestyr = min($wettestyra);
 $driestyrdate = array_search($driestyr, $wettestyra);
 

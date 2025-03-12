@@ -11,7 +11,6 @@ const EXEC_PATH = '/usr/bin/php -q /var/www/html/';
 
 /** Path to the live data text file */
 const LIVE_DATA_PATH = '/var/www/html/clientraw.txt';
-const LIVE_DATA_PATH_ALT = '/var/www/html/EXTclientraw2.txt';
 
 $fullpath = $siteRoot = ROOT;
 

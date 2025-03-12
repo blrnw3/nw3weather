@@ -30,7 +30,7 @@ $statusMessage = '<b>'. date('d M: ', mktime(1,1,1,9,27,2019)) . ' Rain gauge FI
 $showMessage = false;
 $isBad = false;
 // echo "<div class='statusBox info'><b>10am, Mon 16th May</b>: The thermo/hygro sensor is functioning again</div>";
-//echo "<div class='statusBox warning' style='background-color: #fc5;'>nw3weather is undergoing server maintenance this weekend. The site may be down for several hours at a minimum. <br />I am moving from a shared hosted solution to a cheaper, more powerful and more flexible cloud VM host</div>";
+//echo "<div class='statusBox warning' style='background-color: #fc5;'><b>4pm Feb 04: </b>The temperature/humidity sensor is currently DOWN. Backup T/H data are being served by a nearby site.<br /><b>Update Feb 13</b>: A new sensor has now arrived. I will install it by Feb 25th.</div>";
 //echo "<div class='statusBox info'><b>10pm, 8th May</b>: Server maintenance has completed successfully.<br />I have moved from a shared hosting solution to a cheaper, more powerful and more flexible cloud VM host<br /><a href='/contact.php'>Please do report any issues that may have resulted from this</a></div>";
 //echo "<div class='statusBox info'><b>4am, 4th Sep 2016</b>: The thermo/hygro sensor is failing to report. Temp/hum data is being served from the weather station at <a href='http://weather.casa.ucl.ac.uk'>UCL casa</a> in Bloomsbury, W1, whilst I seek a fix. <br /> <b>Update, 10pm 11th Sep:</b> Attempts to revive the sensor have failed. I have bought a new sensor and hope to have it installed in the next couple of weeks.<br /> <b>FIXED, 3pm 17th Sep:</b> The new sensor has been installed and appears to be working. Temperature and Humidity data is back!</div>";
 //echo "<div class='statusBox info'><b>FIXED, 3pm 17th Sep:</b> The new sensor has been installed and appears to be working. Temperature and humidity data is back! <br /><a href='news.php'>Read more</a></div>";
@@ -38,7 +38,10 @@ if($showMessage) {
 	showStatusDiv($statusMessage, $isBad);
 }
 if($OUTAGE) {
-	showStatusDiv("<b>". date('H:m d M: ', $unix - $diff) . "Weather server outage detected automatically</b>.<br /> Data is being served from nearby stations. Site admin has been notified. Problem age: " . $diff . " s", true);
+	$extraMessage = "<b>Update March 6th 5pm</b>: We continue to await new internet equipment to resolve the outage. ETA: March 7th";
+	showStatusDiv("<b>". date('H:m d M: ', time() - $diff) . "Weather server outage detected automatically</b>."
+		. "<br /> Data is being served from nearby stations. Site admin has been notified. Problem age: "
+		. intval($diff / 3600) . " hours<br />$extraMessage", true);
 }
 //echo "<div class='statusBox info' style=''><b>Weather station replacement</b>: This weekend I am replacing the weather station with an entirely new one, a Davis VP2. This will improve reliabilty and data quality. Note well that during the upgrade, data may not be accurate.<br /><b>UPDATE 9pm Sunday</b>: Data from the new weather station is now LIVE. Enjoy. <br />I will post pics of the process and of the new hardware tomorrowish.</div>";
 if (false && $file == 13) echo "<div class='statusBox warning'><b>Faulty sensor</b>: As of 26th Oct the wind sensor is not functioning normally. Until I can fix it (post-covid unless I find two local able helpers), wind data is being served from a nearby weather station, <a href='http://www.harpendenweather.co.uk'>Harpenden weather</a>.</div>";
@@ -167,7 +170,7 @@ if(false && !$planned && $diff > 900) { // 15mins downtime before alert message 
 	showStatusDiv( $message .' &nbsp;
 	   System time: '. date('d/m/y, H:i T', $timestampWD) .
 	   '; &nbsp; Server time: '. date('d/m/y, H:i T') .
-	   '<br />Problem Age: '. round($diff/60) .' mins ('. round($diff/3600). ' hours)'
+	   '<br />Problem Age: '. round($diff/3600). ' hours'
 	);
 	$mail5 = true;
 }

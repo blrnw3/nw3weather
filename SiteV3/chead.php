@@ -34,8 +34,7 @@ if($auto && $metaRefreshable && !$is_bot) {
 <meta http-equiv="content-language" content="en-GB" />	<?php if(isset($_GET['mob'])) { echo '<!--'; $skip_css = true; }
 if($needValcolStyle) { echo '
 					<link rel="stylesheet" type="text/css" href="/valcolstyle.css" media="screen" title="screen" />'; } ?>
-<link rel="stylesheet" type="text/css" href="/<?php echo $wideormain; ?>style.css?updated2018feb4" media="screen" title="screen" /> <?php if($skip_css) { echo '-->'; } ?>
-<!-- <?php // print_r($_SESSION); ?> -->
+<link rel="stylesheet" type="text/css" href="/<?php echo $STYLE_SHEET; ?>.css?updated2024mar8" media="screen" title="screen" /> <?php if($skip_css) { echo '-->'; } ?>
 
 <script type="text/javascript">
 	//<![CDATA[

@@ -315,7 +315,7 @@ echo '<img src="/static-images/'.$icon.'_lg.png" style="background-color:#CCCEEC
 <p>Latest Hampstead Heath pond temperature: <?php echo conv($HR24["misc"]["pondTemp"], 1); ?>
 	&nbsp; <a href="http://nw3weather.co.uk/wxdataday.php?vartype=pond">see temperature history</a></p>
 
-
+<!--
 <p style="font-size: 120%; font-weight: bold;" id="report-2023">
 <a href="/repyear.php">View nw3weather's full 2023 Annual Report</a>
 </p>
@@ -349,7 +349,7 @@ echo '<img src="/static-images/'.$icon.'_lg.png" style="background-color:#CCCEEC
 </dl>
 </p>
 
-<!--
+-->
 <h1>Latest Monthly Weather Report</h1>
 <?php
 $repStamp = mkdate($dmonth-1, 1);
@@ -357,7 +357,6 @@ $repMonth = date('n', $repStamp);
 $repYear = date('Y', $repStamp);
 displayMonthlyReport($repMonth, $repYear);
 ?>
--->
 
 <div id="twitter-feed" style="margin: 2em 1em">
 	<a href="https://twitter.com/nw3weather">

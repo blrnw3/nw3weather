@@ -81,7 +81,7 @@ function DATtoMDAT($arr) {
 	return $mdat;
 }
 function monthlyReport($repMonth, $repYear) {
-	include_once('climavs.php');
+	global $tdatav, $rainav, $sunav, $maxsun, $FSav, $LSav, $AFav;
 
 	$DATM = unserialize(file_get_contents(ROOT .'serialised_datm.txt'));
 	$DATA = unserialize(file_get_contents(ROOT .'serialised_dat.txt'));
@@ -162,6 +162,7 @@ function monthlyReport($repMonth, $repYear) {
 		"winter" => array($AFs, $manualRawM[3]['cnt'], $fallSnow, $fallSnowAnom, $fallSnowAnom2, $AFsFull, $AFavr, $lySnow, $LSavr, $maxDepth),
 		"other" => array($hail, $manualRawM[6]['cnt'], $manualRawM[7]['cnt'], $bigRnsFull, 10, $bigGusts, 30)
 	);
+//	var_dump($export);
 
 	$exported = var_export($export, true);
 	$output = '<?php

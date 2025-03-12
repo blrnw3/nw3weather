@@ -47,16 +47,16 @@ if(date('Hi') < $sunGrabTime) {
 }
 
 //Link to EGLC pressure
-echo '<br /><a href="https://www.wunderground.com/history/daily/gb/london/EGLC/date/',
-	date('Y-n-d',mktime(1,1,1,date('n'),date('d')-$dtm)),
-	'</a><br />';
+echo '<br />'
+. '<a href="https://www.wunderground.com/history/daily/gb/london/EGLC/date/'. date('Y-n-d',mktime(1,1,1,date('n'),date('d')-$dtm)) . '">'
+	. 'EGLC history</a><br />';
 
 echo 'datt size in B: ', filesize($fullpath."datt" . date('Y',mktime(1,1,1,date('n'),date('j')-$dtm,date('Y'))) . ".csv"), '<br />';
 if(!isset($_POST['pwd'])) {
 	$sun = file(ROOT.'maxsun.csv');
-	echo '<br />Max sun for this day: ', $sun[date('z',$mod_timestamp)], ' hours';
+	echo 'Max sun for this day: ', $sun[date('z',$mod_timestamp)], ' hours<br />';
 }
-echo '<br /><a href="datamod.php?dtm=', $dtm, '">Self link</a>';
+echo '<a href="datamod.php?dtm=', $dtm, '">Self link</a>';
 
 $moddata = file($fullpath."dat" . date('Y',mktime(1,1,1,date('n'),date('j')-$dtm,date('Y'))) . ".csv");
 $modline = explode(',', $moddata[count($moddata)-$dtm]);

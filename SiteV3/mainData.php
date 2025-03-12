@@ -34,124 +34,87 @@ $unix = mktime(intval($mainData[29]), intval($mainData[30]), intval($mainData[31
 		intval($mainData[36]), intval($mainData[35]), intval($mainData[141]));
 
 $diff = time() - $unix;
-$OUTAGE = $diff > 7200;
-$ALT_OUTAGE = false;
-$alt_ready = false;
-if($OUTAGE) {
-	$alt_age = time() - filemtime(ROOT.'EXTclientraw.txt');
-	$alt_ready = $alt_age < 300;
-}
+$OUTAGE = $diff > 3600;
 
 // Other multi-use weather vars
 $maxgsthr = $HR24['misc']['maxhrgst'];
 $maxgstToday = $NOW['max']['gust'];
 $maxavgToday = $maxavgspd;
 
-// No wind data - use Harpenden wind data from their clientraw (cached by cron_main)
-if(false) { // wind issue Nov 2020
-	$extClient = file(ROOT.'EXTclientraw.txt');
-	$extOffset = 0.99; // 0.91; //1.3 - tott;
+// Harpenden data
+// July 1st 2024: wind outage
+if(false) {
+	$extClient = file(ROOT.'EXT_harpenden.txt');
 	$extData = explode(" ", $extClient[0]);
-	$wind = $extData[1] * $kntsToMph * $extOffset;
-	$gust = $extData[140] * $kntsToMph * $extOffset; //actually the max 1-min gust
-	$gustRaw = $extData[2] * $kntsToMph * $extOffset; //true 14s gust
-	$w10m = $extData[158] * $kntsToMph * $extOffset;
-	$wdir = $extData[3];
-}
-//$wind = $extData[1];
-// Harpenden down ;(
-if(false && $extData[1] == "14.4") {
-	$extClient = file(ROOT.'EXTclientraw2.txt');
-	$extOffset = 0.95; // 0.91; //1.3 - tott;
-	$extData = explode(" ", $extClient[0]);
-	$wind = $extData[1] * $kntsToMph * $extOffset;
-	$gust = $extData[140] * $kntsToMph * $extOffset; //actually the max 1-min gust
-	$gustRaw = $extData[2] * $kntsToMph * $extOffset; //true 14s gust
-	$w10m = $extData[158] * $kntsToMph * $extOffset;
-	$wdir = $extData[3];
-}
-
-if(false && $OUTAGE && $alt_ready) {
-	$extClient = file(ROOT.'EXTclientraw.txt');
-	$extOffset = 0.99; // 0.91; //1.3 - tott;
-	$extData = explode(" ", $extClient[0]);
-	$wind = $extData[1] * $kntsToMph * $extOffset;
-	$gust = $extData[140] * $kntsToMph * $extOffset; //actually the max 1-min gust
-	$gustRaw = $extData[2] * $kntsToMph * $extOffset; //true 14s gust
-	$w10m = $extData[158] * $kntsToMph * $extOffset;
-	$wdir = $extData[3];
-
-	$temp = $extData[4];
-	$humi = $extData[5];
-
-	$pres = $extData[6];
-	$rain = $extData[7];
-
-	$unix = mktime(intval($extData[29]), intval($extData[30]), intval($extData[31]),
-		intval($extData[36]), intval($extData[35]), intval($extData[141])) - 50;
-
-	$feel = feelsLike($temp, $gust, $dewp);
-	$maxavgToday = $NOW['max']['wind'];
-}
-if(false && $extData[3] === "101") { // CASA rules whilst Harpenden is down ;(
-	$extClient = file(ROOT.'EXTclientraw2.txt');
-	$extOffset = 0.95; // 0.91; //1.3 - tott;
-	$extData = explode(" ", $extClient[0]);
-	$wind = $extData[5] * $extOffset;
-	$gust = $extData[6] * $extOffset;
-	$gustRaw = $extData[6] * $extOffset;
-	$w10m = $extData[5] * $extOffset;
-	$wdir = $extData[7];
-
-	$maxavgToday = $NOW['max']['wind'];
-}
-if(false && $temp == 16.9) {
-	// Casa
-	$extClient2 = file(ROOT.'EXTclientraw2.txt');
-	$extData2 = explode(" ", $extClient2[0]);
-	$temp = $extData2[2] - 0.7;
-	$humi = $extData2[3] + 1;
-}
-if(false && $temp == 16.9) {
-	// StAlbans
-	$extClient2 = file(ROOT.'EXTclientraw2.txt');
-	$extData2 = explode(" ", $extClient2[0]);
-	$temp = $extData2[4] + 0.3;
-	$humi = $extData2[5] - 1;
-}
-
-if(false && date("Hi") > "0009") {
-	// Casa rain
-	$extClient2 = file(ROOT.'EXTclientraw2.txt');
-	$extData2 = explode(" ", $extClient2[0]);
-	$rain = $extData2[7];
-}
-
-if(false && $OUTAGE && $alt_ready) {
-	$extClient2 = file(LIVE_DATA_PATH_ALT);
-	$extData2 = explode(" ", $extClient2[0]);
-
-	$unix = mktime(intval($extData[29]), intval($extData[30]), intval($extData[31]),
-		intval($extData[36]), intval($extData[35]), intval($extData[141])) - 50;
-
-	$alt_true_age = time() - $unix;
-
-	if($alt_true_age < 1200) {
-		// Bencook temp/humi/rain/pres
-		$rain = (date('Ymd') === "20180923") ? 11.0 : $extData2[7];
-		$temp = $extData2[4] + 0.0;
-		$humi = $extData2[5] + 0;
-		$pres = $extData[6] + 0.0;
-		if(date("Hi") <= "0009") {
-			$rain = 0;
-		}
-	} else {
-		$ALT_OUTAGE = true;
+	$unix =  mktime(intval($extData[29]), intval($extData[30]), intval($extData[31]),
+		intval($extData[36]), intval($extData[35]), intval($extData[141]));
+	$harpenden_age = time() - $unix;
+	if($harpenden_age < 600) {
+		$extOffset = 0.9; // 0.91; //1.3 - tott;
+		$wind = $extData[1] * $kntsToMph * $extOffset;
+		$gust = $extData[140] * $kntsToMph * $extOffset; //actually the max 1-min gust
+		$gustRaw = $extData[2] * $kntsToMph * $extOffset; //true 14s gust
+		$w10m = $extData[158] * $kntsToMph * $extOffset;
+		$wdir = $extData[3];
+//		$pres = $extData[6];
+//		$temp = $extData[4] + 1;
+//		$humi = $extData[5];
+	//	$rain = $extData[7];
+		$maxavgToday = $NOW['max']['wind'];
 	}
 }
 
+// Synoptic data from James park
+if($OUTAGE && false) {
+	$mod_james = filemtime(ROOT.'EXT_james.json');
+	$alt_age = time() - $mod_james;
+	if($alt_age < 600) {
+		$unix = $mod_james;
+		$james_data = json_decode(file_get_contents(ROOT."EXT_james.json"), true);
+		$temp = $james_data["STATION"][0]["OBSERVATIONS"]["air_temp_value_1"]["value"] - 0.5;
+		$dewp = $james_data["STATION"][0]["OBSERVATIONS"]["dew_point_temperature_value_1"]["value"] - 0.5;
+		if($dday == 5) {
+			$rain = 0.5;
+		}
+//		$rain = $james_data["STATION"][0]["OBSERVATIONS"]["precip_accum_12_hour_value_1"]["value"];
+		// https://www.omnicalculator.com/physics/relative-humidity
+		$humi = intval(100 * exp((17.625 * $dewp) / (243.04 + $dewp)) / exp((17.625 * $temp) / (243.04 + $temp)));
+//		$humi = (int)(100 - ($temp - $dewp) * 5);  // TODO better
+	}
+}
+
+$DOWN = ($temp < -15);
+
+// CWOP Potters
+if(false && $OUTAGE) {
+	$pot_data = json_decode(file_get_contents(ROOT."EXT_potters.json"), true);
+	$pot_unix = intval($pot_data["weather"]["timestamp"] / 1000);
+	if((time() - $pot_unix) < 20000) {
+//		$unix = $isl_unix;
+		$temp = (float)$pot_data["weather"]["wx"]["temp"];
+		$humi = $pot_data["weather"]["wx"]["humidity"];
+//		$rain = (float)$isl_data["weather"]["wx"]["rain_midnight"];
+//		$pres = (float)$isl_data["weather"]["wx"]["pressure"];
+	}
+}
+
+// CWOP Islington data
+if($DOWN  || $OUTAGE) {
+	$isl_data = json_decode(file_get_contents(ROOT."EXT_islington.json"), true);
+	$isl_unix = intval($isl_data["weather"]["timestamp"] / 1000);
+	if((time() - $isl_unix) < 3600) {
+		$temp = (float)$isl_data["weather"]["wx"]["temp"];
+		$humi = $isl_data["weather"]["wx"]["humidity"];
+		if($OUTAGE) {
+			$unix = $isl_unix;
+			$rain = (float)$isl_data["weather"]["wx"]["rain_midnight"];
+			$pres = (float)$isl_data["weather"]["wx"]["pressure"];
+		}
+	}
+}
+
+
+$feel = feelsLike($temp, $gust, $dewp);
 // Derived current weather variables
 $dewp = dewPoint($temp, $humi);
-$feel = feelsLike($temp, $gust, $dewp);
-
 ?>

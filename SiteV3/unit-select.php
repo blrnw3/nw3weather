@@ -36,21 +36,12 @@ $expTime = 3600 * 24 * 100; // cookie lifespan - 100 days
 
 //CSS setting getter/saver
 if (isset($_GET['css'])) {
-	if ($_GET['css'] == 'wide') {
-		$wideormain = 'wide';
-		setcookie("css", "wide", time() + $expTime);
-	} else {
-		$wideormain = 'main';
-		setcookie("css", "main", time() + $expTime);
-	}
+	$STYLE_SHEET = $_GET['css'];
+	setcookie("css", $STYLE_SHEET, time() + $expTime);
 } elseif (isset($_COOKIE['css'])) {
-	if ($_COOKIE['css'] == 'wide') {
-		$wideormain = 'wide';
-	} else {
-		$wideormain = 'main';
-	}
+	$STYLE_SHEET = $_COOKIE['css'];
 } else {
-	$wideormain = 'main';
+	$STYLE_SHEET = 'mainstyle';
 }
 
 //Unit setting getter/saver

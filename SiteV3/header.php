@@ -46,22 +46,24 @@ function shownewhead() {
 	<td align="center"> <a href="/" title="Browse to homepage"> <img src="/static-images/newmain.jpg" alt="mainimage_nw3weather" width="698" height="100" /> </a> </td>
 	<td align="right" valign="top"> <img src="/static-images/rightheadS.JPG" alt="righthead-weather_box" width="175" height="100" /></td>
 	</tr></table>
-	<div class="subHeader">
-		<span id="currms">
-			<script type="text/javascript">
-				//<!--
-	<?php if($file != 0) { echo 'shownewhead();'; } ?>
-	//-->
-			</script>
-		</span>
-	</div>
-	<div class="subHeaderR">
-		<?php
-		if($isBot || $me || $file == 0) {
-			echo '<h4 style="display: inline; padding: 0px; margin: 0px 10em 0px 0px; color:#454;">
-				nw3 weather, Hampstead London England UK</h4>';
-		}
-		?>
-		<span style="text-align:right"><?php echo $shr; ?></span>
+	<div id="sub-header">
+		<div class="subHeader">
+			<span id="currms">
+				<script type="text/javascript">
+					//<!--
+		<?php if($file != 0) { echo 'shownewhead();'; } ?>
+		//-->
+				</script>
+			</span>
+		</div>
+		<div class="subHeaderR">
+			<?php
+			if($isBot || $file == 0) {
+				echo '<h4 style="display: inline; padding: 0px; margin: 0px 3em 0px 0px; color:#454;">
+					nw3 weather, Hampstead London England UK</h4>';
+			}
+			?>
+			<span style="text-align:right"><?php echo $shr; ?></span>
+		</div>
 	</div>
 </div>

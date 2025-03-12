@@ -1,4 +1,4 @@
-<?php
+';///87/''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''<?php
 const smallGraphWidth1 = 533;
 const smallGraphWidth2 = 500;
 const smallGraphWidth3 = 505;
@@ -231,30 +231,39 @@ if(false && $tstamp % 100 == 0) {
 }
 
 // External clientraw grab and save
-if(false || $OUTAGE) {
-	// $path = 'http://diong.co.uk/clientraw.txt';  // new tottenham wx link
+if(false) {
 	$path = 'http://www.harpendenweather.co.uk/live/clientraw.txt';
-	//$path = 'http://www.sandhurstweather.org.uk/clientraw.txt';
 	$harpendenData = urlToArray($path);
 	if($harpendenData[0] && count($harpendenData) === 1) {
-		file_put_contents(ROOT.'EXTclientraw.txt', $harpendenData[0]);
+		file_put_contents(ROOT.'EXT_harpenden.txt', $harpendenData[0]);
 	} else {
 		quick_log("HarpendenBadData.txt", $harpendenData[0]);
 	}
 }
-if(false || $OUTAGE ) {
-	$path2 = "http://www.brettoliver.org.uk/clientraw.txt";
-//	$path2 = "http://weather.casa.ucl.ac.uk/realtime.txt";
-	//$path2 = "http://www.lambethmeters.co.uk/weather/clientraw.txt";
-//	$path2 = "http://weather.bencook.net/clientraw.txt";
-//	$path2 = "http://www.jon00.me.uk/clientraw.txt"; // MY SERVER IP BLOCKED src: http://www.jon00.me.uk/FreshWDL.shtml
-	//$path2 = "http://www.snglinks.com/wx/spiel/clientraw.txt";
-	$secondaryData = urlToArray($path2);
-	if($secondaryData[0] && count($secondaryData) === 1) {
-		file_put_contents(ROOT.'EXTclientraw2.txt', $secondaryData[0]);
+if(true && (date('i') % 5 == 1)) {
+	// St James
+//	$pathJames = "https://api.synopticdata.com/v2/stations/latest?token=790b537f5b0248bc94ec8bbeae0bcba7&stid=SYN03770";
+//	$dataJames = urlToArray($pathJames);
+//	if($dataJames[0]) {
+//		file_put_contents(ROOT.'EXT_james.json', $dataJames[0]);
+//	} else {
+//		quick_log("james_bad_data.txt", $dataJames[0]);
+//	}
+	// Nearby CWOP (Islington)
+	$pathIslington = "https://meteoglance.com/api/v0/station/2E0RGX-13";
+	$dataIslington = urlToArray($pathIslington);
+	if($dataIslington[0]) {
+		file_put_contents(ROOT.'EXT_islington.json', $dataIslington[0]);
 	} else {
-		quick_log("CasaBadData.txt", $secondaryData[0]);
+		quick_log("islington_bad_data.txt", $dataIslington[0]);
 	}
+//	$pathPotters = "https://meteoglance.com/api/v0/station/G6LTT";
+//	$dataPotters = urlToArray($pathPotters);
+//	if($dataPotters[0]) {
+//		file_put_contents(ROOT.'EXT_potters.json', $dataPotters[0]);
+//	} else {
+//		quick_log("potters_bad_data.txt", $dataPotters[0]);
+//	}
 }
 
 //########### OLD WD file crap ##########//

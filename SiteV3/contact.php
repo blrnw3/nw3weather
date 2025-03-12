@@ -40,6 +40,10 @@
 
 <p>My address is: &nbsp <span style="color:blue"> bmr[at]nw3weather.co.uk</span></p>
 
+<p>
+	For anything informal, feel free to message me on <a href="https://twitter.com/nw3weather/" title="X">Twitter</a>.
+</p>
+
 <br />
 </div>
 

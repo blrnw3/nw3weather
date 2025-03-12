@@ -9,7 +9,7 @@ $titles = array(
 	'London Snowfall, April 2008',
 
 	'Europe, Summer 2008',
-	'London Thunderstorm, Jan 2011',
+	'London T-storm, Jan 2011',
 	'UK, Winter 10/11',
 
 	'Europe, Summer 2011',
