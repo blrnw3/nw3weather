@@ -4,6 +4,7 @@
 /other/
 /www/
 /jpgraph/
+/SiteV3/oldSites/
 */nbproject/
 *.zip
 *.7z
@@ -13,3 +14,4 @@ VMs
 /V3CoreFiles/
 Site_v4/static/img/*
 Images/bannerImage.doc
+/Tests/

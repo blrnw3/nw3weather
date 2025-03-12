@@ -1,0 +1,88 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>City Rankings</title>
+		<meta name="viewport" content="width=device-width, user-scalable=no" />
+		<meta name="description" content="City weather rankings across Europe" />
+		<meta name="keywords" content="weather, Europe, nw3, data, records, statistics, rankings, live" />
+		<meta http-equiv="content-type" content="application/xhtml+xml; charset=ISO-8859-1" />
+		<meta http-equiv="content-language" content="en-GB" />
+		<link rel="stylesheet" type="text/css" href="./style.css" media="screen" title="screen" />
+
+		<script type="text/javascript" src="./jquery-2.0.3.min.js"></script>
+		<script type="text/javascript" src="./js.js"></script>
+
+		<style type="text/css">
+
+		</style>
+	</head>
+	<body>
+		<!-- ##### Header ##### -->
+		<div id="background">
+			<div id="page">
+				<div id="header"></div>
+
+				<!-- ##### Main ##### -->
+				<div id="main">
+					<table>
+						<thead>
+							<tr>
+								<th colspan="3">
+									<span id="leftArrow" class="sideArrow" onclick="changeVar(false);"> &#8678; </span>
+									<span id="tableTitle" onclick="changeVar(true);">Live Euro Wx</span>
+									<span id="rightArrow" class="sideArrow" onclick="changeVar(true);"> &#8680; </span>
+								</th>
+							</tr>
+							<tr class="table-top">
+								<td>
+									<button id="eu-toggle" onclick="toggleGlobal();"></button>
+								</td>
+								<td id="wxvarName" rowspan="2" onclick="updateGUI(true);">
+									<div id="wxvarTitle" class="tableSubTitle"></div>
+									<div class="tableHeadSortArrows"></div>
+								</td>
+								<td id="wxvarRank" rowspan="2" onclick="updateGUI(true);">Rank</td>
+							</tr>
+							<tr class="table-top">
+								<td id="city" onclick="restore();">
+									<div class="tableSubTitle">City</div>
+									<div class="tableHeadSortArrows"></div>
+								</td>
+							</tr>
+						</thead>
+
+						<tbody id="ranks">
+							<tr>
+								<td colspan="3">Loading...</td>
+							</tr>
+						</tbody>
+
+					</table>
+				</div>
+
+				<!-- ##### Footer ##### -->
+				<div id="footer">
+					<!--
+						<div id="note">
+							<p>
+							<b>Note Well</b><br />
+							Cities with purple highlight are your currently-selected cities.
+							<br />Cities in italic and dark-yellow highlight are non-European cities,
+							 selected from a tiny sample of major worldwide cities.
+							</p>
+						</div>
+					-->
+					<div>
+						<a href="#header">Top</a>
+					</div>
+					<div>&copy; 2012-2013, B. Lee-Rodgers</div>
+					<div>NB: Accuracy and reliability of data is not guaranteed</div>
+					<div>
+						<span style="font-size: 85%">Version 1.0</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

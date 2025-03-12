@@ -1,0 +1,234 @@
+@CHARSET "ISO-8859-1";
+
+#background {
+	margin-left:auto;
+	margin-right:auto;
+	margin-top:1px;
+	background-color: #D7E2D8;
+}
+
+#page {
+	margin: 0px auto;
+	color: black;
+	background-color: white;
+	padding: 0;
+	max-width: 550px;
+	border: 1px solid #0B6121;
+	font-size: 9pt;
+}
+
+body {
+	background-color: rgb(243,242,235);
+	font-size: 99%; /* Enables font size scaling in MSIE (apparently) */
+}
+
+/******************Header***************************/
+#header {
+	font-family: arial;
+	color: #EFEFFB;
+
+	background-color:#D35A21;
+	font-size: 120%;
+	text-align: center;
+	padding: 3px;
+}
+
+/******************Main***************************/
+#main {
+	font-family: "Trebuchet MS", verdana, helvetica, arial, sans-serif;
+	font-size: 110%;
+
+	padding: 2px;
+	background-color:#F2FAFD;
+	margin-left:auto;
+	margin-right:auto;
+}
+
+#city {
+    width: 40%;
+}
+#country {
+    width: 30%;
+}
+#wxvarName {
+    width: 45%;
+}
+#wxvarRank {
+    width: 15%;
+}
+#eu-toggle {
+	width: 99%;
+}
+
+#main h2 {
+	color: #168843;
+	font-size: 140%;
+	font-weight: bold;
+	margin-left: 0.4em;
+}
+
+div.tableSubTitle {
+	line-height: 2.2em;
+	float:left;
+	width:90%;
+	text-align:center;
+}
+
+div.tableHeadSortArrows {
+	font-size:80%;
+	float:right;
+	width:10%;
+}
+
+#leftArrow {
+	float: left;
+}
+#rightArrow {
+	float: right;
+}
+#tableTitle {
+	line-height: 2em;
+	width:35%;
+}
+.sideArrow {
+	font-size: 1.5em;
+	width:30%;
+	line-height: 1.5em;
+}
+.sideArrowText {
+	font-size: 0.6em;
+}
+
+table {
+    border: 2px solid #AFB5AF;
+    border-spacing: 0px;
+    width: 100%;
+}
+
+td {
+	text-align: center;
+        border: solid 1px #CAB99D;
+        padding: 4px;
+}
+
+th {
+	background-color: #BDCDF7;
+	font-weight: bold;
+	font-size: 123%;
+	padding: 0.2em;
+}
+
+.table-top {
+	background-color: #DBEBEE;
+	font-weight: bold;
+	font-size: 110%;
+}
+
+.row-dark {
+	background-color: rgb(233,232,225);
+}
+
+.row-light {
+	background-color: white;
+}
+
+.userCity {
+	background-color: #ece;
+	font-weight: bold;
+}
+
+.nonEuroCity {
+	background-color: #eeb;
+	font-family: Tahoma;
+	font-style: italic;
+}
+
+/******************Footer***************************/
+#note {
+	background-color: #ddd;
+	padding: 0.5em;
+}
+
+#footer {
+	font-family: arial;
+	color: #000000;
+
+	background-color:#F2F5A9;
+	text-align: center;
+	padding: 3px 0px 3px 0px;
+}
+
+#footer a {
+	color: black;
+	background-color: transparent;
+	text-decoration: underline;
+	font-weight: bold;
+}
+
+#footer a:hover {
+	text-decoration: none;
+}
+/* Valcol style */
+.leveltemp_0 { background-color: #000074; color: white }
+.leveltemp_1 { background-color: #0000cc; color: white }
+.leveltemp_2 { background-color: #035CB5; color: white }
+.leveltemp_3 { background-color: #10AFE4; }
+.leveltemp_4 { background-color: #00FFC4; }
+.leveltemp_5 { background-color: #07EA57; }
+.leveltemp_6 { background-color: #C8FB11; }
+.leveltemp_7 { background-color: #FFDE00; }
+.leveltemp_8 { background-color: #FF9933; }
+.leveltemp_9 { background-color: #F65A17; color: white }
+.leveltemp_10 { background-color: #DA103C; color: white }
+.levelrain_0 { background-color: #94939A; }
+.levelrain_1 { background-color: #918AA7; }
+.levelrain_2 { background-color: #CCFFFF; }
+.levelrain_3 { background-color: #99FFCC; }
+.levelrain_4 { background-color: #9EDFFD; }
+.levelrain_5 { background-color: #9AACFF; }
+.levelrain_6 { background-color: #7980FF; }
+.levelrain_7 { background-color: #3F48F9; color: white }
+.levelrain_8 { background-color: #010EFE; color: white }
+.levelrain_9 { background-color: #050EAB; color: white }
+.levelrain_10 { background-color: #050D97; color: white }
+.levelrain_11 { background-color: #0B0B3B; color: white }
+.levelwind_0 { background-color: #D9FDFC; }
+.levelwind_1 { background-color: #B1FFFF; }
+.levelwind_2 { background-color: #66FF94; }
+.levelwind_3 { background-color: #99FF00; }
+.levelwind_4 { background-color: #99CC00; }
+.levelwind_5 { background-color: #CCCC00; }
+.levelwind_6 { background-color: #FFCC00; }
+.levelwind_7 { background-color: #FF9900; }
+.levelwind_8 { background-color: #FF6600; }
+.levelwind_9 { background-color: #FF0000; color: #C4C9C2 }
+.levelhumi_0 { background-color: #F3E2A9; }
+.levelhumi_1 { background-color: #F7D358; }
+.levelhumi_2 { background-color: #FFBF00; }
+.levelhumi_3 { background-color: #D7DF01; }
+.levelhumi_4 { background-color: #A5DF00; }
+.levelhumi_5 { background-color: #74DF00; }
+.levelhumi_6 { background-color: #31B404; }
+.levelhumi_7 { background-color: #329511; }
+.levelhumi_8 { background-color: #0B6121; color: #C4C9C2 }
+.levelpres_0 { background-color: #000074; color: white }
+.levelpres_1 { background-color: #0000cc; color: white }
+.levelpres_2 { background-color: #035CB5; color: white }
+.levelpres_3 { background-color: #10AFE4; }
+.levelpres_4 { background-color: #00FFC4; }
+.levelpres_5 { background-color: #07EA57; }
+.levelpres_6 { background-color: #C8FB11; }
+.levelpres_7 { background-color: #FFDE00; }
+.levelpres_8 { background-color: #FF9933; }
+.levelpres_9 { background-color: #F65A17; color: white }
+.levelpres_10 { background-color: #DA103C; color: white }
+.levelcond_0 { background-color: #efe; }
+.levelcond_1 { background-color: #ded; }
+.levelcond_2 { background-color: #cdc; }
+.levelcond_3 { background-color: #bcb; }
+.levelcond_4 { background-color: #aba; }
+.levelcond_5 { background-color: #9a9; color: blue }
+.levelcond_6 { background-color: #898; color: #a4DcF9 }
+.levelcond_7 { background-color: #787; color: white }
+.levelcond_8 { background-color: #676; color: white }
+.levelcond_9 { background-color: #565; color: white }
