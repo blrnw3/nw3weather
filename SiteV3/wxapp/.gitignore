@@ -1,2 +1,5 @@
 config.php
 *.txt
+*.apk
+Webview/ggltrack.php
+Webview/jquery-2.0.3.min.js
