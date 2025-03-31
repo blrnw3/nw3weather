@@ -1,52 +1,12 @@
-<?php require('unit-select.php'); ?>
-
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 <?php
+require("Page.php");
+Page::init([
+	"fileNum" => 8,
+	"title" => "About",
+	"description" => 'NW3 Weather station and Website Information, accuracy, and comments, set-up, location, pictures, traffic, and history.'
+]);
+Page::Start();
 
-$file = 8;
-?>
-
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-	<head>
-		<title>NW3 Weather - About</title>
-
-		<meta name="description" content="Weather station and Website Information, accuracy, and comments, set-up, location, pictures" />
-
-		<?php require('chead.php'); ?>
-		<?php include('ggltrack.php') ?>
-
-		<style type="text/css">
-			.aboutTbl {
-				margin: 0.7em;
-			}
-
-			.aboutTbl td {
-				text-align: center;
-				padding: 0.3em;
-				border: solid 1px #CAB99D;
-				border-spacing: 1px;
-			}
-
-			.aboutTbl tfoot {
-				background-color: #A5DF40;
-				font-weight: bold;
-			}
-		</style>
-	</head>
-
-	<body onload="initialise()">
-
-		<!-- ##### Header ##### -->
-<?php require('header.php'); ?>
-
-		<!-- ##### Left Sidebar ##### -->
-<?php require('leftsidebar.php'); ?>
-
-		<!-- ##### Main Copy ##### -->
-
-<?php
 class Traffic {
 	public $annual = [
 		2011 => [ // Based on 01 Sep - End
@@ -166,6 +126,15 @@ class Traffic {
 			'min_date' => '04 Mar',
 			'max_date' => '02 Nov'
 		],
+		2024 => [
+			'sum' => 324000,
+			'mean' => 885,
+			'median' => 737,
+			'min' => 370,
+			'max' => 2822,
+			'min_date' => '25 Dec',
+			'max_date' => '23 Sep'
+		],
 	];
 
 	public $annual_summary = [
@@ -179,7 +148,10 @@ class Traffic {
 		foreach ($this->annual as $yr => $data) {
 			if($yr > 2012) {
 				$last = $this->annual[$yr - 1]['sum'];
-				$this->annual[$yr]['yoy'] = "+ ". round(($data['sum'] - $last) / $last * 100) ."%";
+				$diff = $data['sum'] - $last;
+				$this->annual[$yr]['yoy'] = (($diff > 0) ? "+ " : "") . round($diff/ $last * 100) ."%";
+			} else {
+				$this->annual[$yr]['yoy'] = "";
 			}
 			$this->annual_summary['sum'] += $data['sum'];
 			$this->annual_summary['mean'] += $data['mean'];
@@ -190,15 +162,12 @@ class Traffic {
 				$this->annual_summary['max'] = $data['max'];
 			}
 		}
-		// 2011 is an incomplete year so adjust count
-		$this->annual_summary['mean'] =  "";  # round($this->annual_summary['mean'] / (count(self::$annual) - 0.6 ));
-//		$this->annual_summary['median'] = 199; // TODO: keep updated
+		$this->annual_summary['mean'] =  "";
+		$this->annual_summary['median'] = "";
+		$this->annual_summary['yoy'] = "";
 	}
 }
 ?>
-
-<div id="main">
-
 	<h1>About nw3weather</h1>
 
 	<h2>Weather Station</h2>
@@ -242,7 +211,7 @@ class Traffic {
 		a 790 acre ancient park just a few miles north of central London.
 		Nearby areas include Hampstead village to the west, Highgate to the north, Belsize Park to the south-west, and Kentish Town to the south.</p>
 	<div id="map">
-		<?php img("/static-images/nw3wxhq.jpg", "Map of nw3 hq within London", 0.5, "Wind Sensors close-up", 784, 816); ?>
+		<?php Html::img("/static-images/nw3wxhq.jpg", "Map of nw3 hq within London", 0.5, "Wind Sensors close-up", 784, 816); ?>
 	</div>
 	<p>The station co-ordinates are approx. <a href="https://www.google.com/maps/@51.556,-0.155,15z" title="Google Maps">51.556, -0.155</a>, which is ~57m (195ft) above mean sea level.</p>
 
@@ -255,13 +224,13 @@ class Traffic {
 		<li>A barometer integrated into the receiving unit (indoors).</li>
 	</ul>
 	<?php
-		img("/photos/wxstn/box.jpg", "Thermo/Hygro and Rain Gauge", 0.2, "Thermo/Hygro in radiation shield, Rain Gauge on top", 430, 338);
-		img("/static-images/P1010074.JPG", "Wind Sensors", 0.2, "Anemometer &amp; Wind Vane on top of pole", 394, 338);
+		Html::img("/photos/wxstn/box.jpg", "Thermo/Hygro and Rain Gauge", 0.2, "Thermo/Hygro in radiation shield, Rain Gauge on top", 430, 338);
+		Html::img("/static-images/P1010074.JPG", "Wind Sensors", 0.2, "Anemometer &amp; Wind Vane on top of pole", 394, 338);
 		echo '<p>The external sensors are wired to a solar-powered transmission unit (which sits atop the radiation shield box).
 			This wirelessly transmits the data from all sensors to the internal console every few seconds.
 			Battery-backup and a data-logger ensure continuous operation</p>';
-		img("/static-images/PICT2516.JPG", "Thermo/Hygro close-up", 0.2, "Thermo/Hygro close-up inside radiation shield", 420, 315);
-		img("/static-images/P1010076.JPG", "Wind Sensors close-up", 0.2, "Wind Sensors close-up", 420, 315);
+		Html::img("/static-images/PICT2516.JPG", "Thermo/Hygro close-up", 0.2, "Thermo/Hygro close-up inside radiation shield", 420, 315);
+		Html::img("/static-images/P1010076.JPG", "Wind Sensors close-up", 0.2, "Wind Sensors close-up", 420, 315);
 	?>
 	<p><a href="./wx7.php#wx-albums">Weather station albums</a> are also available,
 		with more complete and detailed pictures of past and present setups (note that the above pics are of a previous station).</p>
@@ -392,9 +361,9 @@ $traffic->prepare_annual_data_table();
 				<td>Total Visits</td>
 				<td>growth</td>
 				<td>Mean</td>
-				<td>Median</td>
+				<td class="hide-small">Median</td>
 				<td>Max</td>
-				<td>Min</td>
+				<td class="hide-small">Min</td>
 			</tr>
 		</thead>
 		<tfoot> <!-- Yes, it is meant to go here! -->
@@ -403,21 +372,21 @@ $traffic->prepare_annual_data_table();
 				<td><?php echo number_format($traffic->annual_summary['sum']) ?></td>
 				<td><?php echo $traffic->annual_summary['yoy'] ?></td>
 				<td><?php echo $traffic->annual_summary['mean'] ?></td>
-				<td><?php echo $traffic->annual_summary['median'] ?></td>
+				<td class="hide-small"><?php echo $traffic->annual_summary['median'] ?></td>
 				<td><?php echo $traffic->annual_summary['max'] ?></td>
-				<td><?php echo $traffic->annual_summary['min'] ?></td>
+				<td class="hide-small"><?php echo $traffic->annual_summary['min'] ?></td>
 			</tr>
 		</tfoot>
 		<tbody>
 			<?php foreach ($traffic->annual as $year => $data): ?>
 			<tr>
 				<td><?php echo $year ?></td>
-				<td><?php echo number_format($data['sum']); if($year == $dyear) echo "+ (to ${data['TO']})"; ?></td>
+				<td><?php echo number_format($data['sum']); if($year == Date::$dyear) { echo "+ (to ${data['TO']})"; } ?></td>
 				<td><?php echo $data['yoy'] ?></td>
 				<td><?php echo $data['mean'] ?></td>
-				<td><?php echo $data['median'] ?></td>
+				<td class="hide-small"><?php echo $data['median'] ?></td>
 				<td><?php echo $data['max'] ?> (<?php echo $data['max_date'] ?>)</td>
-				<td><?php echo $data['min'] ?> (<?php echo $data['min_date'] ?>)</td>
+				<td class="hide-small"><?php echo $data['min'] ?> (<?php echo $data['min_date'] ?>)</td>
 			</tr>
 			<?php endforeach; ?>
 		</tbody>
@@ -428,7 +397,7 @@ $traffic->prepare_annual_data_table();
 		then again in 2020 with a record-breaking 3-day rain storm in early Oct.
 	</p>
 
-	<?php img("/sessions.jpg", "nw3weather site traffic - sessions", 0.2, "nw3weather daily site visits, 2012-2023", 851, 517); ?>
+	<?php Html::img("/sessions.jpg", "nw3weather site traffic - sessions", 0.2, "nw3weather daily site visits, 2012-2023", 851, 517); ?>
 
 	<h2>Acknowledgements</h2>
 	<p>
@@ -518,10 +487,5 @@ $traffic->prepare_annual_data_table();
 
 	</p>
 
-</div>
 
-		<!-- ##### Footer ##### -->
-<?php require('footer.php'); ?>
-
-	</body>
-</html>
+<?php Page::End(); ?>

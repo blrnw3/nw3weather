@@ -90,3 +90,23 @@ $camImgNew .= (Page::$fileNum === 1) ? '_small.jpg' : '.jpg';
 	shownewhead();
 	//]]>
 </script>
+
+<script type="text/javascript">
+	//<![CDATA[
+	function loadVid(vid, seek, sel, noautoplay) {
+		$("#skycam-selector span").removeClass("selected");
+		$("#timelapse-" + sel).addClass("selected");
+
+		var src = '/cam/timelapse/' + vid + '.mp4';
+		console.log("Loading " + src);
+		var vidBox = document.getElementById('timelapse');
+		vidBox.innerHTML = '<video id="timelapse-vid" width="864" height="576" controls><source src="' + src + '" type="video/mp4"></video>';
+
+		var vid = document.getElementById('timelapse-vid');
+		vid.currentTime = seek;
+		if(!noautoplay) {
+			vid.play();
+		}
+	}
+	//]]>
+</script>

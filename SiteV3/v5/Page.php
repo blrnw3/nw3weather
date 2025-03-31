@@ -42,11 +42,13 @@ class Page {
 
 	private static $start;
 	private static $mailBuffer;
+	private static $mailBufferCount;
 	private static $styleSheet;
 
 	static function init($opts) {
 		self::$start = microtime(true);
 		self::$mailBuffer = [];
+		self::$mailBufferCount = 0;
 
 		foreach ($opts as $k => $v) {
 			self::${$k} = $v;
@@ -104,6 +106,7 @@ class Page {
 			$scripts .= ob_get_contents();
 			ob_end_clean();
 		}
+		$scripts .= self::JQUERY;
 
 		$title = self::$title;
 		$description = self::$description;
@@ -500,8 +503,8 @@ END;
 		   "\t" . $content . "\r\n", FILE_APPEND );
 
 	   if($threshold !== false && (int)$content > $threshold) {
-		   $mailBuffer[$mailBufferCount]['file'] = $txtname;
-		   $mailBuffer[$mailBufferCount]['content'] = $content;
+		   $mailBuffer[self::$mailBufferCount]['file'] = $txtname;
+		   $mailBuffer[self::$mailBufferCount]['content'] = $content;
 		   self::$mailBufferCount++;
 	   }
    }
@@ -513,8 +516,8 @@ END;
 		   $extras . "\r\n", FILE_APPEND );
 
 	   if($threshold && (int)$content > $threshold) {
-		   $mailBuffer[$mailBufferCount]['file'] = $txtname;
-		   $mailBuffer[$mailBufferCount]['content'] = $content;
+		   $mailBuffer[self::$mailBufferCount]['file'] = $txtname;
+		   $mailBuffer[self::$mailBufferCount]['content'] = $content;
 		   self::$mailBufferCount++;
 	   }
    }
@@ -581,7 +584,7 @@ END;
 		//Session setters
 		if (isset($_GET['year'])) {
 			self::$syr = (int)$_GET['year'];
-			$_SESSION['year'] = (self::$syr >= 1871 && self::$syr <= Consts::$dyear) ? self::$syr : Consts::$dyear;
+			$_SESSION['year'] = (self::$syr >= 1871 && self::$syr <= Date::$dyear) ? self::$syr : Date::$dyear;
 		}
 		if (isset($_GET['month'])) {
 			self::$smo = (int)$_GET['month'];

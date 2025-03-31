@@ -277,6 +277,7 @@ body {
 
 img, video {
 	max-width: 100%;
+	height: auto;
 }
 .center {
 	display: flex;
@@ -325,13 +326,35 @@ select {
 .kv-table > div > div:nth-of-type(1) {
 	font-weight: 600;
 }
-.kv-table > div > div:nth-of-type(2) {
-}
 .rowdark > div {
 	background: #e8f0ea
 }
 .empty > div {
 	padding: 0.3rem;
+}
+
+@media screen and (max-width: 900px) {
+    table .hide-small {
+        display: none;
+    }
+}
+
+/****************** Charts ***************************/
+div.charts {
+	display: flex;
+	flex-wrap: wrap;
+	margin: 0.5em;
+}
+div.charts-with-title {
+	display: flex;
+	flex-wrap: wrap;
+	margin: 0.5em;
+}
+div.charts > img {
+	margin: 0.5em;
+}
+div.charts-with-title > img {
+	margin: 0.5em;
 }
 
 /* LEGACY */
@@ -545,8 +568,7 @@ select {
 
 
 .aboutTbl {
-	margin: 0.7em;
-	width: 95%;
+	margin: 0.8em;
 }
 
 .aboutTbl td {
@@ -627,13 +649,15 @@ select {
 /****************** Page specific ***************************/
 /* wx2 */
 #skycam-selector {
-	margin: 1em;
+	margin: 0.6em;
+	display: flex;
+	flex-wrap: wrap;
 }
 
 #skycam-selector span {
 	background-color: #bbb;
-	padding: 0.3em 0.8em;
-	margin: 0.2em 1em;
+	padding: 0.3em 0.6em;
+	margin: 0.2em 0.5em;
 	border: solid 1px #CAB99D;
 	cursor: pointer;
 }
@@ -679,6 +703,48 @@ select.timelapse {
 	margin: 1rem 0;
 	max-width: 1000px;
 }
+
+/* wx5 */
+#widgets {
+	display: flex;
+	flex-wrap: wrap;
+	margin: 0.5rem 0;
+}
+#widgets > div {
+	margin: 0.3rem;
+	flex: 1 1 90%;
+}
+#wx-map {
+	width: 1200px;
+	margin-top: 2rem;
+}
+@media only screen and (max-width: 1430px) {
+	#wx-map {
+		width: 1000px;
+	}
+}
+@media only screen and (max-width: 1230px) {
+	#wx-map {
+		width: 820px;
+	}
+}
+@media only screen and (max-width: 1030px) {
+	#wx-map {
+		width: 630px;
+	}
+}
+@media only screen and (max-width: 830px) {
+	#wx-map {
+		width: 460px;
+	}
+}
+@media only screen and (max-width: 630px) {
+	#wx-map {
+		width: 320px;
+	}
+}
+
+
 /* wx7 */
 .galleries {
 	display: flex;
@@ -690,8 +756,6 @@ select.timelapse {
 	.galleries {
 		gap: 0.6rem;
 	}
-}
-.galleries > div {
 }
 .galleries a {
 	display: block;

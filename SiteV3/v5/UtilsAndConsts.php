@@ -17,6 +17,9 @@ class Site {
 
 	const SUN_GRAB_TIME = '0836'; // When to scrape Wonline for EGLL Sun Hrs
 
+	const GRAPH_DIMS_LARGE = ' height="1017" width="850" ';
+	const GRAPH_DIMS_SMALL = ' height="619" width="542" ';
+
 	public static $rareTags = '/var/www/html/rareTags.php';
 
 	/**
@@ -37,7 +40,7 @@ class Date {
 	public static $months = ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 	public static $months3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 	public static $snames = ['Winter', 'Spring', 'Summer', 'Autumn'];
-	public static $snums = [[0,1,11], [2,3,4], [5,6,7], [8,9,10]];
+	public static $snums = [[0,1,11],  [2,3,4], [5,6,7], [8,9,10]];
 
 	public static $monthname;
 	public static $date;
@@ -102,7 +105,7 @@ class Date {
 	 * @param int $month [=false]
 	 * @param int $day [=false]
 	 * @param boolean $current [=false] whether to display 'current' or 'Today' as the message if the date is today
-	 * @param long $tstamp [=false] use a timestamp instead of d/m/y
+	 * @param int $tstamp [=false] use a timestamp instead of d/m/y
 	 * @param string $debug [=false] prints some debug information
 	 * @param string $format [='js M Y'] date format for full dates
 	 * @return string the formatted date or message
@@ -139,10 +142,10 @@ class Date {
 	}
 	/**
 	 * mktime(0,0,0, m, d, y) shortcut
-	 * @param type $month
-	 * @param type $day
-	 * @param type $year
-	 * @return type
+	 * @param int $month
+	 * @param int $day
+	 * @param int $year
+	 * @return int
 	 */
 	public static function mkdate($month = false, $day = false, $year = false) {
 		if($year === false) { $year = self::$dyear; }
@@ -236,6 +239,7 @@ class Date {
 		return date('t',mkdate($month,2,$year));
 	}
 	public static function get_seasondays($sea, $year = 2009) {
+		$days = 0;
 		for($s2 = 0; $s2 < 3; $s2++) { $days += get_days_in_month(self::$snums[$sea][$s2]+1,$year); }
 		return $days;
 	}

@@ -209,7 +209,7 @@ function isNotBlank($val) {
  * @param int $month [=false]
  * @param int $day [=false]
  * @param boolean $current [=false] whether to display 'current' or 'Today' as the message if the date is today
- * @param long $tstamp [=false] use a timestamp instead of d/m/y
+ * @param int $tstamp [=false] use a timestamp instead of d/m/y
  * @param string $debug [=false] prints some debug information
  * @param string $format [='js M Y'] date format for full dates
  * @return string the formatted date or message
@@ -251,7 +251,7 @@ function today($year = false, $month = false, $day = false, $current = false, $t
  * @param type $month
  * @param type $day
  * @param type $year
- * @return type
+ * @return int
  */
 function mkdate($month = false, $day = false, $year = false) {
 	if($year === false) { $year = $GLOBALS['dyear']; }
@@ -421,6 +421,7 @@ function get_days_in_month($month, $year = 2009) {
 	return date('t',mkdate($month,2,$year));
 }
 function get_seasondays($sea, $year = 2009) {
+	$days = 0;
 	for($s2 = 0; $s2 < 3; $s2++) { $days += get_days_in_month($snums[$sea][$s2]+1,$year); }
 	return $days;
 }
@@ -670,8 +671,8 @@ function img($src, $alt, $margin, $title = null, $width = null, $height = null, 
 
 /**
  * Light or Dark alternating odd/even
- * @param type $i
- * @return type light or dark
+ * @param int $i
+ * @return string light or dark
  */
 function colcol($i) {
 	return ($i % 2 == 0) ? 'light' : 'dark';
@@ -924,8 +925,8 @@ function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset =
 
 /**
  * Convert a YYYYMMDD string to a unix timestamp
- * @param type $stamp
- * @return type
+ * @param string $stamp
+ * @return int
  */
 function datestamp_to_ts($stamp) {
 	return mkdate(substr($stamp,4,2),substr($stamp,6,2),  substr($stamp,0,4));

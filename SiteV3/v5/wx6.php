@@ -161,10 +161,10 @@ $moonImg .= "?" . time();
 		<div><?php echo $mooneclipse; ?></div>
 	</div>
 	<div class="rowdark">
-		<div>Next Moon <acronym title="Nearest approach of Moon to Earth">Perigee</acronym></div>
+		<div>Next Moon <abbr title="Nearest approach of Moon to Earth">Perigee</abbr></div>
 		<div><?php echo $moonperigee; ?> </div></div>
 	<div class="rowlight">
-		<div>Next Moon <acronym title="Furthest approach of Moon to Earth">Apogee</acronym></div>
+		<div>Next Moon <abbr title="Furthest approach of Moon to Earth">Apogee</abbr></div>
 		<div><?php echo $moonapogee; ?> </div>
 	</div>
 </div>
