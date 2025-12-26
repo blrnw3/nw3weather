@@ -764,3 +764,21 @@ select.timelapse {
 .galleries span {
 	display: block;
 }
+
+/* detailed data */
+.detail-flex {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1.5rem;
+	justify-content: space-between;
+}
+.detail-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1.5rem;
+}
+@media only screen and (max-width: 1230px) {
+	.detail-grid {
+		grid-template-columns: 1fr;
+	}
+}

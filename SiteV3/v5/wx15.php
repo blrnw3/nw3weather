@@ -4,9 +4,9 @@
 	?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+"https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 	<title>NW3 Weather - System/Site</title>
 
@@ -39,30 +39,30 @@
 	$freqs = array(1, 60, 3600, 60, 300, 300);
 	$limit = array(2, 200, 10000, 200, 750, 750);
 
-	table(null, '92%" style="margin-bottom:15px; margin-left:25px;', 6);
-	tableHead("System Data Health", 4);
+	Html::table(null, '92%" style="margin-bottom:15px; margin-left:25px;', 6);
+	Html::tableHead("System Data Health", 4);
 
-	tr();
-	td("Measure", null, "40%");
-	td("Timestamp", null, "28%");
-	td("Ago", null, "17%");
-	td("Health", null, "15%");
-	tr_end();
+	Html::tr();
+	Html::td("Measure", null, "40%");
+	Html::td("Timestamp", null, "28%");
+	Html::td("Ago", null, "17%");
+	Html::td("Health", null, "15%");
+	Html::tr_end();
 
 	for ($r = 0; $r < count($labels); $r++) {
-		tr("row" . colcol($r));
-		td($labels[$r]);
-		td(date($format, $timestamps[$r]));
+		Html::tr("row" . colcol($r));
+		Html::td($labels[$r]);
+		Html::td(date($format, $timestamps[$r]));
 		$ago = $timestamps[0] - $timestamps[$r];
-		td(secsToReadable($ago));
+		Html::td(secsToReadable($ago));
 		$ledColour = ($ago <= $freqs[$r]) ? 'Green' : ( ($ago < $limit[$r]) ? 'Amber' : 'Red' );
 		$led = (isset($freqs[$r])) ? '<img src="'. IMG_ROOT .'LED_'. $ledColour
 			.'.png" alt="health" title="Expected Frequency: '. secsToReadable($freqs[$r]) .'" />' : '';
-		td($led);
-		tr_end();
+		Html::td($led);
+		Html::tr_end();
 	}
 
-	table_end();
+	Html::table_end();
 
 
 	$freemem = ($freememory < 0) ? (4000 + $freememory) : $freememory;
@@ -74,22 +74,22 @@
 		$startimedate, $datareceivedcount, $memoryused, '---', $windowsuptime, $freemem .' (Max: 4GB)', '---',
 		$vpconsolebattery, $vpreception2 .' ('. $vpreception .')', $vpissstatus);
 
-	table(null, '53%" align="left', 5);
-	tableHead("Local System and Site Information", 2);
+	Html::table(null, '53%" align="left', 5);
+	Html::tableHead("Local System and Site Information", 2);
 
-	tr();
-	td("Measure", null, "42%");
-	td("Value", null, "58%");
-	tr_end();
+	Html::tr();
+	Html::td("Measure", null, "42%");
+	Html::td("Value", null, "58%");
+	Html::tr_end();
 
 	for ($r = 0; $r < count($measures); $r++) {
-		tr("row" . colcol($r));
-		td($measures[$r]);
-		td($values[$r]);
-		tr_end();
+		Html::tr("row" . colcol($r));
+		Html::td($measures[$r]);
+		Html::td($values[$r]);
+		Html::tr_end();
 	}
 
-	table_end();
+	Html::table_end();
 
 
 	$measures2 = array('Temperature', 'Temperature Trend', 'Relative Humidity', 'Dew Point', '---',
@@ -100,23 +100,23 @@
 	$times2 = array('', '', '', '', '',
 		$minindoortempt, $maxindoortempt, $dailylowindoorhumtime, $dailyhighindoorhumtime, $minindoortempyestt, $maxindoortempyestt);
 
-	table(null, '42%" align="center', 5);
-	tableHead("Machine Room Conditions", 2);
+	Html::table(null, '42%" align="center', 5);
+	Html::tableHead("Machine Room Conditions", 2);
 
-	tr();
-	td("Measure", null, "45%");
-	td("Value", null, "55%");
-	tr_end();
+	Html::tr();
+	Html::td("Measure", null, "45%");
+	Html::td("Value", null, "55%");
+	Html::tr_end();
 
 	for ($r = 0; $r < count($measures2); $r++) {
 		$time = !isBlank($times2[$r]) ? ' at ' . $times2[$r] : '';
-		tr("row" . colcol($r));
-		td($measures2[$r]);
-		td(conv($values2[$r], $convs2[$r]) . $time);
-		tr_end();
+		Html::tr("row" . colcol($r));
+		Html::td($measures2[$r]);
+		Html::td(conv($values2[$r], $convs2[$r]) . $time);
+		Html::tr_end();
 	}
 
-	table_end();
+	Html::table_end();
 ?>
 
 <br />

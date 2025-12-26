@@ -1,38 +1,14 @@
 <?php
-$file = 4;
-$allDataNeeded = true;
-require('unit-select.php');
-?>
+require("Page.php");
+Page::init([
+	"fileNum" => 4,
+	"allDataNeeded" => true,
+	"title" => "Trends, Extremes and Averages",
+	"description" => 'Trends and Extremes and Averages from NW3 weather station.
+	Find out the difference in temperature, wind, rain, pressure, dew point from this time yesterday, one month ago and last year; view max and min records for the site.'
+]);
+Page::Start();
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-	<title>NW3 Weather - Trends, Extremes and Averages</title>
-
-	<meta name="description" content="Trends and Extremes and Averages from NW3 weather station.
-	Find out the difference in temperature, wind, rain, pressure, dew point from this time yesterday, one month ago and last year; view max and min records for the site" />
-
-<?php require('chead.php'); ?>
-<?php include_once("ggltrack.php"); ?>
-</head>
-
-<body>
-	<!-- ##### Header ##### -->
-	<?php require('header.php'); ?>
-	<!-- ##### Left Sidebar ##### -->
-	<?php require('leftsidebar.php'); ?>
-
-	<!-- ##### Main Copy ##### -->
-
-<div id="main">
-	<?php require('site_status.php'); ?>
-
-<h1>Trends, Extremes, and Averages</h1>
-
-<h2>Extremes and Records</h2>
-<?php
 require ROOT.'TemperatureTags.php';
 require ROOT.'RainTags.php';
 require ROOT.'Rain2Tags.php';
@@ -42,6 +18,12 @@ require ROOT.'PressureTags.php';
 require ROOT.'FeelTags.php';
 require ROOT.'SunTags.php';
 
+?>
+
+<h1>Trends, Extremes, and Averages</h1>
+
+<h2>Extremes and Records</h2>
+<?php
 $periods = array("Measure", "Today", "Yesterday", "Last 7 days", "Month", "Year", "All Time");
 $widths = array(0,15,15,14,14,14,14,14);
 
@@ -55,7 +37,8 @@ $dataNames = array("Min Temperature", "Max Temperature",
 				"Max Rain Rate",
 			);
 $dataCat = array(4,4, 0,0, 6,6, 3,3, 0,0, 2,2,2, 4,4, 2);
-$dataConv = array(1,1, 5,5, 3,3, 4,4, 1,1, 2,2,2, 1,1, 2.1);
+$dataConv = array(Wx::Temperature,Wx::Temperature, Wx::Humidity,Wx::Humidity, Wx::Pressure,Wx::Pressure, Wx::Wind,Wx::Wind,
+				  Wx::Temperature,Wx::Temperature, Wx::Rain,Wx::Rain,Wx::Rain, Wx::Temperature,Wx::Temperature, Wx::RainRate);
 $fulldatNames = array('t', 'h', 'p', 'w', 'd', 'r', 'f');
 $order1 = array(0,0, 1,1, 2,2, 3,3, 4,4, 5,5,5, 6,6); //for var name
 $order2 = array(0,1, 0,1, 0,1, 1,2, 0,1, 0,1,2, 0,1); //for min/max/mean named key
@@ -67,10 +50,10 @@ $values = array();
 $dates = array();
 
 for($o = 0; $o < count($order1); $o++) {
-	$mType = $dnm[$order2[$o]];
-	$values[$o][0] = $NOW[$dnm[$order4[$o]]][$mappingsToDailyDataKey[$fulldatNames[$order1[$o]]]];
+	$mType = Wx::$mmm[$order2[$o]];
+	$values[$o][0] = Live::$NOW[Wx::$mmm[$order4[$o]]][Wx::$mappingsToDailyDataKey[$fulldatNames[$order1[$o]]]];
 	$values[$o][1] = ${$fulldatNames[$order1[$o]] .'datYest'}[0][$mType];
-	$dates[$o][0] = $NOW['time'.$mmmr[$order4[$o]]][$mappingsToDailyDataKey[$fulldatNames[$order1[$o]]]];
+	$dates[$o][0] = Live::$NOW['time'.Wx::$mmmr[$order4[$o]]][Wx::$mappingsToDailyDataKey[$fulldatNames[$order1[$o]]]];
 	$dates[$o][1] = ${$fulldatNames[$order1[$o]] .'datYest'}[1][$order2[$o]];
 	foreach($pOrder as $po) {
 		$values[$o][] = ${$fulldatNames[$order1[$o]] .'dat'}[$mType][$order3[$o]][$po];
@@ -78,36 +61,36 @@ for($o = 0; $o < count($order1); $o++) {
 	}
 }
 
-$values[7][0] = $NOW['max']['gust'];
-$values[11][0] = $NOW['max']['rnhr'];
-$values[12][0] = $NOW['max']['rn10'];
-$dates[7][0] = $NOW['timeMax']['gust'];
-$dates[11][0] = $NOW['timeMax']['rnhr'];
-$dates[12][0] = $NOW['timeMax']['rn10'];
+$values[7][0] = Live::$NOW['max']['gust'];
+$values[11][0] = Live::$NOW['max']['rnhr'];
+$values[12][0] = Live::$NOW['max']['rn10'];
+$dates[7][0] = Live::$NOW['timeMax']['gust'];
+$dates[11][0] = Live::$NOW['timeMax']['rnhr'];
+$dates[12][0] = Live::$NOW['timeMax']['rn10'];
 
-$rnRates = array($NOW['max']['rate'], $maxrainrateyest, $maxRateWeek, $mrecorddailyrate, $yrecorddailyrate, $recorddailyrate);
-$rnRatesD = array($NOW['timeMax']['rate'], $maxrainrateyesttime, $maxRateWeek_date, $mrecorddailyratedate, $yrecorddailyratedate, $recorddailyratedate);
+$rnRates = array(Live::$NOW['max']['rate'], $maxrainrateyest, $maxRateWeek, $mrecorddailyrate, $yrecorddailyrate, $recorddailyrate);
+$rnRatesD = array(Live::$NOW['timeMax']['rate'], $maxrainrateyesttime, $maxRateWeek_date, $mrecorddailyratedate, $yrecorddailyratedate, $recorddailyratedate);
 $values[$o] = $rnRates;
 $dates[$o] = $rnRatesD;
 
-table();
-tableHead("Extreme Conditions", 7);
-tr();
+Html::table();
+Html::tableHead("Extreme Conditions", 7);
+Html::tr();
 foreach($periods as $heading) {
-	td($heading, null, next($widths));
+	Html::td($heading, null, next($widths));
 }
-tr_end();
+Html::tr_end();
 
 for($r = 0; $r < count($values); $r++) {
-	tr("row".colcol($r));
+	Html::tr(Html::colcol($r));
 	$tdClass = 'td'. ($dataCat[$r] + 10) .'C';
-	td("<b> $dataNames[$r] </b>", $tdClass);
+	Html::td("<b> $dataNames[$r] </b>", $tdClass);
 	for($c = 0; $c < count($values[0]); $c++) {
-		td( "<b>" . conv($values[$r][$c], $dataConv[$r]) . "</b><br />" . $dates[$r][$c], $tdClass );
+		Html::td( "<b>" . Wx::conv($values[$r][$c], $dataConv[$r]) . "</b><br />" . $dates[$r][$c], $tdClass );
 	}
-	tr_end();
+	Html::tr_end();
 }
-table_end();
+Html::table_end();
 
 echo '<p>
 	<b>NB:</b> This station defines the start of the meteorological day to be midnight; this is when daily values are reset.<br />
@@ -128,7 +111,7 @@ array_splice($pOrder, 4, 0, '365');
 $values = array();
 $anoms = array();
 $daysof = array();
-$dataConv = array(1, 5, 3, 4, 1, 2, 9);
+$dataConv = array(Wx::Temperature, Wx::Humidity, Wx::Pressure, Wx::Wind, Wx::Temperature, Wx::Rain, Wx::Hours);
 $fulldatNames = array('t', 'h', 'p', 'w', 'd', 'r', 's');
 
 $sdatToday[0][2] = $stotals[0]['today'];
@@ -138,7 +121,7 @@ $rdatYest[0]['mean'] = $rtotals[0]['yest'];
 
 for($o = 0; $o < count($fulldatNames); $o++) {
 	$windFix = ($o === 3); //fix for mean wind being in the 'min' array key
-	$values[$o][0] = $NOW['mean'][$mappingsToDailyDataKey[$fulldatNames[$o]]];
+	$values[$o][0] = Live::$NOW['mean'][Wx::$mappingsToDailyDataKey[$fulldatNames[$o]]];
 	$values[$o][1] = ${$fulldatNames[$o] .'datYest'}[0][$windFix ? 'min' : 'mean'];
 	$anoms[$o][0] = ${$fulldatNames[$o] .'datToday'}[2]['mean'];
 	$anoms[$o][1] = ${$fulldatNames[$o] .'datYest'}[2]['mean'];
@@ -150,27 +133,27 @@ for($o = 0; $o < count($fulldatNames); $o++) {
 	}
 }
 
-table();
-tableHead("Averages and Totals", 9);
-tr();
+Html::table();
+Html::tableHead("Averages and Totals", 9);
+Html::tr();
 foreach($periods as $heading) {
-	td($heading, null, next($widths));
+	Html::td($heading, null, next($widths));
 }
-tr_end();
+Html::tr_end();
 
 for($r = 0; $r < count($values); $r++) {
-	tr("row".colcol($r) .'" style="height: 4.2em;');
+	Html::tr(Html::colcol($r) .'" style="height: 4.2em;');
 	$tdClass = 'td'. ($dataCat[$r] + 10) .'C';
-	td("<b> $dataNames[$r] </b>", $tdClass);
+	Html::td("<b> $dataNames[$r] </b>", $tdClass);
 	for($c = 0; $c < count($values[0]); $c++) {
-		$anomOrNo = isBlank($anoms[$r][$c]) ? '' : ( "<br />".
-			( ($r === 0) ? '('. conv($anoms[$r][$c], 1.1, false, true) .')' : $anoms[$r][$c] ) );
-		$daysofOrNo = isBlank($daysof[$r][$c-2]) ? '' : "<br />". $daysof[$r][$c-2] .' days';
-		td( "<b>" . conv($values[$r][$c], $dataConv[$r]) ."</b>". $anomOrNo . $daysofOrNo, $tdClass );
+		$anomOrNo = Util::isBlank($anoms[$r][$c]) ? '' : ( "<br />".
+			( ($r === 0) ? '('. Wx::conv($anoms[$r][$c], Wx::AbsTemp, false, true) .')' : $anoms[$r][$c] ) );
+		$daysofOrNo = Util::isBlank($daysof[$r][$c-2]) ? '' : "<br />". $daysof[$r][$c-2] .' days';
+		Html::td( "<b>" . Wx::conv($values[$r][$c], $dataConv[$r]) ."</b>". $anomOrNo . $daysofOrNo, $tdClass );
 	}
-	tr_end();
+	Html::tr_end();
 }
-table_end();
+Html::table_end();
 ?>
 <p>
 	Bracketed values refer to departure from the relevant long-term climate average; note well that the month and year figures are adjusted for the current date,
@@ -184,112 +167,117 @@ table_end();
 <h2>Trends</h2>
 
 <?php
+$unitT = Wx::getUnits(Wx::Temperature);
+$unitR = Wx::getUnits(Wx::Rain);
+$unitW = Wx::getUnits(Wx::Wind);
+$unitP = Wx::getUnits(Wx::Pressure);
 $periods = array("10 mins", "30 mins", "Hour", "24hrs", "Month", "Year");
-$dataNames = array("Temperature / &deg;$unitT", "Humidity / %", "Wind / $unitW",
-	"Dew Point / &deg;$unitT", "Pressure / $unitP", "Rainfall / $unitR");
-$varPres = array('temp', 'humi', 'wind', 'dewp', 'pres', 'rain'); //index of field position in $HR24
+$dataNames = array("Temperature / $unitT", "Humidity / %", "Wind / $unitW",
+	"Dew Point / $unitT", "Pressure / $unitP", "Rainfall / $unitR");
+$varPres = array('temp', 'humi', 'wind', 'dewp', 'pres', 'rain'); //index of field position in Live::$HR24
 $order = array(0,1,4, 2,3,5);
 $dataCat = array(4,0,3, 0,6,2);
-$convType = array(1.1,5,4, 1,3,2);
+$convType = array(Wx::AbsTemp,Wx::Humidity,Wx::Wind, Wx::Temperature,Wx::Pressure,Wx::Rain);
 
-$valuesMon = getvalsDateAgo(date('Ymd', mkdate($dmonth-1)));
-$valuesYear = getvalsDateAgo(date('Ymd', mkdate($dmonth,$dday,$dyear-1)));
+$valuesMon = getvalsDateAgo(date('Ymd', Date::mkdate(Date::$dmonth-1)));
+$valuesYear = getvalsDateAgo(date('Ymd', Date::mkdate(Date::$dmonth,Date::$dday,Date::$dyear-1)));
 //special case for rain (need to use cum vals)
 $valuesMon['rain'] = $monthrn - $raintodmonthago;
 $valuesYear['rain'] = $yearrn - $raintodayearago;
 
-$HR24['changeHr']['rain'] = $HR24['trendRn'][0] - $HR24['trendRn'][1];
-$HR24['changeDay']['rain'] = $HR24['trendRn'][0];
+Live::$HR24['changeHr']['rain'] = Live::$HR24['trendRn'][0] - Live::$HR24['trendRn'][1];
+Live::$HR24['changeDay']['rain'] = Live::$HR24['trendRn'][0];
 
-table(null, null, 8);
-tableHead("Current Trends", 8);
+Html::table(null, null, 8);
+Html::tableHead("Current Trends", 8);
 
-tr();
-td("Measure", null, 16, 1, 2);
-td("Current<br />$time", "td4", 12, 1, 2);
-td("Change Since Last", "td4", 72, 6);
-tr_end();
+Html::tr();
+Html::td("Measure", null, 16, 1, 2);
+Html::td("Current<br />". Date::$time, "td4", 12, 1, 2);
+Html::td("Change Since Last", "td4", 72, 6);
+Html::tr_end();
 
-tr();
+Html::tr();
 foreach($periods as $heading) {
-	td($heading, 'td4'. (($heading == 'Month') ? ' td4e':''), 12);
+	Html::td($heading, 'td4'. (($heading == 'Month') ? ' td4e':''), 12);
 }
-tr_end();
+Html::tr_end();
 
 $valuesDiff = array(10, 30, 60);
 
 for($r = 0; $r < count($dataCat); $r++) {
-	tr("row".colcol($r));
+	Html::tr(Html::colcol($r));
 	$pos = $order[$r];
 	$li = $varPres[$pos];
 	$tdClass = 'td'. ($dataCat[$pos] + 10) .'C';
-	td("<b> $dataNames[$pos] </b>", $tdClass);
-	td( conv( $HR24['trend'][0][$li], round($convType[$pos]), false ), $tdClass );
+	Html::td("<b> $dataNames[$pos] </b>", $tdClass);
+	Html::td( Wx::conv( Live::$HR24['trend'][0][$li], $convType[$pos], false ), $tdClass );
 	foreach($valuesDiff as $diff) {
 		//$tdClass2 = ($c == 4) ? $tdClass.'" style="border-left: solid 2px rgb(143,208,246);' : $tdClass;
-		td( conv( $HR24['trend'][0][$li] - $HR24['trend'][$diff][$li], $convType[$pos], false, true ), $tdClass );
+		Html::td( Wx::conv( Live::$HR24['trend'][0][$li] - Live::$HR24['trend'][$diff][$li], $convType[$pos], false, true ), $tdClass );
 	}
-	td( conv( $HR24['changeDay'][$li], $convType[$pos], false, true ), $tdClass );
-	td( conv( $HR24['trend'][0][$li] - $valuesMon[$li], $convType[$pos], false, true ), $tdClass );
-	td( conv( $HR24['trend'][0][$li] - $valuesYear[$li], $convType[$pos], false, true ), $tdClass );
-	tr_end();
+	Html::td( Wx::conv( Live::$HR24['changeDay'][$li], $convType[$pos], false, true ), $tdClass );
+	Html::td( Wx::conv( Live::$HR24['trend'][0][$li] - $valuesMon[$li], $convType[$pos], false, true ), $tdClass );
+	Html::td( Wx::conv( Live::$HR24['trend'][0][$li] - $valuesYear[$li], $convType[$pos], false, true ), $tdClass );
+	Html::tr_end();
 }
-table_end();
+Html::table_end();
 ?>
 
 <p align="center"><b>NB: </b>For the month and year rain trends, values refer to differences from cumulative rainfall;
  i.e. the difference between the rain-to-date for this month/year, and that of the previous month/year.</p>
 <?php
 $t = time();
-$periods = array($t, $t - 3600*24, mkdate($dmonth-1), mkdate($dmonth,$dday,$dyear-1));
+$periods = array($t, $t - 3600*24, Date::mkdate(Date::$dmonth-1), Date::mkdate(Date::$dmonth,Date::$dday,Date::$dyear-1));
 $periodNames = array('Today', 'Yesterday', 'Last Month', 'Last Year');
 $extremeTypes = array("Min", "Max", "Avg");
 $e = array('e','','', 'e','','', 'e','','', 'e','','', '');
-$varBase = array(0, 3, 9, 17, 6);
+$varBase = array('t', 'h', 'w', 'd', 'p');
+$subnames = ['min', 'max', 'mean'];
 
-table(null, null, 7);
-tableHead("Extremes' Trends", 13);
+Html::table(null, null, 7);
+Html::tableHead("Extremes' Trends", 13);
 
-tr();
-td("Measure", null, 16, 1, 2);
+Html::tr();
+Html::td("Measure", null, 16, 1, 2);
 foreach($periods as $i => $heading) {
-	td(acronym(date('d F Y',$heading), $periodNames[$i], true), 'td4'. (($heading != $t) ? ' td4e':''), 21, 3);
+	Html::td(HTML::acronym(date('d F Y',$heading), $periodNames[$i], true), 'td4'. (($heading != $t) ? ' td4e':''), 21, 3);
 }
-tr_end();
+Html::tr_end();
 
-tr();
+Html::tr();
 foreach($periods as $x) {
 	foreach($extremeTypes as $subheading) {
-		td($subheading, 'td4'.(($subheading == 'Min' && $x != $t) ? ' td4e':''), 7);
+		Html::td($subheading, 'td4'.(($subheading == 'Min' && $x != $t) ? ' td4e':''), 7);
 	}
 }
-tr_end();
+Html::tr_end();
 
 for($r = 0; $r < count($dataCat)-1; $r++) {
-	tr("row".colcol($r));
+	Html::tr(Html::colcol($r));
 	$pos = $order[$r];
 	$tdClass = 'td'. ($dataCat[$pos] + 10) .'C';
-	td("<b> $dataNames[$pos] </b>", $tdClass);
+	Html::td("<b> $dataNames[$pos] </b>", $tdClass);
 	foreach($periods as $tstamp) {
 		for($d = 0; $d < count($extremeTypes); $d++) {
 			$tdClass2 = ($d == 0 && $tstamp != $t) ? $tdClass.'" style="border-left: solid 2px rgb(143,208,246);' : $tdClass;
-			$type = strpos($dataNames[$pos],'ind') ? 11 - $d : $varBase[$pos] + $d;
-			$val = ($type == 11) ? '-' : $DATA[$type][date('Y', $tstamp)][date('n', $tstamp)][date('j', $tstamp)];
-			td( conv( $val, round($convType[$pos]), false ), $tdClass2 );
+			$name = $varBase[$pos] . $subnames[$d];
+			$val = ($name == 'wmin') ? '-' : Data::get($name, date('Y', $tstamp), date('n', $tstamp), date('j', $tstamp));
+			Html::td( Wx::conv( $val, $convType[$pos], false ), $tdClass2 );
 		}
 	}
-	tr_end();
+	Html::tr_end();
 }
 //rainfall special case
-tr("row".colcol($r));
+Html::tr(Html::colcol($r));
 $tdClass = 'td12C';
-td("<b> $dataNames[$r] </b>", $tdClass);
+Html::td("<b> $dataNames[$r] </b>", $tdClass);
 foreach($periods as $tstamp) {
-	td( conv( $DATA[13][date('Y', $tstamp)][date('n', $tstamp)][date('j', $tstamp)], 2, false ), $tdClass, null, 3 );
+	Html::td( Wx::conv(Data::get("rain", date('Y', $tstamp), date('n', $tstamp), date('j', $tstamp)), Wx::Rain, false ), $tdClass, null, 3 );
 }
-tr_end();
+Html::tr_end();
 
-table_end();
+Html::table_end();
 ?>
 
 <p align="center"><b>Description: </b>Today's averages and extremes compared to yesterday's, and those of this day a month ago, and one year ago.</p>
@@ -299,34 +287,34 @@ table_end();
 <?php
 $periodsTime = array(5,10, 15,20,30, 45,60,75, 90,120);
 
-table(null, null, 5);
-tableHead("Last 2hrs Trends in Detail", 12);
+Html::table(null, null, 5);
+Html::tableHead("Last 2hrs Trends in Detail", 12);
 
-tr();
-td("Measure", null, 16, 1, 2);
-td("Current<br />$time", "td4", 14, 1, 2);
-td("Value x minutes ago", "td4", 70, 10);
-tr_end();
+Html::tr();
+Html::td("Measure", null, 16, 1, 2);
+Html::td("Current<br />". Date::$time, "td4", 14, 1, 2);
+Html::td("Value x minutes ago", "td4", 70, 10);
+Html::tr_end();
 
-tr();
+Html::tr();
 foreach($periodsTime as $heading) {
-	td("-".$heading, null, 7);
+	Html::td("-".$heading, null, 7);
 }
-tr_end();
+Html::tr_end();
 
 for($r = 0; $r < count($dataCat); $r++) {
-	tr("row".colcol($r));
+	Html::tr(Html::colcol($r));
 	$pos = $order[$r];
 	$li = $varPres[$pos];
 	$tdClass = 'td'. ($dataCat[$pos] + 10) .'C';
-	td("<b> $dataNames[$pos] </b>", $tdClass);
-	td( conv($HR24['trend'][0][$li], $convType[$pos], false), $tdClass );
+	Html::td("<b> $dataNames[$pos] </b>", $tdClass);
+	Html::td( Wx::conv(Live::$HR24['trend'][0][$li], $convType[$pos], false), $tdClass );
 	foreach($periodsTime as $timeago) {
-		td( conv( $HR24['trend'][$timeago][$li], $convType[$pos], false ), $tdClass );
+		Html::td( Wx::conv( Live::$HR24['trend'][$timeago][$li], $convType[$pos], false ), $tdClass );
 	}
-	tr_end();
+	Html::tr_end();
 }
-table_end();
+Html::table_end();
 
 
 
@@ -338,10 +326,4 @@ function getvalsDateAgo($dateStamp) {
 }
 ?>
 
-</div>
-
-<!-- ##### Footer ##### -->
-<?php require('footer.php'); ?>
-
-</body>
-</html>
+<?php Page::End(); ?>

@@ -2,6 +2,10 @@
 const ROOT = '/var/www/html/';
 const PHP_INT_MIN = -9223564353720;
 
+const UNIT_UK = 0;
+const UNIT_US = 1;
+const UNIT_EU = 2;
+
 class Site {
 	const MAIN_ROOT = ROOT;
 	const VID_ROOT = '/mnt/nw3-vol1/html/';
@@ -14,6 +18,7 @@ class Site {
 	const LATITUDE = 51.556;
 	const LONGITUDE = -0.154;
 	const ZENITH = 90.2;
+	const BASE_YEAR = 2009;
 
 	const SUN_GRAB_TIME = '0836'; // When to scrape Wonline for EGLL Sun Hrs
 
@@ -113,14 +118,17 @@ class Date {
 	public static function today($year = false, $month = false, $day = false, $current = false, $tstamp = false, $debug = false, $format = 'jS M Y') {
 		if($current) { $message = 'Current'; } else { $message = 'Today'; }
 		if($tstamp) {
+			if(is_string($tstamp)) {
+				$tstamp = Date::dtStrToTs($tstamp);
+			}
 			$record = $tstamp;
-			$year_new = date('Y', $tstamp); $month_new = date('n', $tstamp); $day_new = date('j', $tstamp);
+			$year_new = date('Y', $record); $month_new = date('n', $record); $day_new = date('j', $record);
 		}
 		else {
 			if(!$year) { $year_new = self::$dyear; } else { $year_new = $year; }
 			if(!$month) { $month_new = self::$dmonth; } else { $month_new = $month; }
 			if(!$day) { $day_new = self::$dday; } else { $day_new = $day; }
-			$record = mkdate($month_new, $day_new, $year_new);
+			$record = Date::mkdate($month_new, $day_new, $year_new);
 		}
 		if($debug) {
 			echo date(' H:i, d m Y ',$record), ' xxx ', date(' H:i, d m Y ',mktime(0,0,0)), '<br />';
@@ -132,12 +140,12 @@ class Date {
 		else {
 			//echo ' post-fail ';
 			if(!$month && !$day) { return $year_new; }
-			elseif(!$month && !$year) { return datefull($day_new); }
-			elseif(!$year && !$day) { return monthfull($month_new); }
-			elseif(!$day) { return monthfull($month) . ' ' . $year_new; }
+			elseif(!$month && !$year) { return Date::datefull($day_new); }
+			elseif(!$year && !$day) { return Date::monthfull($month_new); }
+			elseif(!$day) { return Date::monthfull($month) . ' ' . $year_new; }
 			elseif(!$month) { return 'Day ' . $day_new . ', ' . $year_new; }
-			elseif(!$year) { return datefull($day_new) . ' ' . monthfull($month_new); }
-			else { return date($format, mkdate($month_new, $day_new,$year_new)); }
+			elseif(!$year) { return Date::datefull($day_new) . ' ' . Date::monthfull($month_new); }
+			else { return date($format, Date::mkdate($month_new, $day_new,$year_new)); }
 		}
 	}
 	/**
@@ -189,13 +197,23 @@ class Date {
 	public static function daytotime($day) {
 		return strtotime('Jan 1st 2009 + '.(string)($day).' days');
 	}
+
+	/**
+	 * Converts a date string to a timestamp
+	 * @param string $dtStr
+	 * @return int timestamp
+	 */
+	public static function dtStrToTs($dtStr) {
+		return Date::mkdate(substr($dtStr, 5, 2), substr($dtStr, 7, 2), substr($dtStr, 0, 4));
+	}
+
 	/**
 	 * Converts a monthly offset from Jan 2009 to a timestamp
 	 * @param int $mon offset in months
 	 * @return int timestamp
 	 */
 	public static function monthtotime($mon) {
-		return mkdate(1 + $mon, 1, 2009);
+		return Date::mkdate(1 + $mon, 1, 2009);
 	}
 	/**
 	 * Converts an offset from 1st [curr_month] 2009 to a timestamp, where the offset is an index of
@@ -214,7 +232,7 @@ class Date {
 			$days -= $dim;
 			$y++;
 		}
-		return mkdate($m, $days, $y);
+		return Date::mkdate($m, $days, $y);
 	}
 	public static function time_av($times) {
 		for($i = 0; $i < count($times); $i++) {
@@ -236,7 +254,7 @@ class Date {
 	}
 
 	public static function get_days_in_month($month, $year = 2009) {
-		return date('t',mkdate($month,2,$year));
+		return date('t',Date::mkdate($month,2,$year));
 	}
 	public static function get_seasondays($sea, $year = 2009) {
 		$days = 0;
@@ -244,11 +262,11 @@ class Date {
 		return $days;
 	}
 	public static function get_days_in_year($year) {
-		return date("z", mkdate(12,31,$year)) + 1;
+		return date("z", Date::mkdate(12,31,$year)) + 1;
 	}
 
 	public static function datefull($test) {
-		return date('jS', mkdate(1,$test));
+		return date('jS', Date::mkdate(1,$test));
 	}
 	public static function monthfull($mn) {
 		return self::$months3[intval($mn)-1];
@@ -277,11 +295,11 @@ class Date {
    }
    /**
 	* Convert a YYYYMMDD string to a unix timestamp
-	* @param type $stamp
+	* @param string $stamp
 	* @return type
 	*/
    public static function datestamp_to_ts($stamp) {
-	   return mkdate(substr($stamp,4,2),substr($stamp,6,2),  substr($stamp,0,4));
+	   return Date::mkdate(substr($stamp,4,2),substr($stamp,6,2),  substr($stamp,0,4));
    }
 }
 // Initialize computed static fields
@@ -349,6 +367,7 @@ class HTML {
 	* @param int $rowspan [=false]
 	*/
    public static function td($value, $class = null, $width = false, $colspan = false, $rowspan = false) {
+	   $wid = $csp = $rsp = '';
 	   if(is_null($class)) { $class = 'td4'; }
 	   if($width) { $wid = ' width="'.$width.'%"'; }
 	   if($colspan) { $csp = ' colspan="'.$colspan.'"'; }
@@ -386,11 +405,11 @@ class HTML {
 
    /**
 	* Light or Dark alternating odd/even
-	* @param type $i
+	* @param int $i
 	* @return type light or dark
 	*/
    public static function colcol($i) {
-	   return ($i % 2 == 0) ? 'light' : 'dark';
+	   return ($i % 2 == 0) ? 'rowlight' : 'rowdark';
    }
 
    /**
@@ -458,33 +477,35 @@ class Util {
 	* @param mixed $array to mean over
 	* @return mixed array on success, empty string on receiving non-array input or an array of all blanks
 	*/
-   public static function mean($array, $cnt = false) {
+   public static function mean($array) {
 	   if(!is_array($array)) {
-		   return '';
+		   return null;
 	   }
-
-	   $validCnt = 0;
-	   foreach ($array as $value) {
-		   if(!self::isBlank($value)) {
-			   $validCnt++;
-		   }
-	   }
-
-	   $finalCnt = $cnt ? $cnt : $validCnt;
-
-	   return ($validCnt > 0) ? array_sum($array)/$finalCnt : '';
+	   return array_sum($array) / Util::mycount($array);
    }
-   /**
-	* Min, max, mean, or count; computed based on $type
-	* @param mixed $arr the 1D array
-	* @param enum $type 0: min, 1: max, 2: mean, 3: count > 0
-	* @return mixed|number
-	*/
-   public static function mom($arr, $type) {
-	   if($type == 0) { return mymin($arr); }
-	   elseif($type == 1) { return mymax($arr); }
-	   elseif($type == 3) { return sum_cond($arr, true, 0); }
-	   else { return mean($arr); }
+
+   public static function extremeValAndKey($arr, $type) {
+		if(!is_array($arr)) return null;
+
+		$extreme = ($type == 0) ? PHP_INT_MAX : -1 * PHP_INT_MAX;
+		$extremeKey = null;
+
+		foreach($arr as $key => $val) {
+			if(!Util::isBlank($val)) {
+				$val = floatval($val);
+				if(($type == 0 && $val < $extreme) || 
+					($type == 1 && $val > $extreme)) {
+					$extreme = $val;
+					$extremeKey = $key;
+				}
+			}
+		}
+
+		if($extreme == PHP_INT_MAX || $extreme == -1 * PHP_INT_MAX) {
+			return null;
+		}
+
+		return [$extreme, $extremeKey];
    }
 
    /**
@@ -510,7 +531,7 @@ class Util {
 		if(!is_array($arr)) return null;
 
 		foreach($arr as $val) {
-			if(!isBlank($val)) {
+			if(!Util::isBlank($val)) {
 				$val = floatval($val);
 				if($val > $max) { $max = $val; }
 			} else {
@@ -526,7 +547,7 @@ class Util {
 		if(!is_array($arr)) return null;
 
 		foreach($arr as $val) {
-			if(!isBlank($val)) {
+			if(!Util::isBlank($val)) {
 				$val = floatval($val);
 				if($val < $min) { $min = $val; }
 			}
@@ -535,12 +556,12 @@ class Util {
 		return $min;
 	}
 
-	public static function sum_cond($arr, $isGreater, $limit, $isMean = false) {
+	public static function cond_count($arr, $isGreater = true, $limit = 0, $isMean = false) {
 		$cnt = $blanks = 0;
 
 		if($isGreater) {
 			foreach($arr as $val) {
-				if( !isBlank($val) ) {
+				if( !Util::isBlank($val) ) {
 					if($val > $limit) {
 						$cnt++;
 					}
@@ -550,7 +571,7 @@ class Util {
 			}
 		} else {
 			foreach($arr as $val) {
-				if( !isBlank($val) ) {
+				if( !Util::isBlank($val) ) {
 					if($val < $limit) {
 						$cnt++;
 					}
@@ -563,7 +584,17 @@ class Util {
 		if($blanks == count($arr))
 			return null;
 
-		if($isMean) { return mean($arr, $cnt); }
+		if($isMean) { return Util::mean($arr, $cnt); }
+		return $cnt;
+	}
+
+	public static function mycount($arr) {
+		$cnt = 0;
+		foreach($arr as $val) {
+			if( !Util::isBlank($val) ) {
+				$cnt++;
+			}	
+		}
 		return $cnt;
 	}
 
@@ -657,6 +688,9 @@ class Util {
 	 * @return bool
 	 */
 	public static function isBlank($val) {
+		if(is_array($val)) {
+			debug_print_backtrace();
+		}
 		return (strlen($val) === 0 || $val === '-');
 	}
 	/**
@@ -665,7 +699,7 @@ class Util {
 	 * @return bool
 	 */
 	public static function isNotBlank($val) {
-		return !isBlank($val);
+		return !Util::isBlank($val);
 	}
 
 	public static function monthly_extras($array) {
@@ -717,6 +751,32 @@ class Util {
 	public static function listdir($dir) {
 		return array_diff(scandir($dir), array('.', '..'));
 	}
+
+	public static function array_filter_keys($array, $callback) {
+		$result = [];
+		foreach ($array as $key => $value) {
+			if (call_user_func($callback, $key)) {
+				$result[$key] = $value;
+			}
+		}
+		return $result;
+	}
+
+	/**
+	 * Extracts values from an array of associative arrays using a specific key.
+	 *
+	 * @param array $array The input array of associative arrays.
+	 * @param string $key The key whose values to extract.
+	 * @return array The array of values.
+	 */
+	public static function array_pluck($array, $key) {
+		$result = [];
+		foreach ($array as $k => $val) {
+			$result[$k] = $val[$key];
+		}
+		return $result;
+	}
+	
 }
 
 class Misc {
@@ -741,7 +801,7 @@ class Misc {
 			$days = ($day == 0) ? listdir($mbase) : array(zerolead($day));
 			foreach($days as $d) {
 				$dbase = $mbase . $d . "/";
-				$sproc = mkdate($mi, intval($d), $year);
+				$sproc = Date::mkdate($mi, intval($d), $year);
 				if(is_null($twiset)) {
 					$sunrise = -1;
 					$sunset = 9999;

@@ -1,11 +1,13 @@
 # Pages DONE
-- wx2
+- wx2, skycam
 - wx3
+- wx4
 - wx5
 - wx6
 - wx7
 - wx8
 - wx9
+- wx10
 
 # Progress log
 
@@ -16,6 +18,14 @@
 - more pages done
 - Next up: index.php
 
+## Jun 2nd 2025
+- converted cron_tags into something much more readable with DataSummarizer
+- TODO: continue converting ViewDetailedData to use that instead of crontags
+
+## Dec 26th 2025
+
+
 ## TODO
+- wx12
 - Improve responsive design - test all pages
 

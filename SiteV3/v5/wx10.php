@@ -1,65 +1,44 @@
-<?php require('unit-select.php'); ?>
-
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 <?php
-	$file = 10; ?>
+require("Page.php");
+require("ViewDetailedData.php");
+Page::init([
+	"fileNum" => 10,
+	"title" => "Humidity Detail",
+	"description" => 'Detailed latest humidity (dew point, relative humidity etc.) data/information and records from NW3 weather station.'
+]);
+Page::Start();
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-	<title>NW3 Weather - Humidity Detail</title>
+require ROOT.'HumidityTags.php';
 
-	<meta name="description" content="Detailed latest humidity (dew point, relative humidity etc.) data/information and records from NW3 weather station" />
-
-	<?php require('chead.php'); ?>
-	<?php include('ggltrack.php') ?>
-</head>
-
-<body>
-	<!-- ##### Header ##### -->
-	<?php require('header.php'); ?>
-
-	<!-- ##### Left Sidebar ##### -->
-	<?php require('leftsidebar.php'); ?>
-
-
-	<!-- ##### Main Copy ##### -->
-<div id="main">
-<?php require('site_status.php'); ?>
-<?php require $root.'HumidityTags.php'; ?>
-
-<?php
 //http://www.gorhamschaffler.com/humidity_formulas.htm
-$airdensity = $pres / (($temp + 273.15) * 287) * 100000;
+$airdensity = Wx::conv(Live::$pres / ((Live::$temp + 273.15) * 287) * 100000, Wx::Density, true, false, -2);
 //http://forum.onlineconversion.com/showthread.php?t=567
-$B44 = $temp; $C42 = $humi;
+$B44 = Live::$temp; $C42 = Live::$humi;
 $abshum = ((0.000002*pow($B44,4))+(0.0002*pow($B44,3))+(0.0095*pow($B44,2))+(0.337*$B44)+4.9034)*$C42/100;
 
 //http://forum.weatherzone.com.au/ubbthreads.php/topics/1096474/Wet_Bulb_Temperature_calculati
-$Tc = $temp; $Tdc = $dewp; $P = $pres;
+$Tc = Live::$temp; $Tdc = Live::$dewp; $P = Live::$pres;
 $E = 6.11 * pow(10, (7.5 * $Tdc / (237.7 + $Tdc)));
 $wetbulb = (((0.00066 * $P) * $Tc) + ((4098 * $E) / ( pow(($Tdc + 237.7), 2)) * $Tdc)) / ((0.00066 * $P) + (4098 * $E) / ( pow($Tdc + 237.7, 2)));
 
-require './detailDataModules.php';
 
 $humType = isset($_GET['humtype']) ? $_GET['humtype'] : 'rel';
 if($humType == 'rel') {
-	$checkRel = checkHTML;
+	$checkRel = Html::CHECK;
 	$checkDew = '';
 	$humLabel = 'Relative Humidity';
-	$mainTables = new DetailedDataModule("hum");
+	$mainTables = new ViewDetailedData("hum");
 	$measures = array('Relative Humidity','Humidity Trend','24hr Mean Humidity', 'Wet-Bulb Temperature','Absolute Humidity','Air Density');
-	$values = array($humi,conv($HR24['changeHr']['humi'],5,1,1) . ' /hr',$HR24['mean']['humi'], $wetbulb,$abshum,$airdensity);
-	$conv = array(5,false,5, 1,10,10);
+	$values = array(Live::$humi,Wx::conv(Live::$HR24['changeHr']['humi'],Wx::Humidity,1,1) . ' /hr',Live::$HR24['mean']['humi'], $wetbulb,$abshum,$airdensity);
+	$conv = array(Wx::Humidity,Wx::None,Wx::Humidity, Wx::Temperature,Wx::Density,Wx::None);
 } else {
 	$checkRel = '';
-	$checkDew = checkHTML;
+	$checkDew = Html::CHECK;
 	$humLabel = 'Dew Point';
-	$mainTables = new DetailedDataModule("dew");
+	$mainTables = new ViewDetailedData("dew");
 	$measures = array('Dew Point','Dew Pt Trend','24hr Mean Dew Pt', 'Wet-Bulb Temperature','Absolute Humidity','Air Density');
-	$values = array($dewp,conv($HR24['changeHr']['dewp'],1.1,1,1) . ' /hr',$HR24['mean']['dewp'], $wetbulb,$abshum,$airdensity);
-	$conv = array(1,false,1, 1,10,10);
+	$values = array(Live::$dewp,Wx::conv(Live::$HR24['changeHr']['dewp'],Wx::AbsTemp,1,1) . ' /hr',Live::$HR24['mean']['dewp'], $wetbulb,$abshum,$airdensity);
+	$conv = array(Wx::Temperature,Wx::None,Wx::Temperature, Wx::Temperature,Wx::Density,Wx::None);
 }
 echo 'Humidity Type:
 	<form style="margin-right:1em;" action="" method="get">
@@ -73,20 +52,9 @@ echo 'Humidity Type:
 	<h1>Detailed '.$humLabel.' Data</h1>
 ';
 
-
 $mainTables->currentLatest($measures, $values, $conv);
-$mainTables->recentAvgsExtrms();
-$mainTables->graph31dump();
 $mainTables->avgsExtrmsRecs();
-
-echo '<br />';
 $mainTables->pastYearAvgsExtrms();
-echo '<br />';
-
-$mainTables->seasonalAvgs();
-$mainTables->graph12Dump();
-$mainTables->recordPeriodAvgs();
-
 $mainTables->rankTables();
 ?>
 
@@ -102,7 +70,7 @@ $mainTables->rankTables();
 <a name="help"></a>
 <p><b><span style="color:green">The different measures of humidity:</span></b> <br />
 
-<b>The Dew Point</b> (or frost point if the temperature is &lt; <?php echo conv(0,1,1); ?>&nbsp;
+<b>The Dew Point</b> (or frost point if the temperature is &lt; <?php echo Wx::conv(0,Wx::Temperature,1); ?>, true, false, -1)&nbsp;
 is the saturation temperature of a parcel of air, i.e. the point at which water condenses out.
 It is the temperature at which an object would need to be
 for dew to form on it (dew forms because certain objects - like cars - cool more rapidly than the air, enabling them to
@@ -121,10 +89,5 @@ so it is more saturated, as less water vapour can exist in cooler air.
 relative humidity is just a measure of the degree to which the air is full of water vapour (i.e. its saturation).
 One is an absolute measure, the other is relative.</p>
 
-</div>
 
-<!-- ##### Footer ##### -->
-<?php require('footer.php'); ?>
-
-</body>
-</html>
+<?php Page::End(); ?>

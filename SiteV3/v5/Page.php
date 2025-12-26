@@ -5,11 +5,8 @@ date_default_timezone_set('Europe/London');
 
 // NB: see end of file for other inclusions and init
 require("UtilsAndConsts.php");
-require("WxData.php");
-
-const UNIT_UK = 0;
-const UNIT_US = 1;
-const UNIT_EU = 2;
+require("WxDefinition.php");
+require("WxFn.php");
 
 class Page {
 	const JQUERY = '<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>';
@@ -22,7 +19,7 @@ class Page {
 	public static $fileNum;
 	// optionals
 	public static $isSubFile = false;
-	public static $allDataNeeded = false;
+	public static $allDataNeeded = false;  // Currently unused
 	public static $needValcolStyle = false;
 
 	public static $syr;
@@ -35,10 +32,6 @@ class Page {
 	public static $isBot = false;
 	public static $pageName = "";
 	public static $units = UNIT_UK;
-
-	// TODO: put somewhere better
-	public static $DATA;
-	public static $DATM;
 
 	private static $start;
 	private static $mailBuffer;
@@ -65,10 +58,6 @@ class Page {
 
 		// Init other static stuff
 		Live::init();
-		if (self::$allDataNeeded) {
-			self::$DATA = unserialize(file_get_contents(ROOT . 'serialised_dat.txt'));
-			self::$DATM = unserialize(file_get_contents(ROOT . 'serialised_datm.txt'));
-		}
 	}
 
 	public static function Start() {

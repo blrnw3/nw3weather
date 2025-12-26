@@ -67,7 +67,7 @@
 					<div>
 						<span style="font-size:85%">
 							<?php
-							echo 'PHP executed '. acronym('Session count: '. $_SESSION['count'][$file], 'in ') . $phpload .'s';
+							echo 'PHP executed '. HTML::acronym('Session count: '. $_SESSION['count'][$file], 'in ') . $phpload .'s';
 							if($me) {
 								$mem_usage = round(memory_get_usage() / 1024 / 1024, 1);
 								$mem_peak = round(memory_get_peak_usage() / 1024 / 1024, 1);

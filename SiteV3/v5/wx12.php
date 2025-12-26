@@ -1,41 +1,22 @@
-<?php require('unit-select.php'); ?>
-
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 <?php
-	$file = 12;
+require "Page.php";
+require "ViewDetailedData.php";
+Page::init([
+	"fileNum" => 12,
+	"title" => "Rain Detail",
+	"description" => 'Detailed latest rainfall data, graphs and records from NW3 weather station.'
+]);
+Page::Start();
+
+require ROOT.'RainTags.php';
+require ROOT.'Rain2Tags.php';
 ?>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-	<title>NW3 Weather - Rain Detail</title>
-
-	<meta name="description" content="Detailed latest rainfall data, graphs and records from NW3 weather station" />
-
-	<?php require('chead.php'); ?>
-	<?php include('ggltrack.php') ?>
-</head>
-
-<body>
-	<!-- ##### Header ##### -->
-	<?php require('header.php'); ?>
-
-	<!-- ##### Left Sidebar ##### -->
-	<?php require('leftsidebar.php'); ?>
-
-	<!-- ##### Main Copy ##### -->
-
-	<div id="main">
-
-<?php require('site_status.php'); ?>
-<?php require $root.'RainTags.php'; ?>
-<?php require $root.'Rain2Tags.php'; ?>
 
 <h1>Detailed Rainfall Data</h1>
 
 <table class="table1" width="34%" align="left" cellpadding="5" cellspacing="0">
 <?php
-tableHead("Current / Latest", 2);
+Html::tableHead("Current / Latest", 2);
 echo '<tr class="table-top"><td class="td12" colspan="1">Measure</td><td class="td12" colspan="1">Value</td></tr>';
 $measures = array('Daily Rain','Rain Last 10 mins','Rain Last Hour','Rain Last 3 hrs','Rain Last 6 hrs','Rain Last 24 hrs',
 	'Rain Duration','Rain Rate','Past 24hrs Duration', '---','Most Recent Rain',
@@ -62,8 +43,8 @@ for($r = 0; $r < count($measures); $r++) {
 
 <table class="table1" width="65%" align="center" cellpadding="5" cellspacing="0" >
 <?php
-tableHead("Current Extremes", 5);
-tr();
+Html::tableHead("Current Extremes", 5);
+Html::tr();
 $headings = array('Measure', 'Year', 'Month', 'Today', 'Yesterday');
 $measures = array('Wettest Day','Most Rain In One Hour','Max Rain Rate','Longest Wet Spell','Longest Dry Spell','Wettest Month','Driest Month','Most Rain Days',
 	'Fewest Rain Days');
@@ -79,9 +60,9 @@ $timesY = array($yrecorddailyraindate, $yrecorddailyhrmaxdate, $yrecorddailyrate
 $timesB = array('', norain_fix($maxhourrnyesttime,$yestrn), norain_fix($maxrainrateyesttime,$yestrn,true), '', '', '', '', '', '');
 
 for($h = 0; $h < count($headings); $h++) {
-	td($headings[$h], "td12", $widthsTbl2[$h]);
+	Html::td($headings[$h], "td12", $widthsTbl2[$h]);
 }
-tr_end();
+Html::tr_end();
 
 for($r = 0; $r < count($measures); $r++) {
 	if($r % 2 == 0) { $colcol = 'light'; } else { $colcol = 'dark'; }
@@ -106,9 +87,9 @@ for($r = 0; $r < count($measures); $r++) {
 
 <table class="table1" width="65%" align="left" cellpadding="5" cellspacing="0">
 <?php
-tableHead("Records", 4);
-tr();
-$headings = array('Measure', 'Overall', $monthname, datefull($dday) . ' ' .monthfull($dmonth));
+Html::tableHead("Records", 4);
+Html::tr();
+$headings = array('Measure', 'Overall', $monthname, Date::datefull(Date::$dday) . ' ' .Date::monthfull(Date::$dmonth));
 $marginsRecords = array(21, 29, 27, 23);
 //$measures = array('Max Rain In One Day','Most Rain In One Hour','Max Rain Rate','Longest Wet Spell','Longest Dry Spell','Wettest Month','Driest Month','Most Rain Days',
 //	'Fewest Rain Days');
@@ -120,9 +101,9 @@ $timesD = array($maxrainDdate, $maxhrmaxDdate, $maxrateDdate, '', '', '', '', ''
 $timesM = array($maxrainMDdate, $maxhrmaxMDdate, $maxrateMDdate, $recwetlength_currdate, $recdrylength_currdate, $monthrn_max_currdate, $monthrn_min_currdate, $rndays_max_currdate, $rndays_min_currdate);
 $timesA = array($recorddailyraindate, $recorddailyhrmaxdate, $recorddailyratedate, $recwetlengthdate, $recdrylengthdate, $monthrn_maxdate, $monthrn_mindate, $rndays_maxdate, $rndays_mindate);
 for($h = 0; $h < count($headings); $h++) {
-	td($headings[$h], "td12", $marginsRecords[$h]);
+	Html::td($headings[$h], "td12", $marginsRecords[$h]);
 }
-tr_end();
+Html::tr_end();
 for($r = 0; $r < count($measures); $r++) {
 	if($r % 2 == 0) { $colcol = 'light'; } else { $colcol = 'dark'; }
 	echo '<tr class="row', $colcol, '">
@@ -138,8 +119,8 @@ for($r = 0; $r < count($measures); $r++) {
 
 <table class="table1" align="center" width="34%" cellpadding="5" cellspacing="0">
 <?php
-tableHead("Wettest Days");
-tr();
+Html::tableHead("Wettest Days");
+Html::tr();
 echo '<td class="td12" colspan="1">Rank</td><td class="td12" colspan="1">Value</td><td class="td12" colspan="1">Date</td></tr>';
 
 for($i = 1; $i <= $ranknum; $i++) {
@@ -158,8 +139,8 @@ for($i = 1; $i <= $ranknum; $i++) {
 
 <table class="table1" width="65%" align="left" cellpadding="5" cellspacing="0">
 <?php
-tableHead("More Records");
-tr();
+Html::tableHead("More Records");
+Html::tr();
 echo '<td class="td12" colspan="1">Measure</td><td class="td12" colspan="1">Value and Date</td></tr>';
 if($rn24 > 54.2) {
 	$record24hrrain = $rn24;
@@ -186,8 +167,8 @@ for($r = 0; $r < count($measures); $r++) {
 
 <table class="table1" align="center" width="34%" cellpadding="5" cellspacing="0">
 <?php
-tableHead("Wettest Months");
-tr();
+Html::tableHead("Wettest Months");
+Html::tr();
 echo '<td class="td12" colspan="1">Rank</td><td class="td12" colspan="1">Value</td><td class="td12" colspan="1">Date</td></tr>';
 for($i = 1; $i <= 8; $i++) {
 	$style = colcol($i);
@@ -205,14 +186,14 @@ for($i = 1; $i <= 8; $i++) {
 
 <table class="table1" align="left" width="50%" cellpadding="5" cellspacing="0">
 <?php
-tableHead("Past Year Monthly Totals");
-tr();
+Html::tableHead("Past Year Monthly Totals");
+Html::tr();
 echo '<td class="td12">Month</td><td class="td12">Total</td><td class="td12">Anomaly</td></tr>';
 for($i = 0; $i < 12; $i++) {
 	if($i % 2 == 0) { $style = 'rowlight'; } else { $style = 'rowdark'; } $hlite = ''; $yr2 = '';
-	if($i+1 == intval($dmonth)) { $raintots[$i] = $lymrain; $yr2 = $dyear-1; }
-	if($i+1 == intval($dmonth)-1) { $hlite = 'border-bottom:3px solid #8181F7'; }
-	$yr1 = ''; if($i == 0) { $yr1 = $dyear; } if($yr1 == $yr2) { $yr1 = ''; }
+	if($i+1 == intval(Date::$dmonth)) { $raintots[$i] = $lymrain; $yr2 = Date::$dyear-1; }
+	if($i+1 == intval(Date::$dmonth)-1) { $hlite = 'border-bottom:3px solid #8181F7'; }
+	$yr1 = ''; if($i == 0) { $yr1 = Date::$dyear; } if($yr1 == $yr2) { $yr1 = ''; }
 	if(date('m') < 2) { $yr1 = ''; }
 	echo '<tr class="', $style, '"><td style="', $hlite, '" class="td12">', date('F ',mkdate($i+1, 1)), $yr1, $yr2, '</td><td style="', $hlite, '" class="td12">',
 	conv($raintots[$i],2,1), '</td><td style="', $hlite, '" class="td12">', percent($raintots[$i],$rainav[$i],0,true,false), '</td></tr>
@@ -228,8 +209,8 @@ $style_end = 'border-top:4px solid #0431B4;border-bottom:4px solid #0431B4;font-
 
 <table class="table1" align="center" width="34%" cellpadding="5" cellspacing="0">
 <?php
-tableHead("Driest Months");
-tr();
+Html::tableHead("Driest Months");
+Html::tr();
 echo '<td class="td12" colspan="1">Rank</td><td class="td12" colspan="1">Value</td><td class="td12" colspan="1">Date</td></tr>';
 
 for($i = 1; $i <= 8; $i++) {
@@ -248,21 +229,21 @@ for($i = 1; $i <= 8; $i++) {
 
 <table class="table1" align="center" width="48%" cellpadding="5" cellspacing="0">
 <?php
-tableHead("Past Year Seasonal Totals");
-tr();
+Html::tableHead("Past Year Seasonal Totals");
+Html::tr();
 echo '<td class="td12">Season</td><td class="td12">Total</td><td class="td12">Anomaly</td></tr>';
 
 
 // When the season is in full swing, we need to use monthly totals from >12 months ago
-if($sc >= 2) { $raintots[$dmonth == 1 ? 11 : $dmonth-2] = $lymrain1; }
-if($sc == 3) { $raintots[$dmonth == 2 ? 11 : $dmonth-3] = $lymrain2; }
+if($sc >= 2) { $raintots[Date::$dmonth == 1 ? 11 : Date::$dmonth-2] = $lymrain1; }
+if($sc == 3) { $raintots[Date::$dmonth == 2 ? 11 : Date::$dmonth-3] = $lymrain2; }
 
 $sraintots = array($raintots[0]+$raintots[1]+$raintots[11], $raintots[2]+$raintots[3]+$raintots[4], $raintots[5]+$raintots[6]+$raintots[7], $raintots[8]+$raintots[9]+$raintots[10]);
 $srainav = array($rainav[0]+$rainav[1]+$rainav[11], $rainav[2]+$rainav[3]+$rainav[4], $rainav[5]+$rainav[6]+$rainav[7], $rainav[8]+$rainav[9]+$rainav[10]);
 for($i = 0; $i < 4; $i++) {
 	if($i % 2 == 0) { $style = 'rowlight'; } else { $style = 'rowdark'; } $hlite = '';
 	if($i+1 == $season-1) { $hlite = 'border-bottom:3px solid #8181F7'; }
-	if($i+1 < $season || date('n') == 12) { $nwint = $dyear; } else { $nwint = $dyear-1; } $dfo1 = date('Y')-2001; $dfo2 = date('Y')-2000; $dfo3 = date('Y')-2002;
+	if($i+1 < $season || date('n') == 12) { $nwint = Date::$dyear; } else { $nwint = Date::$dyear-1; } $dfo1 = date('Y')-2001; $dfo2 = date('Y')-2000; $dfo3 = date('Y')-2002;
 	if(date('n') > 2) { $wint = $dfo1 .'/' .$dfo2; } else { $wint = $dfo3 .'/' .$dfo1; } $yr3 = array($wint, $nwint, $nwint, $nwint);
 	echo '<tr class="', $style, '"><td style="', $hlite, '" class="td12">', $snames[$i], ' ', $yr3[$i], '</td><td style="', $hlite, '" class="td12">',
 	conv($sraintots[$i],2,1), '</td><td style="', $hlite, '" class="td12">', percent($sraintots[$i],$srainav[$i],0,true,false), '</td></tr>';
@@ -284,13 +265,8 @@ for($i = 0; $i < 4; $i++) {
 <b>Note 4:</b> Rain rate records are manually checked, and changed if necessary, due to occasional lag in data transmission. Initial high readings may well be corrected at a later date.<br />
 </p>
 
-<p><a href="wxdataday.php?vartype=rain" title="<?php echo $dyear; ?>daily rain totals"><b>View daily totals for the past year</b></a></p>
+<p><a href="wxdataday.php?vartype=rain" title="<?php echo Date::$dyear; ?>daily rain totals"><b>View daily totals for the past year</b></a></p>
 
 <?php if($rn24 > 0) { echo '<img style="margin:5px" src="graphdayA.php?type1=rain&amp;x=800&amp;y=400" alt="Last 24hrs Rainfall" />'; } ?>
 
-</div>
-
-<!-- ##### Footer ##### -->
-<?php require('footer.php'); ?>
- </body>
-</html>
+<?php Page::End(); ?>
