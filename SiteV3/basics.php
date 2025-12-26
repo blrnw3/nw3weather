@@ -78,16 +78,16 @@ $mailBuffer = array(); //used for delaying email sending
 $mailBufferCount = 0;
 
 const HTML_START = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-	<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+	"https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+	<html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 	';
 
-const JQUERY = '<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>';
+const JQUERY = '<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>';
 
 const GRAPH_DIMS_LARGE = ' height="1017" width="850" ';
 const GRAPH_DIMS_SMALL = ' height="619" width="542" ';
 
-$sunGrabTime = '0836'; // When to scrape Wonline for EGLL Sun Hrs
+$datmCheckTime = '0603'; // When to check if datm has been written
 
 /*
  * ###### BUGS #####

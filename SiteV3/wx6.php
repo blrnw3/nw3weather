@@ -1,7 +1,7 @@
 <?php require('unit-select.php'); ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+	"https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <?php
 
@@ -13,7 +13,7 @@ $twilightAM = date_sunrise(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenithTwi, 
 $twilightPM = date_sunset(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenithTwi, date('I'));
 ?>
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 	<head>
 		<title>NW3 Weather - Sun and Moon Info</title>
 
