@@ -96,15 +96,8 @@ file_put_contents( ROOT.'serialised_datNow.txt', serialize($newNOW) );
 file_put_contents( ROOT.'serialised_datHr24.txt', serialize( dailyData( date('Ymd') ) ) );
 
 //datm append
-if($tstamp == $sunGrabTime) {
-	$sunhrs = getSunHrs();
-	$wethrs = file_get_contents(ROOT."wethrs.txt");
-	$pond_temp_yest = $newNOW["misc"]["pondTemp"];
-	$listm = array($sunhrs,$wethrs,'u','','','','','','blr','','','1',$pond_temp_yest,'\n');
-	$fildatm = fopen(ROOT."datm" . $yr_yest . ".csv", "a");
-	fputcsv($fildatm, $listm);
-	fclose($fildatm);
-	copy(ROOT.'datm' . $yr_yest . '.csv', ROOT.'backup/datm' . $yr_yest.'-'.$day_yest . '.csv');
+if($tstamp == $datmCheckTime) {
+	checkDatmWritten();
 }
 
 if($fiveMinutely) {
@@ -250,20 +243,20 @@ if(true && (date('i') % 5 == 1)) {
 //		quick_log("james_bad_data.txt", $dataJames[0]);
 //	}
 	// Nearby CWOP (Islington)
-	$pathIslington = "https://meteoglance.com/api/v0/station/2E0RGX-13";
-	$dataIslington = urlToArray($pathIslington);
-	if($dataIslington[0]) {
-		file_put_contents(ROOT.'EXT_islington.json', $dataIslington[0]);
+	// $pathIslington = "https://meteoglance.com/api/v0/station/2E0RGX-13";
+	// $dataIslington = urlToArray($pathIslington);
+	// if($dataIslington[0]) {
+	// 	file_put_contents(ROOT.'EXT_islington.json', $dataIslington[0]);
+	// } else {
+	// 	quick_log("islington_bad_data.txt", $dataIslington[0]);
+	// }
+	$pathPotters = "https://meteoglance.com/api/v0/station/G6LTT";
+	$dataPotters = urlToArray($pathPotters);
+	if($dataPotters[0]) {
+		file_put_contents(ROOT.'EXT_potters.json', $dataPotters[0]);
 	} else {
-		quick_log("islington_bad_data.txt", $dataIslington[0]);
+		quick_log("potters_bad_data.txt", $dataPotters[0]);
 	}
-//	$pathPotters = "https://meteoglance.com/api/v0/station/G6LTT";
-//	$dataPotters = urlToArray($pathPotters);
-//	if($dataPotters[0]) {
-//		file_put_contents(ROOT.'EXT_potters.json', $dataPotters[0]);
-//	} else {
-//		quick_log("potters_bad_data.txt", $dataPotters[0]);
-//	}
 }
 
 //########### OLD WD file crap ##########//
@@ -336,6 +329,10 @@ foreach($HR24['trend'] as $ti => $trend) {
 }
 if($same && (date('i') % 10 == 1)) {
 	mail("alerts@nw3weather.co.uk","Data is flat-lining","Alert! Temperature/Hum is stuck at $temp / $humi");
+}
+
+if($tstamp == '2336') {
+	pullAndSavePondData();
 }
 
 ///////END OF SCRIPT////////END OF SCRIPT///////////////////////////////////////////////////////////################
@@ -481,11 +478,13 @@ function serialiseCSV($csv, $today = true) {
 	global $dyear, $dmonth, $dday, $siteRoot, $newNOW;
 
 	$data = array();
+	$dataNew = [];
 
 	for($year = 2009; $year <= $dyear; $year++) {
 		$yrfil = $siteRoot.$csv.$year.'.csv';
 		if(file_exists($yrfil)) {
 			$raw = file($yrfil);
+			$header = explode(',', trim($raw[0]));
 			$cntRaw = count($raw);
 			for($i = 1; $i < $cntRaw; $i++) {
 				$day = date('j', strtotime('Jan 1st '. (string)$year . ' + ' . (string)($i-1) . ' days'));
@@ -494,6 +493,7 @@ function serialiseCSV($csv, $today = true) {
 				$cntRawa = count($rawa);
 				for($j = 0; $j < $cntRawa; $j++) {
 					$data[$j][$year][$month][$day] = $rawa[$j];
+					$dataNew[$header[$j]][$year][$month][$day] = $rawa[$j];
 				}
 			}
 			if( $year == $dyear && $today && $csv != 'datm' ) {
@@ -531,21 +531,27 @@ function serialiseCSV($csv, $today = true) {
 
 				for($j = 0; $j < $cntRawa; $j++) {
 					$data[$j][$year][$dmonth][$dday] = ($csv == 'dat') ? $list[$j] : $listt[$j];
+					$dataNew[$header[$j]][$year][$dmonth][$dday] = ($csv == 'dat') ? $list[$j] : $listt[$j];
 				}
 			}
 		}
 	}
 	file_put_contents( ROOT.'serialised_'.$csv.'.txt', serialize($data) );
+	file_put_contents( ROOT.'serialised_'.$csv.'_new.txt', serialize($dataNew) );
 	// For perf, serialize each var too
 	if($csv === "dat") {
-		foreach ($data as $var => $dat) {
-			file_put_contents( ROOT."serialised_dat_$var.txt", serialize($dat) );
+		foreach ($data as $j => $dat) {
+			file_put_contents( ROOT."serialised_dat_$j.txt", serialize($dat) );
+		}
+		foreach ($dataNew as $j => $dat) {
+			file_put_contents( ROOT."serialised_dat_new_$j.txt", serialize($dat) );
 		}
 	}
 }
 
 function serialiseCSVm() {
 	$data = array();
+	$dataNew = [];
 
 	$DATA = unserialize(file_get_contents(ROOT . 'serialised_dat.txt'));
 
@@ -553,6 +559,7 @@ function serialiseCSVm() {
 		$yrfil = ROOT.'datm'.$year.'.csv';
 		if(file_exists($yrfil)) {
 			$raw = file($yrfil);
+			$header = explode(',', trim($raw[0]));
 			$cnt1 = count($raw);
 			for($i = 1; $i < $cnt1; $i++) {
 				$rawa = explode(',', $raw[$i]);
@@ -572,41 +579,26 @@ function serialiseCSVm() {
 						$rawa[$j] = '';
 					}
 					$data[$j][$year][$month][$day] = $rawa[$j];
+					$dataNew[$header[$j]][$year][$month][$day] = $rawa[$j];
 				}
 			}
 		}
 	}
 	file_put_contents( ROOT.'serialised_datm.txt', serialize($data) );
+	file_put_contents( ROOT.'serialised_datm_new.txt', serialize($dataNew) );
 	// For perf, serialize each var too
-	foreach ($data as $var => $dat) {
-		file_put_contents( ROOT."serialised_datm_$var.txt", serialize($dat) );
+	foreach ($data as $j => $dat) {
+		file_put_contents( ROOT."serialised_datm_$j.txt", serialize($dat) );
+	}
+	foreach ($dataNew as $j => $dat) {
+		file_put_contents( ROOT."serialised_dat_new_$j.txt", serialize($dat) );
 	}
 }
 
-function getSunHrs() {
-	$ts = mktime(12, 0, 0, date('n'),date('j')-1, date('Y'));
-	$url = "http://www.weatheronline.co.uk/weather/maps/current?CONT=ukuk&TYP=sonne&ART=tabelle&DATE=${ts}&";
-	$fileSun = urlToArray($url, 20);
-	if(!$fileSun) return "0";
-	$len = count($fileSun);
-	$sunHrs = 0;
-	for($i = 300; $i < $len; $i++) {
-		if(strpos($fileSun[$i], 'Heathrow')) {
-			$sunHrs = (int) strip_tags($fileSun[$i+1]);
-			break;
-		}
+function checkDatmWritten() {
+	if(write_datm("0")) {
+		mail("alerts@nw3weather.co.uk", "Failed to receive sunhrs!", "Data not written for this day so defaulted to zero sun");
 	}
-	//Store the raw file for debugging
-	$hand = fopen(ROOT.'sunhrs_raw.htm', 'w');
-	foreach($fileSun as $line) {
-		fwrite($hand, $line);
-	}
-	fclose($hand);
-	quick_log("sunHrs.txt", $i ." / ". $len);
-	if($i === $len) {
-		mail("alerts@nw3weather.co.uk", "Failed to get sunhrs!", "Get on it. URL was $url");
-	}
-	return "$sunHrs";
 }
 
 function get_wuvu_cnt() {
@@ -676,6 +668,50 @@ function serializeHistoricalData() {
 	foreach ($data as $var => $dat) {
 		file_put_contents( ROOT."serialised_historical_$var.txt", serialize($dat) );
 	}
+}
+
+function pullAndSavePondData($url = 'https://ponds.nsupdate.info/pond-temps.html', $outputFile = 'pond_temp.txt') {
+    try {
+        // Get the HTML content
+        $html = @file_get_contents($url);
+        if (!$html) {
+            throw new Exception("Failed to fetch the web page.");
+        }
+		file_put_contents(ROOT."pond_raw.html", $html);
+
+        // Load HTML into DOMDocument
+        $dom = new DOMDocument();
+        libxml_use_internal_errors(true);
+        $dom->loadHTML($html);
+        libxml_clear_errors();
+        
+		$table = $dom->getElementsByTagName('table')->item(0);
+        if (!$table) {
+            throw new Exception("No table found.");
+        }
+
+        $output = null;
+        foreach ($table->getElementsByTagName('tr') as $row) {
+            if ($row->parentNode->nodeName == 'thead') continue;
+
+            $cols = $row->getElementsByTagName('td');
+            if ($cols->length < 2) continue;
+
+            $deepTemp = trim($cols->item(1)->nodeValue);
+
+            $output = $deepTemp;
+			break;
+        }
+        if (!is_null($output)) {
+            file_put_contents(ROOT.$outputFile, $output);
+			return $output;
+        } else {
+            throw new Exception("No data found to write.");
+        }
+    } catch (Exception $e) {
+        echo "Error: " . $e->getMessage() . "\n";
+        return null;
+    }
 }
 
 ?>

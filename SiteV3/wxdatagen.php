@@ -147,7 +147,9 @@ $valcolSumOffset = 250 / $valcol[$typevalcolNum][count($valcol[$typevalcolNum])-
 if(!$badCats) {
 	$badCats = [];
 }
-
+if($description === 'Pond Temperature') {
+	$description = 'Pond Temperature @ Hampstead Heath';
+}
 echo '<h1>'. $datgenHeading .' - ', $description,
 	 ' / ', $std_units[ $units_all[$types_all[$type]] ], '<br /></h1>';
 

@@ -3,9 +3,9 @@ require('unit-select.php');
 	 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+   "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 	<title>NW3 Weather - Data Input</title>
 
@@ -32,6 +32,86 @@ if(isset($_GET['cerealify'])) {
 	die();
 }
 
+
+
+// Extract sunny time ranges from a JSON file of 5-min predictions
+function getSunnyRangesFromJson($jsonPath, $returnAsString = false) {
+	if(!is_string($jsonPath) || $jsonPath === '' || !file_exists($jsonPath)) {
+		return $returnAsString ? '' : [];
+	}
+	$raw = file_get_contents($jsonPath);
+	$data = json_decode($raw, true);
+	if(!is_array($data) || !isset($data['preds']) || !is_array($data['preds'])) {
+		return $returnAsString ? '' : [];
+	}
+	$freq = isset($data['freq']) ? intval($data['freq']) : 5;
+	$preds = $data['preds'];
+
+	// Ensure chronological order by HHMM keys
+	ksort($preds, SORT_STRING);
+
+	$toMinutes = function($hhmm) {
+		$hhmm = str_pad($hhmm, 4, '0', STR_PAD_LEFT);
+		$h = intval(substr($hhmm, 0, 2));
+		$m = intval(substr($hhmm, 2, 2));
+		return $h * 60 + $m;
+	};
+	$toHHMM = function($minutes) {
+		$h = floor($minutes / 60);
+		$m = $minutes % 60;
+		return sprintf('%02d:%02d', $h, $m);
+	};
+
+	$ranges = [];
+	$currentStartMin = null;
+	$prevMin = null;
+
+	foreach($preds as $hhmm => $isSunny) {
+		$curMin = $toMinutes($hhmm);
+		if($isSunny) {
+			if($currentStartMin === null) {
+				// starting a new sunny stretch
+				$currentStartMin = $curMin;
+			} else if($prevMin !== null && $curMin > $prevMin + $freq) {
+				// gap detected; close previous range at prev + freq
+				$ranges[] = [$currentStartMin, $prevMin + $freq];
+				$currentStartMin = $curMin;
+			}
+			$prevMin = $curMin;
+		} else {
+			if($currentStartMin !== null) {
+				// close sunny block at prev + freq
+				$endMin = ($prevMin === null) ? $curMin : $prevMin + $freq;
+				$ranges[] = [$currentStartMin, $endMin];
+				$currentStartMin = null;
+				$prevMin = null;
+			} else {
+				$prevMin = null; // remain outside sunny period
+			}
+		}
+	}
+
+	// Close final open range (if the day ends sunny)
+	if($currentStartMin !== null) {
+		$endMin = ($prevMin === null) ? $currentStartMin : $prevMin + $freq;
+		$ranges[] = [$currentStartMin, $endMin];
+	}
+
+	// For each range, also print out in brackets the length in hours, to 1dp
+	$formatted = array_map(function($r) use ($toHHMM) {
+		$start = $r[0];
+		$end = $r[1];
+		$length_mins = $end - $start;
+		$length_hrs = round($length_mins / 60, 1);
+		return $toHHMM($start) . '-' . $toHHMM($end) . ' (' . $length_hrs . 'h)';
+	}, $ranges);
+
+	if($returnAsString) {
+		return implode(', ', $formatted);
+	}
+	return $formatted;
+}
+
 if(isset($_GET['dtm'])) { $dtm = $_GET['dtm']; } else { $dtm = 1; }
 $mod_timestamp = mkdate(date('n'),date('j')-$dtm, date('Y'));
 
@@ -41,9 +121,9 @@ $sunset_time = date_sunset($mod_timestamp, SUNFUNCS_RET_STRING, $lat, $lng, $zen
 echo "Sunrise: $sunrise_time. Sunset: $sunset_time.<br />";
 echo "Camlink: <a href='/highreswebcam.php?camtype=sky&light=day&width=6&freq=10'>Highres cam for today</a>";
 
-//If less than sunhrs scrape time... WARN
-if(date('Hi') < $sunGrabTime) {
-	echo "<h2><b>WARNING: TOO EARLY!</b></h2><p>Cannot make any edits until after $sunGrabTime</p>";
+//If less than datmCheckTime... WARN
+if(date('Hi') < $datmCheckTime) {
+	echo "<h2><b>WARNING: TOO EARLY!</b></h2><p>Cannot make any edits until after $datmCheckTime</p>";
 }
 
 //Link to EGLC pressure
@@ -53,8 +133,8 @@ echo '<br />'
 
 echo 'datt size in B: ', filesize($fullpath."datt" . date('Y',mktime(1,1,1,date('n'),date('j')-$dtm,date('Y'))) . ".csv"), '<br />';
 if(!isset($_POST['pwd'])) {
-	$sun = file(ROOT.'maxsun.csv');
-	echo 'Max sun for this day: ', $sun[date('z',$mod_timestamp)], ' hours<br />';
+    $sun = file(ROOT.'maxsun.csv');
+    echo 'Max sun for this day: ', $sun[date('z',$mod_timestamp)], ' hours<br />';
 }
 echo '<a href="datamod.php?dtm=', $dtm, '">Self link</a>';
 
@@ -123,6 +203,10 @@ if(isset($_POST['pwd'])) {
 		}
 		fclose($fildatm);
 		echo "<p>Saved!</p>";
+		// Echo the new size of the saved file
+		$datfile = $fullpath."dat" . date('Y',mktime(1,1,1,date('n'),date('j')-$dtm,date('Y'))) . ".csv";
+		$filesize = filesize($datfile);
+		echo "<p>New file size: " . number_format($filesize) . " bytes</p>";
 //		serialiseCSVm();
 
 //		exec('/usr/local/bin/php -q /var/www/html/cron_tags.php blr ftw > /dev/null &');
@@ -175,9 +259,10 @@ for($i = 0; $i < count($modline); $i++) {
 echo '</table>
 	<br />
 	<table border="1" cellpadding="5">';
+$val_comms = $modline[$types["rain"]] > 0 ? "rn" : "-";
 for($i = 0; $i < count($modlinem); $i++) {
 	if($i % 2 == 0) { $style = 'light'; } else { $style = 'dark'; }
-	$val_tag = ($types_m_original[$i] == "away") ? 'value="1"' : "";
+	$val_tag = ($types_m_original[$i] == "comms") ? 'value="'.$val_comms.'"' : "";
 	echo '<tr class="row', $style ,'"><td class="td', $data_m_num[$i] + 10 ,'C">', $types_m_original[$i], '</td>
 		<td class="td', $data_m_num[$i] + 10 ,'C">', $modlinem[$i], ' </td>
 		<td><input type="text" ', $val_tag ,' name="', $types_m_original[$i], '" /> </td>';
@@ -198,7 +283,12 @@ echo '</table><br />
 	';
 	$graphres = $target_st .'small_'. $target_en;
 
-
+if(!isset($_POST['pwd'])) {
+	// Always show sunny ranges derived from ROOT/sun/YYYYMMDD.json (uses dtm)
+	$sunJsonPath = ROOT . 'sun/' . date('Ymd', $mod_timestamp) . '.json';
+	$sunnyRanges = getSunnyRangesFromJson($sunJsonPath, true);
+	echo 'Sunny ranges: ', ($sunnyRanges === '' ? 'N/A' : htmlspecialchars($sunnyRanges, ENT_QUOTES)), '<br />';
+}
 ?>
 
 <img src="/<?php echo date("Y/Ymd", $modTimestamp); ?>dailywebcam.jpg" alt="daycamsum" />

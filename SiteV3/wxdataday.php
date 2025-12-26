@@ -2,7 +2,7 @@
 require('unit-select.php'); ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+   "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <?php
 	$file = 40;
@@ -13,7 +13,7 @@ require('unit-select.php'); ?>
 	$datgenHeading = 'Daily Data Tables';
 ?>
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 
 	<title>NW3 Weather - Annual Data Reports</title>
@@ -292,6 +292,12 @@ $descripDeets = $isNotSummarisable ? '.' : ' along with monthly summary:
 	lowest, highest'.$meanTotalCount.', and the cumulative value for the year to the month\'s end.';
 echo '<p>';
 echo $description .' in London, nw3, for every available day of '. $year . $descripDeets;
+if($type === 'pond') {
+	echo "<br />Pond temperatures are from a variety of sources, historically from manual measurement by friends who are regular swimmers of 
+	either the kenwood ladies, highgate mens, or hampstead mixed ponds.
+	Now primarily this is via <a href='https://ponds.nsupdate.info/'>automated sensors</a> thanks to the efforts
+	of volunteers at the mens pond, though data may still come from manual measurement where needed.";
+}
 if($isAnom) {
 	echo '<br />Figures in brackets refer to departure from <strong>recent</strong> 
 		<a href="wxaverages.php" title="Long-term NW3 climate averages">average conditions</a>';

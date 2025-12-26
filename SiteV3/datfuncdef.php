@@ -80,7 +80,7 @@ $start_yearsm = [1910,2009, 2009,1959,1949, 2009,1949,2009, 2009,2009,2009,2009,
 // Separate usage
 $data_m_description = array('Sun Hours', 'Wet Hours', 'Cloud Cover', acronym('Possible events: Air frost, Dense fog, Snowfall, Lying Snow, Hail, Thunder(storm), Max sun.','Events',true),
 						'Comments', 'Extra Comments', 'Issues',	acronym('This tells whether I was absent from North London on the day. When absent I am unable to make detailed weather observations of any events such as fog, rain, snow and thunder,	instead using reports from fellow observers at nearby sites, webcam footage, or the observations of friends/family.',
-						'Observer Absent?', true), 'Pond Temperature (Heath)');
+						'Observer Absent?', true), 'Pond Temperature @ Hampstead Heath');
 
 //All daily
 $types_alltogether = array_merge($types_original,$types_derived,$types_m_original,$types_anom); // int -> str
@@ -806,4 +806,31 @@ function midpoint_of_longest($arr, $max_gap) {
 	}
 	return $arr[$longest_p_end - floor($longest_period / 2)];
 }
+
+function write_datm($sunhrs) {
+	// Check it needs to be written
+	$datm = file(ROOT . 'datm' . $GLOBALS['yr_yest'] . '.csv');
+	$len = count($datm);
+	$expected = intval(date('z')) + 1; // num-days in year + header
+	if($len === $expected) {
+		return false;
+	}
+	$pond_temp = null;
+	if (file_exists(ROOT."pond_temp.txt")) {
+		$mod_time = filemtime(ROOT."pond_temp.txt");
+		if (time() - $mod_time < 48 * 3600) {
+			$pond_temp = file_get_contents(ROOT."pond_temp.txt");
+		}
+	}
+	if($pond_temp === null) {
+		$NOW = unserialize(file_get_contents(ROOT . 'serialised_datNow.txt'));
+		$pond_temp = $NOW["misc"]["pondTemp"];
+	}
+	$wethrs = file_get_contents(ROOT."wethrs.txt");
+	$listm = array($sunhrs,$wethrs,'u','','','','','','blr','','','1',$pond_temp,'\n');
+	$fildatm = fopen(ROOT."datm" . $GLOBALS['yr_yest'] . ".csv", "a");
+	fputcsv($fildatm, $listm);
+	return true;
+}
+
 ?>

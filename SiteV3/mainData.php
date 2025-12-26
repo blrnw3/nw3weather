@@ -83,10 +83,10 @@ if($OUTAGE && false) {
 	}
 }
 
-$DOWN = ($temp < -15);
+$DOWN = ($temp < -5 || $humi < 25 || ($temp == -22.2 && $humi == 80));
 
 // CWOP Potters
-if(false && $OUTAGE) {
+if($DOWN || $OUTAGE) {
 	$pot_data = json_decode(file_get_contents(ROOT."EXT_potters.json"), true);
 	$pot_unix = intval($pot_data["weather"]["timestamp"] / 1000);
 	if((time() - $pot_unix) < 20000) {
@@ -99,7 +99,7 @@ if(false && $OUTAGE) {
 }
 
 // CWOP Islington data
-if($DOWN  || $OUTAGE) {
+if(false && ($DOWN  || $OUTAGE)) {
 	$isl_data = json_decode(file_get_contents(ROOT."EXT_islington.json"), true);
 	$isl_unix = intval($isl_data["weather"]["timestamp"] / 1000);
 	if((time() - $isl_unix) < 3600) {
