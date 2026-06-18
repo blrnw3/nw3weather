@@ -816,7 +816,8 @@ function write_datm($sunhrs) {
 		return false;
 	}
 	$pond_temp = null;
-	if (file_exists(ROOT."pond_temp.txt")) {
+	// 2026-05-31: pond data flakey in summer
+	if (false && file_exists(ROOT."pond_temp.txt")) {
 		$mod_time = filemtime(ROOT."pond_temp.txt");
 		if (time() - $mod_time < 48 * 3600) {
 			$pond_temp = file_get_contents(ROOT."pond_temp.txt");

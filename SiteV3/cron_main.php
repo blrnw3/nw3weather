@@ -95,6 +95,9 @@ $newNOW = dailyData(); //used by serialiseCSV and datNOW
 file_put_contents( ROOT.'serialised_datNow.txt', serialize($newNOW) );
 file_put_contents( ROOT.'serialised_datHr24.txt', serialize( dailyData( date('Ymd') ) ) );
 
+// 'API'
+file_put_contents(ROOT.'api_latest.txt', $newLine);
+
 //datm append
 if($tstamp == $datmCheckTime) {
 	checkDatmWritten();
@@ -684,7 +687,7 @@ function pullAndSavePondData($url = 'https://ponds.nsupdate.info/pond-temps.html
         libxml_use_internal_errors(true);
         $dom->loadHTML($html);
         libxml_clear_errors();
-        
+
 		$table = $dom->getElementsByTagName('table')->item(0);
         if (!$table) {
             throw new Exception("No table found.");

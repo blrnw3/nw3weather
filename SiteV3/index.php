@@ -316,39 +316,38 @@ echo '<img src="/static-images/'.$icon.'_lg.png" style="background-color:#CCCEEC
 	&nbsp; <a href="http://nw3weather.co.uk/wxdataday.php?vartype=pond">see temperature history</a></p>
 
 <!--
-<p style="font-size: 120%; font-weight: bold;" id="report-2023">
-<a href="/repyear.php">View nw3weather's full 2023 Annual Report</a>
+<p style="font-size: 120%; font-weight: bold;" id="report-2025">
+<a href="/repyear.php">View nw3weather's full 2025 Annual Report</a>
 </p>
 
-<h2>Key data for 2023</h2>
+<h2>Key data for 2025</h2>
 <p>
 <dl>
 	<dt>Headline</dt>
-	<dd>Warm and sunny June & Sept, wet end, minimal snow.</dd>
+	<dd>Warm and very sunny, especially March to July. Few rain days</dd>
 	<dt class="temp">Temperature</dt>
-	<dd>Mean <b>12.1 C</b> [+0.7 C from the <abbr title="Long-term climate average">LTA</abbr>].
-		Absolute Min and Max: <b>-4.9 C</b> (Jan 23), and <b>31.7 C</b> (Sep 9). <br />
-		Air frosts: <b>29</b>. Ice days: <b>1</b>. Days above 30C: <b>6</b>. Max feels-like: <b>40 C</b>.
+	<dd>Mean <b>12.5 C</b> [+1.1 C from the <abbr title="Long-term climate average">LTA</abbr>].
+		Absolute Min and Max: <b>-4.4 C</b> (Jan 11), and <b>34.1 C</b> (Jul 1). <br />
+		Air frosts: <b>20</b>. Ice days: <b>0</b>. Days above 30C: <b>11</b>.
 	</dd>
 	<dt class="rain">Rainfall</dt>
-	<dd>Total: <b>647 mm</b> [+5%] across <b>159</b> days (44%) of <abbr title="=0.2mm">recordable rain</abbr>. <br />
-		Highest daily (starting at midnight) total: <b>21 mm</b> (Sep 20). <br />
-		Wettest Month: <b>94 mm</b> [+45%] (Oct). Most rainy: <b>23 days</b> (Mar). <br />
-		Driest: <b>4 mm</b> [-91%] (Feb). Fewest days: <b>4 days</b> in Feb, 8 hrs total. <br />
-		Most rain in an hour: <b>~14 mm</b>, from a thunderstorm on the <a href="/wxhistday.php?year=2023&month=06&day=12">12th of Jun</a>
+	<dd>Total: <b>578 mm</b> [-6%] across <b>122</b> days (33%) of <abbr title="=0.2mm">recordable rain</abbr>. <br />
+		Highest daily (starting at midnight) total: <b>36 mm</b> (Jul 19). <br />
+		Wettest Month: <b>89 mm</b> [+50%] (Jan). Most rainy: <b>16 days</b> (Nov). <br />
+		Driest: <b>4 mm</b> [-90%] (Mar) on just 2 days, with a total of 5 hours of rainfall  <br />
+		Most rain in an hour: <b>~26 mm</b> in a Thunderstorm on <a href="/wxhistday.php?year=2025&month=05&day=12">May 12</a>
 	</dd>
 	<dt class="sun">Sunshine</dt>
-	<dd>Total: <b>1504 hrs</b> [-6%] from a possible 4045. (37%) <br />
-		Days with more than a minute of sunshine: <b>322</b> days (88%). <br />
-		Sunniest month: <b>253 hrs</b> [+31%] (Jun). Dullest than avg: <b>-60%</b> in Mar.
+	<dd>Total: <b>1911 hrs</b> [+20] from a possible 4045. (47%) <br />
+		Days with more than a minute of sunshine: <b>311</b> days (87%). <br />
+		Sunniest month: <b>260 hrs</b> [+34%] (Jun). Dullest: <b>59 hrs</b> [-15%] in Jan.
 	</dd>
 	<dt class="snow">Winter Events</dt>
 	<dd>
-		Minimal. A few cm of snow fell early on Mar 8th and settled. Otherwise a trace of snow on March 6 and 10, and on Dec 1st.
+		A couple of cm of lying snow on Jan 5th, and a bit of falling snow on Nov 19.
 	</dd>
 </dl>
 </p>
-
 -->
 <h1>Latest Monthly Weather Report</h1>
 <?php
