@@ -246,14 +246,14 @@ if(true && (date('i') % 5 == 1)) {
 //		quick_log("james_bad_data.txt", $dataJames[0]);
 //	}
 	// Nearby CWOP (Islington)
-	// $pathIslington = "https://meteoglance.com/api/v0/station/2E0RGX-13";
-	// $dataIslington = urlToArray($pathIslington);
-	// if($dataIslington[0]) {
-	// 	file_put_contents(ROOT.'EXT_islington.json', $dataIslington[0]);
-	// } else {
-	// 	quick_log("islington_bad_data.txt", $dataIslington[0]);
-	// }
-	$pathPotters = "https://meteoglance.com/api/v0/station/G6LTT";
+	 $pathIslington = "https://api.aprs.fi/api/get?name=2E0RGX-13&what=wx&apikey=&format=json";
+	 $dataIslington = urlToArray($pathIslington);
+	 if($dataIslington[0]) {
+	 	file_put_contents(ROOT.'EXT_islington.json', $dataIslington[0]);
+	 } else {
+	 	quick_log("islington_bad_data.txt", $dataIslington[0]);
+	 }
+	$pathPotters = "https://api.aprs.fi/api/get?name=G6LTT&what=wx&apikey=&format=json";
 	$dataPotters = urlToArray($pathPotters);
 	if($dataPotters[0]) {
 		file_put_contents(ROOT.'EXT_potters.json', $dataPotters[0]);
