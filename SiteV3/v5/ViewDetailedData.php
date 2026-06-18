@@ -1,8 +1,5 @@
 <?php
 
-/**
-* This depends heavily on precomputed data in cron_tags.php to make it fast.
- */
 class ViewDetailedData {
 
 	private $group;
@@ -33,7 +30,64 @@ class ViewDetailedData {
 				"superlativeLo" => "Coldest",
 				"superlativeHi" => "Warmest",
 				"letter" => "t",
-				"class" => 14
+				"class" => 14,
+				"anomaly" => true
+			],
+			"baro" => [
+				"name" => "Pressure",
+				"unit" => Wx::Pressure,
+				"var_min" => Wx::$daily["pmin"],
+				"var_max" => Wx::$daily["pmax"],
+				"var_mean" => Wx::$daily["pmean"],
+				"superlativeLo" => "Lowest",
+				"superlativeHi" => "Highest",
+				"letter" => "p",
+				"class" => 16
+			],
+			"wind" => [
+				"name" => "Wind",
+				"unit" => Wx::Wind,
+				"var_min" => Wx::$daily["gust"],
+				"var_max" => Wx::$daily["wmax"],
+				"var_mean" => Wx::$daily["wmean"],
+				"superlativeLo" => "Calmest",
+				"superlativeHi" => "Windiest",
+				"letter" => "w",
+				"class" => 13
+			],
+			"rain" => [
+				"name" => "Rain",
+				"unit" => Wx::Rain,
+				"var_min" => Wx::$daily["r10max"],
+				"var_max" => Wx::$daily["hrmax"],
+				"var_mean" => Wx::$daily["rain"],
+				"superlativeLo" => "Driest",
+				"superlativeHi" => "Wettest",
+				"letter" => "r",
+				"class" => 12,
+				"anomaly" => true
+			],
+			"hum" => [
+				"name" => "Humidity",
+				"unit" => Wx::Humidity,
+				"var_min" => Wx::$daily["hmin"],
+				"var_max" => Wx::$daily["hmax"],
+				"var_mean" => Wx::$daily["hmean"],
+				"superlativeLo" => "Least Humid",
+				"superlativeHi" => "Most Humid",
+				"letter" => "h",
+				"class" => 10
+			],
+			"dew" => [
+				"name" => "Dew Point",
+				"unit" => Wx::Temperature,
+				"var_min" => Wx::$daily["dmin"],
+				"var_max" => Wx::$daily["dmax"],
+				"var_mean" => Wx::$daily["dmean"],
+				"superlativeLo" => "Least Humid",
+				"superlativeHi" => "Most Humid",
+				"letter" => "d",
+				"class" => 10
 			],
 			// TODO more
 
@@ -42,29 +96,13 @@ class ViewDetailedData {
 		$this->group = $groups[$groupName];
 		$this->conv = $this->group["unit"];
 		$this->getAnom = array_key_exists("anomaly", $this->group);
+		// $this->letter = $this->group["letter"];
 
 		$this->datMins = new DataSummarizer($this->group["var_min"]);
 		$this->datMaxs = new DataSummarizer($this->group["var_max"]);
 		$this->datMeans = new DataSummarizer($this->group["var_max"]);
 
-		// $daytypes = array('temp' => 6, 'hum' => 7, 'dew' => 9, 'rain' => 10, 'baro' => 8, 'wdir' => 11, 'gust' => 4, 'wind' => 3);
-		// $index = $daytypes[$type];
-		// $tconv = array(false,false,false, Wx::Wind,Wx::Wind,false, Wx::Temperature,Wx::Humidity,Wx::Pressure, Wx::Temperature,Wx::Rain);
-		// $classes = array(0,0,0, 13,13,13, 14,10,16, 10,12);
-		// $names = array('temp' => 'Temperature', 'hum' => 'Humidity', 'dew' => 'Dew Point', 'rain' => 'Rainfall', 'baro' => 'Pressure',
-		// 	'wdir' => 'Wind Direction', 'gust' => 'Gust', 'wind' => 'Wind Speed');
-		// $superlativeHighs = array('','','', 'Windiest','Gustiest','', 'Warmest','Most Humid','Highest', 'Most Humid','Wettest');
-		// $superlativeLows = array('','','', 'Calmest','Calmest','', 'Coldest','Least Humid','Lowest', 'Least Humid','Driest');
-
-		// $this->letter = ($index == 8) ? 'p' : substr($type, 0, 1);
-
-		// $this->conv = $tconv[$index];
-		// $this->cssClass = 'td'.$classes[$index];
-		// $this->label = $names[$type];
-
-		// $this->superlativeHigh = $superlativeHighs[$index];
-		// $this->superlativeLow = $superlativeLows[$index];
-
+		
 		// $periods_keys = array('d','b','7','m','31','y','365','a','mr','dr','7cum','Ma','Mmr','31cum','Ya','365cum');
 		// $periods_values = array('Today','Yesterday','7-day','Month','31-day','Year','365-day','Overall',
 		// 	Date::$months[Date::$dmonth-1], Date::datefull(Date::$dday).' ' .Date::monthfull(Date::$dmonth), '7-day', 'Month', Date::$months[Date::$dmonth-1], '31-day', 'Year', '365-day');

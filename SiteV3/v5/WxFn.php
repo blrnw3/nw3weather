@@ -134,8 +134,8 @@ class DataSummarizer {
 	// Daily vals for different periods
 	public $vals;  // Y-m-d indexed daily vals
 	public $currentMonth;
-	public $currentMonthAll; // current monthname only
-	public $currentDateAll; // current day-monthname only
+	public $currentMonthAll; // current month, all years
+	public $currentDateAll; // current month-day, all years
 	public $currentYear;
 	public $pastNDays = [];
 
@@ -151,10 +151,12 @@ class DataSummarizer {
 	private $dayIdx;
 	private $summable;
 	private $summaryKey;
+	private $anomable;
 
 	public function __construct($varName, $startYear = null) {
 		$this->varName = $varName;
 		$this->summable = array_key_exists("summable", Wx::$daily[$this->varName]);
+		$this->anomable = array_key_exists("anomaly", Wx::$daily[$this->varName]);
 		$this->summaryKey = $this->summable ? "sum" : "mean";
 
 		$this->startYear = $startYear === null ? Site::BASE_YEAR : $startYear;
@@ -181,11 +183,11 @@ class DataSummarizer {
 		});
 
 		$this->currentMonthAll = Util::array_filter_keys($this->vals, function($key) {
-			return substr($key, 5, 2) === Util::zerolead(Date::$dmonth);
+			return substr($key, 5, 2) === $this->monthIdx;
 		});
 
 		$this->currentDateAll = Util::array_filter_keys($this->vals, function($key) {
-			return substr($key, 5, 5) === Util::zerolead(Date::$dmonth) . '-' . $this->dayIdx;
+			return substr($key, 5, 5) === $this->monthIdx . '-' . $this->dayIdx;
 		});
 
 		$this->currentYear = Util::array_filter_keys($this->vals, function($key) {
@@ -205,7 +207,7 @@ class DataSummarizer {
 		foreach ($this->monthSummaries as $year => $monthlySummary) {
 			foreach ($monthlySummary as $month => $summary) {
 				$this->monthSummariesFlat["$year-$month-01"] = $summary;
-				if ($month === $this->monthIdx) {
+				if ($month == $this->monthIdx) {
 					$this->currentMonthSummariesFlat["$year-$month-01"] = $summary;
 				}
 			}
@@ -215,14 +217,10 @@ class DataSummarizer {
 	public function summarize() {
 		$period_summaries = $this->getFixedPeriodSummaries() + $this->getRecentNdaySummaries() + $this->getRecordFixedPeriodMeans() + $this->getRecordNdayMeans();
 		return [
-			'monthly_summaries' => $this->monthSummaries,
-			'yearly_summaries' => $this->yearSummaries,
-			"season_summaries" => $this->seasonSummaries,
 			"period_summaries" => $period_summaries,
-			// 'recent_nday_summaries' => $this->getRecentNdaySummaries(),
-			// 'record_nday_means' => $this->getRecordNdayMeans(),
-			// 'fixed_period_summaries' => $this->getFixedPeriodSummaries(),
-			// 'record_fixed_period_means' => $this->getRecordFixedPeriodMeans(),
+			'year_summaries' => $this->yearSummaries,
+			'month_summaries' => $this->monthSummaries,
+			"season_summaries" => $this->seasonSummaries,
 			'ranks' => $this->getRanks()
 		];
 	}
@@ -271,14 +269,22 @@ class DataSummarizer {
 		return $summary;
 	}
 
+	private function addAnomalies($summary, $anom) {
+		if($this->anomable) {
+			$summary['anom'] = $summary[$this->summaryKey] - $anom;
+			$summary['anom_pct'] = $summary['anom'] / $anom * 100;
+		}
+	}
+
 	private function getMonthlySummaries() {
 		$allMonthSummary = [];
 		for ($year = $this->startYear; $year <= Date::$dyear; $year++) {
 			foreach (Data::getYearlyData($this->varName, $year) as $month => $dailyData) {
-				$month = Util::zerolead($month);
+				$month = strval(Util::zerolead($month));
 				$summary = $this->getBaseSummary($dailyData);
 				$summary['minDate'] = $year . '-' . $month . '-' . Util::zerolead($summary['minDate']);
 				$summary['maxDate'] = $year . '-' . $month . '-' . Util::zerolead($summary['maxDate']);
+				$this->addAnomalies($summary, LTA::getMonthlyAnom($this->varName, $month));
 				$allMonthSummary[$year][$month] = $summary;
 			}
 		}
@@ -289,6 +295,7 @@ class DataSummarizer {
 		$allYearSummary = [];
 		foreach ($this->monthSummaries as $year => $monthlySummaries) {
 			$allYearSummary[$year] = $this->mergeSummaries($monthlySummaries);
+			$this->addAnomalies($allYearSummary[$year], LTA::getYearlyAnom($this->varName));
 		}
 		return $allYearSummary;
 	}
@@ -307,7 +314,9 @@ class DataSummarizer {
 					}
 				}
 				if(count($vals) > 0) {
-					$seasons[Date::$snames[$i] ."_". $year] = $this->mergeSummaries($vals);
+					$seasonSummary = $this->mergeSummaries($vals);
+					$this->addAnomalies($seasonSummary, LTA::getSeasonAnom($this->varName, $i));
+					$seasons[Date::$snames[$i] ."_". $year] = $seasonSummary;
 				}
 			}
 		}
@@ -319,8 +328,12 @@ class DataSummarizer {
 		foreach(DataSummarizer::$periods as $period) {
 			$k = "latest_$period". "d";
 			$periodSummaries[$k] = $this->getBaseSummary($this->pastNDays[$period]);
-			$periodSummaries[$k]['minDateFmt'] = Date::today(null, $period > 31, true, null, Date::dtStrToTs($periodSummaries[$k]['minDate']));
-			$periodSummaries[$k]['maxDateFmt'] = Date::today(null, $period > 31, true, null, Date::dtStrToTs($periodSummaries[$k]['maxDate']));
+			$periodSummaries[$k]['minDateFmt'] = Date::today(null, $period > 31, true, null, $periodSummaries[$k]['minDate']);
+			$periodSummaries[$k]['maxDateFmt'] = Date::today(null, $period > 31, true, null, $periodSummaries[$k]['maxDate']);
+			if($this->anomable) {
+				
+				$this->addAnomalies($periodSummaries[$k], $anom);
+			}
 		}
 		return $periodSummaries;
 	}
@@ -378,9 +391,9 @@ class DataSummarizer {
 
 	private function getRecordFixedPeriodMeans() {
 		return [
-			'monthly_mean_alltime' => $this->getBaseSummary(Util::array_pluck($this->monthSummariesFlat, $this->summaryKey)),
-			'monthly_mean_all_this_month' => $this->getBaseSummary(Util::array_pluck($this->currentMonthSummariesFlat, $this->summaryKey)),
-			'annual_mean_alltime' => $this->getBaseSummary(Util::array_pluck($this->yearSummaries, $this->summaryKey)),
+			'month_mean_alltime' => $this->getBaseSummary(Util::array_pluck($this->monthSummariesFlat, $this->summaryKey)),
+			'month_mean_all_this_month' => $this->getBaseSummary(Util::array_pluck($this->currentMonthSummariesFlat, $this->summaryKey)),
+			'year_mean_alltime' => $this->getBaseSummary(Util::array_pluck($this->yearSummaries, $this->summaryKey)),
 		];
 	}
 
@@ -412,8 +425,8 @@ class DataSummarizer {
 			"daily_alltime" => $this->extractHighLow($this->vals, 10),
 			"daily_all_this_month" => $this->extractHighLow($this->currentMonthAll, 10),
 			"daily_all_this_date" => $this->extractHighLow($this->currentDateAll, 5),
-			"monthly_mean_alltime" => $this->extractHighLow(Util::array_pluck($this->monthSummariesFlat, $this->summaryKey), 10),
-			"monthly_mean_all_this_month" => $this->extractHighLow(Util::array_pluck($this->currentMonthSummariesFlat, $this->summaryKey), 10),
+			"month_mean_alltime" => $this->extractHighLow(Util::array_pluck($this->monthSummariesFlat, $this->summaryKey), 10),
+			"month_mean_all_this_month" => $this->extractHighLow(Util::array_pluck($this->currentMonthSummariesFlat, $this->summaryKey), 10),
 		];
 	}
 }
@@ -480,59 +493,6 @@ class Data {
 		}
 		// BUG TODO: if for current day, it returns the value as cached at midnight, which is the only time the time file is updated
 		return self::$CACHE_DAT_TIMES[$name][$year][$month][$day];
-	}
-
-	/**
-	 * Converts an array indexed as [month][day] to one indexed by [dayOfYear]
-	 * @param mixed array[][]
-	 * @return mixed array[]
-	 */
-	public static function MDtoZ($arr) {
-		$z = array();
-		$cnt = count($arr);
-		for($mon = 1; $mon <= $cnt; $mon++) {
-			if(is_array($arr[$mon])) {
-				$z = array_merge($z, $arr[$mon]);
-			}
-		}
-		return $z;
-	}
-
-	public static function datAnom($varName, $sourceData, $originalVarNum) {
-		global $lta, $vars, $sumq_all;
-
-		$ltaRefDaily = ['tmina' => 0, 'tmaxa' => 1, 'tmeana' => 2, 'sunhrp' => 4];
-		$ltaRefMonthly = ['raina' => 4, 'wmeana' => 6, 'wethra' => 11, 'sunhra' => 12];
-
-		$originalSummable = $sumq_all[$originalVarNum];
-		$anomType = substr($varName, strlen($varName)-1, 1);  // a or p
-
-		$res = [];
-		foreach ($sourceData as $year => $arr1) {
-			foreach ($arr1 as $month => $arr2) {
-				$daysInMonth = get_days_in_month($month, $year);
-				foreach ($arr2 as $day => $v) {
-					if(array_key_exists($varName, $ltaRefDaily)) {
-						$climVal = $lta[$ltaRefDaily[$varName]][date('z', Date::mkdate($month, $day, $year))];
-					} elseif(array_key_exists($varName, $ltaRefMonthly)) {
-						$divisor = $originalSummable ? $daysInMonth : 1;
-						$climVal = $vars[$ltaRefMonthly[$varName]][$month-1] / $divisor;
-					} else {
-						$climVal = 24;
-					}
-					if($originalSummable) {
-						$val = $v / $climVal * 100;
-					} else {
-						$val = $v - $climVal;
-					}
-					if($val > 100 && $anomType === 'p') {
-						$val = 100;
-					}
-					$res[$year][$month][$day] = $val;
-				}
-			}
-		}
-		return $res;
 	}
 
 	public static function datDerived($varName, $include_historic) {
@@ -1032,7 +992,7 @@ class Data {
 
 	public static function timeFromMM($mm, $arr, $hrs, $mins) {
 		$line = array_search($mm, $arr);
-		return zerolead($hrs[$line]).':'.zerolead($mins[$line]);
+		return Util::zerolead($hrs[$line]).':'.Util::zerolead($mins[$line]);
 	}
 
 	public static function midpoint_of_longest($arr, $max_gap) {

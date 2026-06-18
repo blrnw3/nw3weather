@@ -8,6 +8,7 @@
 - wx8
 - wx9
 - wx10
+- wx14
 
 # Progress log
 

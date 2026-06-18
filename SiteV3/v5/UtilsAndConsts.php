@@ -200,11 +200,11 @@ class Date {
 
 	/**
 	 * Converts a date string to a timestamp
-	 * @param string $dtStr
+	 * @param string $dtStr like 2025-01-01
 	 * @return int timestamp
 	 */
 	public static function dtStrToTs($dtStr) {
-		return Date::mkdate(substr($dtStr, 5, 2), substr($dtStr, 7, 2), substr($dtStr, 0, 4));
+		return Date::mkdate(substr($dtStr, 5, 2), substr($dtStr, 8, 2), substr($dtStr, 0, 4));
 	}
 
 	/**
@@ -610,8 +610,8 @@ class Util {
 
 
 	public static function zerolead($tag) {
-		$tag = intval($tag);
-		if($tag < 10 && $tag >= 0) { $tag = '0'.$tag; }
+		$tagi = intval($tag);
+		if($tagi < 10 && $tagi >= 0) { return '0'.$tag; }
 		return $tag;
 	}
 	public static function roundi($val) {

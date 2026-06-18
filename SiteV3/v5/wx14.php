@@ -8,7 +8,7 @@ Page::init([
 ]);
 Page::Start();
 
-require ROOT . 'TemperatureTags.php';
+// require ROOT . 'TemperatureTags.php';
 ?>
 
 <h1>Detailed Temperature Data</h1>

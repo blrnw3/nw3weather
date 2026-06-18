@@ -765,84 +765,103 @@ class LTA {
 		}
 		foreach(self::$vars as $_ => $obj) {
 			if(array_key_exists("monthly", $obj)) {
-				$obj["yearly_sum"] = array_sum($obj["monthly"]);
-				$obj["yearly_mean"] = $obj["yearly_sum"] / 12;
+				$obj["year_sum"] = array_sum($obj["monthly"]);
+				$obj["year_mean"] = $obj["year_sum"] / 12;
+				$obj["season_sum"] = [];
+				$obj["season_mean"] = [];
+				foreach(Date::$snums as $si => $months) {
+					$season_sum = 0;
+					foreach($months as $mi) {
+						$season_sum += $obj["monthly"][$mi];
+					}
+					$obj["season_sum"][$si] = $season_sum;
+					$obj["season_mean"][$si] = $season_sum / 3;
+				}
 			}
 		}
 	}
 
-	public static function getDailyAnom($val, $type, $month, $day, $yr = null) {
+	public static function getDailyAnom($type, $month, $day, $yr = null) {
 		if($yr === null) {
 			$yr = Date::$dyear;
 		}
-		return $val - self::$vars[$type]["daily"][date("z", Date::mkdate($month, $day, $yr))];
+		return self::$vars[$type]["daily"][date("z", Date::mkdate($month, $day, $yr))];
 	}
 
-	public static function getMonthlyAnom($val, $type, $month) {
-		return $val - self::$vars[$type]["monthly"][$month-1];
+	public static function getMonthlyAnom($type, $month) {
+		return self::$vars[$type]["monthly"][$month-1];
 	}
 	
-	public static function getYearlyAnom($val, $type) {
-		return $val - self::$vars[$type]["yearly_mean"];
+	public static function getYearlyAnom($type) {
+		return self::$vars[$type][Wx::$daily[$type]["summable"] ? "year_sum" : "year_mean"];
 	}
 
+	public static function getSeasonAnom($type, $season) {
+		return self::$vars[$type][Wx::$daily[$type]["summable"] ? "season_sum" : "season_mean"][$season];
+	}
 
+	public static function getDateEndingAnom($type, $end, $duration) {
+		$anom = 0;
+		for($i = 0; $i < $duration; $i++) {
+			$anom += self::getDailyAnom($type, Date::$dmonth, Date::$dday - $i, Date::$dyear) / ($this->summable ? 1 : $period);
+		}
+	}
 
-public static $vars = [
-	"tmin" => [
-		"monthly" => [3.0,3.0,4.3,6.0,9.0,12.0,14.2,14.1,11.5,8.6,5.5,3.6],
-		"daily" => [],
-		"desription" => "Min Temp",
-		"unit" => 1,
-		"color" => "blue"
-	],
-	"tmax" => [
-		"monthly" => [7.8,8.2,10.9,14.3,17.8,20.9,23.0,22.5,19.1,14.8,10.7,8.2],
-		"daily" => [],
-		"desription" => "Max Temp",
-		"unit" => 1,
-		"color" => "orange"
-	],
-	"tmean" => "dynamic",
-	"trange" => "dynamic",
-	"rain" => [
-		"monthly" => [59,45,39,42,46,47,46,54,50,65,67,57],
-		"desription" => "Rainfall",
-		"unit" => 2,
-		"color" => "cadetblue3"
-	],
-	"rdays" => [
-		"monthly" => [11,9,10,10,9,9,8,8,9,11,10,11],
-		"desription" => "Rain Days > 1mm",
-		"unit" => false,
-		"color" => "cadetblue4"
-	],
-	"wmean" => [
-		"monthly" => [5.2,5.1,5.2,4.9,4.7,4.4,4.3,4.0,3.9,4.1,4.6,5.1],
-		"desription" => "Rain Days > 1mm",
-		"unit" => false,
-		"color" => "cadetblue4"
-	],
-	"sunhr" => [
-		"monthly" => [69,78,113,161,189,194,195,185,147,118,84,65],
-		"daily" => [],
-		"desription" => "Sun hours",
-		"unit" => false,
-		"color" => "gold"
-	],
-	"maxsun" => [
-		"monthly" => [233,249,331,376,440,452,454,410,342,295,237,219],
-		"daily" => [],
-		"desription" => "Max Sun hours",
-		"unit" => false,
-		"color" => "gold3"
-	],
-	"wethr" => [
-		"monthly" => [67,52,53,46,40,37,34,38,41,49,63,62],
-		"desription" => "Max Sun hours",
-		"unit" => false,
-		"color" => "aquamarine4"
-	],
-];
+	public static $vars = [
+		"tmin" => [
+			"monthly" => [3.0,3.0,4.3,6.0,9.0,12.0,14.2,14.1,11.5,8.6,5.5,3.6],
+			"daily" => [],
+			"desription" => "Min Temp",
+			"unit" => 1,
+			"color" => "blue"
+		],
+		"tmax" => [
+			"monthly" => [7.8,8.2,10.9,14.3,17.8,20.9,23.0,22.5,19.1,14.8,10.7,8.2],
+			"daily" => [],
+			"desription" => "Max Temp",
+			"unit" => 1,
+			"color" => "orange"
+		],
+		"tmean" => "dynamic",
+		"trange" => "dynamic",
+		"rain" => [
+			"monthly" => [59,45,39,42,46,47,46,54,50,65,67,57],
+			"desription" => "Rainfall",
+			"unit" => 2,
+			"color" => "cadetblue3"
+		],
+		"rdays" => [
+			"monthly" => [11,9,10,10,9,9,8,8,9,11,10,11],
+			"desription" => "Rain Days > 1mm",
+			"unit" => false,
+			"color" => "cadetblue4"
+		],
+		"wmean" => [
+			"monthly" => [5.2,5.1,5.2,4.9,4.7,4.4,4.3,4.0,3.9,4.1,4.6,5.1],
+			"desription" => "Rain Days > 1mm",
+			"unit" => false,
+			"color" => "cadetblue4"
+		],
+		"sunhr" => [
+			"monthly" => [69,78,113,161,189,194,195,185,147,118,84,65],
+			"daily" => [],
+			"desription" => "Sun hours",
+			"unit" => false,
+			"color" => "gold"
+		],
+		"maxsun" => [
+			"monthly" => [233,249,331,376,440,452,454,410,342,295,237,219],
+			"daily" => [],
+			"desription" => "Max Sun hours",
+			"unit" => false,
+			"color" => "gold3"
+		],
+		"wethr" => [
+			"monthly" => [67,52,53,46,40,37,34,38,41,49,63,62],
+			"desription" => "Max Sun hours",
+			"unit" => false,
+			"color" => "aquamarine4"
+		],
+	];
 
 }

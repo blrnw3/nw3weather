@@ -14,6 +14,24 @@ require ROOT.'Rain2Tags.php';
 
 <h1>Detailed Rainfall Data</h1>
 
+<?php
+$mainTables = new ViewDetailedData("rain");
+$tchangehour = Wx::conv(Live::$HR24['changeHr']['temp'], Wx::AbsTemp, 1, 1);
+$measures = ['Temperature','Temperature Trend / hr','Feels-like','Night Minimum (21-09)','Day Maximum (09-21)','24hr Average',
+	'Daily Air Frost Hours', 'Monthly Air Frosts', 'Annual Air Frosts'];
+$values = [Live::$temp, $tchangehour, Live::$feel, $nighttimeMin, $daytimeMax, $last24houravtemp,
+	$hrsfrostmidnight, $daysTminL0C, $daysTminyearL0C ];
+$conv = [Wx::Temperature, Wx::None, Wx::Temperature, Wx::Temperature, Wx::Temperature, Wx::Temperature,
+	Wx::None, Wx::None, Wx::None];
+
+$mainTables->currentLatest($measures, $values, $conv);
+
+$measures2 = array('Lowest Min','Highest Max','Highest Min','Lowest Max','Coldest Day','Warmest Day','Averages','Mean','Mean Minimum','Mean Maximum');
+$mainTables->avgsExtrmsRecs($measures2);
+$mainTables->pastYearAvgsExtrms($measures2);
+$mainTables->rankTables();
+?>
+
 <table class="table1" width="34%" align="left" cellpadding="5" cellspacing="0">
 <?php
 Html::tableHead("Current / Latest", 2);
