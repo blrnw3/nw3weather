@@ -83,16 +83,18 @@ if($OUTAGE && false) {
 	}
 }
 
-$DOWN = ($temp < -5 || $humi < 25 || ($temp == -22.2 && $humi == 80));
+$DOWN = ($temp < -5 || $humi < 25 || ($temp == 19.3 && $humi == 80));
 
 // CWOP Potters
 if($DOWN || $OUTAGE) {
 	$pot_data = json_decode(file_get_contents(ROOT."EXT_potters.json"), true);
-	$pot_unix = intval($pot_data["weather"]["timestamp"] / 1000);
-	if((time() - $pot_unix) < 20000) {
-//		$unix = $isl_unix;
-		$temp = (float)$pot_data["weather"]["wx"]["temp"];
-		$humi = $pot_data["weather"]["wx"]["humidity"];
+	$pot_wx = $pot_data["entries"][0];
+	$pot_unix = intval($pot_wx["time"]);
+	if((time() - $pot_unix) < 5000) {
+		$unix = $pot_unix;
+		$temp = (float)$pot_wx["temp"];
+		$humi = $pot_wx["humidity"];
+		$pres = $pot_wx["pressure"];
 //		$rain = (float)$isl_data["weather"]["wx"]["rain_midnight"];
 //		$pres = (float)$isl_data["weather"]["wx"]["pressure"];
 	}

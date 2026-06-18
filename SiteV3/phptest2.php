@@ -13,6 +13,7 @@
 
 	<meta http-equiv="content-type" content="application/xhtml+xml; charset=ISO-8859-1" />
 	<link rel="stylesheet" type="text/css" href="./mainstyle.css" media="screen" />
+	<?php require('chead.php'); ?>
 	<?php include_once("ggltrack.php"); ?>
 </head>
 
@@ -27,7 +28,9 @@
 	<!-- ##### Main Copy ##### -->
 
 <div id="main">
-<?php
+<?php require('site_status.php'); ?>
+	<?php
+
 if(!$me) {
 	echo 'Not allowed on this ip. Admin only!';
 	die();
@@ -38,7 +41,22 @@ if(!$me) {
 <a href="phptest2.php">Self link</a>
 <pre>
 <?php
-var_dump($vars_to_climav_daily["tmean"]);
+$pot_data = json_decode(file_get_contents(ROOT."EXT_potters.json"), true);
+var_dump($pot_data);
+$pot_wx = $pot_data["entries"][0];
+var_dump($pot_wx);
+$pot_unix = intval($pot_wx["time"] / 1000);
+echo("    $pot_unix    ");
+if((time() - $pot_unix) < 20000) {
+//		$unix = $isl_unix;
+	$temp = (float)$pot_wx["temp"];
+	$humi = $pot_wx["humidity"];
+	$pres = $pot_wx["pressure"];
+//		$rain = (float)$isl_data["weather"]["wx"]["rain_midnight"];
+//		$pres = (float)$isl_data["weather"]["wx"]["pressure"];
+}
+
+//var_dump($vars_to_climav_daily["tmean"]);
 ?>
 </pre>
 <?php

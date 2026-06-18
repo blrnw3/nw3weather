@@ -38,7 +38,7 @@ if($showMessage) {
 	showStatusDiv($statusMessage, $isBad);
 }
 if($OUTAGE) {
-	$extraMessage = "<b>Update March 6th 5pm</b>: We continue to await new internet equipment to resolve the outage. ETA: March 7th";
+//	$extraMessage = "<b>Update March 6th 5pm</b>: We continue to await new internet equipment to resolve the outage. ETA: March 7th";
 	showStatusDiv("<b>". date('H:m d M: ', time() - $diff) . "Weather server outage detected automatically</b>."
 		. "<br /> Data is being served from nearby stations. Site admin has been notified. Problem age: "
 		. intval($diff / 3600) . " hours<br />$extraMessage", true);
