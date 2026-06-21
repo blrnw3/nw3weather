@@ -1,0 +1,10 @@
+.git
+**/.git
+*.zip
+*.7z
+VMs
+Site_v4
+SiteV3old
+SiteV3/oldSites
+photos
+Images

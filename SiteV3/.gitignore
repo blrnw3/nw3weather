@@ -1,0 +1,30 @@
+# Prod data + cron-generated files pulled by scripts/sync-prod-data.sh.
+# These live only on the server and must never be committed.
+clientraw.txt
+clientrawBackup.txt
+customtextout.txt
+goodlog.txt
+todaylog.txt
+*.csv
+serialised_*.txt
+rareTags.php
+*Tags.php
+!cron_tags.php
+METAR.txt
+WUforecast.txt
+*.json
+
+# Generated images/video
+*.png
+*.gif
+*.jpg
+*.jpeg
+*.wmv
+*.mp4
+
+# Synced static dirs / chart lib
+/jpgraph/
+/static-images/
+/logfiles/
+/log/
+/Logs/
