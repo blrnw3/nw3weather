@@ -1,7 +1,8 @@
 <?php
 //Main daily data variables
 $types_original = array('tmin','tmax','tmean','hmin','hmax','hmean','pmin','pmax','pmean','wmean','wmax','gust','wdir','rain','hrmax','10max','ratemax', //16
-						'dmin','dmax','dmean','nightmin','daymax','tc10max','tchrmax','hchrmax','tc10min','tchrmin','hchrmin','w10max','fmin', 'fmax', 'fmean', 'afhrs'); //32
+						'dmin','dmax','dmean','nightmin','daymax','tc10max','tchrmax','hchrmax','tc10min','tchrmin','hchrmin','w10max','fmin', 'fmax', 'fmean', 'afhrs', //32
+						'amin','amax','amean'); //35 (PM2.5 daily min/max/mean)
 $types = array_flip($types_original);
 $data_colours = array('#FFD750','orange','tan3','chartreuse','darkolivegreen','chartreuse3','darkorchid4','orchid1','purple','red','firebrick1','firebrick2','firebrick3',
 					'royalblue','royalblue1','royalblue2','royalblue3','darkseagreen','darkslategray','darkseagreen4','peachpuff','darkgoldenrod1',
@@ -480,6 +481,11 @@ function dailyData($procfil = 'today') {
 	$rncum = $w10 = 0;
 	$mins = $maxs = $means = $timesMin = $timesMax = array();
 
+	// PM2.5 is an optional trailing column (11); tracked separately and guarded,
+	// since older/partial logs may not contain it.
+	$pm25Sum = 0; $pm25Count = 0; $pm25Min = null; $pm25Max = null;
+	$pm25MinTimes = array(); $pm25MaxTimes = array();
+
 	$windDirs = [];
 
 	$filcust = file(ROOT. "logfiles/daily/" . $procfil . 'log.txt');
@@ -510,6 +516,18 @@ function dailyData($procfil = 'today') {
 					$datt[$t]['timesMin'][] = mktime($custhr[$i],$custmin[$i]);
 				}
 			}
+		}
+
+		// PM2.5 - trailing column 11, only present from launch onward
+		if(isset($custl[11]) && trim($custl[11]) !== '') {
+			$pm25V = floatval($custl[11]);
+			$dat[11][$i] = $pm25V;
+			$pm25Sum += $pm25V; $pm25Count++;
+			$tPm25 = mktime($custhr[$i], $custmin[$i]);
+			if($pm25Max === null || $pm25V > $pm25Max) { $pm25Max = $pm25V; $pm25MaxTimes = array($tPm25); }
+			elseif($pm25V === $pm25Max) { $pm25MaxTimes[] = $tPm25; }
+			if($pm25Min === null || $pm25V < $pm25Min) { $pm25Min = $pm25V; $pm25MinTimes = array($tPm25); }
+			elseif($pm25V === $pm25Min) { $pm25MinTimes[] = $tPm25; }
 		}
 
 		$feels[$i] = feelsLike($custl[6], $custl[4], $custl[9]);
@@ -649,6 +667,21 @@ function dailyData($procfil = 'today') {
 
 	$hrChanges['wind'] = $dat[3][$end-1] - $dat[3][$end-61];
 	$hr24Changes['wind'] = $dat[3][$end-1] - $dat[3][1];
+
+	// PM2.5 summary - only when data was present this period
+	if($pm25Count > 0) {
+		$mins['pm25'] = $pm25Min;
+		$maxs['pm25'] = $pm25Max;
+		$means['pm25'] = round($pm25Sum / $pm25Count, 1);
+		$timesMin['pm25'] = date('H:i', midpoint_of_longest($pm25MinTimes, 120));
+		$timesMax['pm25'] = date('H:i', midpoint_of_longest($pm25MaxTimes, 120));
+		if($end > 61 && isset($dat[11][$end-1]) && isset($dat[11][$end-61])) {
+			$hrChanges['pm25'] = $dat[11][$end-1] - $dat[11][$end-61];
+		}
+		if($end > 1 && isset($dat[11][$end-1]) && isset($dat[11][1])) {
+			$hr24Changes['pm25'] = $dat[11][$end-1] - $dat[11][1];
+		}
+	}
 
 	$means['wind'] = round(mean($dat[3]), 1);
 	$means['w10m'] = round(mean($wind10), 1);

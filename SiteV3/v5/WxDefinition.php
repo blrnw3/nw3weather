@@ -14,7 +14,7 @@ class Wx {
 	public static $periods = [7,31,365];
 
 	public static $mappingsToDailyDataKey = [
-		't' => 'temp', 'h' => 'humi', 'p' => 'pres', 'd' => 'dewp', 'w'=> 'wind', 'r' => 'rain', 'f' => 'feel'
+		't' => 'temp', 'h' => 'humi', 'p' => 'pres', 'd' => 'dewp', 'w'=> 'wind', 'r' => 'rain', 'f' => 'feel', 'a' => 'pm25'
 	];
 
 	static function _conv_temp($val) { return ($val * 1.8) + 32; }
@@ -44,6 +44,7 @@ class Wx {
 	const RainRate = 'rnrt';
 	const Direction = 'dir';
 	const DirectionRaw = 'dir_raw';
+	const Pm25 = 'pm25'; // Air quality (raw PM2.5); banded to UK DAQI for display
 
 	public static $windlabels = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
 		'S', 'SSW','SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
@@ -226,6 +227,17 @@ class Wx {
 				'unit' => '&deg;F',
 				'conversion' => true,
 			]
+		],
+		self::Pm25 => [
+			'name' => self::Pm25,
+			'unit' => '&micro;g/m<sup>3</sup>',
+			'precision' => 1,
+			'summable' => false,
+			'minmax' => true,
+			'round_size' => 10,
+			'thresholds_day' => [11,23,35, 41,47,53, 58,64,70],
+			'threshold_colours' => ['9cff9c','31ff00','31cf00', 'ffff00','ffcf00','ff9a00', 'ff6464','ff0000','990000', '7d0023'],
+			'threshold_txtcolours' => [false,false,false, false,false,false, 'fff','fff','fff', 'fff'],
 		]
 	];
 
@@ -332,6 +344,54 @@ class Wx {
 			$cnt++;
 		}
 		return "Apocalypse";
+	}
+	/**
+	 * Band a raw PM2.5 value (ug/m3) into the UK Daily Air Quality Index (DAQI).
+	 * Uses DEFRA PM2.5 breakpoints (officially a 24h running mean - we band the
+	 * latest reading as a live approximation).
+	 * @param mixed $pm25 raw PM2.5
+	 * @return array [band 1-10 (0 = unknown), name Low/Moderate/High/Very High, css-class]
+	 */
+	public static function daqi($pm25) {
+		if($pm25 === null || $pm25 === '' || !is_numeric($pm25)) {
+			return array(0, 'Unknown', 'daqi-unknown');
+		}
+		$pm = (float)$pm25;
+		$bands = array(11, 23, 35, 41, 47, 53, 58, 64, 70); // upper bound of bands 1-9
+		$band = 10;
+		foreach($bands as $i => $hi) {
+			if($pm <= $hi) { $band = $i + 1; break; }
+		}
+		if($band <= 3) { return array($band, 'Low', 'daqi-low'); }
+		if($band <= 6) { return array($band, 'Moderate', 'daqi-mod'); }
+		if($band <= 9) { return array($band, 'High', 'daqi-high'); }
+		return array($band, 'Very High', 'daqi-vhigh');
+	}
+	/**
+	 * US EPA Air Quality Index from raw PM2.5 (ug/m3), using the 2024-revised
+	 * PM2.5 breakpoints. Concentration is truncated to 1 dp per EPA method.
+	 * @param mixed $pm25 raw PM2.5
+	 * @return int|null AQI 0-500, or null if no value
+	 */
+	public static function usAqi($pm25) {
+		if($pm25 === null || $pm25 === '' || !is_numeric($pm25)) {
+			return null;
+		}
+		$c = floor((float)$pm25 * 10) / 10; // truncate to 1 dp
+		$bp = array(
+			array(0.0,   9.0,   0,   50),
+			array(9.1,   35.4,  51,  100),
+			array(35.5,  55.4,  101, 150),
+			array(55.5,  125.4, 151, 200),
+			array(125.5, 225.4, 201, 300),
+			array(225.5, 325.4, 301, 500),
+		);
+		foreach($bp as $b) {
+			if($c <= $b[1]) {
+				return (int)round(($b[3] - $b[2]) / ($b[1] - $b[0]) * ($c - $b[0]) + $b[2]);
+			}
+		}
+		return 500;
 	}
 	public static function rate_fix($rate) {
 		if(round($rate) > 5) { return round($rate); } else { return $rate; }
@@ -477,7 +537,7 @@ class Wx {
 			'colour' => 'royalblue1',
 			'start_year' => 2009,
 		],
-		'r10max' => [
+		'10max' => [
 			'description' => 'Maximum 10-min Rain',
 			'unit' => Wx::Rain,
 			'colour' => 'royalblue2',
@@ -588,6 +648,25 @@ class Wx {
 			'summable' => true,
 			'anomaly' => true,
 			'start_year' => 2009,
+		],
+		'amin' => [
+			'description' => 'Minimum PM2.5',
+			'unit' => Wx::Pm25,
+			'colour' => 'darkseagreen3',
+			'start_year' => 2026,
+		],
+		'amax' => [
+			'description' => 'Maximum PM2.5',
+			'unit' => Wx::Pm25,
+			'colour' => 'sienna',
+			'start_year' => 2026,
+		],
+		'amean' => [
+			'description' => 'Mean PM2.5',
+			'unit' => Wx::Pm25,
+			'colour' => 'rosybrown',
+			'spread' => true,
+			'start_year' => 2026,
 		],
 		// Derived quantities
 		'trange' => [
@@ -763,8 +842,8 @@ class LTA {
 			self::$vars["sunhr"]["daily"][$z] = self::$vars["sunhr"]["monthly"][$month_idx] / $month_days * ($dsuncc[$z] / $dsuncc[$month_midpoint_idx]);
 			self::$vars["wmean"]["daily"][$z] = self::$vars["wmean"]["monthly"][$month_idx];
 		}
-		foreach(self::$vars as $_ => $obj) {
-			if(array_key_exists("monthly", $obj)) {
+		foreach(self::$vars as $key => &$obj) {
+			if(is_array($obj) && array_key_exists("monthly", $obj)) {
 				$obj["year_sum"] = array_sum($obj["monthly"]);
 				$obj["year_mean"] = $obj["year_sum"] / 12;
 				$obj["season_sum"] = [];
@@ -779,25 +858,41 @@ class LTA {
 				}
 			}
 		}
+		unset($obj);
 	}
 
 	public static function getDailyAnom($type, $month, $day, $yr = null) {
 		if($yr === null) {
 			$yr = Date::$dyear;
 		}
-		return self::$vars[$type]["daily"][date("z", Date::mkdate($month, $day, $yr))];
+		$z = date("z", Date::mkdate($month, $day, $yr));
+		if(!isset(self::$vars[$type]["daily"][$z])) {
+			return null;
+		}
+		return self::$vars[$type]["daily"][$z];
 	}
 
 	public static function getMonthlyAnom($type, $month) {
+		if(!isset(self::$vars[$type]) || !is_array(self::$vars[$type]) || !isset(self::$vars[$type]["monthly"])) {
+			return null;
+		}
 		return self::$vars[$type]["monthly"][$month-1];
 	}
 	
 	public static function getYearlyAnom($type) {
-		return self::$vars[$type][Wx::$daily[$type]["summable"] ? "year_sum" : "year_mean"];
+		if(!isset(self::$vars[$type]) || !is_array(self::$vars[$type])) {
+			return null;
+		}
+		$key = (isset(Wx::$daily[$type]["summable"]) && Wx::$daily[$type]["summable"]) ? "year_sum" : "year_mean";
+		return isset(self::$vars[$type][$key]) ? self::$vars[$type][$key] : null;
 	}
 
 	public static function getSeasonAnom($type, $season) {
-		return self::$vars[$type][Wx::$daily[$type]["summable"] ? "season_sum" : "season_mean"][$season];
+		if(!isset(self::$vars[$type]) || !is_array(self::$vars[$type])) {
+			return null;
+		}
+		$key = (isset(Wx::$daily[$type]["summable"]) && Wx::$daily[$type]["summable"]) ? "season_sum" : "season_mean";
+		return isset(self::$vars[$type][$key][$season]) ? self::$vars[$type][$key][$season] : null;
 	}
 
 	public static function getDateEndingAnom($type, $end, $duration) {

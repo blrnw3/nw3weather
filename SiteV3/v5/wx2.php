@@ -10,6 +10,7 @@ Page::Start();
 
 $risetime = (date_sunrise(time(), SUNFUNCS_RET_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I')) - 1);
 $risesecs = 2.5 * $risetime;  // 2.5s per hour timelapse
+$yr_yest = Date::$yr_yest;
 $mon_yest_zero = Util::zerolead(Date::$mon_yest);
 $lastmonth = date("Y_m", Date::mkdate(Date::$dmonth - 1, 1, Date::$dyear));
 $lastyear = intval(Date::$dyear) - 1;

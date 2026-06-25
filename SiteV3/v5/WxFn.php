@@ -14,6 +14,7 @@ class Live {
 	public static $wdir;
 	public static $dewp;
 	public static $feel;
+	public static $pm25; // Air quality: latest raw PM2.5 (ug/m3), null if unavailable
 
 	// 24hr / today
 	public static $NOW;
@@ -30,6 +31,15 @@ class Live {
 	public static function init() {
 		self::$NOW = unserialize(file_get_contents(ROOT . 'serialised_datNow.txt'));
 		self::$HR24 = unserialize(file_get_contents(ROOT . 'serialised_datHr24.txt'));
+
+		// Air quality: latest PM2.5 reading (polled every 5 min by cron), null if absent
+		$pm25File = ROOT . 'pm25_latest.txt';
+		if(file_exists($pm25File)) {
+			$pm25Raw = trim(file_get_contents($pm25File));
+			self::$pm25 = ($pm25Raw !== '' && is_numeric($pm25Raw)) ? (float)$pm25Raw : null;
+		} else {
+			self::$pm25 = null;
+		}
 
 		$crsizeFinal = filesize(Site::LIVE_DATA_PATH);
 
@@ -72,7 +82,8 @@ class Live {
 		self::$maxgstToday = self::$NOW['max']['gust'];
 
 		// Harpenden data
-		if(self::$outage) {
+		// July 1st 2024: wind outage
+		if(false) {
 			$extClient = file(ROOT.'EXT_harpenden.txt');
 			$extData = explode(" ", $extClient[0]);
 			self::$unix =  mktime(intval($extData[29]), intval($extData[30]), intval($extData[31]),
@@ -85,11 +96,9 @@ class Live {
 				self::$gustRaw = $extData[2] * $kntsToMph * $extOffset; //true 14s gust
 				self::$w10m = $extData[158] * $kntsToMph * $extOffset;
 				self::$wdir = $extData[3];
-				self::$pres = $extData[6];
-				self::$temp = $extData[4] + 1;
-				self::$humi = $extData[5];
 			}
 		}
+
 		// Synoptic data from James park
 		if(self::$outage && false) {
 			$mod_james = filemtime(ROOT.'EXT_james.json');
@@ -99,22 +108,45 @@ class Live {
 				$james_data = json_decode(file_get_contents(ROOT."EXT_james.json"), true);
 				self::$temp = $james_data["STATION"][0]["OBSERVATIONS"]["air_temp_value_1"]["value"] - 0.5;
 				self::$dewp = $james_data["STATION"][0]["OBSERVATIONS"]["dew_point_temperature_value_1"]["value"] - 0.5;
-		//		$rain = $james_data["STATION"][0]["OBSERVATIONS"]["precip_accum_12_hour_value_1"]["value"];
 				// https://www.omnicalculator.com/physics/relative-humidity
 				self::$humi = intval(100 * exp((17.625 * self::$dewp) / (243.04 + self::$dewp)) / exp((17.625 * self::$temp) / (243.04 + self::$temp)));
-		//		$humi = (int)(100 - ($temp - $dewp) * 5);  // TODO better
 			}
 		}
+
+		$DOWN = (self::$temp < -9 || self::$humi < 20 || (self::$temp == -19.3 && self::$humi == 80));
+
 		// CWOP Islington data
-		if(self::$outage) {
+		$mainBackupOk = false;
+		if(($DOWN || self::$outage) && file_exists(ROOT."EXT_islington.json")) {
 			$isl_data = json_decode(file_get_contents(ROOT."EXT_islington.json"), true);
-			$isl_unix = intval($isl_data["weather"]["timestamp"] / 1000);
-			if((time() - $isl_unix) < 900) {
-				$unix = $isl_unix;
-				$temp = (float)$isl_data["weather"]["wx"]["temp"];
-				$humi = $isl_data["weather"]["wx"]["humidity"];
-				$rain = (float)$isl_data["weather"]["wx"]["rain_midnight"];
-				$pres = (float)$isl_data["weather"]["wx"]["pressure"];
+			$isl_wx = $isl_data["entries"][0];
+			$isl_unix = intval($isl_wx["time"]);
+			if((time() - $isl_unix) < 3600) {
+				$mainBackupOk = true;
+				self::$unix = $isl_unix;
+				self::$temp = (float)$isl_wx["temp"];
+				self::$humi = $isl_wx["humidity"];
+				self::$rain = (float)$isl_wx["rain_mn"]; // rain since midnight (meteoglance field)
+				self::$pres = (float)$isl_wx["pressure"];
+				self::$wind = (float)$isl_wx["wind_speed"];
+				self::$gust = (float)$isl_wx["wind_gust"];
+				self::$gustRaw = self::$gust + 1;
+				self::$w10m = self::$wind;
+			}
+		}
+
+		// CWOP Potters
+		if(($DOWN || self::$outage) && file_exists(ROOT."EXT_potters.json")) {
+			$pot_data = json_decode(file_get_contents(ROOT."EXT_potters.json"), true);
+			$pot_wx = $pot_data["entries"][0];
+			$pot_unix = intval($pot_wx["time"]);
+			if((time() - $pot_unix) < 3000) {
+				if(!$mainBackupOk) {
+					self::$unix = $pot_unix;
+					self::$temp = (float)$pot_wx["temp"];
+					self::$humi = $pot_wx["humidity"];
+				}
+				self::$rain = (float)$pot_wx["rain_24h"];
 			}
 		}
 
@@ -269,10 +301,10 @@ class DataSummarizer {
 		return $summary;
 	}
 
-	private function addAnomalies($summary, $anom) {
-		if($this->anomable) {
+	private function addAnomalies(&$summary, $anom) {
+		if($this->anomable && is_numeric($anom)) {
 			$summary['anom'] = $summary[$this->summaryKey] - $anom;
-			$summary['anom_pct'] = $summary['anom'] / $anom * 100;
+			$summary['anom_pct'] = $anom != 0 ? $summary['anom'] / $anom * 100 : null;
 		}
 	}
 
@@ -330,10 +362,6 @@ class DataSummarizer {
 			$periodSummaries[$k] = $this->getBaseSummary($this->pastNDays[$period]);
 			$periodSummaries[$k]['minDateFmt'] = Date::today(null, $period > 31, true, null, $periodSummaries[$k]['minDate']);
 			$periodSummaries[$k]['maxDateFmt'] = Date::today(null, $period > 31, true, null, $periodSummaries[$k]['maxDate']);
-			if($this->anomable) {
-				
-				$this->addAnomalies($periodSummaries[$k], $anom);
-			}
 		}
 		return $periodSummaries;
 	}
@@ -492,6 +520,9 @@ class Data {
 			self::$CACHE_DAT_TIMES = unserialize(file_get_contents(ROOT . "serialised_datt_new.txt"));
 		}
 		// BUG TODO: if for current day, it returns the value as cached at midnight, which is the only time the time file is updated
+		if (!isset(self::$CACHE_DAT_TIMES[$name][$year][$month][$day])) {
+			return null;
+		}
 		return self::$CACHE_DAT_TIMES[$name][$year][$month][$day];
 	}
 
@@ -688,6 +719,11 @@ class Data {
 		$rncum = $w10 = 0;
 		$mins = $maxs = $means = $timesMin = $timesMax = array();
 
+		// PM2.5 is an optional trailing column (11); tracked separately and guarded,
+		// since older/partial logs may not contain it.
+		$pm25Sum = 0; $pm25Count = 0; $pm25Min = null; $pm25Max = null;
+		$pm25MinTimes = array(); $pm25MaxTimes = array();
+
 		$windDirs = [];
 
 		$filcust = file(ROOT. "logfiles/daily/" . $procfil . 'log.txt');
@@ -718,6 +754,18 @@ class Data {
 						$datt[$t]['timesMin'][] = mktime($custhr[$i],$custmin[$i]);
 					}
 				}
+			}
+
+			// PM2.5 - trailing column 11, only present from launch onward
+			if(isset($custl[11]) && trim($custl[11]) !== '') {
+				$pm25V = floatval($custl[11]);
+				$dat[11][$i] = $pm25V;
+				$pm25Sum += $pm25V; $pm25Count++;
+				$tPm25 = mktime($custhr[$i], $custmin[$i]);
+				if($pm25Max === null || $pm25V > $pm25Max) { $pm25Max = $pm25V; $pm25MaxTimes = array($tPm25); }
+				elseif($pm25V === $pm25Max) { $pm25MaxTimes[] = $tPm25; }
+				if($pm25Min === null || $pm25V < $pm25Min) { $pm25Min = $pm25V; $pm25MinTimes = array($tPm25); }
+				elseif($pm25V === $pm25Min) { $pm25MinTimes[] = $tPm25; }
 			}
 
 			$feels[$i] = feelsLike($custl[6], $custl[4], $custl[9]);
@@ -857,6 +905,21 @@ class Data {
 
 		$hrChanges['wind'] = $dat[3][$end-1] - $dat[3][$end-61];
 		$hr24Changes['wind'] = $dat[3][$end-1] - $dat[3][1];
+
+		// PM2.5 summary - only when data was present this period
+		if($pm25Count > 0) {
+			$mins['pm25'] = $pm25Min;
+			$maxs['pm25'] = $pm25Max;
+			$means['pm25'] = round($pm25Sum / $pm25Count, 1);
+			$timesMin['pm25'] = date('H:i', midpoint_of_longest($pm25MinTimes, 120));
+			$timesMax['pm25'] = date('H:i', midpoint_of_longest($pm25MaxTimes, 120));
+			if($end > 61 && isset($dat[11][$end-1]) && isset($dat[11][$end-61])) {
+				$hrChanges['pm25'] = $dat[11][$end-1] - $dat[11][$end-61];
+			}
+			if($end > 1 && isset($dat[11][$end-1]) && isset($dat[11][1])) {
+				$hr24Changes['pm25'] = $dat[11][$end-1] - $dat[11][1];
+			}
+		}
 
 		$means['wind'] = round(mean($dat[3]), 1);
 		$means['w10m'] = round(mean($wind10), 1);

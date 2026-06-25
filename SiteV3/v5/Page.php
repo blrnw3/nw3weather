@@ -58,6 +58,7 @@ class Page {
 
 		// Init other static stuff
 		Live::init();
+		LTA::init();
 	}
 
 	public static function Start() {
@@ -110,7 +111,7 @@ class Page {
 		<meta http-equiv="pragma" content="no-cache" />
 		<meta name="author" content="Ben Masschelein Rodgers" />
 		<meta name="description" content="$description" />
-		<meta name="viewport" content="width=420, initial-scale=1.0" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
 		<link rel="stylesheet" type="text/css" href="/v5/$styleSheet.css?20240412" media="screen" title="screen" />
@@ -230,7 +231,10 @@ END;
 			}
 
 			$class = $classes ? ' class="'. implode(" ", $classes) . '"' : '';
-			$html .= '<a href="'. $item["page"]. '.php"' . $class . ' title="'. $item["text"]. '">'. $item["title"]. '</a>
+			// v5-native pages link relatively; pages still on the legacy root use an absolute path
+			$isV5 = file_exists(__DIR__ . '/' . $item["page"] . '.php');
+			$href = ($isV5 ? '' : '/') . $item["page"] . '.php';
+			$html .= '<a href="'. $href . '"' . $class . ' title="'. $item["text"]. '">'. $item["title"]. '</a>
 			';
 		}
 		return $html;
@@ -567,7 +571,7 @@ END;
 		if (isset($_GET['noblr'])) {
 			setcookie("me", false, time() + self::$cookieLifeSecs);
 		}
-		if($_COOKIE['me'] == true) {
+		if(isset($_COOKIE['me']) && $_COOKIE['me'] == true) {
 			self::$me = true;
 		}
 		//Session setters

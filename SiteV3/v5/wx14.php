@@ -7,25 +7,28 @@ Page::init([
 	"description" => 'Detailed latest temperature data/information and records from NW3 weather station.'
 ]);
 Page::Start();
-
-// require ROOT . 'TemperatureTags.php';
 ?>
 
 <h1>Detailed Temperature Data</h1>
 
 <?php
 $mainTables = new ViewDetailedData("temp");
+
+$tmin = new DataSummarizer("tmin");
+$monthFrosts = Util::cond_count($tmin->currentMonth, false, 0);
+$yearFrosts = Util::cond_count($tmin->currentYear, false, 0);
+
 $tchangehour = Wx::conv(Live::$HR24['changeHr']['temp'], Wx::AbsTemp, 1, 1);
-$measures = ['Temperature','Temperature Trend / hr','Feels-like','Night Minimum (21-09)','Day Maximum (09-21)','24hr Average',
+$measures = ['Temperature', 'Temperature Trend / hr', 'Feels-like', 'Night Minimum (21-09)', 'Day Maximum (09-21)', '24hr Average',
 	'Daily Air Frost Hours', 'Monthly Air Frosts', 'Annual Air Frosts'];
-$values = [Live::$temp, $tchangehour, Live::$feel, $nighttimeMin, $daytimeMax, $last24houravtemp,
-	$hrsfrostmidnight, $daysTminL0C, $daysTminyearL0C ];
+$values = [Live::$temp, $tchangehour, Live::$feel, Live::$NOW['min']['night'], Live::$NOW['max']['day'], Live::$NOW['mean']['temp'],
+	Live::$NOW['misc']['frosthrs'], $monthFrosts, $yearFrosts];
 $conv = [Wx::Temperature, Wx::None, Wx::Temperature, Wx::Temperature, Wx::Temperature, Wx::Temperature,
-	Wx::None, Wx::None, Wx::None];
+	Wx::Hours, Wx::Days, Wx::Days];
 
 $mainTables->currentLatest($measures, $values, $conv);
 
-$measures2 = array('Lowest Min','Highest Max','Highest Min','Lowest Max','Coldest Day','Warmest Day','Averages','Mean','Mean Minimum','Mean Maximum');
+$measures2 = array('Lowest Min', 'Highest Max', 'Highest Min', 'Lowest Max', 'Coldest Day', 'Warmest Day', 'Averages', 'Mean', 'Mean Minimum', 'Mean Maximum');
 $mainTables->avgsExtrmsRecs($measures2);
 $mainTables->pastYearAvgsExtrms($measures2);
 $mainTables->rankTables();

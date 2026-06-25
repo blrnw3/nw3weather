@@ -8,8 +8,6 @@ Page::init([
 ]);
 Page::Start();
 
-require ROOT.'HumidityTags.php';
-
 //http://www.gorhamschaffler.com/humidity_formulas.htm
 $airdensity = Wx::conv(Live::$pres / ((Live::$temp + 273.15) * 287) * 100000, Wx::Density, true, false, -2);
 //http://forum.onlineconversion.com/showthread.php?t=567

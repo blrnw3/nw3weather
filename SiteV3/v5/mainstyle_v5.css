@@ -148,7 +148,9 @@ body {
 	font-size: 1.1rem;
 }
 #main {
-	width: 1250px;
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow-x: auto;
 	padding: 0.5rem 1rem;
 	background-color:#F2FAFD;
 }
@@ -780,5 +782,299 @@ select.timelapse {
 @media only screen and (max-width: 1230px) {
 	.detail-grid {
 		grid-template-columns: 1fr;
+	}
+}
+
+/****************** Home dashboard ***************************/
+.home-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 0.5rem 1rem;
+}
+.home-head h1 {
+	margin-bottom: 0;
+}
+.home-summary {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 1rem;
+	background: #eef5ef;
+	border: 1px solid #cfe3d2;
+	border-radius: 6px;
+	padding: 0.6rem 1rem;
+	margin: 0.5rem 0.3rem;
+	text-align: right;
+}
+.home-summary .home-report {
+	line-height: 1.5;
+}
+.live-status {
+	margin-top: 0.4rem;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.4rem;
+}
+.live-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: #999;
+	flex: 0 0 auto;
+}
+.live-dot-ok {
+	background: #2ecc40;
+	box-shadow: 0 0 5px rgba(46, 204, 64, 0.8);
+}
+.live-dot-stale {
+	background: #e0242b;
+	box-shadow: 0 0 5px rgba(224, 36, 43, 0.8);
+}
+.live-meta {
+	font-size: 0.85rem;
+	color: #555;
+}
+.home-forecast {
+	display: flex;
+	align-items: center;
+	gap: 1.2rem;
+	flex-wrap: wrap;
+	flex: 0 0 auto;
+}
+.fcast-day {
+	text-align: center;
+	min-width: 96px;
+}
+.fcast-day img {
+	width: 60px;
+	height: auto;
+	background-color: #CCCEEC;
+	border-radius: 6px;
+}
+.fcast-label {
+	font-weight: 600;
+}
+.fcast-desc {
+	font-size: 0.85rem;
+	color: #444;
+}
+.fcast-temps {
+	margin-top: 0.1rem;
+}
+.fcast-pop {
+	font-size: 0.85rem;
+	color: #3567EF;
+}
+.fcast-more {
+	font-size: 0.9rem;
+}
+
+.wx-cards {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 1rem;
+	margin: 0.5rem 0.3rem 1.5rem;
+}
+@media only screen and (max-width: 1150px) {
+	.wx-cards { grid-template-columns: repeat(3, 1fr); }
+}
+@media only screen and (max-width: 820px) {
+	.wx-cards { grid-template-columns: repeat(2, 1fr); }
+}
+@media only screen and (max-width: 520px) {
+	.wx-cards { grid-template-columns: 1fr; }
+}
+/* Live cards live in their own AJAX-refreshed wrapper but join the parent grid */
+.wx-live-cards {
+	display: contents;
+}
+.wx-card {
+	background: #fff;
+	border: 1px solid #d6e2d8;
+	border-top: 4px solid #15866A;
+	border-radius: 6px;
+	padding: 0.7rem 0.9rem;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.wx-card-head {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-weight: 600;
+	font-size: 1.1rem;
+	color: #15866A;
+	margin-bottom: 0.4rem;
+}
+.wx-card-icon {
+	flex: 0 0 auto;
+}
+.wx-card-head a.hidden-link {
+	color: inherit;
+	padding: 0;
+}
+.wx-card-now {
+	font-size: 1.9rem;
+	font-weight: 600;
+	line-height: 1.1;
+}
+.wx-card-now .wx-rate {
+	font-size: 0.85rem;
+	font-weight: 400;
+	color: #555;
+	white-space: nowrap;
+}
+.wx-card-sub {
+	color: #444;
+	margin: 0.2rem 0 0.5rem;
+}
+.wx-card-rows {
+	margin-top: 0.4rem;
+	border-top: 1px dashed #dde8df;
+}
+.wx-card-rows > div {
+	display: flex;
+	flex-wrap: nowrap;
+	justify-content: space-between;
+	gap: 0.5rem;
+	padding: 0.28rem 0;
+	border-bottom: 1px dashed #eef3ef;
+	white-space: nowrap;
+}
+.wx-card-rows > div:last-child {
+	border-bottom: none;
+}
+.wx-card-rows .k {
+	color: #567;
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.wx-card-rows .v {
+	text-align: right;
+	flex: 0 0 auto;
+}
+.wx-card-rows .wx-when {
+	color: #889;
+	font-weight: 400;
+	font-size: 0.85em;
+}
+.wx-card-foot {
+	margin-top: 0.5rem;
+	font-size: 0.9rem;
+}
+
+/* Per-variable accent colours */
+.wx-card-temp { border-top-color: #DF7401; }
+.wx-card-temp .wx-card-head { color: #DF7401; }
+.wx-card-humi { border-top-color: #2E9D30; }
+.wx-card-humi .wx-card-head { color: #2E9D30; }
+.wx-card-pres { border-top-color: #7055BF; }
+.wx-card-pres .wx-card-head { color: #7055BF; }
+.wx-card-wind { border-top-color: #DA1313; }
+.wx-card-wind .wx-card-head { color: #DA1313; }
+.wx-card-rain { border-top-color: #3567EF; }
+.wx-card-rain .wx-card-head { color: #3567EF; }
+.wx-card-sun { border-top-color: #B8860B; }
+.wx-card-sun .wx-card-head { color: #B8860B; }
+.wx-card-pm25 { border-top-color: #5B8A72; }
+.wx-card-pm25 .wx-card-head { color: #5B8A72; }
+.wx-card-pm25 .wx-card-now { font-size: 1.5rem; }
+.wx-card-head .wx-card-label { color: inherit; }
+
+/* Air-quality DAQI band pill (DEFRA colours) */
+.daqi-band {
+	display: inline-block;
+	padding: 0.05em 0.5em;
+	border-radius: 0.3rem;
+	font-size: 1.4rem;
+	line-height: 1.25;
+	color: #1a1a1a;
+}
+.daqi-low { background: #6ad16a; }
+.daqi-mod { background: #f2c500; }
+.daqi-high { background: #ff7a52; color: #fff; }
+.daqi-vhigh { background: #8a0033; color: #fff; }
+.daqi-unknown { background: #d9d9d9; color: #555; font-size: 1.1rem; }
+
+/* Webcam: plain image below the cards (capped at natural size) */
+.home-cam-link {
+	display: inline-block;
+	margin: 0 0.3rem 1.5rem;
+}
+.home-cam-link img {
+	width: auto;
+	max-width: 100%;
+	height: auto;
+	display: block;
+	border: 1px solid #d6e2d8;
+	border-radius: 6px;
+}
+
+/* Graph boxes: two per row */
+.home-graphs {
+	display: grid;
+	grid-template-columns: repeat(2, max-content);
+	gap: 0.8rem;
+	margin: 0.3rem 0.3rem 1rem;
+}
+@media only screen and (max-width: 900px) {
+	.home-graphs { grid-template-columns: 1fr; }
+}
+.home-graphs img {
+	display: block;
+	background: #fff;
+	border: 1px solid #d6e2d8;
+	border-radius: 6px;
+	padding: 0.3rem;
+	width: 100%;
+	max-width: 400px;
+	height: auto;
+}
+
+/* About-the-station info box */
+.home-about {
+	margin: 1rem 0.3rem;
+	padding: 0.2rem 1rem;
+	background: #eef5ef;
+	border-left: 4px solid #15866A;
+	border-radius: 4px;
+}
+
+.home-links {
+	margin: 0.5rem 0.3rem 1rem;
+	padding: 0.6rem 0.9rem;
+	background: #eef5ef;
+	border-radius: 6px;
+	line-height: 2;
+}
+.home-links a {
+	margin: 0 0.4rem;
+	white-space: nowrap;
+}
+
+/****************** Responsive layout ***************************/
+@media only screen and (max-width: 760px) {
+	#nav-wrapper {
+		flex-direction: column;
+	}
+	#nav {
+		width: auto;
+	}
+	#main {
+		padding: 0.5rem 0.6rem;
+	}
+	#main h1 {
+		font-size: 1.5rem;
+	}
+	.detail-flex {
+		gap: 0.8rem;
+	}
+	.home-summary {
+		flex-direction: column;
+		align-items: flex-start;
 	}
 }

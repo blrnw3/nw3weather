@@ -51,9 +51,12 @@ $dates = array();
 
 for($o = 0; $o < count($order1); $o++) {
 	$mType = Wx::$mmm[$order2[$o]];
-	$values[$o][0] = Live::$NOW[Wx::$mmm[$order4[$o]]][Wx::$mappingsToDailyDataKey[$fulldatNames[$order1[$o]]]];
+	$dkey = isset(Wx::$mappingsToDailyDataKey[$fulldatNames[$order1[$o]]]) ? Wx::$mappingsToDailyDataKey[$fulldatNames[$order1[$o]]] : null;
+	$mmKey = Wx::$mmm[$order4[$o]];
+	$timeKey = 'time' . Wx::$mmmr[$order4[$o]];
+	$values[$o][0] = ($dkey !== null && isset(Live::$NOW[$mmKey][$dkey])) ? Live::$NOW[$mmKey][$dkey] : null;
 	$values[$o][1] = ${$fulldatNames[$order1[$o]] .'datYest'}[0][$mType];
-	$dates[$o][0] = Live::$NOW['time'.Wx::$mmmr[$order4[$o]]][Wx::$mappingsToDailyDataKey[$fulldatNames[$order1[$o]]]];
+	$dates[$o][0] = ($dkey !== null && isset(Live::$NOW[$timeKey][$dkey])) ? Live::$NOW[$timeKey][$dkey] : '';
 	$dates[$o][1] = ${$fulldatNames[$order1[$o]] .'datYest'}[1][$order2[$o]];
 	foreach($pOrder as $po) {
 		$values[$o][] = ${$fulldatNames[$order1[$o]] .'dat'}[$mType][$order3[$o]][$po];
@@ -62,14 +65,14 @@ for($o = 0; $o < count($order1); $o++) {
 }
 
 $values[7][0] = Live::$NOW['max']['gust'];
-$values[11][0] = Live::$NOW['max']['rnhr'];
-$values[12][0] = Live::$NOW['max']['rn10'];
+$values[11][0] = isset(Live::$NOW['max']['rnhr']) ? Live::$NOW['max']['rnhr'] : null;
+$values[12][0] = isset(Live::$NOW['max']['rn10']) ? Live::$NOW['max']['rn10'] : null;
 $dates[7][0] = Live::$NOW['timeMax']['gust'];
-$dates[11][0] = Live::$NOW['timeMax']['rnhr'];
-$dates[12][0] = Live::$NOW['timeMax']['rn10'];
+$dates[11][0] = isset(Live::$NOW['timeMax']['rnhr']) ? Live::$NOW['timeMax']['rnhr'] : '';
+$dates[12][0] = isset(Live::$NOW['timeMax']['rn10']) ? Live::$NOW['timeMax']['rn10'] : '';
 
-$rnRates = array(Live::$NOW['max']['rate'], $maxrainrateyest, $maxRateWeek, $mrecorddailyrate, $yrecorddailyrate, $recorddailyrate);
-$rnRatesD = array(Live::$NOW['timeMax']['rate'], $maxrainrateyesttime, $maxRateWeek_date, $mrecorddailyratedate, $yrecorddailyratedate, $recorddailyratedate);
+$rnRates = array(isset(Live::$NOW['max']['rate']) ? Live::$NOW['max']['rate'] : null, $maxrainrateyest, $maxRateWeek, $mrecorddailyrate, $yrecorddailyrate, $recorddailyrate);
+$rnRatesD = array(isset(Live::$NOW['timeMax']['rate']) ? Live::$NOW['timeMax']['rate'] : '', $maxrainrateyesttime, $maxRateWeek_date, $mrecorddailyratedate, $yrecorddailyratedate, $recorddailyratedate);
 $values[$o] = $rnRates;
 $dates[$o] = $rnRatesD;
 
@@ -121,10 +124,12 @@ $rdatYest[0]['mean'] = $rtotals[0]['yest'];
 
 for($o = 0; $o < count($fulldatNames); $o++) {
 	$windFix = ($o === 3); //fix for mean wind being in the 'min' array key
-	$values[$o][0] = Live::$NOW['mean'][Wx::$mappingsToDailyDataKey[$fulldatNames[$o]]];
+	$dk = isset(Wx::$mappingsToDailyDataKey[$fulldatNames[$o]]) ? Wx::$mappingsToDailyDataKey[$fulldatNames[$o]] : null;
+	$values[$o][0] = ($dk !== null && isset(Live::$NOW['mean'][$dk])) ? Live::$NOW['mean'][$dk]
+		: (isset(${$fulldatNames[$o] .'datToday'}[0][2]) ? ${$fulldatNames[$o] .'datToday'}[0][2] : null);
 	$values[$o][1] = ${$fulldatNames[$o] .'datYest'}[0][$windFix ? 'min' : 'mean'];
-	$anoms[$o][0] = ${$fulldatNames[$o] .'datToday'}[2]['mean'];
-	$anoms[$o][1] = ${$fulldatNames[$o] .'datYest'}[2]['mean'];
+	$anoms[$o][0] = isset(${$fulldatNames[$o] .'datToday'}[2]['mean']) ? ${$fulldatNames[$o] .'datToday'}[2]['mean'] : '';
+	$anoms[$o][1] = isset(${$fulldatNames[$o] .'datYest'}[2]['mean']) ? ${$fulldatNames[$o] .'datYest'}[2]['mean'] : '';
 	foreach($pOrder as $po) {
 		$values[$o][] = ($o <= 4) ? ${$fulldatNames[$o] .'dat'}[$windFix ? 'min' : 'mean'][2][$po] : ${$fulldatNames[$o] .'totals'}[0][$po];
 		$anoms[$o][] = ($o === 0) ? ${$fulldatNames[$o] .'dat'}['mean'][2][$po.'anom'] :
@@ -146,9 +151,11 @@ for($r = 0; $r < count($values); $r++) {
 	$tdClass = 'td'. ($dataCat[$r] + 10) .'C';
 	Html::td("<b> $dataNames[$r] </b>", $tdClass);
 	for($c = 0; $c < count($values[0]); $c++) {
-		$anomOrNo = Util::isBlank($anoms[$r][$c]) ? '' : ( "<br />".
-			( ($r === 0) ? '('. Wx::conv($anoms[$r][$c], Wx::AbsTemp, false, true) .')' : $anoms[$r][$c] ) );
-		$daysofOrNo = Util::isBlank($daysof[$r][$c-2]) ? '' : "<br />". $daysof[$r][$c-2] .' days';
+		$anomVal = isset($anoms[$r][$c]) ? $anoms[$r][$c] : '';
+		$anomOrNo = Util::isBlank($anomVal) ? '' : ( "<br />".
+			( ($r === 0) ? '('. Wx::conv($anomVal, Wx::AbsTemp, false, true) .')' : $anomVal ) );
+		$daysofVal = isset($daysof[$r][$c-2]) ? $daysof[$r][$c-2] : '';
+		$daysofOrNo = Util::isBlank($daysofVal) ? '' : "<br />". $daysofVal .' days';
 		Html::td( "<b>" . Wx::conv($values[$r][$c], $dataConv[$r]) ."</b>". $anomOrNo . $daysofOrNo, $tdClass );
 	}
 	Html::tr_end();

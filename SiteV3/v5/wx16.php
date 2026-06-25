@@ -7,8 +7,6 @@ Page::init([
 	"description" => 'Detailed latest barometric pressure data/information and records from NW3 weather station.'
 ]);
 Page::Start();
-
-require ROOT.'PressureTags.php';
 ?>
 
 <h1>Detailed Barometric Pressure Data</h1>

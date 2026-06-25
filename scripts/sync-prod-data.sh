@@ -31,6 +31,7 @@ SRC="$PROD_SSH:$PROD_DOCROOT/"
 # (*Tags.php matches generated tag files like RainTags.php, not cron_tags.php.)
 DATA_FILTERS=(
   --include='clientraw.txt'
+  --include='clientrawBackup.txt'
   --include='customtextout.txt'
   --include='goodlog.txt'
   --include='todaylog.txt'
@@ -39,10 +40,14 @@ DATA_FILTERS=(
   --include='*Tags.php'
   --include='METAR.txt'
   --include='WUforecast.txt'
+  --include='pm25_latest.txt'
   --include='*.json'
   --include='logfiles/'
   --include='logfiles/daily/'
   --include='logfiles/daily/*'
+  --include='photos/'
+  --include='photos/albums/'
+  --include='photos/albums/albInfo.php'
   --exclude='*'
 )
 
@@ -66,6 +71,12 @@ sync_full_extras() {
   rsync -avz "${RSYNC_SSH[@]}" \
     --include='*.png' --include='*.gif' --include='*.jpg' --exclude='*' \
     "$SRC" "$LOCAL_DOCROOT/"
+
+  echo ">> Pulling photo album thumbnails (preview images for wx7)"
+  rsync -avz --prune-empty-dirs "${RSYNC_SSH[@]}" \
+    --include='*/' --include='*s.jpg' --include='*s.JPG' --exclude='*' \
+    "$PROD_SSH:$PROD_DOCROOT/photos/" "$LOCAL_DOCROOT/photos/" || \
+    echo "   (skipped: photos not found)"
 }
 
 loop_clientraw() {

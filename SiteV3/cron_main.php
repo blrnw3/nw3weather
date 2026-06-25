@@ -3,8 +3,16 @@ const smallGraphWidth1 = 533;
 const smallGraphWidth2 = 500;
 const smallGraphWidth3 = 505;
 
+// PurpleAir sensor index to pull air-quality (PM2.5) from. Set after picking the
+// nearest outdoor sensor to the station; 0 = unconfigured (fetch skipped).
+// The API key lives in secrets.php (PURPLEAIR_KEY), included below.
+const PURPLEAIR_SENSOR = 0;
+
 $t_start = microtime(get_as_float);
 include('/var/www/html/basics.php');
+
+// API keys (git-excluded; this cron is the only includer - keys never reach page code).
+if(file_exists(ROOT.'secrets.php')) include(ROOT.'secrets.php');
 
 echo "START: ". date('r'). "\n";
 
@@ -47,11 +55,13 @@ if(false && $tstamp != '0000' && (date('i') % 10 == 1 || $recentWDdowntime)) {
 if($tstamp == '0107') {
 	$gust = $wind;
 }
-$lineVars = array($wind, $gust, $wdir, $temp, $humi, $pres, $dewp, $rain);
+// Air quality: carry forward the latest PM2.5 reading (polled every 5 min below).
+$pm25 = file_exists(ROOT.'pm25_latest.txt') ? trim(file_get_contents(ROOT.'pm25_latest.txt')) : '';
+$lineVars = array($wind, $gust, $wdir, $temp, $humi, $pres, $dewp, $rain, $pm25);
 $isBadLineData = ($pres == 0);
 $newLine = date('H,i,d,');
 foreach ($lineVars as $value) {
-	$newLine .= round( trim($value), 1) . ',';
+	$newLine .= (($value === '') ? '' : round( trim($value), 1)) . ',';
 }
 $newLine = substr($newLine, 0, strlen($newLine)-1) . "\r\n";
 ########################################################
@@ -97,6 +107,17 @@ file_put_contents( ROOT.'serialised_datHr24.txt', serialize( dailyData( date('Ym
 
 // 'API'
 file_put_contents(ROOT.'api_latest.txt', $newLine);
+
+// Cache yesterday's full daily summary once per day (self-healing via mtime check).
+// The v5 home page loads this single small file instead of unserialising the large
+// per-variable daily files just to read a few of yesterday's values.
+$yestFile = ROOT.'serialised_datYest.txt';
+if(!file_exists($yestFile) || date('Ymd', filemtime($yestFile)) !== date('Ymd')) {
+	$yestYmd = date('Ymd', $dtstamp_yest);
+	if(file_exists(ROOT."logfiles/daily/{$yestYmd}log.txt")) {
+		file_put_contents($yestFile, serialize(dailyData($yestYmd)));
+	}
+}
 
 //datm append
 if($tstamp == $datmCheckTime) {
@@ -226,6 +247,59 @@ if(false && $tstamp % 100 == 0) {
 	}
 }
 
+// Local forecast from Open-Meteo (free, no API key). Today + tomorrow.
+if(date('i') % 30 == 7) {
+	$fcUrl = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lng"
+		. "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+		. "&timezone=Europe%2FLondon&forecast_days=2";
+	$fcRaw = @file_get_contents($fcUrl, false, stream_context_create(array('http' => array('timeout' => 6))));
+	$fcJson = $fcRaw ? json_decode($fcRaw, true) : null;
+	if($fcJson && isset($fcJson['daily']['time'])) {
+		$d = $fcJson['daily'];
+		$labels = array('Today', 'Tomorrow');
+		$fcDays = array();
+		foreach($d['time'] as $i => $date) {
+			list($fcIcon, $fcDesc) = forecastIcon((int)$d['weather_code'][$i]);
+			$fcDays[] = array(
+				'label' => isset($labels[$i]) ? $labels[$i] : date('D', strtotime($date)),
+				'date' => $date,
+				'icon' => $fcIcon,
+				'desc' => $fcDesc,
+				'tmax' => $d['temperature_2m_max'][$i],
+				'tmin' => $d['temperature_2m_min'][$i],
+				'pop'  => $d['precipitation_probability_max'][$i],
+			);
+		}
+		file_put_contents(ROOT.'forecast_v5.json', json_encode(array('updated' => time(), 'days' => $fcDays)));
+	} else {
+		quick_log('forecast_bad.txt', substr((string)$fcRaw, 0, 200));
+	}
+}
+
+// Air quality (PM2.5) from PurpleAir. Polled every 5 min; the latest value is
+// carried forward into the per-minute log (see $lineVars above) so dailyData()
+// produces min/max/mean for free. Raw PM2.5 is stored; the v5 site bands it as UK DAQI.
+if(PURPLEAIR_SENSOR && (date('i') % 5 == 2) && defined('PURPLEAIR_KEY') && PURPLEAIR_KEY !== '') {
+	$paUrl = 'https://api.purpleair.com/v1/sensors/' . PURPLEAIR_SENSOR . '?fields=pm2.5_10minute';
+	$paCtx = stream_context_create(array('http' => array(
+		'header' => "X-API-Key: " . PURPLEAIR_KEY . "\r\n",
+		'timeout' => 6,
+	)));
+	$paRaw = @file_get_contents($paUrl, false, $paCtx);
+	$paJson = $paRaw ? json_decode($paRaw, true) : null;
+	$pm25Now = null;
+	if(isset($paJson['sensor']['pm2.5_10minute'])) {
+		$pm25Now = $paJson['sensor']['pm2.5_10minute'];
+	} elseif(isset($paJson['sensor']['stats']['pm2.5_10minute'])) {
+		$pm25Now = $paJson['sensor']['stats']['pm2.5_10minute'];
+	}
+	if($pm25Now !== null && is_numeric($pm25Now)) {
+		file_put_contents(ROOT.'pm25_latest.txt', round((float)$pm25Now, 1));
+	} else {
+		quick_log('purpleair_bad.txt', substr((string)$paRaw, 0, 200));
+	}
+}
+
 // External clientraw grab and save
 if(false) {
 	$path = 'http://www.harpendenweather.co.uk/live/clientraw.txt';
@@ -236,7 +310,7 @@ if(false) {
 		quick_log("HarpendenBadData.txt", $harpendenData[0]);
 	}
 }
-if(true && (date('i') % 5 == 1)) {
+if(true && (date('i') % 5 == 4)) {
 	// St James
 //	$pathJames = "https://api.synopticdata.com/v2/stations/latest?token=790b537f5b0248bc94ec8bbeae0bcba7&stid=SYN03770";
 //	$dataJames = urlToArray($pathJames);
@@ -246,14 +320,15 @@ if(true && (date('i') % 5 == 1)) {
 //		quick_log("james_bad_data.txt", $dataJames[0]);
 //	}
 	// Nearby CWOP (Islington)
-	 $pathIslington = "https://api.aprs.fi/api/get?name=2E0RGX-13&what=wx&apikey=&format=json";
+	 $aprsKey = defined('APRSFI_KEY') ? APRSFI_KEY : '';
+	 $pathIslington = "https://api.aprs.fi/api/get?name=2E0RGX-13&what=wx&apikey=$aprsKey&format=json";
 	 $dataIslington = urlToArray($pathIslington);
 	 if($dataIslington[0]) {
 	 	file_put_contents(ROOT.'EXT_islington.json', $dataIslington[0]);
 	 } else {
 	 	quick_log("islington_bad_data.txt", $dataIslington[0]);
 	 }
-	$pathPotters = "https://api.aprs.fi/api/get?name=G6LTT&what=wx&apikey=&format=json";
+	$pathPotters = "https://api.aprs.fi/api/get?name=G6LTT&what=wx&apikey=$aprsKey&format=json";
 	$dataPotters = urlToArray($pathPotters);
 	if($dataPotters[0]) {
 		file_put_contents(ROOT.'EXT_potters.json', $dataPotters[0]);
@@ -345,6 +420,45 @@ file_put_contents( ROOT."Logs/cronExecuted.txt", myround($p_time) );
 echo "END: ". date('r'). "\n";
 
 ### Functions ###
+
+/**
+ * Maps a WMO weather code (from Open-Meteo) to a [icon, description] pair.
+ * Icons match the *_lg.png set in static-images/.
+ */
+function forecastIcon($code) {
+	$map = array(
+		0  => array('clear', 'Clear sky'),
+		1  => array('clear', 'Mainly clear'),
+		2  => array('partlycloudy', 'Partly cloudy'),
+		3  => array('cloudy', 'Overcast'),
+		45 => array('fog', 'Fog'),
+		48 => array('fog', 'Freezing fog'),
+		51 => array('rain', 'Light drizzle'),
+		53 => array('rain', 'Drizzle'),
+		55 => array('rain', 'Heavy drizzle'),
+		56 => array('rain', 'Freezing drizzle'),
+		57 => array('rain', 'Freezing drizzle'),
+		61 => array('rain', 'Light rain'),
+		63 => array('rain', 'Rain'),
+		65 => array('rain', 'Heavy rain'),
+		66 => array('rain', 'Freezing rain'),
+		67 => array('rain', 'Freezing rain'),
+		71 => array('snow', 'Light snow'),
+		73 => array('snow', 'Snow'),
+		75 => array('snow', 'Heavy snow'),
+		77 => array('snow', 'Snow grains'),
+		80 => array('rain_showers', 'Light showers'),
+		81 => array('rain_showers', 'Showers'),
+		82 => array('rain_showers', 'Heavy showers'),
+		85 => array('snow_showers', 'Snow showers'),
+		86 => array('snow_showers', 'Snow showers'),
+		95 => array('tstorms', 'Thunderstorm'),
+		96 => array('tstorms_showers', 'Thunderstorm with hail'),
+		99 => array('tstorms_showers', 'Thunderstorm with hail'),
+	);
+	return isset($map[$code]) ? $map[$code] : array('cloudy', 'Cloudy');
+}
+
 function graph_stitch() {
 	$im1 = imagecreatefrompng('1.png');
 	$im2 = imagecreatefrompng('2.png');
@@ -411,7 +525,8 @@ function logneatenandrepair() {
 	// T/H/Dew: 6, 7, 9
 	// Baro: 8
 	// Rain: 10
-	$FIELDS_TO_PRESERVE = [3, 4, 5, 6, 7, 8, 9, 10];
+	// PM2.5: 11
+	$FIELDS_TO_PRESERVE = [3, 4, 5, 6, 7, 8, 9, 10, 11];
 
 	if($FIELDS_TO_PRESERVE) {
 		$live_data = file($goodlog);
@@ -513,6 +628,9 @@ function serialiseCSV($csv, $today = true) {
 					$newNOW['max']['w10m'],
 					$newNOW['min']['feel'], $newNOW['max']['feel'], $newNOW['mean']['feel'],
 					$newNOW['misc']['frosthrs'],
+					isset($newNOW['min']['pm25']) ? $newNOW['min']['pm25'] : '',
+					isset($newNOW['max']['pm25']) ? $newNOW['max']['pm25'] : '',
+					isset($newNOW['mean']['pm25']) ? $newNOW['mean']['pm25'] : '',
 					' \n'
 				);
 
@@ -528,6 +646,9 @@ function serialiseCSV($csv, $today = true) {
 					$newNOW['timeMin']['tchange10'], $newNOW['timeMin']['tchangehr'], $newNOW['timeMin']['hchangehr'],
 					$newNOW['timeMax']['w10m'],
 					$newNOW['timeMin']['feel'], $newNOW['timeMax']['feel'], '',
+					'',
+					isset($newNOW['timeMin']['pm25']) ? $newNOW['timeMin']['pm25'] : '',
+					isset($newNOW['timeMax']['pm25']) ? $newNOW['timeMax']['pm25'] : '',
 					'',
 					' \n'
 				);
