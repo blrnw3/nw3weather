@@ -83,35 +83,45 @@ if($OUTAGE && false) {
 	}
 }
 
-$DOWN = ($temp < -5 || $humi < 25 || ($temp == -22.2 && $humi == 80));
+$DOWN = ($temp < -9 || $humi < 20 || ($temp == -19.3 && $humi == 80));
+
+// CWOP Islington data
+$mainBackupOk = false;
+if(($DOWN  || $OUTAGE)) {
+	$isl_data = json_decode(file_get_contents(ROOT."EXT_islington.json"), true);
+	$isl_wx = $isl_data["entries"][0];
+	$isl_unix = intval($isl_wx["time"]);
+	if((time() - $isl_unix) < 3600) {
+		$mainBackupOk = true;
+		$unix = $isl_unix;
+		$temp = (float)$isl_wx["temp"];
+		$humi = $isl_wx["humidity"];
+		$rain = (float)$isl_wx["rain_midnight"];
+		$pres = (float)$isl_wx["pressure"];
+		$wind = (float)$isl_wx["wind_speed"];
+		$gust = (float)$isl_wx["wind_gust"];
+		$gustRaw = $gust + 1;
+		$w10m = $wind;
+	}
+}
 
 // CWOP Potters
 if($DOWN || $OUTAGE) {
 	$pot_data = json_decode(file_get_contents(ROOT."EXT_potters.json"), true);
-	$pot_unix = intval($pot_data["weather"]["timestamp"] / 1000);
-	if((time() - $pot_unix) < 20000) {
-//		$unix = $isl_unix;
-		$temp = (float)$pot_data["weather"]["wx"]["temp"];
-		$humi = $pot_data["weather"]["wx"]["humidity"];
-//		$rain = (float)$isl_data["weather"]["wx"]["rain_midnight"];
-//		$pres = (float)$isl_data["weather"]["wx"]["pressure"];
+	$pot_wx = $pot_data["entries"][0];
+	$pot_unix = intval($pot_wx["time"]);
+	if((time() - $pot_unix) < 3000) {
+		if(!$mainBackupOk) {
+			$unix = $pot_unix;
+			$temp = (float)$pot_wx["temp"];
+			$humi = $pot_wx["humidity"];
+//			$pres = $pot_wx["pressure"];
+		}
+		$rain = (float)$pot_wx["rain_24h"];
 	}
 }
 
-// CWOP Islington data
-if(false && ($DOWN  || $OUTAGE)) {
-	$isl_data = json_decode(file_get_contents(ROOT."EXT_islington.json"), true);
-	$isl_unix = intval($isl_data["weather"]["timestamp"] / 1000);
-	if((time() - $isl_unix) < 3600) {
-		$temp = (float)$isl_data["weather"]["wx"]["temp"];
-		$humi = $isl_data["weather"]["wx"]["humidity"];
-		if($OUTAGE) {
-			$unix = $isl_unix;
-			$rain = (float)$isl_data["weather"]["wx"]["rain_midnight"];
-			$pres = (float)$isl_data["weather"]["wx"]["pressure"];
-		}
-	}
-}
+
 
 
 $feel = feelsLike($temp, $gust, $dewp);
