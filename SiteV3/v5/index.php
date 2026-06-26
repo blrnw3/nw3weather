@@ -113,15 +113,37 @@ if (file_exists($fcFile)) {
 </div>
 <noscript><p><b>Note:</b> Javascript must be enabled for live updates to function</p></noscript>
 
-<a class="home-cam-link" href="wx2.php" title="Full webcam image and timelapses"><img id="cam" name="refresh-home" src="/skycam_small.jpg" title="Click to enlarge" alt="Web cam" width="864" height="576" /></a>
-
 <script type="text/javascript">
 	//<![CDATA[
+	function readLiveData() {
+		var el = document.getElementById('newData');
+		if (!el) { return null; }
+		try { return JSON.parse(el.value); } catch (e) { return null; }
+	}
+
+	// Flash each changed live value: green when it rose, red when it fell.
+	function flashLiveChanges(oldData, newData) {
+		if (!oldData || !newData) { return; }
+		for (var i = 0; i < newData.length; i++) {
+			if (oldData[i] === null || newData[i] === null || newData[i] === oldData[i]) { continue; }
+			var el = document.getElementById('var' + i);
+			if (!el) { continue; }
+			var cls = (newData[i] > oldData[i]) ? 'wx-flash-up' : 'wx-flash-down';
+			el.classList.remove('wx-flash-up', 'wx-flash-down');
+			void el.offsetWidth; // restart the CSS animation
+			el.classList.add(cls);
+		}
+	}
+
 	function refreshLiveBody() {
 		if (!document.hidden && window.fetch) {
+			var oldData = readLiveData();
 			fetch('/v5/ajaxwxbody.php', { cache: 'no-store' })
 				.then(function (r) { return r.text(); })
-				.then(function (html) { document.getElementById('live-wx-body').innerHTML = html; })
+				.then(function (html) {
+					document.getElementById('live-wx-body').innerHTML = html;
+					flashLiveChanges(oldData, readLiveData());
+				})
 				.catch(function () {});
 		}
 		setTimeout(refreshLiveBody, 20000);
@@ -185,14 +207,34 @@ if (file_exists($fcFile)) {
 	//]]>
 </script>
 
-<h2>Recent Trends</h2>
-<div class="home-graphs">
-	<img id="graph1" src="/graphdayA.php?type1=temp&amp;type2=rain&amp;ts=12&amp;x=400&amp;y=160&amp;nofooter&amp;currid=<?php echo time(); ?>" alt="Last 12-hours temperature and rain" width="400" height="160" />
-	<img id="graph2" src="/graphdayA.php?type1=hum&amp;type2=dew&amp;ts=12&amp;x=400&amp;y=160&amp;currid=<?php echo time(); ?>" alt="Last 12-hours humidity and dew point" width="400" height="160" />
-	<img id="graph3" src="/graphdayA.php?type1=baro&amp;ts=12&amp;x=400&amp;y=160&amp;currid=<?php echo time(); ?>" alt="Last 12-hours pressure" width="400" height="160" />
-	<img id="graph4" src="/graphdayA.php?type1=wind&amp;type2=wdir&amp;ts=12&amp;x=400&amp;y=160&amp;currid=<?php echo time(); ?>" alt="Last 12-hours wind" width="400" height="160" />
+<div class="home-lower">
+	<div class="home-chart-panel">
+		<div class="home-chart-bar">
+			<div class="home-chart-vars" role="tablist">
+				<button type="button" data-var="temp" class="active" title="Temperature"><img src="<?php echo Site::IMG_ROOT; ?>thermom8_small.png" alt="Temperature" width="26" height="26" /></button>
+				<button type="button" data-var="rain" title="Rainfall"><img src="<?php echo Site::IMG_ROOT; ?>rain2_small.png" alt="Rainfall" width="26" height="26" /></button>
+				<button type="button" data-var="wind" title="Wind speed &amp; gust"><img src="<?php echo Site::IMG_ROOT; ?>windy_small.png" alt="Wind speed and gust" width="26" height="26" /></button>
+				<button type="button" data-var="humi" title="Humidity"><img src="<?php echo Site::IMG_ROOT; ?>humidity_small.png" alt="Humidity" width="26" height="26" /></button>
+				<button type="button" data-var="dewp" title="Dew point"><img src="<?php echo Site::IMG_ROOT; ?>dewy_small.png" alt="Dew point" width="26" height="26" /></button>
+				<button type="button" data-var="pres" title="Pressure"><img src="<?php echo Site::IMG_ROOT; ?>pressure2_small.png" alt="Pressure" width="26" height="26" /></button>
+				<button type="button" data-var="pm25" title="Air quality"><img src="<?php echo Site::IMG_ROOT; ?>sky3_small.png" alt="Air quality" width="26" height="26" /></button>
+				<button type="button" data-var="wdir" title="Wind direction"><img src="<?php echo Site::IMG_ROOT; ?>compass_small.png" alt="Wind direction" width="26" height="26" /></button>
+			</div>
+			<div class="home-graph-controls" role="group" aria-label="Chart time range">
+				<button type="button" data-range="6" class="active">6h</button>
+				<button type="button" data-range="12">12h</button>
+				<button type="button" data-range="24">24h</button>
+			</div>
+		</div>
+		<div id="home-chart" class="home-chart"></div>
+		<p class="home-chart-more"><a href="/charts.php" title="All NW3 weather charts">See all charts &rarr;</a></p>
+	</div>
+	<div class="home-cam">
+		<a class="home-cam-link" href="wx2.php" title="Full webcam image and timelapses"><img id="cam" name="refresh-home" src="/skycam_small.jpg" title="Click to enlarge" alt="Web cam" width="864" height="576" /></a>
+	</div>
 </div>
-<p><a href="/charts.php" title="All NW3 weather charts">See all charts</a></p>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<?php include 'charts-home.php'; ?>
 
 <?php if ($forecast): ?>
 <h2>Forecast</h2>

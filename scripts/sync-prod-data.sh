@@ -8,7 +8,7 @@
 # Usage:
 #   scripts/sync-prod-data.sh                 # one-shot pull of data + generated files
 #   scripts/sync-prod-data.sh --full          # also pull jpgraph/, static-images/, sample cam/video
-#   scripts/sync-prod-data.sh --loop [secs]   # keep clientraw.txt fresh (default 20s) to mimic the live feed
+#   scripts/sync-prod-data.sh --loop [secs]   # keep all home-page data fresh (default 20s) to mimic the live feed
 #
 # Config (override via env or by editing the defaults below):
 #   PROD_SSH        ssh target          (default ben@188.166.156.109)
@@ -51,6 +51,31 @@ DATA_FILTERS=(
   --exclude='*'
 )
 
+# Subset that the live home page reads on every (AJAX) refresh. Looped frequently
+# so the local dashboard, charts and forecast track production.
+#   clientraw(.txt/Backup) : live current values + outage fallback
+#   serialised_datNow      : today's running min/max/mean snapshot (cards)
+#   serialised_datHr24     : 24hr trends/changes (cards' arrows & trend rows)
+#   serialised_datYest     : yesterday summary (cards' "Yesterday" rows)
+#   goodlog.txt            : 24hr rolling log (interactive charts endpoint)
+#   pm25_latest.txt        : latest air-quality reading
+#   METAR.txt              : current-conditions decode line
+#   forecast_v5.json       : today/tomorrow forecast block
+#   *Tags.php              : RainTags (month/year rain) + rareTags (console text)
+HOME_LIVE_FILTERS=(
+  --include='clientraw.txt'
+  --include='clientrawBackup.txt'
+  --include='serialised_datNow.txt'
+  --include='serialised_datHr24.txt'
+  --include='serialised_datYest.txt'
+  --include='goodlog.txt'
+  --include='pm25_latest.txt'
+  --include='METAR.txt'
+  --include='forecast_v5.json'
+  --include='*Tags.php'
+  --exclude='*'
+)
+
 mkdir -p "$LOCAL_DOCROOT"
 
 sync_data() {
@@ -79,18 +104,17 @@ sync_full_extras() {
     echo "   (skipped: photos not found)"
 }
 
-loop_clientraw() {
+loop_home() {
   local interval="${1:-20}"
-  echo ">> Live loop: refreshing clientraw.txt + datNow every ${interval}s (Ctrl-C to stop)"
+  echo ">> Live loop: refreshing all home-page data every ${interval}s (Ctrl-C to stop)"
   while true; do
-    rsync -az "${RSYNC_SSH[@]}" "$PROD_SSH:$PROD_DOCROOT/clientraw.txt" "$LOCAL_DOCROOT/clientraw.txt" || true
-    rsync -az "${RSYNC_SSH[@]}" "$PROD_SSH:$PROD_DOCROOT/serialised_datNow.txt" "$LOCAL_DOCROOT/" 2>/dev/null || true
+    rsync -az --prune-empty-dirs "${RSYNC_SSH[@]}" "${HOME_LIVE_FILTERS[@]}" "$SRC" "$LOCAL_DOCROOT/" 2>/dev/null || true
     sleep "$interval"
   done
 }
 
 case "${1:-}" in
-  --loop) loop_clientraw "${2:-20}" ;;
+  --loop) loop_home "${2:-20}" ;;
   --full) sync_data; sync_full_extras ;;
   "")     sync_data ;;
   *)      echo "Unknown option: $1"; sed -n '2,20p' "$0"; exit 1 ;;

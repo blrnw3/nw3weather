@@ -797,16 +797,17 @@ select.timelapse {
 	margin-bottom: 0;
 }
 .home-summary {
+	order: -1; /* wide screens: live box on the left, title on the right */
 	display: flex;
 	align-items: center;
-	justify-content: flex-end;
+	justify-content: flex-start;
 	gap: 1rem;
 	background: #eef5ef;
 	border: 1px solid #cfe3d2;
 	border-radius: 6px;
 	padding: 0.6rem 1rem;
 	margin: 0.5rem 0.3rem;
-	text-align: right;
+	text-align: left;
 }
 .home-summary .home-report {
 	line-height: 1.5;
@@ -815,7 +816,7 @@ select.timelapse {
 	margin-top: 0.4rem;
 	display: flex;
 	align-items: center;
-	justify-content: flex-end;
+	justify-content: flex-start;
 	gap: 0.4rem;
 }
 .live-dot {
@@ -926,6 +927,33 @@ select.timelapse {
 	color: #555;
 	white-space: nowrap;
 }
+
+/* Live trend arrows */
+.wx-arrow {
+	font-size: 0.8rem;
+	font-weight: 700;
+	line-height: 1;
+	vertical-align: 0.08em;
+}
+.wx-arrow-up { color: #1f9d3b; }
+.wx-arrow-down { color: #d23030; }
+.wx-arrow-steady { color: #999; font-weight: 400; }
+
+/* Flash a live value green (rose) or red (fell) when it changes on refresh */
+.wx-card-now span[id^="var"] {
+	border-radius: 4px;
+	padding: 0 0.1em;
+}
+@keyframes wxFlashUp {
+	from { background-color: rgba(31, 157, 59, 0.45); }
+	to { background-color: transparent; }
+}
+@keyframes wxFlashDown {
+	from { background-color: rgba(210, 48, 48, 0.40); }
+	to { background-color: transparent; }
+}
+.wx-flash-up { animation: wxFlashUp 1.6s ease-out; }
+.wx-flash-down { animation: wxFlashDown 1.6s ease-out; }
 .wx-card-sub {
 	color: #444;
 	margin: 0.2rem 0 0.5rem;
@@ -1000,39 +1028,106 @@ select.timelapse {
 .daqi-vhigh { background: #8a0033; color: #fff; }
 .daqi-unknown { background: #d9d9d9; color: #555; font-size: 1.1rem; }
 
-/* Webcam: plain image below the cards (capped at natural size) */
+/* Lower home row: interactive chart panel beside the webcam, half each */
+.home-lower {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.8rem;
+	align-items: start;
+	margin: 0.3rem 0.3rem 1.5rem;
+}
+@media only screen and (max-width: 900px) {
+	.home-lower { grid-template-columns: 1fr; }
+}
+.home-chart-panel { min-width: 0; }
+.home-chart-more { margin: 0 0.3rem; }
+
+/* Webcam: fills the right half, capped at natural size */
+.home-cam { min-width: 0; }
 .home-cam-link {
-	display: inline-block;
-	margin: 0 0.3rem 1.5rem;
+	display: block;
 }
 .home-cam-link img {
-	width: auto;
-	max-width: 100%;
+	width: 100%;
+	max-width: 864px;
 	height: auto;
 	display: block;
 	border: 1px solid #d6e2d8;
 	border-radius: 6px;
 }
 
-/* Graph boxes: two per row */
-.home-graphs {
-	display: grid;
-	grid-template-columns: repeat(2, max-content);
-	gap: 0.8rem;
-	margin: 0.3rem 0.3rem 1rem;
-}
-@media only screen and (max-width: 900px) {
-	.home-graphs { grid-template-columns: 1fr; }
-}
-.home-graphs img {
-	display: block;
+/* Interactive home-page chart */
+.home-chart {
 	background: #fff;
 	border: 1px solid #d6e2d8;
 	border-radius: 6px;
-	padding: 0.3rem;
-	width: 100%;
-	max-width: 400px;
-	height: auto;
+	margin: 0.3rem 0.3rem 0.6rem;
+	height: 340px;
+	min-width: 0;
+}
+@media only screen and (max-width: 600px) {
+	.home-chart { height: 280px; }
+}
+
+/* Controls bar: variable tabs on the left, range toggle pushed right */
+.home-chart-bar {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.3rem;
+	margin: 0.3rem 0.3rem 0.5rem;
+}
+
+/* Variable tabs (icon-only) */
+.home-chart-vars {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.05rem;
+	flex: 1 1 auto;
+}
+.home-chart-vars button {
+	display: inline-flex;
+	align-items: center;
+	cursor: pointer;
+	margin: 0;
+	padding: 0.1rem;
+	background: #eef5ef;
+	color: #15604c;
+	border: 1px solid #d6e2d8;
+	border-radius: 8px;
+	line-height: 0;
+}
+.home-chart-vars button img {
+	display: block;
+	width: 30px;
+	height: 30px;
+}
+.home-chart-vars button:hover { background: #e0eee3; }
+.home-chart-vars button.active {
+	background: #15866A;
+	border-color: #15866A;
+}
+
+/* Time-range toggle */
+.home-graph-controls {
+	display: flex;
+	gap: 0.1rem;
+	flex: 0 0 auto;
+}
+.home-graph-controls button {
+	font: inherit;
+	cursor: pointer;
+	margin: 0.2rem;
+	padding: 0.2rem 0.45rem;
+	background: #fff;
+	color: #15604c;
+	border: 1px solid #d6e2d8;
+	border-radius: 5px;
+}
+.home-graph-controls button:hover { background: #eef5ef; }
+.home-graph-controls button.active {
+	background: #15866A;
+	color: #fff;
+	border-color: #15866A;
 }
 
 /* About-the-station info box */
@@ -1073,7 +1168,12 @@ select.timelapse {
 	.detail-flex {
 		gap: 0.8rem;
 	}
+	.home-head {
+		flex-direction: column;
+		align-items: stretch;
+	}
 	.home-summary {
+		order: 0; /* stacked: title stays on top, live box drops below it */
 		flex-direction: column;
 		align-items: flex-start;
 	}

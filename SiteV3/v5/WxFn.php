@@ -78,6 +78,8 @@ class Live {
 		self::$outage = self::$diff > 3600;
 
 		// Other multi-use weather vars
+		// Floored at the live gust below, once any fallback source has settled it - the
+		// per-minute log's last-hour max can momentarily lag a fresh live gust.
 		self::$maxgsthr = self::$HR24['misc']['maxhrgst'];
 		self::$maxgstToday = self::$NOW['max']['gust'];
 
@@ -153,6 +155,9 @@ class Live {
 		// Derived current weather variables
 		self::$feel = Wx::feelsLike(self::$temp, self::$gust, self::$dewp);
 		self::$dewp = Wx::dewPoint(self::$temp, self::$humi);
+
+		// Max gust in the last hour can never be below the current gust.
+		self::$maxgsthr = max((float)self::$maxgsthr, (float)self::$gust, (float)self::$gustRaw);
 	}
 }
 
