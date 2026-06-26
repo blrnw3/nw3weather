@@ -17,9 +17,10 @@ $list = array(
 	$yestNow['max']['w10m'],
 	$yestNow['min']['feel'], $yestNow['max']['feel'], $yestNow['mean']['feel'],
 	$yestNow['misc']['frosthrs'],
-	isset($yestNow['min']['pm25']) ? $yestNow['min']['pm25'] : '',
-	isset($yestNow['max']['pm25']) ? $yestNow['max']['pm25'] : '',
-	isset($yestNow['mean']['pm25']) ? $yestNow['mean']['pm25'] : '',
+	// TODO when pm2.5 is ready
+	// isset($yestNow['min']['pm25']) ? $yestNow['min']['pm25'] : '',
+	// isset($yestNow['max']['pm25']) ? $yestNow['max']['pm25'] : '',
+	// isset($yestNow['mean']['pm25']) ? $yestNow['mean']['pm25'] : '',
 	' \n'
 );
 
@@ -35,10 +36,11 @@ $listt = array(
 	$yestNow['timeMin']['tchange10'], $yestNow['timeMin']['tchangehr'], $yestNow['timeMin']['hchangehr'],
 	$yestNow['timeMax']['w10m'],
 	$yestNow['timeMin']['feel'], $yestNow['timeMax']['feel'], '',
-	'',
-	isset($yestNow['timeMin']['pm25']) ? $yestNow['timeMin']['pm25'] : '',
-	isset($yestNow['timeMax']['pm25']) ? $yestNow['timeMax']['pm25'] : '',
-	'',
+	'', // No frost hrs time
+	// TODO when pm2.5 is ready
+	// isset($yestNow['timeMin']['pm25']) ? $yestNow['timeMin']['pm25'] : '',
+	// isset($yestNow['timeMax']['pm25']) ? $yestNow['timeMax']['pm25'] : '',
+	// '',
 	' \n'
 );
 

@@ -32,6 +32,7 @@ class Live {
 		self::$NOW = unserialize(file_get_contents(ROOT . 'serialised_datNow.txt'));
 		self::$HR24 = unserialize(file_get_contents(ROOT . 'serialised_datHr24.txt'));
 
+		// TODO get from $NOW
 		// Air quality: latest PM2.5 reading (polled every 5 min by cron), null if absent
 		$pm25File = ROOT . 'pm25_latest.txt';
 		if(file_exists($pm25File)) {
@@ -83,23 +84,6 @@ class Live {
 		self::$maxgsthr = self::$HR24['misc']['maxhrgst'];
 		self::$maxgstToday = self::$NOW['max']['gust'];
 
-		// Harpenden data
-		// July 1st 2024: wind outage
-		if(false) {
-			$extClient = file(ROOT.'EXT_harpenden.txt');
-			$extData = explode(" ", $extClient[0]);
-			self::$unix =  mktime(intval($extData[29]), intval($extData[30]), intval($extData[31]),
-				intval($extData[36]), intval($extData[35]), intval($extData[141]));
-			$harpenden_age = time() - self::$unix;
-			if($harpenden_age < 600) {
-				$extOffset = 0.9; // 0.91; //1.3 - tott;
-				self::$wind = $extData[1] * $kntsToMph * $extOffset;
-				self::$gust = $extData[140] * $kntsToMph * $extOffset; //actually the max 1-min gust
-				self::$gustRaw = $extData[2] * $kntsToMph * $extOffset; //true 14s gust
-				self::$w10m = $extData[158] * $kntsToMph * $extOffset;
-				self::$wdir = $extData[3];
-			}
-		}
 
 		// Synoptic data from James park
 		if(self::$outage && false) {

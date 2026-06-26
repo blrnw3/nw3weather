@@ -2,7 +2,7 @@
 //Main daily data variables
 $types_original = array('tmin','tmax','tmean','hmin','hmax','hmean','pmin','pmax','pmean','wmean','wmax','gust','wdir','rain','hrmax','10max','ratemax', //16
 						'dmin','dmax','dmean','nightmin','daymax','tc10max','tchrmax','hchrmax','tc10min','tchrmin','hchrmin','w10max','fmin', 'fmax', 'fmean', 'afhrs', //32
-						'amin','amax','amean'); //35 (PM2.5 daily min/max/mean)
+						); // TODO: pm2.5 vars
 $types = array_flip($types_original);
 $data_colours = array('#FFD750','orange','tan3','chartreuse','darkolivegreen','chartreuse3','darkorchid4','orchid1','purple','red','firebrick1','firebrick2','firebrick3',
 					'royalblue','royalblue1','royalblue2','royalblue3','darkseagreen','darkslategray','darkseagreen4','peachpuff','darkgoldenrod1',
@@ -518,7 +518,7 @@ function dailyData($procfil = 'today') {
 			}
 		}
 
-		// PM2.5 - trailing column 11, only present from launch onward
+		// PM2.5 - trailing column 11, only present from 2026 launch onward
 		if(isset($custl[11]) && trim($custl[11]) !== '') {
 			$pm25V = floatval($custl[11]);
 			$dat[11][$i] = $pm25V;

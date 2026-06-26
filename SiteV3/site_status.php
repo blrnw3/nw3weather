@@ -38,8 +38,8 @@ if($showMessage) {
 	showStatusDiv($statusMessage, $isBad);
 }
 if($OUTAGE) {
-	if(time() < 1782826663) {
-		$extraMessage = "<b>Update June 18th 5pm</b>: The cause of the outage remains unknown and there is no ETA for a fix";
+	if(time() < 1782786930) {
+		$extraMessage = "Unfortunately we have another outage with resolution not expected before late Sunday";
 	}
 	showStatusDiv("<b>". date('H:m d M: ', time() - $diff) . "Weather server outage detected automatically</b>."
 		. "<br /> Data is being served from nearby stations. Site admin has been notified. Problem age: "

@@ -699,7 +699,7 @@ function serialiseCSVm() {
 					if($j === 3) { //falling snow
 						$rawa[$j] = ($rawa[$j] == 'y') ? $DATA[13][$year][$month][$day] + 0.01 : $rawa[$j];
 					}
-					if($j === 12 && $year < 2019) {
+					if($j === 12 && $year < 2019) { // pond temp from 2019
 						$rawa[$j] = '';
 					}
 					$data[$j][$year][$month][$day] = $rawa[$j];
