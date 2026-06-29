@@ -36,8 +36,10 @@ $mainTables->pastYearAvgsExtrms($measures2);
 $mainTables->rankTables();
 ?>
 
-<img style="margin:5px 1px" width="860" height="400" src="/graph12.php?type=rain&amp;x=860&amp;y=400&amp;lta" alt="Last 12 months rainfall total in London" />
-<img style="margin:5px 1px" width="860" height="460" src="/graph_daily_trend.php?x=860&amp;y=460&amp;type=rain&amp;cume&amp;year=<?php echo Date::$yr_yest; ?>" alt="cumulative rainfall total this year vs climate normal average so far in London" />
+<?php
+Charts::daily(['type' => 'rain', 'mode' => 'monthly', 'length' => 12, 'summary_type' => Data::SUMMARY_SUM, 'lta' => 1], ['height' => 400]);
+Charts::daily(['type' => 'rain', 'mode' => 'daily', 'year' => Date::$yr_yest, 'month' => 0, 'cume' => 1, 'lta' => 1], ['height' => 460]);
+?>
 
 <p><a href="/charts.php?dtype=rain">View more rain charts</a></p>
 

@@ -7,6 +7,7 @@ date_default_timezone_set('Europe/London');
 require("UtilsAndConsts.php");
 require("WxDefinition.php");
 require("WxFn.php");
+require("ChartHelper.php");
 
 class Page {
 	const JQUERY = '<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>';
@@ -168,7 +169,7 @@ END;
 		<div id="footer">
 			<div>
 				<p><a href="#header">&#x2B06;&#xFE0E; Top</a></p>
-				<p><a href="/mob.php" title="Very basic mobile browsing">&#x1F4F1;&#xFE0E; Mobile</a></p>
+				<p><a href="mob.php" title="Very basic mobile browsing">&#x1F4F1;&#xFE0E; Mobile</a></p>
 				<p><a href="/" title="Browse to homepage">&#x1F3E0;&#xFE0E; Home</a></p>
 			</div>
 			<div>
@@ -177,7 +178,7 @@ END;
 				<p>&#x2600;&#xFE0E; Sister station: <a href="https://rwcweather.com" target="_blank" title="Redwood City Weather, CA">RWC Weather</a></p>
 			</div>
 			<div>
-				<p><a href="/contact.php" title="E-mail me">&#x1F4E7;&#xFE0E; Contact / Social</a></p>
+				<p><a href="contact.php" title="E-mail me">&#x1F4E7;&#xFE0E; Contact / Social</a></p>
 				<p>&copy; nw3weather 2010-$year</p>
 				<p>&#x1F527;&#xFE0E; Site version 5.0</p>
 			</div>
@@ -482,8 +483,8 @@ END;
 
 	   $fil = fopen(ROOT.'Logs/'.$txtname, "a");
 	   fwrite( $fil, date("H:i:s d/m/Y") . "\t" . $content .
-		   str_subpad( filter_input(INPUT_SERVER, "REQUEST_URI", FILTER_SANITIZE_URL), 100 ) .
-		   str_subpad(filter_input(INPUT_SERVER, "HTTP_REFERER", FILTER_SANITIZE_URL), 120) .
+		   Util::str_subpad( filter_input(INPUT_SERVER, "REQUEST_URI", FILTER_SANITIZE_URL), 100 ) .
+		   Util::str_subpad(filter_input(INPUT_SERVER, "HTTP_REFERER", FILTER_SANITIZE_URL), 120) .
 		   str_pad(self::$ip, 16) .
 		   substr(str_replace("Mozilla/5.0 (","",self::$browser), 0, 80) .
 		   "\r\n" );
@@ -610,13 +611,28 @@ END;
 }
 
 class DataPage extends Page {
-	static function buildSlug($key, $val) {
-		$form_params = ["vartype" => $GLOBALS["type"], "year" => $GLOBALS['year'], "month" => $GLOBALS['month'],
-			"summary_type" => $GLOBALS['GET_SUMMARY_TYPE'], "start_year_rep" => $GLOBALS["startYrReport"]];
-		$form_params[$key] = $val;
+	/**
+	 * Builds a query string from the current data-page selectors, overriding one
+	 * key. Reads live values from $_GET so it has no dependency on page globals.
+	 * @param string $key the parameter to override
+	 * @param mixed $val its new value
+	 * @param array $defaults optional default values for any absent parameter
+	 * @return string a query string beginning with '&'
+	 */
+	static function buildSlug($key, $val, $defaults = []) {
+		$keys = ["vartype", "year", "month", "summary_type", "start_year_rep", "rankLimit"];
 		$slug = "";
-		foreach ($form_params as $k => $v) {
-			$slug .= "&$k=$v";
+		foreach ($keys as $k) {
+			if($k === $key) {
+				$v = $val;
+			} elseif(isset($_GET[$k])) {
+				$v = $_GET[$k];
+			} elseif(array_key_exists($k, $defaults)) {
+				$v = $defaults[$k];
+			} else {
+				continue;
+			}
+			$slug .= "&$k=" . urlencode($v);
 		}
 		return $slug;
 	}

@@ -33,17 +33,19 @@ $mainTables->rankTables();
 <hr />
 <h2>Wind roses</h2>
 <div class="detail-grid">
-	<div><img src="/rose_month.png" alt="windrose month" title="Current month-to-date windrose" width="432" height="460" /></div>
-	<div><img src="/rose_year.png" alt="windrose year" title="Current year-to-date windrose" width="432" height="460" /></div>
+	<div><?php Charts::rose(['en' => 'month']); ?></div>
+	<div><?php Charts::rose(['en' => 'year', 'st' => Date::$dyear . '0101']); ?></div>
 </div>
 <p><a href="/windrose_viewer.php">See wind roses for all months, days and years</a></p>
 
 <h3>Latest wind charts</h3>
-<img style="margin:5px" src="/graphdayA.php?type1=wind&amp;type2=wdir&amp;x=800&amp;y=400" alt="Last 24hrs wind speed and direction" width="800" height="400" />
-<img style="margin:5px" src="/graph_daily_trend.php?x=845&amp;y=450&amp;type=wmean&amp;year=<?php echo Date::$yr_yest; ?>" alt="daily wind speed this year" />
+<?php
+Charts::intradayPanel(['num' => 1], ['wind' => 'Speed &amp; gust', 'wdir' => 'Direction'], ['height' => 400]);
+Charts::daily(['type' => 'wmean', 'mode' => 'daily', 'year' => Date::$yr_yest, 'month' => 0, 'lta' => 1], ['height' => 440]);
+?>
 
 <h3>All-time wind rose for NW3</h3>
-<img style="margin:8px" src="/rose_all.png" alt="windrose all time" title="All-time-to-date windrose" width="800" height="820" />
+<?php Charts::rose(['en' => 'now', 'st' => '20090101'], ['height' => 640]); ?>
 
 <h2>Notes</h2>
 <ul>

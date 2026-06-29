@@ -225,7 +225,7 @@ class Date {
 		$days++; // Convert to 1-based
 		$y = 2009; $m = self::$dmonth;
 		while ($days > 0) {
-			$dim = get_days_in_month($m, $y);
+			$dim = self::get_days_in_month($m, $y);
 			if($days <= $dim) {
 				break;
 			}
@@ -235,18 +235,20 @@ class Date {
 		return Date::mkdate($m, $days, $y);
 	}
 	public static function time_av($times) {
+		$mktimes = [];
 		for($i = 0; $i < count($times); $i++) {
 			if(!strpos($times[$i], '*')) {
 				if(strpos($times[$i], ':') > 0) { $mktimes[$i] = strtotime($times[$i]); }
-				elseif($times[$i] < 1 && $times[$i] > 0) { $mktimes[$i] = decimal_timefix($times[$i]); }
+				elseif($times[$i] < 1 && $times[$i] > 0) { $mktimes[$i] = self::decimal_timefix($times[$i]); }
 			}
 		}
-		$meanTime = mean($mktimes);
-		return ($meanTime === '') ? 'n/a' : date(' H:i ', $meanTime);
+		if(count($mktimes) === 0) { return 'n/a'; }
+		$meanTime = Util::mean($mktimes);
+		return ($meanTime === '' || $meanTime === null) ? 'n/a' : date(' H:i ', $meanTime);
 	}
 	public static function decimal_timefix($dec) {
 		$hr = floor($dec*24);
-		return zerolead($hr) . ':' . round(($dec*24-$hr)*60);
+		return Util::zerolead($hr) . ':' . round(($dec*24-$hr)*60);
 	}
 	public static function timeformat($time) {
 		if(strpos($time, ':')) { return date('H:i', strtotime($time)); }
@@ -258,7 +260,7 @@ class Date {
 	}
 	public static function get_seasondays($sea, $year = 2009) {
 		$days = 0;
-		for($s2 = 0; $s2 < 3; $s2++) { $days += get_days_in_month(self::$snums[$sea][$s2]+1,$year); }
+		for($s2 = 0; $s2 < 3; $s2++) { $days += self::get_days_in_month(self::$snums[$sea][$s2]+1,$year); }
 		return $days;
 	}
 	public static function get_days_in_year($year) {
@@ -438,7 +440,7 @@ class HTML {
 			   <select name="day">';
 		   for($i = 1; $i <= 31; $i++) {
 			   $selected = ($i == $dproc) ? 'selected="selected"' : '';
-			   echo '<option value="', $i, '" ', $selected, '>', zerolead($i), '</option>
+			   echo '<option value="', $i, '" ', $selected, '>', Util::zerolead($i), '</option>
 				   ';
 		   }
 	   }
@@ -453,7 +455,7 @@ class HTML {
 	*/
    public static function dropdownCycle($dir, $href, $title, $disabled = false) {
 	   $lg = $dir ? 9654 : 9664;
-	   echo '<a class="arrow" href="'.PAGE_NAME. '?'. $href .'" title="'. $title .'">
+	   echo '<a class="arrow" href="'. Page::$pageName . '?'. $href .'" title="'. $title .'">
 		   &#'. $lg .';
 		   </a>
 	   ';
@@ -703,8 +705,19 @@ class Util {
 	}
 
 	public static function monthly_extras($array) {
-		return array( sum_cond($array[20],0,0), sum_cond($array[28],1,15), sum_cond($array[13],1,0.1), sum_cond($array[13],1,1),
-			conv( sum_cond($array[13],1,0.1,true), 2 )  );
+		return array( Util::cond_count($array[20],false,0), Util::cond_count($array[28],true,15), Util::cond_count($array[13],true,0.1), Util::cond_count($array[13],true,1),
+			Wx::conv( Util::cond_count($array[13],true,0.1,true), Wx::Rain )  );
+	}
+
+	/**
+	 * Pad a string to a fixed length, marking truncation with an ellipsis.
+	 * @param string $string
+	 * @param int $length
+	 * @return string
+	 */
+	public static function str_subpad($string, $length) {
+		$padding = (strlen($string) > $length) ? "...  " : " ";
+		return substr( str_pad($string, $length), 0, $length - strlen($padding) ) . $padding;
 	}
 
 	/**
@@ -785,20 +798,20 @@ class Misc {
 		$frame_rate = 24, $crf = 25, $name = null, $scale = "1080x720") {
 
 		$months = $month ? array($month) : range(1, 12);
-		$src = CAM_ROOT."camchive/$cam";
+		$src = Site::CAM_ROOT."camchive/$cam";
 		if(is_null($name)) {
 			$period = is_null($twiset) ? "all" : "sun$twiset";
 			$name = "${cam}cam_test_${year}_m${month}_d${day}_f${freq}_p-${period}_r${frame_rate}";
 		}
-		$tmpdir = VID_ROOT."tmpdir/$name";
-		$outfile = VID_ROOT."timelapse/${name}.mp4";
+		$tmpdir = Site::VID_ROOT."tmpdir/$name";
+		$outfile = Site::VID_ROOT."timelapse/${name}.mp4";
 
 		echo shell_exec("mkdir $tmpdir");
 
 		foreach($months as $mi) {
-			$m = zerolead($mi);
+			$m = Util::zerolead($mi);
 			$mbase = "$src/$year/$m/";
-			$days = ($day == 0) ? listdir($mbase) : array(zerolead($day));
+			$days = ($day == 0) ? Util::listdir($mbase) : array(Util::zerolead($day));
 			foreach($days as $d) {
 				$dbase = $mbase . $d . "/";
 				$sproc = Date::mkdate($mi, intval($d), $year);
@@ -806,11 +819,11 @@ class Misc {
 					$sunrise = -1;
 					$sunset = 9999;
 				} else {
-					$sunrise = intval(date_sunrise($sproc, SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) * 60 - $twiset);
-					$sunset = intval(date_sunset($sproc, SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) * 60 + $twiset);
+					$sunrise = intval(date_sunrise($sproc, SUNFUNCS_RET_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) * 60 - $twiset);
+					$sunset = intval(date_sunset($sproc, SUNFUNCS_RET_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) * 60 + $twiset);
 				}
 				echo "Processing $dbase: sunrise: $sunrise, sunset: $sunset\n";
-				foreach(listdir($dbase) as $c){
+				foreach(Util::listdir($dbase) as $c){
 					$hr = substr($c, 0, 2);
 					$min = substr($c, 2, 2);
 					$num = intval($hr) * 60 + intval($min);

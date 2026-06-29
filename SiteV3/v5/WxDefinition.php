@@ -253,6 +253,62 @@ class Wx {
 	}
 
 	/**
+	 * Numeric unit conversion for charting: returns the value converted to the
+	 * user's selected units as a float (no formatting/units string), or null for
+	 * blank input. Mirrors conv() but is safe to feed straight into a chart.
+	 * @param mixed $val raw value (UK units)
+	 * @param string $type a Wx unit constant
+	 * @param int|null $dp optional decimal places to round to
+	 * @return float|null
+	 */
+	public static function convNum($val, $type, $dp = null) {
+		if($val === null || $val === '' || $val === '-' || !is_numeric($val)) {
+			return null;
+		}
+		$value = (float)$val;
+		if(key_exists($type, self::$UNITS)) {
+			$var = self::$UNITS[$type];
+			if(key_exists(Page::$units, $var)) {
+				$var = array_merge($var, $var[Page::$units]);
+			}
+			if(key_exists('conversion', $var)) {
+				$value = call_user_func('Wx::_conv_'. $var['name'], $value);
+			}
+		}
+		return ($dp === null) ? $value : round($value, $dp);
+	}
+
+	/**
+	 * Resolves a legacy R-style colour name (e.g. 'royalblue1', 'tan3') to a hex
+	 * string usable by Highcharts. Unknown names fall back to a neutral blue.
+	 * @param string $name
+	 * @return string hex colour
+	 */
+	public static function colourHex($name) {
+		if($name === null || $name === '') {
+			return '#4f81bd';
+		}
+		if($name[0] === '#') {
+			return $name;
+		}
+		// Strip a trailing R-style shade index (e.g. 'royalblue2' -> 'royalblue')
+		$base = preg_replace('/\d+$/', '', $name);
+		$map = [
+			'tan' => '#cd853f', 'royalblue' => '#4169e1', 'firebrick' => '#b22222',
+			'orange' => '#ff8c00', 'chartreuse' => '#7fb800', 'darkolivegreen' => '#556b2f',
+			'darkorchid' => '#9932cc', 'orchid' => '#da70d6', 'purple' => '#800080',
+			'red' => '#e03131', 'darkseagreen' => '#8fbc8f', 'darkslategray' => '#2f4f4f',
+			'peachpuff' => '#ffb38a', 'darkgoldenrod' => '#b8860b', 'lightpink' => '#f4a8b8',
+			'azure' => '#7fb0c8', 'bisque' => '#e8c9a0', 'beige' => '#c8b88a',
+			'cadetblue' => '#3a7a86', 'sienna' => '#a0522d', 'rosybrown' => '#bc8f8f',
+			'green' => '#2f9e44', 'darkred' => '#8b0000', 'black' => '#333333',
+			'cyan' => '#1cb5bf', 'yellow' => '#e6c000', 'aqua' => '#1cbfbf',
+			'gold' => '#d4a017',
+		];
+		return isset($map[$base]) ? $map[$base] : (isset($map[$name]) ? $map[$name] : '#4f81bd');
+	}
+
+	/**
 	* Convert from UK units to US or EU, and neaten-up <br />
 	* @param mixed $tag the value to convert
 	* @param int $type the coversion type (one of the class constants)

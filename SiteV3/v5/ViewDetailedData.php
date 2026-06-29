@@ -8,6 +8,10 @@ class ViewDetailedData {
 	private $getAnom;
 
 	private $letter;
+	private $varMin;
+	private $varMax;
+	private $varMean;
+	private $intradayVar;
 	private $label;
 	private $cssClass;
 	private $type;
@@ -121,6 +125,10 @@ class ViewDetailedData {
 
 		// Properties the render methods rely on
 		$this->letter = $this->group["letter"];
+		$this->varMin = $this->group["var_min"];
+		$this->varMax = $this->group["var_max"];
+		$this->varMean = $this->group["var_mean"];
+		$this->intradayVar = isset(Wx::$mappingsToDailyDataKey[$this->letter]) ? Wx::$mappingsToDailyDataKey[$this->letter] : 'temp';
 		$this->label = $this->group["name"];
 		$this->cssClass = "td12";
 		$this->type = $groupName;
@@ -398,7 +406,7 @@ class ViewDetailedData {
 		}
 		echo ' </div>';
 		echo '<div class="detail-graph">';
-		echo '  <img style="margin:5px;" src="/graphdayA.php?type=' . $this->groupName . '&amp;x=600&amp;y=300&amp;ts=12&amp;nofooter" width="600" height="300" alt="Last 12hrs London nw3 ' . $this->label . '" />';
+		Charts::intraday(['num' => 1, 'ts' => 12], $this->intradayVar, ['height' => 300]);
 		echo '</div>';
 		echo '</div>';
 
@@ -458,20 +466,19 @@ class ViewDetailedData {
 		echo ' </div>';
 
 		echo ' <div class="detail-graph">';
-		echo '   <img src="/graph31.php?type=' . $this->letter . 'mean&amp;x=600&amp;y=300&amp;length=31" width="600" height="300" alt="31-day chart of mean London ' . $this->label . '" />';
+		Charts::daily(['type' => $this->varMean, 'mode' => 'daily', 'length' => 31], ['height' => 300]);
 		echo ' </div>';
 		echo '</div>';
 
 		// 31-day min and max charts
-		echo '
-			<div class="detail-grid">
-				<div class="detail-graph">
-					<img src="/graph31.php?type=' . $this->letter . 'min&amp;x=600&amp;y=350" width="600" height="350" alt="31-day chart of min London ' . $this->label . '" />
-				</div>
-				<div class="detail-graph">
-					<img src="/graph31.php?type=' . $this->letter . 'max&amp;x=600&amp;y=350" width="600" height="350" alt="31-day chart of max London ' . $this->label . '" />
-				</div>
-		</div>';
+		echo '<div class="detail-grid">';
+		echo '<div class="detail-graph">';
+		Charts::daily(['type' => $this->varMin, 'mode' => 'daily', 'length' => 31], ['height' => 350]);
+		echo '</div>';
+		echo '<div class="detail-graph">';
+		Charts::daily(['type' => $this->varMax, 'mode' => 'daily', 'length' => 31], ['height' => 350]);
+		echo '</div>';
+		echo '</div>';
 	}
 
 	function avgsExtrmsRecs($measures = null, $wid = 99) {
@@ -616,18 +623,20 @@ class ViewDetailedData {
 
 		$this->seasonalAvgs();
 
-		echo '
-			<h3>Past 24hrs and past 12 months trends for ' . $this->label . '</h3>
-			<div class="detail-grid">
-				<div><img width="600" height="330" src="/graphdayA.php?type=' . $this->type . '&amp;x=600&amp;y=330" alt="Last 24hrs London ' . $this->label . '" /></div>
-				<div><img width="600" height="330" src="/graph12.php?type=' . $this->letter . 'mean&amp;x=600&amp;y=330&amp;lta" alt="12 month mean London ' . $this->label . '" /></div>
-			</div>
-			<div class="detail-grid">
-				<div><img width="600" height="330" src="/graph12.php?type=' . $this->letter . 'min&amp;x=600&amp;y=330" alt="12month min London ' . $this->label . '" /></div>
-				<div><img width="600" height="330" src="/graph12.php?type=' . $this->letter . 'max&amp;x=600&amp;y=330" alt="12month max London ' . $this->label . '" /></div>
-			</div>
-			<p><a href="/charts.php">View more ' . $this->label . ' charts</a></p>
-		';
+		echo '<h3>Past 24hrs and past 12 months trends for ' . $this->label . '</h3>';
+		echo '<div class="detail-grid">';
+		echo '<div>';
+		Charts::intraday(['num' => 1], $this->intradayVar, ['height' => 330]);
+		echo '</div><div>';
+		Charts::daily(['type' => $this->varMean, 'mode' => 'monthly', 'length' => 12, 'summary_type' => Data::SUMMARY_MEAN, 'lta' => 1], ['height' => 330]);
+		echo '</div></div>';
+		echo '<div class="detail-grid">';
+		echo '<div>';
+		Charts::daily(['type' => $this->varMin, 'mode' => 'monthly', 'length' => 12, 'summary_type' => Data::SUMMARY_MEAN], ['height' => 330]);
+		echo '</div><div>';
+		Charts::daily(['type' => $this->varMax, 'mode' => 'monthly', 'length' => 12, 'summary_type' => Data::SUMMARY_MEAN], ['height' => 330]);
+		echo '</div></div>';
+		echo '<p><a href="/charts.php">View more ' . $this->label . ' charts</a></p>';
 	}
 
 	private function seasonalAvgs($wid = 75) {

@@ -516,12 +516,13 @@ class Data {
 	}
 
 	public static function datDerived($varName, $include_historic) {
-		global $types_all;
-
 		$srcMap = ["ratemean" => ["rain", "wethr"], "trange" => ["tmin", "tmax"], "hrange" => ["hmin", "hmax"], "prange" => ["pmin", "pmax"]];
+		if(!isset($srcMap[$varName])) {
+			return [];
+		}
 		$src = $srcMap[$varName];
-		$var1 = varNumToDatArray($types_all[$src[0]], $include_historic);
-		$var2 = varNumToDatArray($types_all[$src[1]], $include_historic);
+		$var1 = self::varToDatArray($src[0], $include_historic);
+		$var2 = self::varToDatArray($src[1], $include_historic);
 
 		$res = [];
 		foreach ($var1 as $year => $arr1) {
@@ -542,47 +543,34 @@ class Data {
 
 
 	/**
-	 * Gets data from the right global ALL array (DATA, DATAM), or derives it (anoms, ranges, rates).
-	 * @param int $varNum
-	 * @param mixed $include_historic false to exclude, int to set start year for historic data, true to include all
-	 * @return mixed
+	 * Returns array[year][month][day] = val for a named variable, optionally
+	 * prepending pre-2009 historical data. Derived variables (ranges, mean rate)
+	 * are computed on the fly from their source variables.
+	 * @param string $name variable name (key of Wx::$daily)
+	 * @param mixed $include_historic false to exclude pre-2009 data, int start-year
+	 *        or true to include the serialised historical record where available
+	 * @return array
 	 */
-	// public static function varNameToDatArray($varName, $include_historic = false) {
-	// 	$isAnom = in_array($varName, $types_anom);
-	// 	if($isAnom) {
-	// 		$anomVarName = $varName;
-	// 		$varNum = $types_all[substr($varName, 0, strlen($varName)-1)];  // e.g. tmina -> 0
-	// 		$varName = $types_alltogether[$varNum];
-	// 	}
-	// 	if(in_array($varName, $types_derived)) {
-	// 		return datDerived($varName, $include_historic);
-	// 	}
-	// 	if($varNum < count($types)) {
-	// 		if (!array_key_exists($varName, $CACHE_DAT)) {
-	// 			$CACHE_DAT[$varName] = unserialize(file_get_contents(ROOT . "serialised_dat_$varNum.txt"));
-	// 		}
-	// 	} else {
-	// 		if (!array_key_exists($varName, $CACHE_DAT)) {
-	// 			$idx = $varNum - $types_all['sunhr'];
-	// 			$CACHE_DAT[$varName] = unserialize(file_get_contents(ROOT . "serialised_datm_$idx.txt"));
-	// 		}
-	// 	}
-	// 	$arr = $CACHE_DAT[$varName];
-	// 	if($include_historic !== false && $start_year_all[$varNum] < 2009) {
-	// 		if($include_historic < 2009) {
-	// 			// Populate cache
-	// 			if (!array_key_exists($varName, $CACHE_DAT_HIST)) {
-	// 				$CACHE_DAT_HIST[$varName] = unserialize(file_get_contents(ROOT."serialised_historical_$varName.txt"));
-	// 			}
-	// 			$arr = $CACHE_DAT_HIST[$varName] + $arr;
-	// 		}
-	// 	}
-	// 	if($isAnom) {
-	// 		// NB: passing the original varname
-	// 		return datAnom($anomVarName, $arr, $varNum);
-	// 	}
-	// 	return $arr;
-	// }
+	public static function varToDatArray($name, $include_historic = false) {
+		if(isset(Wx::$daily[$name]['derived']) && Wx::$daily[$name]['derived']) {
+			return self::datDerived($name, $include_historic);
+		}
+		$arr = self::getAllData($name);
+
+		$startYear = isset(Wx::$daily[$name]['start_year']) ? Wx::$daily[$name]['start_year'] : Site::BASE_YEAR;
+		$wantsHistoric = ($include_historic !== false) && ($include_historic === true || $include_historic < Site::BASE_YEAR);
+		if($wantsHistoric && $startYear < Site::BASE_YEAR) {
+			$histFile = ROOT . "serialised_historical_$name.txt";
+			if(file_exists($histFile)) {
+				if(!array_key_exists($name, self::$CACHE_DAT_HIST)) {
+					self::$CACHE_DAT_HIST[$name] = unserialize(file_get_contents($histFile));
+				}
+				// Union keeps in-record (post-2009) years authoritative
+				$arr = self::$CACHE_DAT_HIST[$name] + $arr;
+			}
+		}
+		return $arr;
+	}
 
 
 	public static function summarize($arr, $summary_type) {
@@ -605,7 +593,37 @@ class Data {
 	public static function summarize2D($arr2D, $summary_type) {
 		$summary = [];
 		foreach($arr2D as $k => $arr) {
-			$summary[$k] = summarize($arr, $summary_type);
+			$summary[$k] = self::summarize($arr, $summary_type);
+		}
+		return $summary;
+	}
+
+	/**
+	 * Flattens an array indexed [month][day] into a 1D array indexed by day-of-year.
+	 * @param array $arr [month][day] => val
+	 * @return array
+	 */
+	public static function MDtoZ($arr) {
+		$z = [];
+		$cnt = count($arr);
+		for($mon = 1; $mon <= $cnt; $mon++) {
+			if(isset($arr[$mon]) && is_array($arr[$mon])) {
+				$z = array_merge($z, $arr[$mon]);
+			}
+		}
+		return $z;
+	}
+
+	/**
+	 * Reduces an array indexed [month][day] to [month] => summary across each month.
+	 * @param array $arr [month][day] => val
+	 * @param int $summary_type one of the Data::SUMMARY_* constants
+	 * @return array [month] => summary
+	 */
+	public static function MDtoMsummary($arr, $summary_type = Data::SUMMARY_MEAN) {
+		$summary = [];
+		foreach($arr as $mon => $days) {
+			$summary[$mon] = self::summarize($days, $summary_type);
 		}
 		return $summary;
 	}
@@ -613,14 +631,14 @@ class Data {
 
 	// GLOBAL DATA ACCESS FUNCTIONS
 	/**
-	 * Returns array[year][month][day] = val
-	 * @param type $var
-	 * @param type $start_year
-	 * @return type
+	 * Returns array[year][month][day] = val from $start_year onward.
+	 * @param string $var variable name
+	 * @param int $start_year first year to include (also controls historic merge)
+	 * @return array
 	 */
 	public static function getDailyData($var, $start_year) {
 		$data = [];
-		foreach( varNumToDatArray($GLOBALS["types_all"][$var], $start_year) as $y => $dat ) {
+		foreach( self::varToDatArray($var, $start_year) as $y => $dat ) {
 			if($y >= $start_year) {
 				$data[$y] = $dat;
 			}
@@ -628,8 +646,60 @@ class Data {
 		return $data;
 	}
 
+	/**
+	 * Returns array[month][day] = val for a single year.
+	 * @param string $var variable name
+	 * @param int $year
+	 * @return array
+	 */
+	public static function getDailyDataForYear($var, $year) {
+		$data = self::varToDatArray($var, $year);
+		return isset($data[$year]) ? $data[$year] : [];
+	}
+
+	/**
+	 * Returns array[year][month] = summary across the chosen years.
+	 * @param string $var variable name
+	 * @param int $summary_type one of the Data::SUMMARY_* constants
+	 * @param int $start_year
+	 * @param int $end_year
+	 * @return array
+	 */
+	public static function getMonthlySummary($var, $summary_type, $start_year, $end_year) {
+		$data = [];
+		foreach (self::varToDatArray($var, $start_year) as $year => $months) {
+			if($year >= $start_year && $year <= $end_year) {
+				$data[$year] = self::summarize2D($months, $summary_type);
+			}
+		}
+		return $data;
+	}
+
+	/**
+	 * Returns array[year] = summary across the chosen years.
+	 * @param string $var variable name
+	 * @param int $summary_type one of the Data::SUMMARY_* constants
+	 * @param int $start_year
+	 * @param int $end_year
+	 * @return array
+	 */
+	public static function getAnnualData($var, $summary_type, $start_year, $end_year) {
+		$data = [];
+		foreach (self::varToDatArray($var, $start_year) as $year => $months) {
+			if($year >= $start_year && $year <= $end_year) {
+				$data[$year] = self::summarize(self::MDtoZ($months), $summary_type);
+			}
+		}
+		return $data;
+	}
+
+	/**
+	 * Maps a variable name to its Wx conversion/unit type (e.g. 'tmin' => Wx::Temperature).
+	 * @param string $type variable name
+	 * @return string Wx unit constant
+	 */
 	public static function typeToConvType($type) {
-		return $GLOBALS['typeconvs_all'][$GLOBALS['types_all'][$type]];
+		return isset(Wx::$daily[$type]['unit']) ? Wx::$daily[$type]['unit'] : Wx::None;
 	}
 
 	/**
@@ -675,7 +745,7 @@ class Data {
 			}
 		}
 		//clean-up
-		$mean = ($count === 0) ? 0 : roundToDp($sum / $count, 0);
+		$mean = ($count === 0) ? 0 : Util::roundToDp($sum / $count, 0);
 		if($mean < 0) {
 			$mean += 360;
 		}
@@ -757,7 +827,7 @@ class Data {
 				elseif($pm25V === $pm25Min) { $pm25MinTimes[] = $tPm25; }
 			}
 
-			$feels[$i] = feelsLike($custl[6], $custl[4], $custl[9]);
+			$feels[$i] = Wx::feelsLike($custl[6], $custl[4], $custl[9]);
 
 			//cumulative rain
 			if($i > 0) {
@@ -847,44 +917,44 @@ class Data {
 		$timesMin['night'] = date( 'H:i', ($nightmint1 + $nightmint2) / 2 );
 		$timesMin['nightTomoz'] = date( 'H:i', ($nightmint1T + $nightmint2T) / 2 );
 
-		$maxs['wind'] = max($dat[3]); $timesMax['wind'] = timeFromMM($maxs['wind'], $dat[3], $custhr, $custmin);
-		$maxs['gust'] = max($dat[4]); $timesMax['gust'] = timeFromMM($maxs['gust'], $dat[4], $custhr, $custmin);
+		$maxs['wind'] = max($dat[3]); $timesMax['wind'] = self::timeFromMM($maxs['wind'], $dat[3], $custhr, $custmin);
+		$maxs['gust'] = max($dat[4]); $timesMax['gust'] = self::timeFromMM($maxs['gust'], $dat[4], $custhr, $custmin);
 
-		$minFeel = min($feels); $timesMin['feel'] = timeFromMM($minFeel, $feels, $custhr, $custmin);
-		$maxFeel = max($feels); $timesMax['feel'] = timeFromMM($maxFeel, $feels, $custhr, $custmin);
+		$minFeel = min($feels); $timesMin['feel'] = self::timeFromMM($minFeel, $feels, $custhr, $custmin);
+		$maxFeel = max($feels); $timesMax['feel'] = self::timeFromMM($maxFeel, $feels, $custhr, $custmin);
 		$mins['feel'] = round($minFeel, 1);
 		$maxs['feel'] = round($maxFeel, 1);
 
 		if(is_array($rn60)) {
-			$maxs['rnhr'] = max($rn60); if($maxs['rnhr'] > 0.2) { $timesMax['rnhr'] = timeFromMM($maxs['rnhr'], $rn60, $custhr, $custmin); }
-			$maxs['tchangehr'] = max($tchangehr); $timesMax['tchangehr'] = timeFromMM($maxs['tchangehr'], $tchangehr, $custhr, $custmin);
-			$maxs['hchangehr'] = max($hchangehr); $timesMax['hchangehr'] = timeFromMM($maxs['hchangehr'], $hchangehr, $custhr, $custmin);
-			$tchhr = min($tchangehr); $timesMin['tchangehr'] = timeFromMM($tchhr, $tchangehr, $custhr, $custmin);
-			$hchhr = min($hchangehr); $timesMin['hchangehr'] = timeFromMM($hchhr, $hchangehr, $custhr, $custmin);
+			$maxs['rnhr'] = max($rn60); if($maxs['rnhr'] > 0.2) { $timesMax['rnhr'] = self::timeFromMM($maxs['rnhr'], $rn60, $custhr, $custmin); }
+			$maxs['tchangehr'] = max($tchangehr); $timesMax['tchangehr'] = self::timeFromMM($maxs['tchangehr'], $tchangehr, $custhr, $custmin);
+			$maxs['hchangehr'] = max($hchangehr); $timesMax['hchangehr'] = self::timeFromMM($maxs['hchangehr'], $hchangehr, $custhr, $custmin);
+			$tchhr = min($tchangehr); $timesMin['tchangehr'] = self::timeFromMM($tchhr, $tchangehr, $custhr, $custmin);
+			$hchhr = min($hchangehr); $timesMin['hchangehr'] = self::timeFromMM($hchhr, $hchangehr, $custhr, $custmin);
 			$mins['tchangehr'] = -1 * $tchhr;
 			$mins['hchangehr'] = -1 * $hchhr;
 
 		}
 		if(is_array($t10)) {
-			$w10max = max($wind10); $timesMax['w10m'] = timeFromMM($w10max, $wind10, $custhr, $custmin);
+			$w10max = max($wind10); $timesMax['w10m'] = self::timeFromMM($w10max, $wind10, $custhr, $custmin);
 			$maxs['w10m'] = round($w10max, 1);
-			$maxs['rn10'] = max($rn10); if($maxs['rn10'] > 0.2) { $timesMax['rn10'] = timeFromMM($maxs['rn10'], $rn10, $custhr, $custmin); }
-			$t10min = min($t10); $timesMin['tchange10'] = timeFromMM($t10min, $t10, $custhr, $custmin);
+			$maxs['rn10'] = max($rn10); if($maxs['rn10'] > 0.2) { $timesMax['rn10'] = self::timeFromMM($maxs['rn10'], $rn10, $custhr, $custmin); }
+			$t10min = min($t10); $timesMin['tchange10'] = self::timeFromMM($t10min, $t10, $custhr, $custmin);
 			$mins['tchange10'] = -1 * $t10min;
-			$maxs['tchange10'] = max($t10); $timesMax['tchange10'] = timeFromMM($maxs['tchange10'], $t10, $custhr, $custmin);
+			$maxs['tchange10'] = max($t10); $timesMax['tchange10'] = self::timeFromMM($maxs['tchange10'], $t10, $custhr, $custmin);
 		}
 		if(is_array($rr)) {
 			$maxs['rate'] = max($rr);
-			$timesMax['rate'] = timeFromMM($maxs['rate'], $rr, $custhr, $custmin);
+			$timesMax['rate'] = self::timeFromMM($maxs['rate'], $rr, $custhr, $custmin);
 			$maxs['rate'] = $maxs['rate'];
 		}
 		for($t = 6; $t < 10; $t++) {
 			// Time of max/min is the mean time of the longest continuous period at that value
-			$timesMin[$daytypes[$t]] = date('H:i', midpoint_of_longest($datt[$t]['timesMin'], 120));
-			$timesMax[$daytypes[$t]] = date('H:i', midpoint_of_longest($datt[$t]['timesMax'], 120));
+			$timesMin[$daytypes[$t]] = date('H:i', self::midpoint_of_longest($datt[$t]['timesMin'], 120));
+			$timesMax[$daytypes[$t]] = date('H:i', self::midpoint_of_longest($datt[$t]['timesMax'], 120));
 			$mins[$daytypes[$t]] = $datt[$t]['min'];
 			$maxs[$daytypes[$t]] = $datt[$t]['max'];
-			$means[$daytypes[$t]] = round( mean($dat[$t]), $round_pt[$t] );
+			$means[$daytypes[$t]] = round( Util::mean($dat[$t]), $round_pt[$t] );
 
 			if($end > 61) {
 				$hrChanges[$daytypes[$t]] = $dat[$t][$end-1] - $dat[$t][$end-61];
@@ -900,8 +970,8 @@ class Data {
 			$mins['pm25'] = $pm25Min;
 			$maxs['pm25'] = $pm25Max;
 			$means['pm25'] = round($pm25Sum / $pm25Count, 1);
-			$timesMin['pm25'] = date('H:i', midpoint_of_longest($pm25MinTimes, 120));
-			$timesMax['pm25'] = date('H:i', midpoint_of_longest($pm25MaxTimes, 120));
+			$timesMin['pm25'] = date('H:i', self::midpoint_of_longest($pm25MinTimes, 120));
+			$timesMax['pm25'] = date('H:i', self::midpoint_of_longest($pm25MaxTimes, 120));
 			if($end > 61 && isset($dat[11][$end-1]) && isset($dat[11][$end-61])) {
 				$hrChanges['pm25'] = $dat[11][$end-1] - $dat[11][$end-61];
 			}
@@ -910,10 +980,10 @@ class Data {
 			}
 		}
 
-		$means['wind'] = round(mean($dat[3]), 1);
-		$means['w10m'] = round(mean($wind10), 1);
-		$means['wdir'] = wdirMean($dat[5], $dat[3]);
-		$means['feel'] = round(mean($feels), 1);
+		$means['wind'] = round(Util::mean($dat[3]), 1);
+		$means['w10m'] = round(Util::mean($wind10), 1);
+		$means['wdir'] = self::wdirMean($dat[5], $dat[3]);
+		$means['feel'] = round(Util::mean($feels), 1);
 		$means['rain'] = $rncum;
 		if($means['rain'] < 0.2) {
 			$maxs['rnhr'] = $maxs['rn10'] = null;
@@ -1000,7 +1070,7 @@ class Data {
 			}
 
 			$diff = time() - $prevRn;
-			$ago = secsToReadable($diff);
+			$ago = Date::secsToReadable($diff);
 			$dateAgo = date('jS M', $prevRn);
 			if(date('Ymd') == date('Ymd', $prevRn)) {
 				$dateAgo = 'Today';
@@ -1029,7 +1099,7 @@ class Data {
 		}
 
 		$frosthrs = round($frostMins / 60, (int)($frostMins < 10) + 1);
-		$rnDuration = roundToDp($duration / 60, 1);
+		$rnDuration = Util::roundToDp($duration / 60, 1);
 
 		return array("min" => $mins, "max" => $maxs, "mean" => $means, "timeMin" => $timesMin, "timeMax" => $timesMax,
 					"trend" => $trends, "trendRn" => $rnCums, "changeHr" => $hrChanges, "changeDay" => $hr24Changes,
