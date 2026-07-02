@@ -359,6 +359,125 @@ div.charts-with-title > img {
 	margin: 0.5em;
 }
 
+/* wx3 live dashboard: variable + range toggles, main + multi-var charts */
+.wx3-live-bar {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.4rem;
+	margin: 0.3rem 0.3rem 0.5rem;
+}
+.wx3-live-vars {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 0.2rem;
+	flex: 1 1 auto;
+	overflow-x: auto;
+}
+.wx3-live-vars button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	cursor: pointer;
+	margin: 0;
+	padding: 0.2rem 0.45rem;
+	white-space: nowrap;
+	background: #eef5ef;
+	color: #15604c;
+	border: 1px solid #d6e2d8;
+	border-radius: 8px;
+	font: inherit;
+	font-size: 0.85rem;
+}
+.wx3-live-vars button img {
+	display: block;
+	width: 22px;
+	height: 22px;
+}
+.wx3-live-vars button:hover { background: #e0eee3; }
+.wx3-live-vars button.active {
+	background: #15866A;
+	color: #fff;
+	border-color: #15866A;
+}
+.wx3-live-range {
+	display: flex;
+	gap: 0.1rem;
+	flex: 0 0 auto;
+}
+.wx3-live-range button {
+	font: inherit;
+	cursor: pointer;
+	margin: 0;
+	padding: 0.2rem 0.5rem;
+	background: #fff;
+	color: #15604c;
+	border: 1px solid #d6e2d8;
+	border-radius: 5px;
+}
+.wx3-live-range button:hover { background: #eef5ef; }
+.wx3-live-range button.active {
+	background: #15866A;
+	color: #fff;
+	border-color: #15866A;
+}
+.wx3-chart {
+	background: #fff;
+	border: 1px solid #d6e2d8;
+	border-radius: 6px;
+	margin: 0.3rem 0.3rem 0.6rem;
+	min-width: 0;
+}
+.wx3-multi {
+	display: flex;
+	flex-direction: row;
+}
+.wx3-multi > .wx3-chart {
+	flex: 1 1 0;
+	width: 50%;
+}
+@media only screen and (max-width: 900px) {
+	.wx3-multi { flex-direction: column; }
+	.wx3-multi > .wx3-chart { width: auto; }
+}
+
+/* Trend charts need a definite width so Highcharts gets a real plot area */
+div.charts > .wxchart {
+	flex: 1 1 420px;
+	min-width: 300px;
+}
+
+/* Selectable trend chart (variable dropdown) - full width */
+div.charts > .wxsel-chart {
+	flex: 1 1 100%;
+	width: 100%;
+}
+.wxsel-chart .wxchart { width: 100%; }
+.wxsel-chart { margin: 0.5em; }
+.wxsel-bar {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	margin: 0 0.3rem 0.3rem;
+	font-size: 0.85rem;
+}
+.wxsel {
+	font: inherit;
+	padding: 0.15rem 0.3rem;
+	color: #15604c;
+	background: #fff;
+	border: 1px solid #d6e2d8;
+	border-radius: 5px;
+}
+
+/* Wind roses: equal-sized, larger */
+div.charts-with-title > div {
+	flex: 1 1 380px;
+	min-width: 320px;
+}
+div.charts-with-title .wxchart {
+	width: 100%;
+}
+
 /* LEGACY */
 
 .table-top {
@@ -1049,11 +1168,52 @@ select.timelapse {
 }
 .home-cam-link img {
 	width: 100%;
-	max-width: 864px;
+	max-width: 700px;
 	height: auto;
 	display: block;
 	border: 1px solid #d6e2d8;
 	border-radius: 6px;
+}
+
+/* wx2: responsive 24hr thumbnail grid (max 6 per row) */
+.cam-grid {
+	display: grid;
+	grid-template-columns: repeat(6, 1fr);
+	gap: 6px;
+	margin: 0.5rem 0 0.8rem;
+}
+.cam-grid figure {
+	margin: 0;
+	text-align: center;
+	font-size: 0.8rem;
+}
+.cam-grid img {
+	width: 100%;
+	height: auto;
+	display: block;
+	border-radius: 4px;
+	border: 1px solid #d6e2d8;
+}
+.cam-grid figcaption {
+	color: #444;
+	padding-top: 2px;
+}
+.cam-grid-missing {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	aspect-ratio: 3 / 2;
+	background: #eef3ee;
+	border: 1px dashed #cdd8ce;
+	border-radius: 4px;
+	color: #888;
+	font-size: 0.75rem;
+}
+@media only screen and (max-width: 900px) {
+	.cam-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media only screen and (max-width: 560px) {
+	.cam-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* Interactive home-page chart */

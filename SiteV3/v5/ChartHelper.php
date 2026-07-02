@@ -56,7 +56,7 @@ class Charts {
 		self::assets();
 		$id = self::container($opts);
 		$url = self::url('histdata.php', $params);
-		self::run('NW3.histChart(' . json_encode($id) . ',' . json_encode($url) . ');');
+		self::run('NW3.histChart(' . json_encode($id) . ',' . json_encode($url) . ',' . json_encode($opts) . ');');
 	}
 
 	/** Alias for daily(). */
@@ -104,11 +104,133 @@ class Charts {
 			. json_encode($initial) . ',' . json_encode('#' . $panelId . '-vars button') . ');');
 	}
 
-	/** Wind rose (polar stacked column) from rosedata.php. */
+	/** Wind rose (polar stacked column) from rosedata.php. Pass $opts['legend']=false to hide the legend. */
 	public static function rose($params, $opts = array()) {
 		self::assets();
 		$id = self::container($opts);
 		$url = self::url('rosedata.php', $params);
-		self::run('NW3.windRose(' . json_encode($id) . ',' . json_encode($url) . ');');
+		$jsOpts = array('legend' => !(isset($opts['legend']) && $opts['legend'] === false));
+		self::run('NW3.windRose(' . json_encode($id) . ',' . json_encode($url) . ',' . json_encode($jsOpts) . ');');
+	}
+
+	/**
+	 * Interactive live dashboard: two fixed multi-variable charts (temp/humidity/
+	 * rain/dew point and wind/gust/pressure) that always show the last 24h, plus a
+	 * single-variable chart with an icon+label variable toggle and a 6h..7d range
+	 * toggle. Short ranges (<=24h) reuse one full-resolution intradaydata.php fetch;
+	 * longer ranges fetch a server-decimated dataset (maxpts) to limit transfer.
+	 */
+	public static function livePanel($opts = array()) {
+		self::assets();
+		$mainHeight  = isset($opts['height']) ? (int)$opts['height'] : 600;
+		$multiHeight = isset($opts['multiHeight']) ? (int)$opts['multiHeight'] : 680;
+		$img = Site::IMG_ROOT;
+
+		$vars = array(
+			'temp' => array('Temp', 'thermom8_small.png'),
+			'rain' => array('Rain', 'rain2_small.png'),
+			'wind' => array('Wind', 'windy_small.png'),
+			'humi' => array('Humidity', 'humidity_small.png'),
+			'dewp' => array('Dew point', 'dewy_small.png'),
+			'pres' => array('Pressure', 'pressure2_small.png'),
+			'pm25' => array('Air quality', 'sky3_small.png'),
+			'wdir' => array('Wind dir', 'compass_small.png'),
+		);
+		// Each range: hours window, days to fetch (cover the window across midnight),
+		// and a server decimation cap (maxpts) for the longer ones to limit transfer.
+		$ranges = array(
+			array('h' => 6,   'days' => 2, 'label' => '6h'),
+			array('h' => 12,  'days' => 2, 'label' => '12h'),
+			array('h' => 24,  'days' => 2, 'label' => '24h'),
+			array('h' => 48,  'days' => 3, 'maxpts' => 720, 'label' => '48h'),
+			array('h' => 72,  'days' => 4, 'maxpts' => 720, 'label' => '3d'),
+			array('h' => 120, 'days' => 6, 'maxpts' => 720, 'label' => '5d'),
+			array('h' => 168, 'days' => 8, 'maxpts' => 720, 'label' => '7d'),
+		);
+		$defaultVar = 'temp';
+		$defaultRangeIdx = 1; // 12h
+
+		echo '<div class="wx3-multi">' . "\n";
+		echo '<div id="wx3-multi-a" class="wx3-chart" style="min-height:' . $multiHeight . 'px;"></div>' . "\n";
+		echo '<div id="wx3-multi-b" class="wx3-chart" style="min-height:' . $multiHeight . 'px;"></div>' . "\n";
+		echo '</div>' . "\n";
+
+		echo '<div class="wx3-live-bar">' . "\n";
+		echo '<div id="wx3-vars" class="wx3-live-vars" role="tablist">';
+		foreach ($vars as $k => $v) {
+			$active = ($k === $defaultVar) ? ' active' : '';
+			echo '<button type="button" class="' . trim($active) . '" data-var="' . htmlspecialchars($k) . '" title="' . htmlspecialchars($v[0]) . '">'
+				. '<img src="' . $img . htmlspecialchars($v[1]) . '" alt="" width="22" height="22" />'
+				. '<span>' . htmlspecialchars($v[0]) . '</span></button>';
+		}
+		echo '</div>' . "\n";
+		echo '<div id="wx3-range" class="wx3-live-range" role="group" aria-label="Chart time range">';
+		foreach ($ranges as $i => $r) {
+			$active = ($i === $defaultRangeIdx) ? ' class="active"' : '';
+			echo '<button type="button"' . $active . ' data-idx="' . (int)$i . '">' . htmlspecialchars($r['label']) . '</button>';
+		}
+		echo '</div>' . "\n";
+		echo '</div>' . "\n";
+
+		echo '<div id="wx3-main" class="wx3-chart" style="min-height:' . $mainHeight . 'px;"></div>' . "\n";
+
+		$cfg = array(
+			'url' => self::url('intradaydata.php'),
+			'mainId' => 'wx3-main',
+			'varSel' => '#wx3-vars button',
+			'rangeSel' => '#wx3-range button',
+			'initialVar' => $defaultVar,
+			'initialRangeIdx' => $defaultRangeIdx,
+			'baseDays' => 2,
+			'ranges' => $ranges,
+			'refresh' => 300000,
+			'multi' => array(
+				array('id' => 'wx3-multi-a', 'kind' => 'thrd'),
+				array('id' => 'wx3-multi-b', 'kind' => 'wgp'),
+			),
+		);
+		self::run('NW3.intradayPage(' . json_encode($cfg) . ');');
+	}
+
+	/**
+	 * Full list of daily variables offered in selectable trend charts, built from
+	 * the data definitions (mirrors the Chart Viewer picker in charts.php), skipping
+	 * non-numeric / unsupported series.
+	 */
+	public static function selectableVars() {
+		$skip = array('comms', 'extra', 'issues', 'away', 'cloud', 'spare', 'sunhrp', 'wethrp');
+		$vars = array();
+		foreach (Wx::$daily as $key => $meta) {
+			if (in_array($key, $skip, true)) { continue; }
+			$vars[$key] = $meta['description'];
+		}
+		return $vars;
+	}
+
+	/**
+	 * Categorical trend chart whose variable is chosen from a dropdown. $params holds
+	 * the shared mode/length/lta (but no type); the picked type is appended client-side.
+	 */
+	public static function dailySelectable($params, $opts = array(), $vars = null, $default = 'wmean') {
+		self::assets();
+		if ($vars === null) { $vars = self::selectableVars(); }
+		$id = 'wxc' . (++self::$seq);
+		$selId = $id . '-sel';
+		$height = isset($opts['height']) ? (int)$opts['height'] : 320;
+
+		echo '<div class="wxsel-chart">' . "\n";
+		echo '<div class="wxsel-bar"><label for="' . $selId . '">Variable:</label> '
+			. '<select id="' . $selId . '" class="wxsel">';
+		foreach ($vars as $type => $label) {
+			$sel = ($type === $default) ? ' selected' : '';
+			echo '<option value="' . htmlspecialchars($type) . '"' . $sel . '>' . htmlspecialchars($label) . '</option>';
+		}
+		echo '</select></div>' . "\n";
+		echo '<div id="' . $id . '" class="wxchart" style="min-height:' . $height . 'px;"></div>' . "\n";
+		echo '</div>' . "\n";
+
+		$url = self::url('histdata.php', $params);
+		self::run('NW3.histSelect(' . json_encode($id) . ',' . json_encode($selId) . ','
+			. json_encode($url) . ',' . json_encode($opts) . ');');
 	}
 }

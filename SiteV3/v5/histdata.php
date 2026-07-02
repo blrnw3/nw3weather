@@ -53,7 +53,7 @@ function cv($v, $isCount = false) {
 	global $convType, $precision;
 	if ($v === null || $v === '' || $v === '-' || !is_numeric($v)) { return null; }
 	if ($isCount) { return round((float)$v, 0); }
-	return Wx::convNum($v, $convType, $precision + 1);
+	return Wx::convNum($v, $convType, $precision);
 }
 
 $out = [
@@ -61,6 +61,8 @@ $out = [
 	'description' => $meta['description'],
 	'colour'      => $colour,
 	'unit'        => strip_tags(Wx::getUnits($convType)),
+	'precision'   => $precision,
+	'yMinZero'    => ($convType !== Wx::Pressure),
 	'mode'        => $mode,
 	'chartType'   => 'column',
 	'xType'       => 'category',
@@ -73,6 +75,15 @@ $out = [
 function ltaMonthly($type) {
 	if (isset(LTA::$vars[$type]) && is_array(LTA::$vars[$type]) && isset(LTA::$vars[$type]['monthly'])) {
 		return LTA::$vars[$type]['monthly'];
+	}
+	// Mean temperature normal isn't stored directly; derive it from tmin/tmax.
+	if ($type === 'tmean'
+		&& isset(LTA::$vars['tmin']['monthly']) && isset(LTA::$vars['tmax']['monthly'])) {
+		$mean = array();
+		for ($m = 0; $m < 12; $m++) {
+			$mean[$m] = (LTA::$vars['tmin']['monthly'][$m] + LTA::$vars['tmax']['monthly'][$m]) / 2;
+		}
+		return $mean;
 	}
 	return null;
 }
@@ -96,7 +107,7 @@ if ($mode === 'annual') {
 	}
 	$out['title'] = 'Annual ' . Data::$SUMMARY_NAMES[$summaryType] . ' ' . $meta['description'];
 	$out['series'][] = ['name' => $meta['description'], 'data' => $data, 'color' => $colour, 'type' => 'column'];
-	if ($isCount) { $out['unit'] = 'days'; }
+	if ($isCount) { $out['unit'] = 'days'; $out['precision'] = 0; }
 
 } elseif ($mode === 'monthly') {
 	$isCount = ($summaryType === Data::SUMMARY_COUNT);
@@ -130,7 +141,7 @@ if ($mode === 'annual') {
 		$out['series'][] = ['name' => $meta['description'], 'data' => $flatVals, 'color' => $colour, 'type' => 'column'];
 		$ltaEndMon = (int)Date::$dmonth;
 	}
-	if ($isCount) { $out['unit'] = 'days'; }
+	if ($isCount) { $out['unit'] = 'days'; $out['precision'] = 0; }
 	// LTA overlay
 	$lta = ltaMonthly($type);
 	if (isset($_GET['lta']) && $lta && $summaryType <= Data::SUMMARY_SUM) {
@@ -140,7 +151,7 @@ if ($mode === 'annual') {
 			$offset = (($ltaEndMon - $n + $i) % 12 + 12) % 12;
 			$climvals[] = cv($lta[$offset]);
 		}
-		$out['series'][] = ['name' => 'Normal', 'data' => $climvals, 'color' => '#888888', 'type' => 'column'];
+		$out['series'][] = ['name' => 'Normal', 'data' => $climvals, 'color' => '#999999', 'type' => 'column'];
 	}
 
 } elseif ($mode === 'climate') {
@@ -152,7 +163,7 @@ if ($mode === 'annual') {
 		$data[] = $lta ? cv($lta[$m]) : null;
 	}
 	$out['title'] = 'Climate normal ' . $meta['description'];
-	$out['series'][] = ['name' => 'Normal', 'data' => $data, 'color' => $colour, 'type' => 'column'];
+	$out['series'][] = ['name' => 'Normal', 'data' => $data, 'color' => '#999999', 'type' => 'column'];
 
 } else {
 	// ----- daily -----

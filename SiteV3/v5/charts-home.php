@@ -3,7 +3,8 @@
 //<![CDATA[
 (function () {
 	var EP = 'chartdata.php';
-	var TEXT = '#222';
+	var TEXT = '#555';
+	var AXES = "#666";
 	var COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N'];
 
 	// One entry per tab. `series` lists the log keys drawn; each carries a
@@ -30,7 +31,7 @@
 			series: [{ key: 'pm25', name: 'Air quality (PM2.5)', grad: ['#4f7a4a', '#9ac98f'] }] }
 	};
 
-	var currentRange = 6;
+	var currentRange = 12;
 	var currentVar = 'temp';
 	var cache = null;
 	var chart = null;
@@ -54,7 +55,7 @@
 	}
 
 	function titleFor(key) {
-		return 'Last ' + currentRange + ' hrs ' + TABS[key].title + ' in NW3';
+		return 'Last ' + currentRange + ' hrs ' + TABS[key].title + ' in nw3';
 	}
 
 	// A complete options object is built per tab and the chart is recreated,
@@ -68,12 +69,12 @@
 			title: { text: yLabel, style: { color: TEXT, fontSize: '0.8rem' } },
 			gridLineColor: '#dddddd',
 			min: 0, max: 360, tickInterval: 45,
-			labels: { style: { color: TEXT }, formatter: function () { return compass(this.value); } }
+			labels: { style: { color: AXES, fontSize: "11px" }, formatter: function () { return compass(this.value); } }
 		} : {
 			title: { text: yLabel, style: { color: TEXT, fontSize: '0.8rem' } },
 			gridLineColor: '#dddddd',
 			min: cfg.area ? 0 : null,
-			labels: { style: { color: TEXT } }
+			labels: { style: { color: AXES, fontSize: "11px"} }
 		};
 
 		var tooltip = isDir ? {
@@ -112,16 +113,16 @@
 
 		return {
 			chart: { backgroundColor: '#ffffff', spacing: [12, 12, 10, 10], style: { color: TEXT } },
-			title: { text: titleFor(key), style: { color: TEXT, fontSize: '1.1rem', fontWeight: 'normal' } },
+			title: { text: titleFor(key), style: { color: TEXT, fontSize: '1rem', fontWeight: 'normal' } },
 			credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999999', fontSize: '9px' } },
 			legend: { enabled: cfg.series.length > 1, itemStyle: { color: TEXT } },
 			xAxis: {
 				type: 'datetime',
-				crosshair: true,
-				gridLineWidth: 1,
-				gridLineColor: '#dddddd',
+				crosshair: false,
+				// gridLineWidth: 1,
+				// gridLineColor: '#dddddd',
 				dateTimeLabelFormats: { minute: '%H:%M', hour: '%H:%M', day: '%e %b' },
-				labels: { style: { color: TEXT } }
+				labels: { style: { color: AXES, fontSize: "11px" } }
 			},
 			yAxis: yAxis,
 			tooltip: tooltip,

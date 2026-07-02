@@ -17,6 +17,10 @@ $wtm = 864;
 $htm = 576;
 $wts = 315;
 $hts = 210;
+$wh = 700;   // v5 home column
+$hh = 467;
+$ww = 1400;  // v5 wx2 near-full-width
+$hw = 933;
 
 $image_raw = imagecreatefromjpeg($root.$img_name);
 if($image_raw) {
@@ -50,6 +54,25 @@ if($image_raw) {
 	imagettftext($image_hd, 20, 0, $wt - 210, $ht - 30, $col3, $FONT, $copystr);
 	safe_cam_save($image_hd, $root.'skycam.jpg', 65);
 
+	// v5 home column
+	$image_home = imagecreatetruecolor($wh, $hh);
+	$col_home = imagecolorallocate($image_home, 250, 250, 250);
+	imagecopyresampled($image_home, $image_raw, 0, 0, 0, 0, $wh, $hh, $w, $h);
+	imagestring($image_home, 4, 10, $hh - 20, $str, $col_home);
+	imagestring($image_home, 4, $wh - 90, $hh - 20, $copystr, $col_home);
+	safe_cam_save($image_home, $root.'skycam_home.jpg', 70);
+
+	// v5 wx2 near-full-width
+	$image_wx2 = imagecreatetruecolor($ww, $hw);
+	$col_wx2 = imagecolorallocate($image_wx2, 250, 250, 250);
+	imagecopyresampled($image_wx2, $image_raw, 0, 0, 0, 0, $ww, $hw, $w, $h);
+	imagettftext($image_wx2, 16, 0, 15, $hw - 22, $col_wx2, $FONT, $str);
+	imagettftext($image_wx2, 16, 0, $ww - 170, $hw - 22, $col_wx2, $FONT, $copystr);
+	safe_cam_save($image_wx2, $root.'skycam_wx2.jpg', 70);
+	if(date('H:i') == $sunset) {
+		copy($root.'skycam_wx2.jpg', $root.'skycam_wx2_sunset.jpg');
+	}
+
 	// Really small
 	$image_vsmall = imagecreatetruecolor($wts, $hts);
 	$col2 = imagecolorallocate($image_vsmall, 250, 250, 250);
@@ -60,6 +83,8 @@ if($image_raw) {
 
 	imagedestroy($image_raw);
 	imagedestroy($image_hd);
+	imagedestroy($image_home);
+	imagedestroy($image_wx2);
 	imagedestroy($image_small);
 	imagedestroy($image_vsmall);
 } else {

@@ -62,6 +62,9 @@ DATA_FILTERS=(
 #   METAR.txt              : current-conditions decode line
 #   forecast_v5.json       : today/tomorrow forecast block
 #   *Tags.php              : RainTags (month/year rain) + rareTags (console text)
+#   skycam_home.jpg        : v5 home-page webcam (auto-refreshed every 10s)
+#   skycam_wx2.jpg         : v5 wx2 near-full-width webcam
+#   skycam_wx2_sunset.jpg  : v5 wx2 latest-daylight image (shown after dark)
 HOME_LIVE_FILTERS=(
   --include='clientraw.txt'
   --include='clientrawBackup.txt'
@@ -73,6 +76,9 @@ HOME_LIVE_FILTERS=(
   --include='METAR.txt'
   --include='forecast_v5.json'
   --include='*Tags.php'
+  --include='skycam_home.jpg'
+  --include='skycam_wx2.jpg'
+  --include='skycam_wx2_sunset.jpg'
   --exclude='*'
 )
 

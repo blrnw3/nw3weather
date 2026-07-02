@@ -123,4 +123,19 @@ for ($i = 0; $i < $total; $i++) {
 $n = count($out['time']);
 $out['updated'] = $n ? (int)($out['time'][$n - 1] / 1000) : null;
 
+// Optional decimation: keep at most `maxpts` evenly-spaced samples (plus the last)
+// so longer windows transfer far less data while preserving the overall shape.
+$maxpts = isset($_GET['maxpts']) ? max(0, (int)$_GET['maxpts']) : 0;
+if ($maxpts > 0 && $n > $maxpts) {
+	$step = (int)ceil($n / $maxpts);
+	$keys = ['time', 'temp', 'dewp', 'humi', 'pres', 'wind', 'gust', 'wdir', 'rain', 'pm25'];
+	foreach ($keys as $k) {
+		$src = $out[$k];
+		$dst = [];
+		for ($i = 0; $i < $n; $i += $step) { $dst[] = $src[$i]; }
+		if (($n - 1) % $step !== 0) { $dst[] = $src[$n - 1]; }
+		$out[$k] = $dst;
+	}
+}
+
 echo json_encode($out);

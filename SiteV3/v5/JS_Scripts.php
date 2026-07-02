@@ -35,24 +35,16 @@
 </script>
 
 <?php
-$camImg = '/currcam';
-$camImgNew = '/skycam_small';
+$camImgNew = '/skycam';
 $camImgLarge = '/skycam.jpg';
 $camImg .= (Page::$fileNum === 1) ? '_small.jpg' : '.jpg';
-$camImgNew .= (Page::$fileNum === 1) ? '_small.jpg' : '.jpg';
+$camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 ?>
 <script type="text/javascript">
 	//<![CDATA[
-	var image = "<?php echo $camImg; ?>";
 	var imageNew = "<?php echo $camImgNew; ?>";
 	var imageLarge = "<?php echo $camImgLarge; ?>";
 
-	function camRefesh() {
-		if(dateJS.getSeconds() < 15 && dateJS.getSeconds() >= 10) {
-			document.images["refresh"].src = image+"?"+timePHP;
-		}
-		setTimeout("camRefesh()", 5000);
-	}
 	function camFreshify(name, img) {
 		if(document.images[name]) {
 			document.images[name].src = img+"?"+timePHP;

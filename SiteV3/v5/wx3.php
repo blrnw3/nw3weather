@@ -11,10 +11,10 @@ Page::Start();
 
 <h1>Latest Graphs &amp; Charts</h1>
 
-<h2>Past 24 hours</h2>
+<h2>Live charts</h2>
 <div id="main-graphs">
 <?php
-Charts::intradayPanel(['num' => 1], null, ['height' => 420]);
+Charts::livePanel(['height' => 450, 'multiHeight' => 500]);
 ?>
 <p>To view different timescales and past days, use the <a href="graphviewer.php">Custom Graphs</a> page.</p>
 </div>
@@ -24,18 +24,16 @@ Charts::intradayPanel(['num' => 1], null, ['height' => 420]);
 <?php
 Charts::daily(['type' => 'tmean', 'mode' => 'daily', 'length' => 31], ['height' => 260]);
 Charts::daily(['type' => 'rain',  'mode' => 'daily', 'length' => 31], ['height' => 260]);
-Charts::daily(['type' => 'wmean', 'mode' => 'daily', 'length' => 31], ['height' => 260]);
-Charts::daily(['type' => 'pmean', 'mode' => 'daily', 'length' => 31], ['height' => 260]);
+Charts::dailySelectable(['mode' => 'daily', 'length' => 31], ['height' => 260], null, 'wmean');
 ?>
 </div>
 
 <h2>12-Month Trends</h2>
 <div class="charts">
 <?php
-Charts::daily(['type' => 'tmean', 'mode' => 'monthly', 'length' => 12, 'summary_type' => Data::SUMMARY_MEAN, 'lta' => 1], ['height' => 260]);
-Charts::daily(['type' => 'rain',  'mode' => 'monthly', 'length' => 12, 'summary_type' => Data::SUMMARY_SUM,  'lta' => 1], ['height' => 260]);
-Charts::daily(['type' => 'wmean', 'mode' => 'monthly', 'length' => 12, 'summary_type' => Data::SUMMARY_MEAN, 'lta' => 1], ['height' => 260]);
-Charts::daily(['type' => 'pmean', 'mode' => 'monthly', 'length' => 12, 'summary_type' => Data::SUMMARY_MEAN], ['height' => 260]);
+Charts::daily(['type' => 'tmean', 'mode' => 'monthly', 'length' => 12, 'summary_type' => Data::SUMMARY_MEAN, 'lta' => 1], ['height' => 260, 'tickInterval' => 2, 'labelFontSize' => '0.6rem']);
+Charts::daily(['type' => 'rain',  'mode' => 'monthly', 'length' => 12, 'summary_type' => Data::SUMMARY_SUM,  'lta' => 1], ['height' => 260, 'tickInterval' => 2, 'labelFontSize' => '0.6rem']);
+Charts::dailySelectable(['mode' => 'monthly', 'length' => 12, 'lta' => 1], ['height' => 260, 'tickInterval' => 2, 'labelFontSize' => '0.6rem'], null, 'wmean');
 ?>
 </div>
 <p>More data types and longer periods on the <a href="charts.php">Charts</a> page.</p>
@@ -43,11 +41,11 @@ Charts::daily(['type' => 'pmean', 'mode' => 'monthly', 'length' => 12, 'summary_
 <div class="charts-with-title">
 <div>
 	<h2>Last 24 hours wind rose</h2>
-	<?php Charts::rose(['en' => '24hrs']); ?>
+	<?php Charts::rose(['en' => '24hrs'], ['legend' => false, 'height' => 460]); ?>
 </div>
 <div>
 	<h2>Monthly wind rose</h2>
-	<?php Charts::rose(['en' => 'month']); ?>
+	<?php Charts::rose(['en' => 'month'], ['legend' => false, 'height' => 460]); ?>
 </div>
 </div>
 

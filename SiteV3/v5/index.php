@@ -221,8 +221,8 @@ if (file_exists($fcFile)) {
 				<button type="button" data-var="wdir" title="Wind direction"><img src="<?php echo Site::IMG_ROOT; ?>compass_small.png" alt="Wind direction" width="26" height="26" /></button>
 			</div>
 			<div class="home-graph-controls" role="group" aria-label="Chart time range">
-				<button type="button" data-range="6" class="active">6h</button>
-				<button type="button" data-range="12">12h</button>
+				<button type="button" data-range="6">6h</button>
+				<button type="button" data-range="12" class="active">12h</button>
 				<button type="button" data-range="24">24h</button>
 			</div>
 		</div>
@@ -230,7 +230,9 @@ if (file_exists($fcFile)) {
 		<p class="home-chart-more"><a href="/charts.php" title="All NW3 weather charts">See all charts &rarr;</a></p>
 	</div>
 	<div class="home-cam">
-		<a class="home-cam-link" href="wx2.php" title="Full webcam image and timelapses"><img id="cam" name="refresh-home" src="/skycam_small.jpg" title="Click to enlarge" alt="Web cam" width="864" height="576" /></a>
+		<a class="home-cam-link" href="wx2.php" title="Full webcam image and timelapses">
+			<img id="cam" name="refresh-home" src="/skycam_home.jpg" title="Click to enlarge" alt="Web cam" width="700" height="467" />
+		</a>
 	</div>
 </div>
 <script src="https://code.highcharts.com/highcharts.js"></script>

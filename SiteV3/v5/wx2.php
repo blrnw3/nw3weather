@@ -23,7 +23,7 @@ $yest_seek = $risesecs;
 <h3>High-resolution Skycam</h3>
 
 <p>The camera is a 5MP Hikvision DS-2CD2055FWD-I with 4mm focal length, and is looking NE over Hampstead Heath.</p>
-<img name="refresh-new" src="/skycam_small.jpg" title="Latest new skycam" width="864" height="576" alt="skycam_new" />
+<img name="refresh-new" src="/skycam_wx2.jpg" title="Latest new skycam" width="1400" height="933" alt="skycam_new" />
 
 <noscript>JavaScript is required for the automatic updates</noscript>
 
@@ -33,15 +33,34 @@ $yest_seek = $risesecs;
 
 <br />
 <?php if(DATE::$time < DATE::$sunrise || DATE::$time > DATE::$sunset) {
-		echo '<h3>Latest daylight webcam image</h3><img src="/skycam_sunset.jpg" alt="Latest sunsetcam" width="864" height="576" /><br /><br />';
+		echo '<h3>Latest daylight webcam image</h3><img src="/skycam_wx2_sunset.jpg" alt="Latest sunsetcam" width="1400" height="933" /><br /><br />';
 	} ?>
 
 </p>
 
 <h3>Skycam images from the last 24 hours</h3>
 <p>A <a href="highreswebcam.php" title="Full-resolution summary"><b>higher resolution version</b></a> is also available.</p>
-<img title="Last 24hrs summary" src="/dailywebcam.jpg" alt="Webcam summary, past 24hrs" width="875" height="941" />
-<br />
+<div class="cam-grid">
+<?php
+$base = floor(time() / 1800) * 1800; // most recent completed half-hour
+for ($i = 47; $i >= 0; $i--) {
+	$ts = $base - $i * 1800;
+	$ymd = date('Y/m/d', $ts);
+	$stamp = date('Hi', $ts);
+	$thumb = "/camthumbs/hik/$ymd/${stamp}hik.jpg";
+	$hires = 'highreswebcam.php?year=' . date('Y', $ts) . '&month=' . date('n', $ts)
+		. '&day=' . date('j', $ts) . '&freq=30&camtype=hik';
+	echo '<figure>';
+	if (file_exists(Site::CAM_ROOT . "camthumbs/hik/$ymd/${stamp}hik.jpg")) {
+		echo '<a href="', $hires, '" title="View full-resolution frame">'
+			. '<img src="', $thumb, '" width="300" height="200" loading="lazy" alt="Skycam ', date('H:i', $ts), '" /></a>';
+	} else {
+		echo '<span class="cam-grid-missing">No image</span>';
+	}
+	echo '<figcaption>', date('H:i', $ts), '</figcaption></figure>';
+}
+?>
+</div>
 <a href="wcarchive.php" title="Webcam summary archive"><b>See full archive</b></a> (starting 01/08/10).
 <br />
 <a href="highreswebcam.php" title="Full-resolution summary"><b>See full-resolution version</b></a>
