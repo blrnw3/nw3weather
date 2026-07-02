@@ -65,7 +65,7 @@ class Report {
 		'w10max' => 3,
 		'fmin' => 0, 'fmax' => 0, 'fmean' => 0,
 		'afhrs' => 10,
-		'amin' => 11, 'amax' => 11, 'amean' => 11,
+		'aqmin' => 11, 'aqmax' => 11, 'aqmean' => 11,
 		'trange' => 0, 'hrange' => 8, 'prange' => 9, 'ratemean' => 5,
 		'sunhr' => 10, 'wethr' => 10, 'cloud' => 10, 'snow' => 10, 'lysnw' => 10,
 		'hail' => 10, 'thunder' => 10, 'fog' => 10, 'comms' => 10, 'extra' => 10,

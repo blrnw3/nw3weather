@@ -2,11 +2,11 @@
 //Main daily data variables
 $types_original = array('tmin','tmax','tmean','hmin','hmax','hmean','pmin','pmax','pmean','wmean','wmax','gust','wdir','rain','hrmax','10max','ratemax', //16
 						'dmin','dmax','dmean','nightmin','daymax','tc10max','tchrmax','hchrmax','tc10min','tchrmin','hchrmin','w10max','fmin', 'fmax', 'fmean', 'afhrs', //32
-						); // TODO: pm2.5 vars
+						'aqmin','aqmax','aqmean'); //35 (PM2.5 daily min/max/mean)
 $types = array_flip($types_original);
 $data_colours = array('#FFD750','orange','tan3','chartreuse','darkolivegreen','chartreuse3','darkorchid4','orchid1','purple','red','firebrick1','firebrick2','firebrick3',
 					'royalblue','royalblue1','royalblue2','royalblue3','darkseagreen','darkslategray','darkseagreen4','peachpuff','darkgoldenrod1',
-					'tan1','tan2','darkolivegreen4','darkgoldenrod2','darkgoldenrod3','darkolivegreen1','lightpink2', 'azure3', 'bisque2', 'beige', 'cadetblue4');
+					'tan1','tan2','darkolivegreen4','darkgoldenrod2','darkgoldenrod3','darkolivegreen1','lightpink2', 'azure3', 'bisque2', 'beige', 'cadetblue4', 'darkseagreen3','sienna','rosybrown');
 $data_description = array('Minimum Temperature','Maximum Temperature','Mean Temperature', //2
 					'Minimum Humidity','Maximum Humidity','Mean Humidity', //5
 					'Minimum Pressure','Maximum Pressure','Mean Pressure', //8
@@ -18,19 +18,20 @@ $data_description = array('Minimum Temperature','Maximum Temperature','Mean Temp
 					'Max 10m Temp Fall','Max 1hr Temp Fall','Max 1hr Hum Fall', //27
 					'Max 10m Wind Speed', //28
 					'Minimum Feels-like', 'Maximum Feels-like', 'Mean Feels-like', //31
-					'Air-frost Hrs'); //32
-$data_unit = array(0,0,0, 4,4,4, 3,3,3, 2,2,2,5, 1,1,1,6, 0,0,0, 0,0, 0,0,4,0,0,4, 2, 0,0,0, 7); //Display correct unit (C,mm,mph...) [see $std_units in unit-select]
-$data_num = array(4,4,4, 0,0,0, 6,6,6, 3,3,3,3, 2,2,2,2, 0,0,0, 4,4, 4,4,0,4,4,0, 3, 4,4,4, 4); //Apply correct CSS
-$typeconv = array(1,1,1, 5,5,5, 3,3,3, 4,4,4,4.5, 2,2,2,2.1, 1,1,1, 1,1, 1.1,1.1,5,1.1,1.1,5, 4, 1,1,1, 9); //For use in conv function
-$wxtable_colr = array(0,0,0, 1,1,1, 2,2,2, 3,3,3,4, 5,5,5,6, 0,0,0, 0,0, 7,7,8,7,7,8, 3, 0,0,0, 10); //For use in data-type tables to get correct ValueColour
-$round_size = array(5,5,5, 10,10,10, 10,10,10, 2,5,10,20, 10,1,0.5,10, 5,5,5, 5,5, 0.5,1,5,0.5,1,5, 2, 5,5,5, 5); //For intelligent auto-scale of charts
-$round_sizei = array(10,10,10, 10,10,10, 0.5,0.5,0.5, 2,5,10,20, 0.5,0.1,0.05,0.5, 10,10,10, 10,10, 1,2,5,1,2,5, 2, 10,10,10, 5); //Imperial version of above
+					'Air-frost Hrs', //32
+					'Minimum PM2.5','Maximum PM2.5','Mean PM2.5'); //35
+$data_unit = array(0,0,0, 4,4,4, 3,3,3, 2,2,2,5, 1,1,1,6, 0,0,0, 0,0, 0,0,4,0,0,4, 2, 0,0,0, 7, 12,12,12); //Display correct unit (C,mm,mph...) [see $std_units in unit-select]
+$data_num = array(4,4,4, 0,0,0, 6,6,6, 3,3,3,3, 2,2,2,2, 0,0,0, 4,4, 4,4,0,4,4,0, 3, 4,4,4, 4, 2,2,2); //Apply correct CSS
+$typeconv = array(1,1,1, 5,5,5, 3,3,3, 4,4,4,4.5, 2,2,2,2.1, 1,1,1, 1,1, 1.1,1.1,5,1.1,1.1,5, 4, 1,1,1, 9, 0,0,0); //For use in conv function
+$wxtable_colr = array(0,0,0, 1,1,1, 2,2,2, 3,3,3,4, 5,5,5,6, 0,0,0, 0,0, 7,7,8,7,7,8, 3, 0,0,0, 10, 0,0,0); //For use in data-type tables to get correct ValueColour
+$round_size = array(5,5,5, 10,10,10, 10,10,10, 2,5,10,20, 10,1,0.5,10, 5,5,5, 5,5, 0.5,1,5,0.5,1,5, 2, 5,5,5, 5, 5,5,5); //For intelligent auto-scale of charts
+$round_sizei = array(10,10,10, 10,10,10, 0.5,0.5,0.5, 2,5,10,20, 0.5,0.1,0.05,0.5, 10,10,10, 10,10, 1,2,5,1,2,5, 2, 10,10,10, 5, 5,5,5); //Imperial version of above
 $sumq = array(false,false,false, false,false,false, false,false,false, false,false,false,false, true,false,false,false, //Is quantity summable (e.g. rain total)
-			false,false,false, false,false, false,false,false,false,false,false, false, false,false,false, true);
+			false,false,false, false,false, false,false,false,false,false,false, false, false,false,false, true, false,false,false);
 $anomq = array(true,true,true, false,false,false, false,false,false, true,false,false,false, true,false,false,false, //Does anomaly exist (e.g. rain)
-		 	false,false,false, false,false, false,false,false,false,false,false, false, false,false,false, false);
+		 	false,false,false, false,false, false,false,false,false,false,false, false, false,false,false, false, false,false,false);
 $start_years = [1881,1881,1881, 2009,2009,2009, 2009,2009,2009, 1949,2009,1959,2009, 1871,2009,2009,2009,
-				2009,2009,2009, 1881,1881, 2009,2009,2009,2009,2009,2009, 2009, 2009,2009,2009, 2009];
+				2009,2009,2009, 1881,1881, 2009,2009,2009,2009,2009,2009, 2009, 2009,2009,2009, 2009, 2026,2026,2026];
 
 //Derived daily quantities
 $types_derived = array('trange','hrange','prange','ratemean');

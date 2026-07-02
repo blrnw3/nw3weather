@@ -14,7 +14,7 @@ class Wx {
 	public static $periods = [7,31,365];
 
 	public static $mappingsToDailyDataKey = [
-		't' => 'temp', 'h' => 'humi', 'p' => 'pres', 'd' => 'dewp', 'w'=> 'wind', 'r' => 'rain', 'f' => 'feel', 'a' => 'pm25'
+		't' => 'temp', 'h' => 'humi', 'p' => 'pres', 'd' => 'dewp', 'w'=> 'wind', 'r' => 'rain', 'f' => 'feel', 'aq' => 'pm25'
 	];
 
 	static function _conv_temp($val) { return ($val * 1.8) + 32; }
@@ -705,19 +705,19 @@ class Wx {
 			'anomaly' => true,
 			'start_year' => 2009,
 		],
-		'amin' => [
+		'aqmin' => [
 			'description' => 'Minimum PM2.5',
 			'unit' => Wx::Pm25,
 			'colour' => 'darkseagreen3',
 			'start_year' => 2026,
 		],
-		'amax' => [
+		'aqmax' => [
 			'description' => 'Maximum PM2.5',
 			'unit' => Wx::Pm25,
 			'colour' => 'sienna',
 			'start_year' => 2026,
 		],
-		'amean' => [
+		'aqmean' => [
 			'description' => 'Mean PM2.5',
 			'unit' => Wx::Pm25,
 			'colour' => 'rosybrown',

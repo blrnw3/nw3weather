@@ -86,7 +86,7 @@ $ukUnits = !$imperial && !$metric;
 $unitD = 'degrees';		$unitH = '%';	$unitRR = $unitR . '/h';
 
 //For data tables and reports
-$std_units = array($unitT, $unitR, $unitW, $unitP, $unitH, $unitD, $unitRR, 'hrs', 'views', 'days', 'shorthand', $unitS);
+$std_units = array($unitT, $unitR, $unitW, $unitP, $unitH, $unitD, $unitRR, 'hrs', 'views', 'days', 'shorthand', $unitS, 'µg/m³');
 $conv_units = array('', ' &deg;' . $unitT, ' ' . $unitR, ' ' . $unitP, ' ' . $unitW, $unitH, ' ' . $unitS, ' ' . $unitL, ' day', ' hrs', ' ' . $unitA, ' degrees');
 
 //Auto-update setting getter/saver

@@ -6,7 +6,7 @@ const smallGraphWidth3 = 505;
 // PurpleAir sensor index to pull air-quality (PM2.5) from. Set after picking the
 // nearest outdoor sensor to the station; 0 = unconfigured (fetch skipped).
 // The API key lives in secrets.php (PURPLEAIR_KEY), included below.
-const PURPLEAIR_SENSOR = 0;
+const PURPLEAIR_SENSOR = 197637;
 
 $t_start = microtime(get_as_float);
 include('/var/www/html/basics.php');

@@ -492,7 +492,14 @@ class Data {
 		if (array_key_exists($name, self::$CACHE_DAT)) {
 			return self::$CACHE_DAT[$name];
 		}
-		return unserialize(file_get_contents(ROOT . "serialised_dat_new_$name.txt"));
+		// Newer variables (e.g. PM2.5 aq*) have no serialised file until the first
+		// post-migration cron run; degrade gracefully rather than warn/fatal.
+		$file = ROOT . "serialised_dat_new_$name.txt";
+		if (!file_exists($file)) {
+			return array();
+		}
+		$data = unserialize(file_get_contents($file));
+		return ($data === false) ? array() : $data;
 	}
 	public static function getYearlyData($name, $year) {
 		return self::getAllData($name)[$year];
