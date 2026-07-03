@@ -52,7 +52,7 @@ $file = 5;
 	
 	<div>
 		<h2>Surface Pressure Chart</h2>
-		<img src="http://www.weathercharts.net/noaa_ukmo_prognosis/PPVE89.gif" alt="fax" title="Surface pressure analysis chart from the Met Office" />
+		<img src="https://www.weathercharts.net/noaa_ukmo_prognosis/PPVE89.gif" alt="fax" title="Surface pressure analysis chart from the Met Office" />
 	</div>
 
 </div>

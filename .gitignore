@@ -21,3 +21,4 @@ Images/~$nnerImage.doc
 
 # API keys / secrets (cron-only; never commit). Template: SiteV3/secrets.example.php
 /SiteV3/secrets.php
+SiteV3/pm25_latest.txt

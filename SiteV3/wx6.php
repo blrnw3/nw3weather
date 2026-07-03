@@ -101,7 +101,7 @@ $twilightPM = date_sunset(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenithTwi, d
 
 				<h3>Earth View</h3>
 				<a href="http://www.fourmilab.ch/earthview/" target="_blank">
-					<img src="http://www.fourmilab.ch/cgi-bin/Earth?img=learth.evif&amp;imgsize=320&amp;dynimg=y&amp;opt=-p&amp;lat=&amp;lon=&amp;alt=&amp;tle=&amp;date=0&amp;utc=&amp;jd="
+					<img src="https://www.fourmilab.ch/cgi-bin/Earth?img=learth.evif&amp;imgsize=320&amp;dynimg=y&amp;opt=-p&amp;lat=&amp;lon=&amp;alt=&amp;tle=&amp;date=0&amp;utc=&amp;jd="
 						 width="640" height="320" border="0"	alt="Earth Daylight &amp; Darkness" /> </a><br />Current location of sunlight/darkness across the globe
 				<a href="http://www.fourmilab.ch/earthview/credits.php" title="Credit">(Credit)</a>
 				<br />

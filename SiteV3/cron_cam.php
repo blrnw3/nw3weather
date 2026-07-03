@@ -51,13 +51,6 @@ if($tstamp == $daily_proctime) {
 		}
 	}
 
-	// v5 wx2 thumbnails only span the trailing 24hrs; prune older day-dirs
-	$thumb_old = CAM_ROOT . "camthumbs/hik/" . date("Y/m/d", mkdate($dmonth, $dday-2, $dyear));
-	if(is_dir($thumb_old)) {
-		array_map('unlink', glob("$thumb_old/*"));
-		rmdir($thumb_old);
-	}
-
 	webcam_summary($frac, 6, date('Y/Ymd') . 'dailywebcam.jpg', $cam_type = "hik", $offset = 0, $wo, $ho);
 	//webcam_summary(.22, 6, date('Y/Ymd', true) . '/dailygwebcam.jpg');
 
@@ -231,24 +224,28 @@ function cam_location($cam_type, $offset, $stamp) {
 }
 
 // v5 wx2: maintain a rolling set of 48 small thumbnails (300x200) for the
-// trailing 24hrs at 30-min intervals, mirroring the archive layout under
-// camthumbs/. Only missing thumbs are generated, so this self-heals cheaply.
+// trailing 24hrs at 30-min intervals. Because the window is exactly one day,
+// each Hi time value is unique, so thumbs live in a single flat directory
+// keyed by time and simply overwrite the previous day's frame. A thumb is
+// (re)generated whenever it is missing or older than its source, so this
+// self-heals cheaply and needs no per-day directories. They live under
+// camchive/ so the existing /camchive/ Apache alias serves them directly.
 function webcam_thumbs($cam_type = "hik", $tw = 300, $th = 200) {
+	$dst_dir = CAM_ROOT . "camchive/thumbs/$cam_type/";
+	if(!is_dir($dst_dir)) { mkdir($dst_dir, 0775, true); }
 	$base = floor(time() / 1800) * 1800; // most recent completed half-hour
 	for($i = 0; $i < 48; $i++) {
 		$ts = $base - $i * 1800;
 		$ymd = date("Y/m/d", $ts);
 		$stamp = date("Hi", $ts);
-		$dst_dir = CAM_ROOT . "camthumbs/$cam_type/$ymd/";
-		$dst = $dst_dir . "$stamp$cam_type.jpg";
-		if(file_exists($dst)) { continue; }
 		$src = CAM_ROOT . "camchive/$cam_type/$ymd/$stamp$cam_type.jpg";
+		$dst = $dst_dir . "$stamp$cam_type.jpg";
 		if(!file_exists($src) || filesize($src) < 1024) { continue; }
+		if(file_exists($dst) && filemtime($dst) >= filemtime($src)) { continue; }
 		$image = imagecreatefromjpeg($src);
 		if(!$image) { continue; }
 		$thumb = imagecreatetruecolor($tw, $th);
 		imagecopyresampled($thumb, $image, 0, 0, 0, 0, $tw, $th, imagesx($image), imagesy($image));
-		if(!is_dir($dst_dir)) { mkdir($dst_dir, 0775, true); }
 		$tmp = $dst . '.temp';
 		imagejpeg($thumb, $tmp, 70);
 		rename($tmp, $dst);

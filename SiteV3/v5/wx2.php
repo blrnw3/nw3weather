@@ -45,13 +45,12 @@ $yest_seek = $risesecs;
 $base = floor(time() / 1800) * 1800; // most recent completed half-hour
 for ($i = 47; $i >= 0; $i--) {
 	$ts = $base - $i * 1800;
-	$ymd = date('Y/m/d', $ts);
 	$stamp = date('Hi', $ts);
-	$thumb = "/camthumbs/hik/$ymd/${stamp}hik.jpg";
+	$thumb = "/camchive/thumbs/hik/${stamp}hik.jpg";
 	$hires = 'highreswebcam.php?year=' . date('Y', $ts) . '&month=' . date('n', $ts)
 		. '&day=' . date('j', $ts) . '&freq=30&camtype=hik';
 	echo '<figure>';
-	if (file_exists(Site::CAM_ROOT . "camthumbs/hik/$ymd/${stamp}hik.jpg")) {
+	if (file_exists(Site::CAM_ROOT . "camchive/thumbs/hik/${stamp}hik.jpg")) {
 		echo '<a href="', $hires, '" title="View full-resolution frame">'
 			. '<img src="', $thumb, '" width="300" height="200" loading="lazy" alt="Skycam ', date('H:i', $ts), '" /></a>';
 	} else {

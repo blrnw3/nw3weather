@@ -61,6 +61,6 @@ showElapsedTimea()
 
 </div>
 <span style="display:none">
-		<a href="http://www.martynhicks.co.uk/weather/topsites/index.php?a=in&amp;u=Timmead">
-		<img src="http://www.martynhicks.co.uk/weather/topsites/button.php?u=Timmead" alt="UK - WEATHER STATION TOPSITES - UK" border="0" /></a>
+		<a href="https://www.martynhicks.co.uk/weather/topsites/index.php?a=in&amp;u=Timmead">
+		<img src="https://www.martynhicks.co.uk/weather/topsites/button.php?u=Timmead" alt="UK - WEATHER STATION TOPSITES - UK" border="0" /></a>
 	</span>

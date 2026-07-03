@@ -3,7 +3,7 @@
 	<head>
 		<title>Live Weather Compare Europe</title>
 		<meta charset="UTF-8" />
-		<link rel="stylesheet" type="text/css" href="http://nw3weather.co.uk/mainstyle.css" media="screen" title="screen" />
+		<link rel="stylesheet" type="text/css" href="../mainstyle.css" media="screen" title="screen" />
 	</head>
 	<body>
 	<div id="page">

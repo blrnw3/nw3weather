@@ -10,7 +10,7 @@ require("WxFn.php");
 require("ChartHelper.php");
 
 class Page {
-	const JQUERY = '<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>';
+	const JQUERY = '<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>';
 
 	private static $cookieLifeSecs = 8640000; // cookie lifespan - 100 days;
 

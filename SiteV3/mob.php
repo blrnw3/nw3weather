@@ -12,7 +12,7 @@
 <meta http-equiv="content-type" content="application/xhtml+xml; charset=ISO-8859-1" />
 <?php // if(isset($_GET['hits'])) { echo '<meta http-equiv="refresh" content="',$_GET['hits'],'" />'; } ?>
 
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.0/jquery.min.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.3.0/jquery.min.js"></script>
 <script type="text/javascript">
 $(document).ready(function() {
 	$("#lol").load("./ajax/wx-body-mob<?php if(isset($_GET['type'])) { echo $_GET['type']; } ?>.php?randval="+ Math.random());

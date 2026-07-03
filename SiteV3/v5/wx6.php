@@ -79,7 +79,7 @@ $moonImg .= "?" . time();
 <h2>Earth View</h2>
 <div id="earthviewer">
 	<a href="http://www.fourmilab.ch/earthview/" target="_blank">
-		<img src="http://www.fourmilab.ch/cgi-bin/Earth?img=learth.evif&amp;imgsize=500&amp;dynimg=y&amp;opt=-p&amp;lat=&amp;lon=&amp;alt=&amp;tle=&amp;date=0&amp;utc=&amp;jd="
+		<img src="https://www.fourmilab.ch/cgi-bin/Earth?img=learth.evif&amp;imgsize=500&amp;dynimg=y&amp;opt=-p&amp;lat=&amp;lon=&amp;alt=&amp;tle=&amp;date=0&amp;utc=&amp;jd="
 			alt="Earth Daylight &amp; Darkness" />
 	</a>
 	<br />
