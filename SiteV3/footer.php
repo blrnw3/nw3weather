@@ -7,6 +7,10 @@ if($dyear < 2000) { //some sort of non-inclusion
 	$dyear = date("Y");
 	$phpload = 0;
 }
+
+// Link to the v5 equivalent of the current page, else the v5 home
+$v5page = basename(parse_url($_SERVER['SCRIPT_NAME'], PHP_URL_PATH));
+$v5href = ($v5page !== '' && file_exists($root . 'v5/' . $v5page)) ? '/v5/' . $v5page : '/v5/';
 ?>
 <br />
 <div id="footer">
@@ -14,7 +18,8 @@ if($dyear < 2000) { //some sort of non-inclusion
 		<a href="#header">Top</a> |
 		<a href="contact.php" title="E-mail me">Contact</a> |
 		<a href="mob.php" title="Very basic mobile browsing">Mobile</a> |
-		<a href="http://nw3weather.co.uk" title="Browse to homepage">Home</a>
+		<a href="http://nw3weather.co.uk" title="Browse to homepage">Home</a> |
+		<a href="<?php echo $v5href; ?>" title="Preview this page on the new version 5 site" style="opacity:0.6">v5 demo</a>
 	</div>
 		<div>
 		&#9728; Sister station: <a href="https://rwcweather.com" target="_blank" title="Redwood City Weather, CA">RWC Weather</a>

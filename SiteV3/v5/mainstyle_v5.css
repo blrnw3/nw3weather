@@ -1132,20 +1132,28 @@ select.timelapse {
 .wx-card-pm25 .wx-card-now { font-size: 1.5rem; }
 .wx-card-head .wx-card-label { color: inherit; }
 
-/* Air-quality DAQI band pill (DEFRA colours) */
-.daqi-band {
-	display: inline-block;
-	padding: 0.05em 0.5em;
-	border-radius: 0.3rem;
+/* Air-quality DAQI status: small green/yellow/red indicator dot + label */
+.daqi-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
 	font-size: 1.4rem;
 	line-height: 1.25;
 	color: #1a1a1a;
 }
-.daqi-low { background: #6ad16a; }
-.daqi-mod { background: #f2c500; }
-.daqi-high { background: #ff7a52; color: #fff; }
-.daqi-vhigh { background: #8a0033; color: #fff; }
-.daqi-unknown { background: #d9d9d9; color: #555; font-size: 1.1rem; }
+.daqi-dot {
+	display: inline-block;
+	width: 0.75em;
+	height: 0.75em;
+	border-radius: 50%;
+	background: #d9d9d9;
+	flex: 0 0 auto;
+}
+.daqi-low .daqi-dot { background: #33a532; }
+.daqi-mod .daqi-dot { background: #f2c500; }
+.daqi-high .daqi-dot { background: #e02b1d; }
+.daqi-vhigh .daqi-dot { background: #e02b1d; }
+.daqi-unknown { color: #555; font-size: 1.1rem; }
 
 /* Lower home row: interactive chart panel beside the webcam, half each */
 .home-lower {

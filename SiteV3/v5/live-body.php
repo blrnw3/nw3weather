@@ -252,15 +252,14 @@ function nw3_render_cards() {
 	list($daqiBand, $daqiName, $daqiClass) = Wx::daqi(Live::$pm25);
 	$usAqi = Wx::usAqi(Live::$pm25);
 	$pm25Now = (Live::$pm25 === null)
-		? '<span id="var6" class="daqi-band daqi-unknown">No data</span>'
-		: '<span id="var6" class="daqi-band ' . $daqiClass . '">DAQI ' . $daqiBand . ' &middot; ' . $daqiName . '</span>';
+		? '<span id="var6" class="daqi-status daqi-unknown"><span class="daqi-dot"></span>No data</span>'
+		: '<span id="var6" class="daqi-status ' . $daqiClass . '"><span class="daqi-dot"></span>DAQI ' . $daqiBand . ' &middot; ' . $daqiName . '</span>';
 	$pm25Sub = (Live::$pm25 === null) ? ''
 		: 'US AQI <b>' . $usAqi . '</b> &middot; PM2.5 <b>' . Wx::conv(Live::$pm25, Wx::Pm25) . '</b>';
 	nw3_card('pm25', 'sky3', 'Air Quality', '', 'Air quality - UK DAQI band &amp; US AQI (from PM2.5)',
 		$pm25Now,
 		$pm25Sub,
 		array(
-			array('Low', nw3_at(nw3_live_get($NOW, 'min', 'pm25'), Wx::Pm25, nw3_live_get($NOW, 'timeMin', 'pm25'))),
 			array('High', nw3_at(nw3_live_get($NOW, 'max', 'pm25'), Wx::Pm25, nw3_live_get($NOW, 'timeMax', 'pm25'))),
 			array('24hr avg', nw3_at(nw3_live_get($HR, 'mean', 'pm25'), Wx::Pm25, null)),
 			array('Yesterday avg', nw3_yest_val('mean', 'pm25', Wx::Pm25)),
