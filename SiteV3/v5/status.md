@@ -1,5 +1,5 @@
 # Pages DONE
-- wx2, skycam
+- wx2
 - wx3
 - wx4
 - wx5

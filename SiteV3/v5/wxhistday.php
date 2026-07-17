@@ -337,7 +337,7 @@ if (is_file(ROOT . $camStamp . 'webcam.' . $endtag)) {
 	echo '<p>Webcam summary not available for this day.</p>';
 }
 if ($sproc > Date::mkdate(6, 20, 2018)) {
-	echo '<p><a href="/highreswebcam.php?year=' . $yproc . '&month=' . $mproc . '&day=' . $dproc . '&camtype=hik&light=all&width=3&freq=30&frame=1&cycle">Full resolution images at up-to 5 minute intervals</a></p>';
+	echo '<p><a href="highreswebcam.php?year=' . $yproc . '&month=' . $mproc . '&day=' . $dproc . '&light=all&width=4&freq=30&frame=1&cycle">Full resolution images at up-to 5 minute intervals</a></p>';
 }
 if ($sproc > Date::mkdate(9, 23, 2016)) {
 	echo '<div style="height:586px;margin:0.6em"><video id="tvid" width="864" height="576" controls>'
