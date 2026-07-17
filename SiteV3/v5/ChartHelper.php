@@ -128,13 +128,13 @@ class Charts {
 
 		$vars = array(
 			'temp' => array('Temp', 'thermom8_small.png'),
-			'rain' => array('Rain', 'rain2_small.png'),
-			'wind' => array('Wind', 'windy_small.png'),
+			'rain' => array('Rain', 'icon-rain.svg'),
+			'wind' => array('Wind', 'icon-wind.svg'),
 			'humi' => array('Humidity', 'humidity_small.png'),
 			'dewp' => array('Dew point', 'dewy_small.png'),
 			'pres' => array('Pressure', 'pressure2_small.png'),
-			'pm25' => array('Air quality', 'sky3_small.png'),
-			'wdir' => array('Wind dir', 'compass_small.png'),
+			'pm25' => array('Air quality', 'icon-airpollution.svg'),
+			'wdir' => array('Wind dir', 'icon-compass.svg'),
 		);
 		// Each range: hours window, days to fetch (cover the window across midnight),
 		// and a server decimation cap (maxpts) for the longer ones to limit transfer.

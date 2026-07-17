@@ -18,7 +18,9 @@ function nw3_card($mod, $icon, $label, $href, $title, $nowHtml, $subHtml, $rows)
 	echo '<div class="wx-card wx-card-' . $mod . '">';
 	echo '<div class="wx-card-head">';
 	if ($icon) {
-		echo '<img class="wx-card-icon" src="' . Site::IMG_ROOT . $icon . '_small.png" alt="" width="36" height="36" />';
+		// An icon ending in .svg is used verbatim; a bare name maps to a *_small.png.
+		$iconSrc = (substr($icon, -4) === '.svg') ? Site::IMG_ROOT . $icon : Site::IMG_ROOT . $icon . '_small.png';
+		echo '<img class="wx-card-icon" src="' . $iconSrc . '" alt="" width="36" height="36" />';
 	}
 	if ($href) {
 		echo '<a class="hidden-link" href="' . $href . '" title="' . $title . '">' . $label . '</a>';
@@ -86,9 +88,9 @@ function nw3_delta($change, $unit) {
 	return $arrow . '<b>' . Wx::conv($change, $unit, true, true) . '</b>';
 }
 
-/** Format "value @ time", with a dash when missing. */
-function nw3_at($val, $unit, $time) {
-	$v = ($val === null) ? '-' : Wx::conv($val, $unit);
+/** Format "value @ time", with a dash when missing. $dpa adjusts decimal places. */
+function nw3_at($val, $unit, $time, $dpa = 0) {
+	$v = ($val === null) ? '-' : Wx::conv($val, $unit, true, false, $dpa);
 	return '<b>' . $v . '</b>' . ($time ? ' <span class="wx-when">@ ' . $time . '</span>' : '');
 }
 
@@ -109,10 +111,10 @@ function nw3_yest_data() {
 }
 
 /** Single yesterday summary value ($agg in min|max|mean) for a base var. */
-function nw3_yest_val($agg, $var, $unit) {
+function nw3_yest_val($agg, $var, $unit, $dpa = 0) {
 	$Y = nw3_yest_data();
 	$v = isset($Y[$agg][$var]) ? $Y[$agg][$var] : null;
-	return ($v === null) ? '-' : '<b>' . Wx::conv($v, $unit) . '</b>';
+	return ($v === null) ? '-' : '<b>' . Wx::conv($v, $unit, true, false, $dpa) . '</b>';
 }
 
 /** "low &rarr; high" range for yesterday for a base var. */
@@ -175,7 +177,9 @@ function nw3_render_cards() {
 	$rnHr = (($rn24 !== null) && (nw3_live_get($HR, 'trendRn', 1) !== null)) ? $rn24 - $HR['trendRn'][1] : null;
 	$rn10 = (($rn24 !== null) && (nw3_live_get($HR, 'trendRn', '10m') !== null)) ? $rn24 - $HR['trendRn']['10m'] : null;
 	$rate = nw3_live_get($NOW, 'misc', 'rnrate');
-	$rnlast = nw3_live_get($NOW, 'misc', 'rnlast');
+	// rnlast (last-rain timestamp) is only computed when dailyData() runs for the
+	// dated file, so it lives in the HR24 snapshot rather than NOW ('today').
+	$rnlast = nw3_live_get($HR, 'misc', 'rnlast');
 	$monthrn = null;
 	$yearrn = null;
 	if (file_exists(ROOT . 'RainTags.php')) {
@@ -185,7 +189,7 @@ function nw3_render_cards() {
 	$nowHtml = '<span id="var5">' . Wx::conv(Live::$rain, Wx::Rain) . '</span> '
 		. (($rate === null) ? '' : '<span class="wx-rate">' . Wx::conv($rate, Wx::RainRate) . '</span>')
 		. ($rained1h ? ' ' . nw3_arrow('rain', 20, 45, 0.1, 1) : '');
-	nw3_card('rain', 'rain2', 'Rainfall', 'wx12.php', 'Detailed rainfall data',
+	nw3_card('rain', 'icon-rain.svg', 'Rainfall', 'wx12.php', 'Detailed rainfall data',
 		$nowHtml,
 		(($rained1h && $rn10 !== null) ? '10-min: <b>' . Wx::conv($rn10, Wx::Rain) . '</b>' : ''),
 		array(
@@ -199,7 +203,7 @@ function nw3_render_cards() {
 	// Wind
 	$maxGust = nw3_live_get($NOW, 'max', 'gust');
 	$nowHtml = '<span id="var4">' . Wx::conv(Live::$wind, Wx::Wind) . '</span> ' . Wx::conv(Live::$wdir, Wx::Direction);
-	nw3_card('wind', 'windy', 'Wind', 'wx13.php', 'Detailed wind data',
+	nw3_card('wind', 'icon-wind.svg', 'Wind', 'wx13.php', 'Detailed wind data',
 		$nowHtml,
 		'Gusting to <b>' . Wx::conv(Live::$gustRaw, Wx::Wind) . '</b> &middot; ' . nw3_bft_force(Live::$wind),
 		array(
@@ -226,7 +230,7 @@ function nw3_render_cards() {
 	$nowHtml = '<span id="var2">' . Wx::conv(Live::$dewp, Wx::Temperature) . '</span> '
 		. nw3_trend(nw3_live_get($HR, 'changeHr', 'dewp'), Wx::AbsTemp) . ' '
 		. nw3_arrow('dewp', 15, 30, 0.4, 0.9);
-	nw3_card('humi', 'dewy', 'Dew Point', 'wx10.php', 'Detailed dew point data',
+	nw3_card('humi', 'dewy', 'Dew Point', 'wx10.php?humtype=dew', 'Detailed dew point data',
 		$nowHtml, '',
 		array(
 			array('Low', nw3_at(nw3_live_get($NOW, 'min', 'dewp'), Wx::Temperature, nw3_live_get($NOW, 'timeMin', 'dewp'))),
@@ -248,21 +252,23 @@ function nw3_render_cards() {
 			array('24hr trend', nw3_delta(nw3_live_get($HR, 'changeDay', 'pres'), Wx::Pressure)),
 		));
 
-	// Air quality (raw PM2.5 -> UK DAQI band + US AQI)
+	// Air pollution (raw PM2.5 -> UK DAQI band + US AQI)
 	list($daqiBand, $daqiName, $daqiClass) = Wx::daqi(Live::$pm25);
 	$usAqi = Wx::usAqi(Live::$pm25);
+	// Per-band class graduates the dot colour within each band group (1-10).
+	$daqiBandClass = ($daqiBand > 0) ? ' daqi-b' . $daqiBand : '';
 	$pm25Now = (Live::$pm25 === null)
 		? '<span id="var6" class="daqi-status daqi-unknown"><span class="daqi-dot"></span>No data</span>'
-		: '<span id="var6" class="daqi-status ' . $daqiClass . '"><span class="daqi-dot"></span>DAQI ' . $daqiBand . ' &middot; ' . $daqiName . '</span>';
+		: '<span id="var6" class="daqi-status ' . $daqiClass . $daqiBandClass . '"><span class="daqi-dot"></span>DAQI ' . $daqiBand . ' &middot; ' . $daqiName . '</span>';
 	$pm25Sub = (Live::$pm25 === null) ? ''
-		: 'US AQI <b>' . $usAqi . '</b> &middot; PM2.5 <b>' . Wx::conv(Live::$pm25, Wx::Pm25) . '</b>';
-	nw3_card('pm25', 'sky3', 'Air Quality', '', 'Air quality - UK DAQI band &amp; US AQI (from PM2.5)',
+		: 'AQI <b>' . $usAqi . '</b> &middot; PM2.5 <b>' . Wx::conv(Live::$pm25, Wx::Pm25, true, false, -1) . '</b>';
+	nw3_card('pm25', 'icon-airpollution.svg', 'Air pollution', '', 'Air pollution - UK DAQI band &amp; AQI (from PM2.5)',
 		$pm25Now,
 		$pm25Sub,
 		array(
-			array('High', nw3_at(nw3_live_get($NOW, 'max', 'pm25'), Wx::Pm25, nw3_live_get($NOW, 'timeMax', 'pm25'))),
-			array('24hr avg', nw3_at(nw3_live_get($HR, 'mean', 'pm25'), Wx::Pm25, null)),
-			array('Yesterday avg', nw3_yest_val('mean', 'pm25', Wx::Pm25)),
+			array('High', nw3_at(nw3_live_get($NOW, 'max', 'pm25'), Wx::Pm25, nw3_live_get($NOW, 'timeMax', 'pm25'), -1)),
+			array('24hr avg', nw3_at(nw3_live_get($HR, 'mean', 'pm25'), Wx::Pm25, null, -1)),
+			array('Yesterday avg', nw3_yest_val('mean', 'pm25', Wx::Pm25, -1)),
 		));
 }
 ?>

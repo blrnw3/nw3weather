@@ -79,6 +79,23 @@ if (file_exists($fcFile)) {
 		$forecast = $fcData['days'];
 	}
 }
+
+// ----- Current moon-phase icon (age-based, mirrors wx6.php) -----
+// $moonage comes from rareTags and looks like "Moon Age: 12.34 days...", so the
+// age in days is the 3rd space-separated token.
+$moonImg = null;
+if (isset($moonage)) {
+	$moonAgeDays = (float) explode(' ', $moonage)[2];
+	$moonSteps = array(2, 4, 6, 9, 11, 13, 16, 18, 21, 23, 26, 28);
+	$moonImg = 'moon13.jpg';
+	foreach ($moonSteps as $i => $threshold) {
+		if ($moonAgeDays < $threshold) {
+			$moonImg = 'moon' . ($i + 1) . '.jpg';
+			break;
+		}
+	}
+}
+$moonName = isset($moonphasename) ? trim($moonphasename) : 'Moon phase';
 ?>
 
 <div class="home-head">
@@ -88,8 +105,9 @@ if (file_exists($fcFile)) {
 			<b><span style="color:#610B0B">Right now:</span></b>
 			<b><?php echo $weather; ?></b>, <?php echo HTML::acronym("Raw METAR: " . $METAR, $cloud); ?>.
 			<div class="live-status">
+				<span class="live-spinner" id="live-spinner" aria-hidden="true" style="display:none"></span>
 				<span class="live-dot" id="live-dot" aria-hidden="true"></span>
-				<span class="live-meta">Updated <b id="live-time"><?php echo date('H:i:s', Live::$unix); ?></b> &middot; <span id="live-age">just now</span></span>
+				<a href="#" class="live-meta live-refresh" id="live-refresh" title="Click to refresh now">Updated <b id="live-time"><?php echo date('H:i:s', Live::$unix); ?></b> &middot; <span id="live-age">just now</span></a>
 			</div>
 		</div>
 	</div>
@@ -100,7 +118,7 @@ if (file_exists($fcFile)) {
 		<?php nw3_render_cards(); ?>
 	</div>
 	<div class="wx-card wx-card-sun">
-		<div class="wx-card-head"><img class="wx-card-icon" src="<?php echo Site::IMG_ROOT; ?>clear.png" alt="" width="36" height="36" /><a class="hidden-link" href="wx6.php" title="Sun, moon and astronomy detail">Sun &amp; Moon</a></div>
+		<div class="wx-card-head"><img class="wx-card-icon" src="<?php echo Site::IMG_ROOT; ?>clear.png" alt="" width="36" height="36" /><?php if ($moonImg !== null): ?><img class="wx-card-icon wx-card-moon" src="<?php echo Site::IMG_ROOT . $moonImg; ?>" alt="<?php echo htmlspecialchars($moonName); ?>" title="<?php echo htmlspecialchars($moonName); ?>" width="36" height="36" /><?php endif; ?><a class="hidden-link" href="wx6.php" title="Sun, moon and astronomy detail">Sun &amp; Moon</a></div>
 		<div class="wx-card-rows">
 			<div><span class="k">Sunrise</span><span class="v"><b><?php echo Date::$sunrise; ?></b></span></div>
 			<div><span class="k">Sunset</span><span class="v"><b><?php echo Date::$sunset; ?></b></span></div>
@@ -115,47 +133,18 @@ if (file_exists($fcFile)) {
 
 <script type="text/javascript">
 	//<![CDATA[
-	function readLiveData() {
-		var el = document.getElementById('newData');
-		if (!el) { return null; }
-		try { return JSON.parse(el.value); } catch (e) { return null; }
-	}
-
-	// Flash each changed live value: green when it rose, red when it fell.
-	function flashLiveChanges(oldData, newData) {
-		if (!oldData || !newData) { return; }
-		for (var i = 0; i < newData.length; i++) {
-			if (oldData[i] === null || newData[i] === null || newData[i] === oldData[i]) { continue; }
-			var el = document.getElementById('var' + i);
-			if (!el) { continue; }
-			var cls = (newData[i] > oldData[i]) ? 'wx-flash-up' : 'wx-flash-down';
-			el.classList.remove('wx-flash-up', 'wx-flash-down');
-			void el.offsetWidth; // restart the CSS animation
-			el.classList.add(cls);
-		}
-	}
-
-	function refreshLiveBody() {
-		if (!document.hidden && window.fetch) {
-			var oldData = readLiveData();
-			fetch('/v5/ajaxwxbody.php', { cache: 'no-store' })
-				.then(function (r) { return r.text(); })
-				.then(function (html) {
-					document.getElementById('live-wx-body').innerHTML = html;
-					flashLiveChanges(oldData, readLiveData());
-				})
-				.catch(function () {});
-		}
-		setTimeout(refreshLiveBody, 20000);
-	}
-	setTimeout(refreshLiveBody, 20000);
-
-	// Live-data freshness: count up the age of the latest reading and flag if stale.
 	(function () {
+		var REFRESH_MS = 20000;
+		var body = document.getElementById('live-wx-body');
 		var dot = document.getElementById('live-dot');
+		var spinner = document.getElementById('live-spinner');
+		var refreshBtn = document.getElementById('live-refresh');
 		var ageEl = document.getElementById('live-age');
 		var timeEl = document.getElementById('live-time');
-		if (!dot || !ageEl) { return; }
+
+		var inFlight = false;
+		var refreshTimer = null;
+		var wdTime = 0, baseServer = 0, t0 = Date.now();
 
 		var tzFmt = null;
 		try {
@@ -165,7 +154,66 @@ if (file_exists($fcFile)) {
 			});
 		} catch (e) {}
 
-		var wdTime = 0, baseServer = 0, t0 = Date.now();
+		function readLiveData() {
+			var el = document.getElementById('newData');
+			if (!el) { return null; }
+			try { return JSON.parse(el.value); } catch (e) { return null; }
+		}
+
+		// Flash each changed live value: green when it rose, red when it fell.
+		function flashLiveChanges(oldData, newData) {
+			if (!oldData || !newData) { return; }
+			for (var i = 0; i < newData.length; i++) {
+				if (oldData[i] === null || newData[i] === null || newData[i] === oldData[i]) { continue; }
+				var el = document.getElementById('var' + i);
+				if (!el) { continue; }
+				var cls = (newData[i] > oldData[i]) ? 'wx-flash-up' : 'wx-flash-down';
+				el.classList.remove('wx-flash-up', 'wx-flash-down');
+				void el.offsetWidth; // restart the CSS animation
+				el.classList.add(cls);
+			}
+		}
+
+		// Swap the status dot for a spinner while a fetch is in progress.
+		function setBusy(busy) {
+			if (spinner) { spinner.style.display = busy ? '' : 'none'; }
+			if (dot) { dot.style.display = busy ? 'none' : ''; }
+			if (refreshBtn) { refreshBtn.classList.toggle('live-refresh-busy', busy); }
+		}
+
+		function doFetch() {
+			if (inFlight || !window.fetch || !body) { return; }
+			inFlight = true;
+			setBusy(true);
+			var oldData = readLiveData();
+			fetch('/v5/ajaxwxbody.php', { cache: 'no-store' })
+				.then(function (r) { return r.text(); })
+				.then(function (html) {
+					body.innerHTML = html;
+					flashLiveChanges(oldData, readLiveData());
+					tick(); // reflect the fresh reading time/age immediately
+				})
+				.catch(function () {})
+				.then(function () {
+					inFlight = false;
+					setBusy(false);
+				});
+		}
+
+		// (Re)start the periodic loop, pushing the next auto-refresh a full
+		// interval out - used after any on-demand fetch to avoid a double hit.
+		function scheduleRefresh() {
+			if (refreshTimer) { clearTimeout(refreshTimer); }
+			refreshTimer = setTimeout(function () {
+				if (!document.hidden) { doFetch(); }
+				scheduleRefresh();
+			}, REFRESH_MS);
+		}
+
+		function refreshNow() {
+			doFetch();
+			scheduleRefresh();
+		}
 
 		function sync() {
 			var w = document.getElementById('WDtime');
@@ -191,18 +239,32 @@ if (file_exists($fcFile)) {
 			return h + 'h ' + (m < 10 ? '0' : '') + m + 'm ago';
 		}
 
+		// Live-data freshness: count up the age of the latest reading and flag if stale.
 		function tick() {
 			sync();
-			if (!wdTime) { return; }
+			if (!wdTime || !ageEl) { return; }
 			var age = baseServer + (Date.now() - t0) / 1000 - wdTime;
 			ageEl.textContent = fmtAge(age);
+			if (!dot) { return; }
 			var ok = age < 180;
 			dot.className = 'live-dot ' + (ok ? 'live-dot-ok' : 'live-dot-stale');
 			dot.title = 'Live data ' + (ok ? 'is current' : 'may be stale') + ' \u2013 ' + fmtAge(age);
 		}
 
+		// Instantly refresh when the user returns to the tab/window.
+		document.addEventListener('visibilitychange', function () {
+			if (!document.hidden) { refreshNow(); }
+		});
+		if (refreshBtn) {
+			refreshBtn.addEventListener('click', function (e) {
+				e.preventDefault();
+				refreshNow();
+			});
+		}
+
 		tick();
 		setInterval(tick, 1000);
+		scheduleRefresh();
 	})();
 	//]]>
 </script>
@@ -212,13 +274,13 @@ if (file_exists($fcFile)) {
 		<div class="home-chart-bar">
 			<div class="home-chart-vars" role="tablist">
 				<button type="button" data-var="temp" class="active" title="Temperature"><img src="<?php echo Site::IMG_ROOT; ?>thermom8_small.png" alt="Temperature" width="26" height="26" /></button>
-				<button type="button" data-var="rain" title="Rainfall"><img src="<?php echo Site::IMG_ROOT; ?>rain2_small.png" alt="Rainfall" width="26" height="26" /></button>
-				<button type="button" data-var="wind" title="Wind speed &amp; gust"><img src="<?php echo Site::IMG_ROOT; ?>windy_small.png" alt="Wind speed and gust" width="26" height="26" /></button>
+				<button type="button" data-var="rain" title="Rainfall"><img src="<?php echo Site::IMG_ROOT; ?>icon-rain.svg" alt="Rainfall" width="26" height="26" /></button>
+				<button type="button" data-var="wind" title="Wind speed &amp; gust"><img src="<?php echo Site::IMG_ROOT; ?>icon-wind.svg" alt="Wind speed and gust" width="26" height="26" /></button>
 				<button type="button" data-var="humi" title="Humidity"><img src="<?php echo Site::IMG_ROOT; ?>humidity_small.png" alt="Humidity" width="26" height="26" /></button>
 				<button type="button" data-var="dewp" title="Dew point"><img src="<?php echo Site::IMG_ROOT; ?>dewy_small.png" alt="Dew point" width="26" height="26" /></button>
 				<button type="button" data-var="pres" title="Pressure"><img src="<?php echo Site::IMG_ROOT; ?>pressure2_small.png" alt="Pressure" width="26" height="26" /></button>
-				<button type="button" data-var="pm25" title="Air quality"><img src="<?php echo Site::IMG_ROOT; ?>sky3_small.png" alt="Air quality" width="26" height="26" /></button>
-				<button type="button" data-var="wdir" title="Wind direction"><img src="<?php echo Site::IMG_ROOT; ?>compass_small.png" alt="Wind direction" width="26" height="26" /></button>
+				<button type="button" data-var="pm25" title="Air quality"><img src="<?php echo Site::IMG_ROOT; ?>icon-airpollution.svg" alt="Air quality" width="26" height="26" /></button>
+				<button type="button" data-var="wdir" title="Wind direction"><img src="<?php echo Site::IMG_ROOT; ?>icon-compass.svg" alt="Wind direction" width="26" height="26" /></button>
 			</div>
 			<div class="home-graph-controls" role="group" aria-label="Chart time range">
 				<button type="button" data-range="6">6h</button>

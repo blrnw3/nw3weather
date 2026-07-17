@@ -23,7 +23,7 @@ $values = [
 	$rn24,
 	Live::$NOW['misc']['wethrs'],
 	Live::$NOW['misc']['rnduration'],
-	Live::$NOW['misc']['rnlast'],
+	Live::$HR24['misc']['rnlast'],
 ];
 $conv = [Wx::Rain, Wx::RainRate, Wx::Rain, Wx::Rain, Wx::Hours, Wx::Hours, Wx::None];
 
