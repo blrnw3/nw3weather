@@ -12,12 +12,44 @@ source changes. The container's docroot is `/var/www/html` — exactly what
 
 ## Prerequisites
 
-- Docker + Docker Compose
+- **Colima** as the Docker engine (preferred over Docker Desktop on macOS),
+  plus the Docker CLI and Compose plugin
 - SSH key access to the prod server (same box you push to `/var/www`)
+
+Install via Homebrew if needed:
+
+```bash
+brew install colima docker docker-compose
+```
+
+Colima does not auto-start after reboot. Either run `colima start` each
+session, or `brew services start colima` for persistence.
 
 ## One-time setup
 
-1. **SSH target is preconfigured** in `scripts/sync-prod-data.sh`
+1. **Start the Docker engine:**
+
+   ```bash
+   colima start
+   ```
+
+   The `web` service is pinned to `platform: linux/amd64` because
+   `php:5.4-apache` has no arm64 build. Colima's QEMU emulation handles that
+   on Apple Silicon. If pulls of the old image fail with a schema-v1 /
+   containerd error, disable the containerd snapshotter in
+   `~/.colima/default/colima.yaml` and restart:
+
+   ```yaml
+   docker:
+     features:
+       containerd-snapshotter: false
+   ```
+
+   ```bash
+   colima restart
+   ```
+
+2. **SSH target is preconfigured** in `scripts/sync-prod-data.sh`
    (`ben@188.166.156.109` on port `8294`). Override with `PROD_SSH` /
    `PROD_SSH_PORT` env vars if needed. Make sure your key gets you in:
 
@@ -25,10 +57,10 @@ source changes. The container's docroot is `/var/www/html` — exactly what
    ssh -p 8294 ben@188.166.156.109 true && echo ok
    ```
 
-2. **PHP version** is pinned to `5.4` in `docker-compose.yml` to match prod
+3. **PHP version** is pinned to `5.4` in `docker-compose.yml` to match prod
    (5.4.16). The image is Debian jessie (archived) — the Dockerfile handles that.
 
-3. **Pull prod data** (one-shot). `--full` also grabs the JPGraph library and
+4. **Pull prod data** (one-shot). `--full` also grabs the JPGraph library and
    `static-images/`, needed for the graph pages:
 
    ```bash
@@ -38,6 +70,7 @@ source changes. The container's docroot is `/var/www/html` — exactly what
 ## Run the site
 
 ```bash
+colima start          # if the engine isn't already up
 docker compose up --build
 ```
 
@@ -76,4 +109,3 @@ Re-run `./scripts/sync-prod-data.sh` any time to refresh the generated files
 - `wxapp/` (the only MySQL part) is optional: start its DB with
   `docker compose --profile wxapp up`, import `SiteV3/wxapp/EuroWeather.sql`, and
   create `SiteV3/wxapp/config.php`.
-```

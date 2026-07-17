@@ -8,7 +8,7 @@
 # Usage:
 #   scripts/sync-prod-data.sh                 # one-shot pull of data + generated files
 #   scripts/sync-prod-data.sh --full          # also pull jpgraph/, static-images/, sample cam/video
-#   scripts/sync-prod-data.sh --loop [secs]   # keep all home-page data fresh (default 20s) to mimic the live feed
+#   scripts/sync-prod-data.sh --loop [secs]   # full data pull, then keep home-page data fresh (default 20s)
 #
 # Config (override via env or by editing the defaults below):
 #   PROD_SSH        ssh target          (default ben@188.166.156.109)
@@ -90,9 +90,9 @@ sync_data() {
 }
 
 sync_full_extras() {
-  echo ">> Pulling jpgraph/ (chart library)"
-  rsync -avz "${RSYNC_SSH[@]}" "$PROD_SSH:$PROD_DOCROOT/jpgraph/" "$LOCAL_DOCROOT/jpgraph/" || \
-    echo "   (skipped: jpgraph not found at $PROD_DOCROOT/jpgraph)"
+  # echo ">> Pulling jpgraph/ (chart library)"
+  # rsync -avz "${RSYNC_SSH[@]}" "$PROD_SSH:$PROD_DOCROOT/jpgraph/" "$LOCAL_DOCROOT/jpgraph/" || \
+  #   echo "   (skipped: jpgraph not found at $PROD_DOCROOT/jpgraph)"
 
   echo ">> Pulling static-images/"
   rsync -avz "${RSYNC_SSH[@]}" "$PROD_SSH:$PROD_DOCROOT/static-images/" "$LOCAL_DOCROOT/static-images/" || \
@@ -120,7 +120,7 @@ loop_home() {
 }
 
 case "${1:-}" in
-  --loop) loop_home "${2:-20}" ;;
+  --loop) sync_data; loop_home "${2:-20}" ;;
   --full) sync_data; sync_full_extras ;;
   "")     sync_data ;;
   *)      echo "Unknown option: $1"; sed -n '2,20p' "$0"; exit 1 ;;
