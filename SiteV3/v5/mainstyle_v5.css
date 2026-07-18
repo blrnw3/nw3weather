@@ -456,9 +456,22 @@ div.charts > .wxchart {
 }
 
 /* Selectable trend chart: LHS selector (~1/3) + chart (~2/3) */
-div.charts > .wxsel-chart {
+div.charts > .wxsel-chart,
+div.charts > .wxsel-wrap {
 	flex: 1 1 100%;
 	width: 100%;
+}
+.wxsel-wrap {
+	margin: 0.5em 0.3rem;
+}
+.wxsel-wrap .wxsel-chart {
+	margin: 0;
+}
+.wxsel-heading {
+	margin: 0 0 0.35rem;
+	font-size: 1.05rem;
+	font-weight: 600;
+	color: #222;
 }
 .wxsel-chart {
 	display: flex;

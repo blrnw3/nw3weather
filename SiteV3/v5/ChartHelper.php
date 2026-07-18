@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/v5/wxcharts.js?20260717s"></script>' . "\n";
+		echo '<script src="/v5/wxcharts.js?20260717v"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */
@@ -494,7 +494,11 @@ class Charts {
 		}
 		$defaultSummable = !empty($varMeta[$default]['summable']);
 		if (!$defaultSummable) { $defaultCume = false; }
+		$headingId = $id . '-heading';
+		$defaultDesc = isset($varMeta[$default]['description']) ? $varMeta[$default]['description'] : $default;
 
+		echo '<div class="wxsel-wrap">' . "\n";
+		echo '<h3 id="' . $headingId . '" class="wxsel-heading">' . htmlspecialchars($year . ($defaultCume ? ' Cumulative ' : ' ') . $defaultDesc) . '</h3>' . "\n";
 		echo '<div class="wxsel-chart">' . "\n";
 		echo '<div id="' . $panelId . '" class="wxsel-panel" role="group" aria-label="Year-to-date variable">' . "\n";
 		self::emitGroupButtons($groups, $defaultGroup);
@@ -519,7 +523,8 @@ class Charts {
 			. '</div>' . "\n";
 		echo '</div>' . "\n";
 		echo '<div id="' . $id . '" class="wxchart wxchart-loading" style="min-height:' . $height . 'px;"></div>' . "\n";
-		echo '</div>' . "\n";
+		echo '</div>' . "\n"; // wxsel-chart
+		echo '</div>' . "\n"; // wxsel-wrap
 
 		$url = self::url('histdata.php', array(
 			'mode' => 'daily',
@@ -528,6 +533,7 @@ class Charts {
 		$cfg = array(
 			'containerId' => $id,
 			'panelId' => $panelId,
+			'headingId' => $headingId,
 			'url' => $url,
 			'opts' => $opts,
 			'groups' => $groups,
@@ -570,7 +576,18 @@ class Charts {
 		$defaultSummary = isset($params['summary_type']) ? (int)$params['summary_type'] : $defaultAggs[0];
 		if (!in_array($defaultSummary, $defaultAggs, true)) { $defaultSummary = $defaultAggs[0]; }
 		$defaultLta = !empty($params['lta']);
+		$headingId = $id . '-heading';
+		$defaultDesc = isset($varMeta[$default]['description']) ? $varMeta[$default]['description'] : $default;
+		$headingInit = $defaultDesc;
+		if ($isMonthly) {
+			$aggName = isset($aggLabels[$defaultSummary]) ? $aggLabels[$defaultSummary] : '';
+			if ($aggName !== '' && stripos($defaultDesc, $aggName) !== 0) {
+				$headingInit = $aggName . ' ' . $defaultDesc;
+			}
+		}
 
+		echo '<div class="wxsel-wrap">' . "\n";
+		echo '<h3 id="' . $headingId . '" class="wxsel-heading">' . htmlspecialchars($headingInit) . '</h3>' . "\n";
 		echo '<div class="wxsel-chart">' . "\n";
 		echo '<div id="' . $panelId . '" class="wxsel-panel" role="group" aria-label="Chart variable">' . "\n";
 		self::emitGroupButtons($groups, $defaultGroup);
@@ -587,7 +604,8 @@ class Charts {
 		}
 		echo '</div>' . "\n";
 		echo '<div id="' . $id . '" class="wxchart wxchart-loading" style="min-height:' . $height . 'px;"></div>' . "\n";
-		echo '</div>' . "\n";
+		echo '</div>' . "\n"; // wxsel-chart
+		echo '</div>' . "\n"; // wxsel-wrap
 
 		$baseParams = $params;
 		unset($baseParams['type'], $baseParams['summary_type'], $baseParams['lta']);
@@ -595,6 +613,7 @@ class Charts {
 		$cfg = array(
 			'containerId' => $id,
 			'panelId' => $panelId,
+			'headingId' => $headingId,
 			'url' => $url,
 			'opts' => $opts,
 			'groups' => $groups,

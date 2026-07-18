@@ -213,10 +213,17 @@ if ($mode === 'annual') {
 				return $series;
 			};
 			$thisYear = $buildYear($yr);
-			// x labels: day-of-year as 'd M'
+			// Month-start ticks only (keeps labels short/horizontal); tips carry the full day.
+			$tickPositions = [];
 			for ($z = 0; $z < count($thisYear); $z++) {
-				$out['categories'][] = date('d M', Date::mkz($z, $yr));
+				$ts = Date::mkz($z, $yr);
+				$out['categories'][] = date('M', $ts);
+				$out['categoryTips'][] = date('j M', $ts);
+				if ((int)date('j', $ts) === 1) {
+					$tickPositions[] = $z;
+				}
 			}
+			$out['tickPositions'] = $tickPositions;
 			$out['series'][] = ['name' => (string)$yr, 'data' => $thisYear, 'color' => $colour, 'type' => 'line'];
 
 			if (isset($_GET['multiyr'])) {

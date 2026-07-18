@@ -91,17 +91,26 @@
 					return html;
 				};
 			}
+			var xAxis = {
+				categories: json.categories,
+				labels: {
+					style: { color: TEXT, fontSize: opts.labelFontSize || '0.7rem' },
+					rotation: 0,
+					autoRotation: false
+				},
+				gridLineWidth: 0
+			};
+			if (json.tickPositions && json.tickPositions.length) {
+				xAxis.tickPositions = json.tickPositions;
+			} else {
+				xAxis.tickInterval = opts.tickInterval || Math.max(1, Math.ceil(json.categories.length / 12));
+			}
 			Highcharts.chart(containerId, {
 				chart: { backgroundColor: '#ffffff', spacing: [12, 12, 8, 6], style: { color: TEXT } },
 				title: { text: opts.title || json.title, style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
 				credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
 				legend: { enabled: series.length > 1, itemStyle: { color: TEXT } },
-				xAxis: {
-					categories: json.categories,
-					tickInterval: opts.tickInterval || Math.max(1, Math.ceil(json.categories.length / 24)),
-					labels: { style: { color: TEXT, fontSize: opts.labelFontSize || '0.7rem' } },
-					gridLineWidth: 0
-				},
+				xAxis: xAxis,
 				yAxis: yAxis,
 				tooltip: tooltip,
 				plotOptions: {
@@ -425,7 +434,7 @@
 			return groups[0];
 		}
 		function metaFor(type) {
-			return varMeta[type] || { aggregations: [0], primary: 0, summable: false };
+			return varMeta[type] || { aggregations: [0], primary: 0, summable: false, description: type };
 		}
 		function syncNormalsUi() {
 			if (!normBtn) { return; }
@@ -443,7 +452,25 @@
 			cumeBtn.classList.toggle('active', allowed && state.cume);
 			cumeBtn.classList.toggle('disabled', !allowed);
 		}
+		function updateHeading() {
+			if (!cfg.headingId) { return; }
+			var el = document.getElementById(cfg.headingId);
+			if (!el) { return; }
+			var meta = metaFor(state.type);
+			var desc = meta.description || state.type;
+			var title = desc;
+			if (cfg.showAggregation) {
+				var agg = aggLabels[state.summary];
+				if (agg && desc.toLowerCase().indexOf(String(agg).toLowerCase()) !== 0) {
+					title = agg + ' ' + desc;
+				}
+			}
+			if (cfg.showCume && state.cume) { title = 'Cumulative ' + title; }
+			if (cfg.showYears && state.year) { title = state.year + ' ' + title; }
+			el.textContent = title;
+		}
 		function load() {
+			updateHeading();
 			var url = cfg.url + (cfg.url.indexOf('?') >= 0 ? '&' : '?')
 				+ 'type=' + encodeURIComponent(state.type);
 			if (cfg.showYears && state.year) {
@@ -480,7 +507,7 @@
 			var opts = g.options || {};
 			var keys = Object.keys(opts);
 			if (keys.indexOf(state.type) < 0) { state.type = keys[0]; }
-			if (!metaFor(state.type).summable) { state.cume = false; }
+			if (cfg.showCume) { state.cume = !!metaFor(state.type).summable; }
 			var html = '', i, k;
 			for (i = 0; i < keys.length; i++) {
 				k = keys[i];
@@ -492,7 +519,7 @@
 				$(subEl).find('button').removeClass('active');
 				$(this).addClass('active');
 				state.type = String($(this).attr('data-type'));
-				if (!metaFor(state.type).summable) { state.cume = false; }
+				if (cfg.showCume) { state.cume = !!metaFor(state.type).summable; }
 				renderAggregation();
 				syncCumeUi();
 				load();
