@@ -595,7 +595,17 @@ class Util {
 		foreach($arr as $val) {
 			if( !Util::isBlank($val) ) {
 				$cnt++;
-			}	
+			}
+		}
+		return $cnt;
+	}
+
+	/** Count days with a present, non-zero value (for SUMMARY_COUNT / "rain days" etc.). */
+	public static function countNonZero($arr) {
+		$cnt = 0;
+		if (!is_array($arr)) { return 0; }
+		foreach ($arr as $val) {
+			if (!Util::isBlank($val) && (float)$val != 0.0) { $cnt++; }
 		}
 		return $cnt;
 	}

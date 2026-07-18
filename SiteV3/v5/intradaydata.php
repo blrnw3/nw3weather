@@ -52,16 +52,31 @@ $out = [
 ];
 
 // Gather the per-minute lines across the requested day span (oldest first).
+// todaylog.txt is a rolling ~24h window. For single-day "today" plots we use it
+// as-is; for multi-day spans we still prefer it for the current day (live data)
+// but drop lines whose day-of-month isn't today — otherwise concatenating
+// yesterday's full daily log with todaylog causes a ~24h backward jump that
+// Highcharts draws as a diagonal "trendline" across the chart.
 $lines = [];
+$lineDays = []; // Ymd stamp for each kept line, parallel to $lines
 for ($d = $num - 1; $d >= 0; $d--) {
 	$dayStamp = date('Ymd', Date::mkdate($mon, $dom - $d, $yr));
 	$path = ROOT . 'logfiles/daily/' . $dayStamp . 'log.txt';
+	$fromTodayLog = false;
 	if ($dayStamp === date('Ymd')) {
 		$todayPath = ROOT . 'logfiles/daily/todaylog.txt';
-		if (file_exists($todayPath)) { $path = $todayPath; }
+		if (file_exists($todayPath)) { $path = $todayPath; $fromTodayLog = true; }
 	}
-	if (file_exists($path)) {
-		$lines = array_merge($lines, file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+	if (!file_exists($path)) { continue; }
+	$dayLines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+	$todayDom = (int)substr($dayStamp, 6, 2);
+	foreach ($dayLines as $ln) {
+		if ($fromTodayLog && $num > 1) {
+			$parts = explode(',', $ln);
+			if (count($parts) < 3 || (int)$parts[2] !== $todayDom) { continue; }
+		}
+		$lines[] = $ln;
+		$lineDays[] = $dayStamp;
 	}
 }
 
@@ -98,7 +113,23 @@ for ($i = 0; $i < $total; $i++) {
 	$h = (int)$c[0]; $mi = (int)$c[1]; $dd = (int)$c[2];
 	// Clip to the requested hour window (single-day requests only)
 	if ($num === 1 && ($h < $startHr || $h >= $endHr)) { continue; }
-	$ts = mktime($h, $mi, 0, $mon, ($num > 1 ? $dd : $dom), $yr);
+	// Timestamp from the line's own day-of-month. Dated files are usually one
+	// calendar day, but todaylog (and some synced "Ymdlog" copies) are a rolling
+	// ~24h window that crosses midnight — stamping every line with the filename
+	// date makes 00:00 land ~24h before 23:59 and Highcharts draws a diagonal.
+	$ds = $lineDays[$i];
+	$y = (int)substr($ds, 0, 4);
+	$m = (int)substr($ds, 4, 2);
+	$dStamp = (int)substr($ds, 6, 2);
+	if ($dd !== $dStamp) {
+		$prev = Date::mkdate($m, $dStamp - 1, $y);
+		if ($dd === (int)date('j', $prev)) {
+			$y = (int)date('Y', $prev);
+			$m = (int)date('n', $prev);
+			$dd = (int)date('j', $prev);
+		}
+	}
+	$ts = mktime($h, $mi, 0, $m, $dd, $y);
 
 	$wind = ($c[3] === '') ? 0 : (float)$c[3];
 	$windSum += $wind; $windBuf[$p % 10] = $wind; $p++;
@@ -121,6 +152,29 @@ for ($i = 0; $i < $total; $i++) {
 }
 
 $n = count($out['time']);
+// Sort + dedupe by minute so overlapping rolling/dated logs never go backwards.
+if ($n > 1) {
+	$order = range(0, $n - 1);
+	usort($order, function ($a, $b) use ($out) {
+		if ($out['time'][$a] == $out['time'][$b]) { return ($a < $b) ? -1 : 1; }
+		return ($out['time'][$a] < $out['time'][$b]) ? -1 : 1;
+	});
+	$keys = ['time', 'temp', 'dewp', 'humi', 'pres', 'wind', 'gust', 'wdir', 'rain', 'pm25'];
+	$sorted = [];
+	foreach ($keys as $k) { $sorted[$k] = []; }
+	$lastT = null;
+	foreach ($order as $idx) {
+		$t = $out['time'][$idx];
+		if ($lastT !== null && $t === $lastT) {
+			foreach ($keys as $k) { $sorted[$k][count($sorted[$k]) - 1] = $out[$k][$idx]; }
+			continue;
+		}
+		foreach ($keys as $k) { $sorted[$k][] = $out[$k][$idx]; }
+		$lastT = $t;
+	}
+	foreach ($keys as $k) { $out[$k] = $sorted[$k]; }
+	$n = count($out['time']);
+}
 $out['updated'] = $n ? (int)($out['time'][$n - 1] / 1000) : null;
 
 // Optional decimation: keep at most `maxpts` evenly-spaced samples (plus the last)

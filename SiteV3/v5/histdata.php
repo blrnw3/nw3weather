@@ -92,6 +92,20 @@ function ltaDaily($type) {
 	if (isset(LTA::$vars[$type]) && is_array(LTA::$vars[$type]) && isset(LTA::$vars[$type]['daily']) && count(LTA::$vars[$type]['daily'])) {
 		return LTA::$vars[$type]['daily'];
 	}
+	// Mean temperature normal isn't stored directly; derive it from tmin/tmax.
+	if ($type === 'tmean'
+		&& !empty(LTA::$vars['tmin']['daily']) && !empty(LTA::$vars['tmax']['daily'])) {
+		$mean = array();
+		$n = max(count(LTA::$vars['tmin']['daily']), count(LTA::$vars['tmax']['daily']));
+		for ($z = 0; $z < $n; $z++) {
+			if (!isset(LTA::$vars['tmin']['daily'][$z]) || !isset(LTA::$vars['tmax']['daily'][$z])) {
+				$mean[$z] = null;
+				continue;
+			}
+			$mean[$z] = (LTA::$vars['tmin']['daily'][$z] + LTA::$vars['tmax']['daily'][$z]) / 2;
+		}
+		return $mean;
+	}
 	return null;
 }
 
@@ -116,10 +130,13 @@ if ($mode === 'annual') {
 		$ms = Data::getMonthlySummary($type, $summaryType, $yr, $yr);
 		$vals = isset($ms[$yr]) ? $ms[$yr] : [];
 		$data = [];
+		$tips = [];
 		for ($m = 1; $m <= 12; $m++) {
 			$out['categories'][] = Date::$months3[$m - 1];
+			$tips[] = Date::$months3[$m - 1] . ' ' . $yr;
 			$data[] = isset($vals[$m]) ? cv($vals[$m], $isCount) : null;
 		}
+		$out['categoryTips'] = $tips;
 		$out['title'] = $yr . ' monthly ' . Data::$SUMMARY_NAMES[$summaryType] . ' ' . $meta['description'];
 		$out['series'][] = ['name' => $meta['description'], 'data' => $data, 'color' => $colour, 'type' => 'column'];
 		$ltaEndMon = 12;
@@ -127,16 +144,20 @@ if ($mode === 'annual') {
 		$length = isset($_GET['length']) ? (int)$_GET['length'] : 12;
 		$startYr = (int)Date::$dyear - intval($length / 12) - 1;
 		$ms = Data::getMonthlySummary($type, $summaryType, $startYr, (int)Date::$yr_yest);
-		$flatVals = []; $flatLabels = [];
+		$flatVals = []; $flatLabels = []; $flatTips = [];
 		foreach ($ms as $yr => $months) {
 			foreach ($months as $m => $v) {
 				$flatVals[] = cv($v, $isCount);
-				$flatLabels[] = Date::$months3[$m - 1] . '-' . substr($yr, 2);
+				// Axis: 3-letter month; tooltip adds the year.
+				$flatLabels[] = Date::$months3[$m - 1];
+				$flatTips[] = Date::$months3[$m - 1] . ' ' . $yr;
 			}
 		}
 		$flatVals = array_slice($flatVals, -$length);
 		$flatLabels = array_slice($flatLabels, -$length);
+		$flatTips = array_slice($flatTips, -$length);
 		$out['categories'] = $flatLabels;
+		$out['categoryTips'] = $flatTips;
 		$out['title'] = "Last $length months " . Data::$SUMMARY_NAMES[$summaryType] . ' ' . $meta['description'];
 		$out['series'][] = ['name' => $meta['description'], 'data' => $flatVals, 'color' => $colour, 'type' => 'column'];
 		$ltaEndMon = (int)Date::$dmonth;
@@ -238,18 +259,23 @@ if ($mode === 'annual') {
 		$length = isset($_GET['length']) ? (int)$_GET['length'] : 31;
 		$startYr = (int)Date::$dyear - intval($length / 365) - 1;
 		$daily = Data::getDailyData($type, $startYr);
-		$flatVals = []; $flatLabels = [];
+		$flatVals = []; $flatLabels = []; $flatTips = [];
+		// Short windows keep day-of-month on the axis; tooltip adds the month.
 		$fmt = ($length < 50) ? 'd' : (($length < 500) ? 'd M' : 'M-y');
+		$tipFmt = ($length < 50) ? 'd M' : (($length < 500) ? 'd M Y' : 'M Y');
 		foreach ($daily as $y => $months) {
 			foreach ($months as $m => $days) {
 				foreach ($days as $d => $v) {
+					$ts = Date::mkdate($m, $d, $y);
 					$flatVals[] = cv($v);
-					$flatLabels[] = date($fmt, Date::mkdate($m, $d, $y));
+					$flatLabels[] = date($fmt, $ts);
+					$flatTips[] = date($tipFmt, $ts);
 				}
 			}
 		}
 		$length = min($length, count($flatVals));
 		$out['categories'] = array_slice($flatLabels, -$length);
+		$out['categoryTips'] = array_slice($flatTips, -$length);
 		$out['series'][] = ['name' => $meta['description'], 'data' => array_slice($flatVals, -$length),
 			'color' => $colour, 'type' => ($length > 90 ? 'line' : 'column')];
 		$out['chartType'] = ($length > 90 ? 'line' : 'column');

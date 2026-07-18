@@ -142,7 +142,7 @@ $newToOld = [0 => 2, 1 => 2, 2 => 3, 3 => 0, 4 => 1];
 $explain = [
 	Data::SUMMARY_MEAN => 'monthly means',
 	Data::SUMMARY_SUM => 'monthly totals',
-	Data::SUMMARY_COUNT => 'count of days with a value',
+	Data::SUMMARY_COUNT => 'count of days with a non-zero value',
 	Data::SUMMARY_MIN => 'lowest daily value each month',
 	Data::SUMMARY_MAX => 'highest daily value each month',
 ];

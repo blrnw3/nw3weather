@@ -344,12 +344,6 @@ END;
 					"page" => "wxaverages",
 					"num" => 20,
 				],
-				[
-					"title" => "Custom Graphs",
-					"text" => "Short-scale weather graphs",
-					"page" => "graphviewer",
-					"num" => 31,
-				],
 			],
 			"historical" => [
 				[
@@ -406,6 +400,14 @@ END;
 					"text" => "In-depth historical data charts",
 					"page" => "charts",
 					"num" => 32,
+					"subhead" => "Charts",
+				],
+				[
+					"title" => "Daily Graphs",
+					"text" => "Daily historical per-minute graphs",
+					"page" => "graphviewer",
+					"num" => 31,
+					"subhead" => true,
 				],
 			],
 			"other" => [

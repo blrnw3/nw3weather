@@ -395,7 +395,7 @@ div.charts-with-title > img {
 }
 .wx3-live-vars button:hover { background: #e0eee3; }
 .wx3-live-vars button.active {
-	background: #15866A;
+	background: #052e24;
 	color: #fff;
 	border-color: #15866A;
 }
@@ -427,6 +427,14 @@ div.charts-with-title > img {
 	margin: 0.3rem 0.3rem 0.6rem;
 	min-width: 0;
 }
+.wxchart-loading,
+.wx3-chart.wxchart-loading {
+	opacity: 0.4;
+	filter: grayscale(0.4);
+	pointer-events: none;
+	background: #eceff0;
+	transition: opacity 0.15s ease, filter 0.15s ease, background 0.15s ease;
+}
 .wx3-multi {
 	display: flex;
 	flex-direction: row;
@@ -440,33 +448,206 @@ div.charts-with-title > img {
 	.wx3-multi > .wx3-chart { width: auto; }
 }
 
-/* Trend charts need a definite width so Highcharts gets a real plot area */
+/* Trend charts: pair as 2-up so 4 fixed charts form a tidy 2×2 */
 div.charts > .wxchart {
-	flex: 1 1 420px;
-	min-width: 300px;
+	flex: 1 1 calc(50% - 0.8rem);
+	min-width: min(300px, 100%);
+	box-sizing: border-box;
 }
 
-/* Selectable trend chart (variable dropdown) - full width */
+/* Selectable trend chart: LHS selector (~1/3) + chart (~2/3) */
 div.charts > .wxsel-chart {
 	flex: 1 1 100%;
 	width: 100%;
 }
-.wxsel-chart .wxchart { width: 100%; }
-.wxsel-chart { margin: 0.5em; }
-.wxsel-bar {
+.wxsel-chart {
 	display: flex;
-	align-items: center;
-	gap: 0.4rem;
-	margin: 0 0.3rem 0.3rem;
-	font-size: 0.85rem;
+	flex-direction: row;
+	align-items: stretch;
+	gap: 0.45rem;
+	margin: 0.5em 0.3rem;
 }
-.wxsel {
+.wxsel-chart .wxchart {
+	flex: 2 1 0;
+	min-width: 0;
+	width: auto;
+	margin: 0;
+}
+.wxsel-panel {
+	flex: 1 1 0;
+	min-width: 9rem;
+	max-width: 15rem;
+	order: 0;
+	background: #f4f7f5;
+	border: 1px solid #d6e2d8;
+	border-radius: 6px;
+	padding: 0.35rem 0.35rem 0.4rem;
+	box-sizing: border-box;
+}
+.wxsel-label {
+	font-size: 0.65rem;
+	font-weight: 600;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+	color: #5a7268;
+	margin: 0.35rem 0.1rem 0.15rem;
+}
+.wxsel-label:first-child { margin-top: 0; }
+.wxsel-groups,
+.wxsel-subtypes,
+.wxsel-agg,
+.wxsel-normals {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.15rem;
+}
+.wxsel-groups button,
+.wxsel-subtypes button,
+.wxsel-agg button,
+.wxsel-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.2rem;
 	font: inherit;
-	padding: 0.15rem 0.3rem;
+	font-size: 0.85rem;
+	line-height: 1.15;
+	padding: 0.2rem 0.3rem;
 	color: #15604c;
 	background: #fff;
-	border: 1px solid #d6e2d8;
-	border-radius: 5px;
+	border: 1px solid #c5d6cb;
+	border-radius: 4px;
+	cursor: pointer;
+	margin: 0.2em;
+}
+.wxsel-groups button img {
+	width: 19px;
+	height: 19px;
+	object-fit: contain;
+	flex: 0 0 auto;
+}
+.wxsel-groups button:hover,
+.wxsel-subtypes button:hover,
+.wxsel-agg button:hover,
+.wxsel-toggle:hover:not(:disabled) {
+	background: #e8f2eb;
+}
+.wxsel-groups button.active,
+.wxsel-subtypes button.active,
+.wxsel-agg button.active,
+.wxsel-toggle.active {
+	background: #15866A;
+	border-color: #15866A;
+	color: #fff;
+}
+.wxsel-toggle:disabled,
+.wxsel-toggle.disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+@media only screen and (max-width: 800px) {
+	.wxsel-chart { flex-direction: column; }
+	.wxsel-panel { max-width: none; }
+}
+
+/* Full Chart Viewer (charts.php): slightly wider panel + period selects */
+.wxsel-viewer {
+	margin: 0.6rem 0 1rem;
+	min-height: 28rem;
+}
+.wxsel-viewer .wxsel-panel {
+	max-width: 17.5rem;
+	min-width: 11rem;
+}
+.wxsel-scale {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.15rem;
+}
+.wxsel-scale button {
+	display: inline-flex;
+	align-items: center;
+	font: inherit;
+	font-size: 0.85rem;
+	line-height: 1.15;
+	padding: 0.2rem 0.3rem;
+	margin: 0.2em;
+	color: #15604c;
+	background: #fff;
+	border: 1px solid #c5d6cb;
+	border-radius: 4px;
+	cursor: pointer;
+}
+.wxsel-scale button:hover { background: #e8f2eb; }
+.wxsel-scale button.active {
+	background: #15866A;
+	border-color: #15866A;
+	color: #fff;
+}
+.wxsel-period {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+}
+.wxsel-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.12rem;
+	font-size: 0.72rem;
+	color: #5a7268;
+}
+.wxsel-field span {
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	font-size: 0.65rem;
+}
+.wxsel-panel select.wxsel {
+	width: 100%;
+	box-sizing: border-box;
+	font: inherit;
+	font-size: 0.82rem;
+	padding: 0.22rem 0.3rem;
+	color: #15604c;
+	background: #fff;
+	border: 1px solid #c5d6cb;
+	border-radius: 4px;
+}
+.wxsel-options {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.15rem;
+}
+/* Our display:flex rules otherwise override the UA [hidden] stylesheet. */
+.wxsel-field[hidden],
+.wxsel-agg-wrap[hidden],
+.wxsel-toggle[hidden],
+.wxsel-options [hidden],
+#gv-var-wrap[hidden] {
+	display: none !important;
+}
+.wxsel-panel .gv-vars {
+	flex-wrap: wrap;
+	overflow: visible;
+}
+.wxsel-panel .gv-vars button {
+	font-size: 0.78rem;
+	padding: 0.15rem 0.35rem;
+}
+.wxsel-panel .gv-vars button img {
+	width: 18px;
+	height: 18px;
+}
+.wxsel-panel .gv-num button {
+	min-width: 1.8rem;
+	padding: 0.15rem 0.3rem;
+}
+.wxsel-viewer .wxchart {
+	min-height: 28rem;
+}
+#cv-disclaimer.note {
+	margin: 0.4rem 0.3rem 1rem;
+	font-size: 0.85rem;
+	color: #555;
 }
 
 /* Wind roses: equal-sized, larger */

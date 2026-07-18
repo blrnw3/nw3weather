@@ -588,7 +588,8 @@ class Data {
 			return array_sum($arr);
 		}
 		if($summary_type === Data::SUMMARY_COUNT) {
-			return Util::mycount($arr);
+			// Days with a present non-zero value (rain days, sun days, event days, …).
+			return Util::countNonZero($arr);
 		}
 		if($summary_type === Data::SUMMARY_MIN) {
 			return Util::mymin($arr);

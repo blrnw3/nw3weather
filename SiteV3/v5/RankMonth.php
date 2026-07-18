@@ -33,7 +33,7 @@ $lastMonthTs = Date::mkdate((int)Date::$dmonth - 1, 1, (int)Date::$dyear);
 $explain = [
 	Data::SUMMARY_MEAN => 'highest and lowest monthly means',
 	Data::SUMMARY_SUM => 'highest and lowest monthly totals',
-	Data::SUMMARY_COUNT => 'most and fewest days with a value',
+	Data::SUMMARY_COUNT => 'most and fewest days with a non-zero value',
 	Data::SUMMARY_MIN => 'highest and lowest monthly minima',
 	Data::SUMMARY_MAX => 'highest and lowest monthly maxima',
 ];

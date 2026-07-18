@@ -24,9 +24,9 @@
 				{ key: 'gust', name: 'Gust', grad: ['#c23b86', '#f08fc0'] }
 			] },
 		wdir: { title: 'wind direction', yTitle: 'Wind direction', unit: '', dp: 0, dir: true,
-			series: [{ key: 'wdir', name: 'Wind direction', flat: '#555555' }] },
+			series: [{ key: 'wdir', name: 'Wind direction', col: '#555' }] },
 		rain: { title: 'rainfall', yTitle: 'Rainfall', unit: 'mm', dp: 1, area: true,
-			series: [{ key: 'rain', name: 'Rainfall', grad: ['#2554c7', '#7fa8f0'] }] },
+			series: [{ key: 'rain', name: 'Rainfall', col: '#2554c7' }] },
 		pm25: { title: 'air quality', yTitle: 'PM2.5', unit: '\u00B5g/m\u00B3', dp: 1,
 			series: [{ key: 'pm25', name: 'Air quality (PM2.5)', grad: ['#4f7a4a', '#9ac98f'] }] }
 	};
@@ -92,7 +92,7 @@
 		var series = [];
 		for (var i = 0; i < cfg.series.length; i++) {
 			var s = cfg.series[i];
-			var stroke = s.flat ? s.flat : gradient(s.grad);
+			var stroke = s.col ? s.col : gradient(s.grad);
 			var type = isDir ? 'scatter' : (cfg.area ? 'area' : 'line');
 			var sObj = {
 				name: s.name,
