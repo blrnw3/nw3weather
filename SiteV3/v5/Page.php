@@ -277,12 +277,6 @@ END;
 					"num" => 3,
 				],
 				[
-					"title" => "Records",
-					"text" => "Records, Extremes, Trends, and Averages",
-					"page" => "wx4",
-					"num" => 4,
-				],
-				[
 					"title" => "Forecast",
 					"text" => "Local Forecasts and Latest Maps",
 					"page" => "wx5",
@@ -293,12 +287,6 @@ END;
 					"text" => "Sun and Moon Data",
 					"page" => "wx6",
 					"num" => 6,
-				],
-				[
-					"title" => $photos,
-					"text" => "My Weather Photography",
-					"page" => "wx7",
-					"num" => 7,
 				],
 				[
 					"title" => "About",
@@ -411,6 +399,12 @@ END;
 				],
 			],
 			"other" => [
+				[
+					"title" => $photos,
+					"text" => "My Weather Photography",
+					"page" => "wx7",
+					"num" => 7,
+				],
 				[
 					"title" => $blog,
 					"text" => "Website and weather station blog and news",

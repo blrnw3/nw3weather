@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/v5/wxcharts.js?20260717v"></script>' . "\n";
+		echo '<script src="/v5/wxcharts.js?20260720c"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */
@@ -331,6 +331,48 @@ class Charts {
 	}
 
 	/**
+	 * Slimmer variable groups for the home-page 31-day chart: core vars only,
+	 * with Mean/Total + Min + Max measures (where available).
+	 */
+	public static function simpleGroups() {
+		$img = Site::IMG_ROOT;
+		return array(
+			array(
+				'id' => 'temp', 'label' => 'Temp', 'icon' => $img . 'thermom8_small.png',
+				'options' => array('tmean' => 'Mean', 'tmin' => 'Min', 'tmax' => 'Max'),
+			),
+			array(
+				'id' => 'rain', 'label' => 'Rain', 'icon' => $img . 'icon-rain.svg',
+				'options' => array('rain' => 'Total'),
+			),
+			array(
+				'id' => 'wind', 'label' => 'Wind', 'icon' => $img . 'icon-wind.svg',
+				'options' => array('wmean' => 'Mean', 'wmax' => 'Max'),
+			),
+			array(
+				'id' => 'pres', 'label' => 'Pressure', 'icon' => $img . 'pressure2_small.png',
+				'options' => array('pmean' => 'Mean', 'pmin' => 'Min', 'pmax' => 'Max'),
+			),
+			array(
+				'id' => 'humi', 'label' => 'Humidity', 'icon' => $img . 'humidity_small.png',
+				'options' => array('hmean' => 'Mean', 'hmin' => 'Min', 'hmax' => 'Max'),
+			),
+			array(
+				'id' => 'dewp', 'label' => 'Dew point', 'icon' => $img . 'dewy_small.png',
+				'options' => array('dmean' => 'Mean', 'dmin' => 'Min', 'dmax' => 'Max'),
+			),
+			array(
+				'id' => 'sun', 'label' => 'Sun', 'icon' => $img . 'icon-sun.svg',
+				'options' => array('sunhr' => 'Total'),
+			),
+			array(
+				'id' => 'aq', 'label' => 'Air quality', 'icon' => $img . 'icon-airpollution.svg',
+				'options' => array('aqmean' => 'Mean', 'aqmin' => 'Min', 'aqmax' => 'Max'),
+			),
+		);
+	}
+
+	/**
 	 * Variable groups for the two-tier selector (group → subtype). Each option maps
 	 * a histdata type key to a short button label. Icons are under Site::IMG_ROOT.
 	 */
@@ -438,10 +480,12 @@ class Charts {
 
 	/**
 	 * Per-type metadata for selectable charts: aggregations, description, start year.
+	 * Pass $groups to limit metadata to that set (defaults to full selectableGroups).
 	 */
-	public static function selectableVarMeta() {
+	public static function selectableVarMeta($groups = null) {
+		if ($groups === null) { $groups = self::selectableGroups(); }
 		$map = array();
-		foreach (self::selectableGroups() as $g) {
+		foreach ($groups as $g) {
 			foreach (array_keys($g['options']) as $type) {
 				$meta = isset(Wx::$daily[$type]) ? Wx::$daily[$type] : array();
 				$aggs = self::aggregationsForType($type);
@@ -498,7 +542,7 @@ class Charts {
 		$defaultDesc = isset($varMeta[$default]['description']) ? $varMeta[$default]['description'] : $default;
 
 		echo '<div class="wxsel-wrap">' . "\n";
-		echo '<h3 id="' . $headingId . '" class="wxsel-heading">' . htmlspecialchars($year . ($defaultCume ? ' Cumulative ' : ' ') . $defaultDesc) . '</h3>' . "\n";
+		echo '<h3 id="' . $headingId . '" class="wxsel-heading">Custom: ' . htmlspecialchars($year . ($defaultCume ? ' Cumulative ' : ' ') . $defaultDesc) . '</h3>' . "\n";
 		echo '<div class="wxsel-chart">' . "\n";
 		echo '<div id="' . $panelId . '" class="wxsel-panel" role="group" aria-label="Year-to-date variable">' . "\n";
 		self::emitGroupButtons($groups, $defaultGroup);
@@ -560,13 +604,15 @@ class Charts {
 	 */
 	public static function dailySelectable($params, $opts = array(), $vars = null, $default = 'wmean') {
 		self::assets();
-		$groups = self::selectableGroups();
-		$varMeta = self::selectableVarMeta();
+		$groups = isset($opts['groups']) ? $opts['groups'] : self::selectableGroups();
+		$varMeta = self::selectableVarMeta($groups);
 		$aggLabels = self::aggregationLabels();
 		$id = 'wxc' . (++self::$seq);
 		$panelId = $id . '-panel';
 		$height = isset($opts['height']) ? (int)$opts['height'] : 320;
 		$isMonthly = (isset($params['mode']) && $params['mode'] === 'monthly');
+		$headingPrefix = array_key_exists('headingPrefix', $opts) ? $opts['headingPrefix'] : 'Custom: ';
+		$showHeading = !isset($opts['showHeading']) || !empty($opts['showHeading']);
 
 		$defaultGroup = $groups[0]['id'];
 		foreach ($groups as $g) {
@@ -576,7 +622,7 @@ class Charts {
 		$defaultSummary = isset($params['summary_type']) ? (int)$params['summary_type'] : $defaultAggs[0];
 		if (!in_array($defaultSummary, $defaultAggs, true)) { $defaultSummary = $defaultAggs[0]; }
 		$defaultLta = !empty($params['lta']);
-		$headingId = $id . '-heading';
+		$headingId = $showHeading ? ($id . '-heading') : null;
 		$defaultDesc = isset($varMeta[$default]['description']) ? $varMeta[$default]['description'] : $default;
 		$headingInit = $defaultDesc;
 		if ($isMonthly) {
@@ -587,7 +633,10 @@ class Charts {
 		}
 
 		echo '<div class="wxsel-wrap">' . "\n";
-		echo '<h3 id="' . $headingId . '" class="wxsel-heading">' . htmlspecialchars($headingInit) . '</h3>' . "\n";
+		if ($showHeading) {
+			echo '<h3 id="' . $headingId . '" class="wxsel-heading">'
+				. htmlspecialchars($headingPrefix . $headingInit) . '</h3>' . "\n";
+		}
 		echo '<div class="wxsel-chart">' . "\n";
 		echo '<div id="' . $panelId . '" class="wxsel-panel" role="group" aria-label="Chart variable">' . "\n";
 		self::emitGroupButtons($groups, $defaultGroup);
@@ -614,6 +663,7 @@ class Charts {
 			'containerId' => $id,
 			'panelId' => $panelId,
 			'headingId' => $headingId,
+			'headingPrefix' => $headingPrefix,
 			'url' => $url,
 			'opts' => $opts,
 			'groups' => $groups,

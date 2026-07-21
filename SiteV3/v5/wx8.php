@@ -135,6 +135,15 @@ class Traffic {
 			'min_date' => '25 Dec',
 			'max_date' => '23 Sep'
 		],
+		2025 => [
+			'sum' => 360000,
+			'mean' => 985,
+			'median' => 837,
+			'min' => 470,
+			'max' => 3822,
+			'min_date' => '01 Jan',
+			'max_date' => '01 Jan'
+		],
 	];
 
 	public $annual_summary = [
@@ -183,7 +192,7 @@ class Traffic {
 		It is, however, important to note that these various updates will not always be carried out due to the large number of
 		potential failure nodes in the system - sensors (power, wireless signal), local PC (HDD failure, software crash, internet connection),
 		and the web server. I have been lucky not to suffer any serious hardware failures (most failures result in no physical data loss), but undoubtedly the time will come.<br />
-		The current uptime status can view on the <a href="wx15.php">system page</a>.
+		The current uptime status can be seen on the <a href="wx15.php">system page</a>.
 	</p>
 
 	<h3>Accuracy</h3>
@@ -282,6 +291,7 @@ class Traffic {
 		<li type="disc">The automatic rain gauge was <a href="./news.php#post-20140330" title="Full details in blog post">further modified</a> on 30th March 2014 to a new resolution of 0.18 mm. </li>
 		<li type="disc">The base and roof of the radiation shield <a href="./news.php#post-20140330" title="Full details in blog post">were replaced</a> on 30th March 2014 owing to decay of the originals. </li>
 		<li type="disc">The entire weather station <a href="./news.php#post-20170906" title="Full details in blog post">was replaced</a> on 5th September 2017 due to failure of the original. </li>
+		<li type="disc">Various sensors have since been replaced and upgraded, still on the VP2 base station. </li>
 	</ul>
 
 
@@ -319,6 +329,12 @@ class Traffic {
 
 	<h3>History</h3>
 	All old site versions are still available to view, but are no longer maintained and may not display the latest data.
+
+	<p>
+		<b><a href="/oldSites/sitev3">Site version 3</a></b> (May 2013 - July 2026). <br />
+		Substantial rewrite of the backend and frontend, focussing on responsiveness, graph generation, and ease-of-development.
+		Also added air quality data using nearby air quality sensors.
+	</p>
 
 	<p>
 		<b><a href="/oldSites/sitev2">Site version 2</a></b> (10th Sep 2011 - 20th May 2013). <br />

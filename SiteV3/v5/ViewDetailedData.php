@@ -43,8 +43,8 @@ class ViewDetailedData {
 	public $periods_all;
 	public static $periodCnt;
 
-	// LTA daily-anomaly is only available for these underlying variables
-	private static $ltaDailyTypes = array('tmin', 'tmax', 'rain');
+	// LTA daily-anomaly available for these (tmean resolved dynamically via LTA)
+	private static $ltaDailyTypes = array('tmin', 'tmax', 'tmean', 'rain');
 
 
 	function __construct($groupName) {
@@ -180,18 +180,24 @@ class ViewDetailedData {
 
 		foreach ($statSums as $stat => $sum) {
 			$ps = $sum['period_summaries'];
+			$varForStat = ($stat === 'min') ? $this->varMin : (($stat === 'max') ? $this->varMax : $this->varMean);
 			foreach (self::$periods as $pk) {
 				$s = isset($ps[$pk]) ? $ps[$pk] : null;
-				$this->dat[$stat][0][$pk] = $this->cleanExtreme($s, 'min');
-				$this->dat[$stat][0][$pk . 'date'] = $this->fmtDate($this->sval($s, 'minDate'));
-				$this->dat[$stat][1][$pk] = $this->cleanExtreme($s, 'max');
-				$this->dat[$stat][1][$pk . 'date'] = $this->fmtDate($this->sval($s, 'maxDate'));
+				$minVal = $this->cleanExtreme($s, 'min');
+				$maxVal = $this->cleanExtreme($s, 'max');
+				$minDate = $this->sval($s, 'minDate');
+				$maxDate = $this->sval($s, 'maxDate');
+				$this->dat[$stat][0][$pk] = $minVal;
+				$this->dat[$stat][0][$pk . 'date'] = $this->fmtPeriodDate($minDate, $pk);
+				$this->dat[$stat][1][$pk] = $maxVal;
+				$this->dat[$stat][1][$pk . 'date'] = $this->fmtPeriodDate($maxDate, $pk);
 				$this->dat[$stat][2][$pk] = $this->sval($s, 'mean');
 				if ($this->getAnom) {
-					$anom = $this->sval($s, 'anom');
-					$this->dat[$stat][0][$pk . 'anom'] = $anom;
-					$this->dat[$stat][1][$pk . 'anom'] = $anom;
-					$this->dat[$stat][2][$pk . 'anom'] = $anom;
+					// Extremes: anom vs daily LTA on the event date (TagGen behaviour)
+					$this->dat[$stat][0][$pk . 'anom'] = $this->eventDayAnom($varForStat, $minVal, $minDate);
+					$this->dat[$stat][1][$pk . 'anom'] = $this->eventDayAnom($varForStat, $maxVal, $maxDate);
+					// Means: period-mean anom from DataSummarizer
+					$this->dat[$stat][2][$pk . 'anom'] = $this->sval($s, 'anom');
 				}
 			}
 			// Record N-day means
@@ -227,13 +233,40 @@ class ViewDetailedData {
 		$yMax = $this->maxSum['period_summaries']['yest'];
 		$yMean = $this->meanSum['period_summaries']['yest'];
 
+		$todMinVal = $this->sval($todMin, 'val');
+		$todMaxVal = $this->sval($todMax, 'val');
+		$todMeanVal = $this->sval($todMean, 'val');
+		$todMinTime = $this->sval($todMin, 'time');
+		$todMaxTime = $this->sval($todMax, 'time');
+
+		// Prefer live TODAY snapshot (matches legacy recentAvgsExtrms / $NOW)
+		$liveKey = isset(Wx::$mappingsToDailyDataKey[$this->letter])
+			? Wx::$mappingsToDailyDataKey[$this->letter] : null;
+		if ($liveKey && is_array(Live::$NOW)) {
+			if (isset(Live::$NOW['min'][$liveKey]) && Util::isNotBlank(Live::$NOW['min'][$liveKey])) {
+				$todMinVal = Live::$NOW['min'][$liveKey];
+			}
+			if (isset(Live::$NOW['max'][$liveKey]) && Util::isNotBlank(Live::$NOW['max'][$liveKey])) {
+				$todMaxVal = Live::$NOW['max'][$liveKey];
+			}
+			if (isset(Live::$NOW['mean'][$liveKey]) && Util::isNotBlank(Live::$NOW['mean'][$liveKey])) {
+				$todMeanVal = Live::$NOW['mean'][$liveKey];
+			}
+			if (!empty(Live::$NOW['timeMin'][$liveKey])) {
+				$todMinTime = Live::$NOW['timeMin'][$liveKey];
+			}
+			if (!empty(Live::$NOW['timeMax'][$liveKey])) {
+				$todMaxTime = Live::$NOW['timeMax'][$liveKey];
+			}
+		}
+
 		$this->datToday = [
-			0 => [0 => $this->sval($todMin, 'val'), 1 => $this->sval($todMax, 'val'), 2 => $this->sval($todMean, 'val')],
-			1 => [0 => $this->sval($todMin, 'time'), 1 => $this->sval($todMax, 'time'), 2 => null],
+			0 => [0 => $todMinVal, 1 => $todMaxVal, 2 => $todMeanVal],
+			1 => [0 => $todMinTime, 1 => $todMaxTime, 2 => null],
 			2 => [
-				'min' => $this->dailyAnom($this->group['var_min'], $this->sval($todMin, 'val'), false),
-				'max' => $this->dailyAnom($this->group['var_max'], $this->sval($todMax, 'val'), false),
-				'mean' => $this->dailyAnom($this->group['var_mean'], $this->sval($todMean, 'val'), false),
+				'min' => $this->dailyAnom($this->group['var_min'], $todMinVal, false),
+				'max' => $this->dailyAnom($this->group['var_max'], $todMaxVal, false),
+				'mean' => $this->dailyAnom($this->group['var_mean'], $todMeanVal, false),
 			],
 		];
 		$this->datYest = [
@@ -251,24 +284,32 @@ class ViewDetailedData {
 		$this->datMM = ['min' => [], 'max' => [], 'mean' => []];
 		foreach ($statSums as $stat => $sum) {
 			$ms = $sum['month_summaries'];
+			$varForStat = ($stat === 'min') ? $this->varMin : (($stat === 'max') ? $this->varMax : $this->varMean);
 			$collect = [0 => [], 1 => [], 2 => []];
 			$days = [0 => [], 1 => []];
 			$anoms = [0 => [], 1 => [], 2 => []];
-			for ($offset = 0; $offset <= 11; $offset++) {
+			// Last 12 complete months (exclude current incomplete month) — matches
+			// pastYearAvgsExtrms display: dmonth-12 .. dmonth-1 (e.g. Jul25–Jun26).
+			for ($offset = 1; $offset <= 12; $offset++) {
 				$ts = Date::mkdate(Date::$dmonth - $offset, 15, Date::$dyear);
 				$y = date('Y', $ts);
 				$mZ = date('m', $ts);
 				$mt = intval(date('n', $ts)) - 1;
 				$s = isset($ms[$y][$mZ]) ? $ms[$y][$mZ] : null;
-				$collect[0][$mt] = $this->cleanExtreme($s, 'min');
-				$collect[1][$mt] = $this->cleanExtreme($s, 'max');
+				$minVal = $this->cleanExtreme($s, 'min');
+				$maxVal = $this->cleanExtreme($s, 'max');
+				$minDate = $this->sval($s, 'minDate');
+				$maxDate = $this->sval($s, 'maxDate');
+				$collect[0][$mt] = $minVal;
+				$collect[1][$mt] = $maxVal;
 				$collect[2][$mt] = $this->sval($s, 'mean');
-				$days[0][$mt] = $this->dayOf($this->sval($s, 'minDate'));
-				$days[1][$mt] = $this->dayOf($this->sval($s, 'maxDate'));
-				$am = ($this->getAnom) ? $this->sval($s, 'anom') : null;
-				$anoms[0][$mt] = $am;
-				$anoms[1][$mt] = $am;
-				$anoms[2][$mt] = $am;
+				$days[0][$mt] = $this->dayOf($minDate);
+				$days[1][$mt] = $this->dayOf($maxDate);
+				if ($this->getAnom) {
+					$anoms[0][$mt] = $this->eventDayAnom($varForStat, $minVal, $minDate);
+					$anoms[1][$mt] = $this->eventDayAnom($varForStat, $maxVal, $maxDate);
+					$anoms[2][$mt] = $this->sval($s, 'anom');
+				}
 			}
 			for ($rank = 0; $rank < 3; $rank++) {
 				$numeric = array_filter($collect[$rank], 'is_numeric');
@@ -315,7 +356,7 @@ class ViewDetailedData {
 					for ($i = 1; $i <= count($list); $i++) {
 						$e = $list[$i - 1];
 						$vals[$i] = isset($e['val']) ? $e['val'] : null;
-						$dates[$i] = $this->fmtDate(isset($e['dt']) ? $e['dt'] : null);
+						$dates[$i] = $this->fmtRankDate(isset($e['dt']) ? $e['dt'] : null, $typeOut);
 					}
 					$this->ranks[$j][$typeOut][$hilo] = [0 => $vals, 1 => $dates];
 				}
@@ -346,19 +387,91 @@ class ViewDetailedData {
 
 	private function fmtDate($raw) {
 		if ($raw === null || $raw === '') return '';
-		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw)) {
-			return date('jS M Y', Date::dtStrToTs($raw));
+		$ts = $this->parseDateTs($raw);
+		if ($ts === null) return (string) $raw;
+		// Full date with Today/Yesterday (ranks, fallbacks)
+		return Date::today(true, true, true, false, $ts);
+	}
+
+	/**
+	 * Rank-table date labels (legacy TagGen):
+	 *   daily    → full date / Today / Yesterday
+	 *   monthly  → "Jul 2018", or red "Current" for this month
+	 *   dailyCM  → "Day N, YYYY" / Today / Yesterday
+	 */
+	private function fmtRankDate($raw, $type) {
+		if ($raw === null || $raw === '') return '';
+		$ts = $this->parseDateTs($raw);
+		if ($ts === null) return (string) $raw;
+		if ($type === 'monthly') {
+			// Pass y/m (not tstamp) so "Current" matches any day in this month
+			// (Date::today fills day-of-month from today when $day is false).
+			return Date::today((int)date('Y', $ts), (int)date('n', $ts), false, true);
 		}
-		return (string) $raw; // already-formatted or year
+		if ($type === 'dailyCM') {
+			return Date::today(true, false, true, false, $ts);
+		}
+		return Date::today(true, true, true, false, $ts);
+	}
+
+	/**
+	 * Period-aware date label matching legacy TagGen today() usage:
+	 *   7d / 31d / curr month → day only ("20th"), or Today/Yesterday
+	 *   year / 365d           → day + month ("6th Jan")
+	 *   alltime               → full ("11th Feb 2012")
+	 *   all this month        → "Day N, YYYY"
+	 *   all this date         → year only
+	 */
+	private function fmtPeriodDate($raw, $pk) {
+		if ($raw === null || $raw === '') return '';
+		$ts = $this->parseDateTs($raw);
+		if ($ts === null) return (string) $raw;
+		switch ($pk) {
+			case 'latest_7d':
+			case 'latest_31d':
+			case 'curr_month':
+				return Date::today(false, false, true, false, $ts);
+			case 'curr_year':
+			case 'latest_365d':
+				return Date::today(false, true, true, false, $ts);
+			case 'all_this_month':
+				return Date::today(true, false, true, false, $ts);
+			case 'all_this_date':
+				return Date::today(true, false, false, false, $ts);
+			case 'alltime':
+			default:
+				return Date::today(true, true, true, false, $ts);
+		}
+	}
+
+	private function parseDateTs($raw) {
+		if ($raw === null || $raw === '') return null;
+		if (is_numeric($raw) && (int)$raw > 100000) {
+			return (int)$raw; // unix timestamp
+		}
+		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw)) {
+			return Date::dtStrToTs($raw);
+		}
+		$ts = strtotime($raw);
+		return $ts ? $ts : null;
 	}
 
 	private function fmtRecDate($raw, $rk) {
 		if (!$raw) return '';
 		if ($rk === 'Ya') return (string) $raw;
 		if (preg_match('/^(\d{4})-(\d{2})/', $raw, $m)) {
-			return Date::$months3[intval($m[2]) - 1] . ' ' . $m[1];
+			$y = (int)$m[1];
+			$mo = (int)$m[2];
+			// Month/year means: "Jul 2018", or red "Current" for this month
+			return Date::today($y, $mo, false, true);
 		}
 		return (string) $raw;
+	}
+
+	/** Wrap a date label for display under a value (italic, easier to scan). */
+	private function dateHtml($label) {
+		if ($label === null || $label === '') return '';
+		return '<br /><span class="wx-date">' . $label . '</span>';
 	}
 
 	private function dailyAnom($varName, $val, $yest) {
@@ -368,6 +481,29 @@ class ViewDetailedData {
 		$d = $yest ? Date::$day_yest : Date::$dday;
 		$y = $yest ? Date::$yr_yest : Date::$dyear;
 		$norm = LTA::getDailyAnom($varName, $m, $d, $y);
+		if (!is_numeric($norm)) return null;
+		return $val - $norm;
+	}
+
+	/** Anomaly of an extreme value vs daily LTA on the event date (Y-m-d or day-of-month). */
+	private function eventDayAnom($varName, $val, $dateRaw) {
+		if (!$this->getAnom || $val === null || !is_numeric($val) || !$dateRaw) return null;
+		if (!in_array($varName, self::$ltaDailyTypes)) return null;
+		$m = null; $d = null; $y = null;
+		if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $dateRaw, $mm)) {
+			$y = (int)$mm[1]; $m = (int)$mm[2]; $d = (int)$mm[3];
+		} elseif (is_numeric($dateRaw)) {
+			$m = (int)Date::$dmonth;
+			$d = (int)$dateRaw;
+			$y = (int)Date::$dyear;
+		} else {
+			$ts = strtotime($dateRaw);
+			if ($ts) {
+				$y = (int)date('Y', $ts); $m = (int)date('n', $ts); $d = (int)date('j', $ts);
+			}
+		}
+		if (!$m || !$d) return null;
+		$norm = LTA::getDailyAnom($varName, $m, $d, $y ?: Date::$dyear);
 		if (!is_numeric($norm)) return null;
 		return $val - $norm;
 	}
@@ -413,19 +549,19 @@ class ViewDetailedData {
 		$data = [
 			[
 				'label' => "Today's Low",
-				'value' => $this->disp($this->minSum["period_summaries"]["today"]["val"]),
+				'value' => $this->disp($this->datToday[0][0]),
 				'time' => $this->datToday[1][0],
 				'anomaly' => $this->datToday[2]['min'],
 			],
 			[
 				'label' => "Today's High",
-				'value' => $this->disp($this->maxSum["period_summaries"]["today"]["val"]),
+				'value' => $this->disp($this->datToday[0][1]),
 				'time' => $this->datToday[1][1],
 				'anomaly' => $this->datToday[2]['max'],
 			],
 			[
 				'label' => "Today's Mean",
-				'value' => $this->disp($this->meanSum["period_summaries"]["today"]["val"]),
+				'value' => $this->disp($this->datToday[0][2]),
 				'time' => null,
 				'anomaly' => $this->datToday[2]['mean'],
 			],
@@ -444,9 +580,9 @@ class ViewDetailedData {
 			[
 				'label' => "Yesterday's Mean",
 				'value' => $this->disp($this->datYest[0]['mean']),
-				'time' => $this->datYest[1][2],
+				'time' => null,
 				'anomaly' => $this->datYest[2]['mean'],
-			]
+			],
 		];
 		echo '<div class="detail-grid">';
 		echo ' <div class="kv-table">';
@@ -509,7 +645,7 @@ class ViewDetailedData {
 				if ($r != 6) {
 					$pk = self::$periods[$c];
 					$anom = $this->anomHint(isset($values[$r][$pk . 'anom']) ? $values[$r][$pk . 'anom'] : null);
-					$date = (isset($values[$r][$pk . 'date']) && $values[$r][$pk . 'date'] !== '') ? '<br />' . $values[$r][$pk . 'date'] : '';
+					$date = $this->dateHtml(isset($values[$r][$pk . 'date']) ? $values[$r][$pk . 'date'] : '');
 					Html::td('<b>' . $this->disp(isset($values[$r][$pk]) ? $values[$r][$pk] : null) . '</b>' . $anom . $date, $this->cssClass);
 				} else {
 					Html::td('&nbsp;', $this->cssClass);
@@ -539,7 +675,7 @@ class ViewDetailedData {
 				if ($r != 6) {
 					$pk = self::$periods[$c];
 					$anom = $this->anomHint(isset($values[$r][$pk . 'anom']) ? $values[$r][$pk . 'anom'] : null);
-					$date = (isset($values[$r][$pk . 'date']) && $values[$r][$pk . 'date'] !== '') ? '<br />' . $values[$r][$pk . 'date'] : '';
+					$date = $this->dateHtml(isset($values[$r][$pk . 'date']) ? $values[$r][$pk . 'date'] : '');
 					Html::td('<b>' . $this->disp(isset($values[$r][$pk]) ? $values[$r][$pk] : null) . '</b>' . $anom . $date, $this->cssClass);
 				} else {
 					Html::td('&nbsp;', $this->cssClass);
@@ -555,22 +691,49 @@ class ViewDetailedData {
 	}
 
 	function pastYearAvgsExtrms($measures = null, $wid = 99) {
-		// Daily graphs for past year
-		echo '
-			<h3>Current year vs last year daily trends for ' . $this->label . '</h3>
-			<img width="1200" height="500" src="/graph_daily_trend.php?type=' . $this->letter . 'mean&amp;x=1200&amp;y=500&amp;multiyr=last" alt="Daily London mean ' . $this->label . ' vs climate normals" />
-			<h3>This year min/max daily trends in detail for ' . $this->label . '</h3>
-			<div class="detail-grid">
-				<div><img width="600" height="350" src="/graph_daily_trend.php?type=' . $this->letter . 'min&amp;x=600&amp;y=350&amp;year=' . Date::$yr_yest . '" alt="Current year daily London min ' . $this->label . ' vs climate normals" /></div>
-				<div><img width="600" height="350" src="/graph_daily_trend.php?type=' . $this->letter . 'max&amp;x=600&amp;y=350&amp;year=' . Date::$yr_yest . '" alt="Current year daily London max ' . $this->label . ' vs climate normals" /></div>
-			</div>
-		';
+		// Daily trends: Highcharts via histdata.php (same stack as wx3), replacing
+		// the legacy graph_daily_trend.php jpgraph images.
+		$yr = (int)Date::$dyear;
+		echo '<h3>Current year vs last year daily trends for ' . $this->label . '</h3>';
+		echo '<div class="charts">';
+		Charts::daily([
+			'type' => $this->varMean,
+			'mode' => 'daily',
+			'year' => $yr,
+			'month' => 0,
+			'multiyr' => 'last',
+			'lta' => 1,
+		], ['height' => 420]);
+		echo '</div>';
+
+		echo '<h3>This year min/max daily trends in detail for ' . $this->label . '</h3>';
+		echo '<div class="detail-grid charts">';
+		echo '<div>';
+		Charts::daily([
+			'type' => $this->varMin,
+			'mode' => 'daily',
+			'year' => $yr,
+			'month' => 0,
+			'lta' => 1,
+		], ['height' => 350]);
+		echo '</div><div>';
+		Charts::daily([
+			'type' => $this->varMax,
+			'mode' => 'daily',
+			'year' => $yr,
+			'month' => 0,
+			'lta' => 1,
+		], ['height' => 350]);
+		echo '</div></div>';
 
 		$dat = $this->datMM;
 		$measures = is_null($measures) ? self::$measuresGeneric : $measures;
 		$values = array($dat['min'][0], $dat['max'][1], $dat['min'][1], $dat['max'][0], $dat['mean'][0], $dat['mean'][1], '---', $dat['mean'][2], $dat['min'][2], $dat['max'][2]);
 
-		echo "<h2>Past Year Monthly Averages and Extremes (" . date('M') . " " . (Date::$dyear - 2001) . ' - ' . date('M y', Date::mkdate(Date::$dmonth - 1, 15)) . ")</h2>";
+		$pastStart = Date::mkdate(Date::$dmonth - 12, 15, Date::$dyear);
+		$pastEnd = Date::mkdate(Date::$dmonth - 1, 15, Date::$dyear);
+		echo "<h2>Past Year Monthly Averages and Extremes ("
+			. date('F Y', $pastStart) . ' - ' . date('F Y', $pastEnd) . ")</h2>";
 		Html::table(null, $wid . '%" align="center', 6);
 		Html::tr();
 		Html::td("Month", $this->cssClass);
@@ -598,7 +761,7 @@ class ViewDetailedData {
 					}
 					$anom = $this->anomHint(isset($values[$r][2][$mt]) ? $values[$r][2][$mt] : null);
 					if (array_key_exists(1, $values[$r]) && array_key_exists($mt, $values[$r][1]) && $values[$r][1][$mt] !== null) {
-						$date = '<br />' . Date::datefull($values[$r][1][$mt]);
+						$date = $this->dateHtml(Date::datefull($values[$r][1][$mt]));
 					} else {
 						$date = '';
 					}
@@ -702,7 +865,7 @@ class ViewDetailedData {
 
 			for ($c = 0; $c < count($periods); $c++) {
 				$pk = $periods[$c];
-				$date = (isset($values[$r][$pk . 'date']) && $values[$r][$pk . 'date'] !== '') ? '<br />' . $values[$r][$pk . 'date'] : '';
+				$date = $this->dateHtml(isset($values[$r][$pk . 'date']) ? $values[$r][$pk . 'date'] : '');
 				Html::td('<b>' . $this->disp(isset($values[$r][$pk]) ? $values[$r][$pk] : null) . '</b>' . $date, $this->cssClass);
 			}
 			Html::tr_end();
@@ -730,7 +893,7 @@ class ViewDetailedData {
 			for ($j = 0; $j < 3; $j++) {
 				$v = isset($rankArray[$j][$type][1][0][$i]) ? $rankArray[$j][$type][1][0][$i] : null;
 				$d = isset($rankArray[$j][$type][1][1][$i]) ? $rankArray[$j][$type][1][1][$i] : '';
-				Html::td($this->disp($v) . '<br />' . $d, $this->cssClass);
+				Html::td($this->disp($v) . $this->dateHtml($d), $this->cssClass);
 			}
 			Html::tr_end();
 		}
@@ -753,7 +916,7 @@ class ViewDetailedData {
 			for ($j = 0; $j < 3; $j++) {
 				$v = isset($rankArray[$j][$type][0][0][$i]) ? $rankArray[$j][$type][0][0][$i] : null;
 				$d = isset($rankArray[$j][$type][0][1][$i]) ? $rankArray[$j][$type][0][1][$i] : '';
-				Html::td($this->disp($v) . '<br />' . $d, $this->cssClass);
+				Html::td($this->disp($v) . $this->dateHtml($d), $this->cssClass);
 			}
 			Html::tr_end();
 		}

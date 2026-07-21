@@ -13,7 +13,8 @@
  * Params:
  *   date   Ymd day to plot (default: today)
  *   num    number of days, ending on `date` (default 1, max 92)
- *   ts,te  optional start/end hour to clip the window
+ *   ts,te  optional start/end hour offsets into the log buffer (legacy graphdaygen;
+ *          e.g. ts=12 on a rolling ~24h today-log keeps the last 12 hours)
  */
 require __DIR__ . '/Page.php';
 ini_set('display_errors', '0');
@@ -52,18 +53,19 @@ $out = [
 ];
 
 // Gather the per-minute lines across the requested day span (oldest first).
-// todaylog.txt is a rolling ~24h window. For single-day "today" plots we use it
-// as-is; for multi-day spans we still prefer it for the current day (live data)
-// but drop lines whose day-of-month isn't today — otherwise concatenating
-// yesterday's full daily log with todaylog causes a ~24h backward jump that
-// Highcharts draws as a diagonal "trendline" across the chart.
+// Match legacy graphdaygen.php: single-day plots use logfiles/daily/{Ymd}log.txt.
+// For the current day that file is a rolling copy of goodlog (~24h), which is what
+// "Past 24hrs" / ts=12 charts on the detailed pages need. todaylog.txt is
+// calendar-day-so-far only (reset at midnight) — legacy only substitutes it when
+// num>1 so concatenating yesterday's full day with a short todaylog doesn't leave
+// a gap. When we do use todaylog, keep only today's DOM to avoid a backward jump.
 $lines = [];
 $lineDays = []; // Ymd stamp for each kept line, parallel to $lines
 for ($d = $num - 1; $d >= 0; $d--) {
 	$dayStamp = date('Ymd', Date::mkdate($mon, $dom - $d, $yr));
 	$path = ROOT . 'logfiles/daily/' . $dayStamp . 'log.txt';
 	$fromTodayLog = false;
-	if ($dayStamp === date('Ymd')) {
+	if ($num > 1 && $dayStamp === date('Ymd')) {
 		$todayPath = ROOT . 'logfiles/daily/todaylog.txt';
 		if (file_exists($todayPath)) { $path = $todayPath; $fromTodayLog = true; }
 	}
@@ -71,13 +73,25 @@ for ($d = $num - 1; $d >= 0; $d--) {
 	$dayLines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 	$todayDom = (int)substr($dayStamp, 6, 2);
 	foreach ($dayLines as $ln) {
-		if ($fromTodayLog && $num > 1) {
+		if ($fromTodayLog) {
 			$parts = explode(',', $ln);
 			if (count($parts) < 3 || (int)$parts[2] !== $todayDom) { continue; }
 		}
 		$lines[] = $ln;
 		$lineDays[] = $dayStamp;
 	}
+}
+
+// ts/te are hour offsets into the concatenated buffer (legacy graphdaygen), not
+// clock hours. ts=12 on a ~24h rolling today-log ⇒ skip the first 12h ⇒ last 12h.
+// Only applied for single-day requests (detailed-page mini charts).
+if ($num === 1 && count($lines) > 0 && ($startHr > 0 || isset($_GET['te']))) {
+	$startIdx = (int)round(60 * $startHr);
+	$endIdx = isset($_GET['te']) ? (int)round(60 * $endHr) : count($lines);
+	$startIdx = max(0, min($startIdx, count($lines)));
+	$endIdx = max($startIdx, min($endIdx, count($lines)));
+	$lines = array_slice($lines, $startIdx, $endIdx - $startIdx);
+	$lineDays = array_slice($lineDays, $startIdx, $endIdx - $startIdx);
 }
 
 if (!class_exists('IntradayDirMean')) {
@@ -111,12 +125,10 @@ for ($i = 0; $i < $total; $i++) {
 	$c = explode(',', $lines[$i]);
 	if (count($c) < 11) { continue; }
 	$h = (int)$c[0]; $mi = (int)$c[1]; $dd = (int)$c[2];
-	// Clip to the requested hour window (single-day requests only)
-	if ($num === 1 && ($h < $startHr || $h >= $endHr)) { continue; }
 	// Timestamp from the line's own day-of-month. Dated files are usually one
-	// calendar day, but todaylog (and some synced "Ymdlog" copies) are a rolling
-	// ~24h window that crosses midnight — stamping every line with the filename
-	// date makes 00:00 land ~24h before 23:59 and Highcharts draws a diagonal.
+	// calendar day, but today's {Ymd}log.txt is a rolling copy of goodlog that
+	// crosses midnight — stamping every line with the filename date makes 00:00
+	// land ~24h before 23:59 and Highcharts draws a diagonal.
 	$ds = $lineDays[$i];
 	$y = (int)substr($ds, 0, 4);
 	$m = (int)substr($ds, 4, 2);

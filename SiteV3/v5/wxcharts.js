@@ -61,6 +61,8 @@
 					marker: { enabled: false },
 					connectNulls: false
 				};
+				if (s.lineWidth != null) { o.lineWidth = s.lineWidth; }
+				if (s.opacity != null) { o.opacity = s.opacity; }
 				if (autoscale) {
 					o.threshold = null;
 					o.softThreshold = false;
@@ -146,7 +148,43 @@
 		return out;
 	}
 
-	function renderIntraday(containerId, json, variable) {
+	/** Hours covered by a time series (or null if unknown). */
+	function spanHours(json) {
+		var t = json && json.time;
+		if (t && t.length >= 2) {
+			return Math.max(0, (t[t.length - 1] - t[0]) / 3600000);
+		}
+		if (json && json.num) { return json.num * 24; }
+		return null;
+	}
+
+	/** e.g. "Last 12 hrs", "Last 3 days". */
+	function timescaleLabel(hours, opts) {
+		opts = opts || {};
+		var h = Math.max(1, Math.round(hours));
+		var prefix = (opts.prefix != null) ? opts.prefix : 'Last ';
+		if (h < 40) {
+			return prefix + h + ' hr' + (h === 1 ? '' : 's');
+		}
+		var d = Math.max(1, Math.round(h / 24));
+		if (opts.daysOnly || Math.abs(h / 24 - d) < 0.2) {
+			return prefix + d + ' day' + (d === 1 ? '' : 's');
+		}
+		return prefix + h + ' hrs';
+	}
+
+	function intraTitle(json, variable, opts) {
+		opts = opts || {};
+		if (opts.title) { return opts.title; }
+		var cfg = INTRA_TABS[variable] || INTRA_TABS.temp;
+		var name = cfg.name;
+		var hours = (opts.hours != null) ? opts.hours : spanHours(json);
+		if (hours == null) { return name; }
+		return timescaleLabel(hours, opts) + ' ' + name;
+	}
+
+	function renderIntraday(containerId, json, variable, opts) {
+			opts = opts || {};
 			variable = variable || 'temp';
 			if (!json) { $('#' + containerId).html('<p>No data available.</p>'); return; }
 			var cfg = INTRA_TABS[variable] || INTRA_TABS.temp;
@@ -177,7 +215,7 @@
 
 			Highcharts.chart(containerId, {
 				chart: { backgroundColor: '#ffffff', spacing: [12, 12, 10, 10], style: { color: TEXT } },
-				title: { text: cfg.name, style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
+				title: { text: intraTitle(json, variable, opts), style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
 				credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
 				legend: { enabled: keys.length > 1, itemStyle: { color: TEXT } },
 				xAxis: { type: 'datetime', crosshair: true, gridLineWidth: 1, gridLineColor: '#ddd',
@@ -270,7 +308,8 @@
 	}
 
 	// Temperature + humidity + rain + dew point (legacy graphday.php layout).
-	function multiTHRD(containerId, json) {
+	function multiTHRD(containerId, json, opts) {
+		opts = opts || {};
 		var u = json.units || {};
 		var tunit = u.temp || '', runit = u.rain || '';
 		var isF = tunit.indexOf('F') >= 0, isIn = (runit === 'in');
@@ -292,12 +331,13 @@
 		var rtick = isIn ? 0.25 : 5;
 
 		var colTemp = '#d34f00', colHumi = '#1d7806', colRain = '#2554c7';
+		var title = opts.title || (timescaleLabel(spanHours(json) || 24) + ' temperature, humidity, rain');
 
 		Highcharts.chart(containerId, {
 			// alignTicks (default true) forces shared tick counts across axes and can
 			// push humidity past 100% so its ticks line up with temp/rain — disable it.
 			chart: { backgroundColor: '#ffffff', alignTicks: false, spacing: [10, 4, 8, 4], style: { color: TEXT } },
-			title: { text: 'Temperature, humidity, rain', style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
+			title: { text: title, style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
 			credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
 			legend: { enabled: true, itemStyle: { color: TEXT, fontSize: '11px' } },
 			xAxis: dashTimeX(),
@@ -340,7 +380,8 @@
 	}
 
 	// Wind speed + gust + pressure (legacy graphday2.php layout).
-	function multiWGP(containerId, json) {
+	function multiWGP(containerId, json, opts) {
+		opts = opts || {};
 		var u = json.units || {};
 		var wunit = u.wind || 'mph', punit = u.pres || 'hPa';
 		var isKph = (wunit === 'kph'), isInHg = (punit.indexOf('Hg') >= 0 || punit.indexOf('in') >= 0);
@@ -350,10 +391,11 @@
 		var pdp = isInHg ? 2 : 0;
 		var pTick = isInHg ? 0.5 : 15;
 		var colWind = '#c01717', colPres = '#5b3fb0';
+		var title = opts.title || (timescaleLabel(spanHours(json) || 24) + ' wind speed, gust & pressure');
 
 		Highcharts.chart(containerId, {
 			chart: { backgroundColor: '#ffffff', alignTicks: false, spacing: [10, 4, 8, 4], style: { color: TEXT } },
-			title: { text: 'Wind speed, gust & pressure', style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
+			title: { text: title, style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
 			credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
 			legend: { enabled: true, itemStyle: { color: TEXT, fontSize: '11px' } },
 			xAxis: dashTimeX(),
@@ -383,9 +425,10 @@
 		});
 	}
 
-	function multiChart(containerId, json, kind) {
+	function multiChart(containerId, json, kind, opts) {
+		opts = opts || {};
 		if (!json || !json.time || !json.time.length) { $('#' + containerId).html('<p>No data available.</p>'); return; }
-		if (kind === 'wgp') { multiWGP(containerId, json); } else { multiTHRD(containerId, json); }
+		if (kind === 'wgp') { multiWGP(containerId, json, opts); } else { multiTHRD(containerId, json, opts); }
 	}
 
 	// Categorical chart whose variable is chosen from a <select>; `baseUrl` carries
@@ -467,7 +510,7 @@
 			}
 			if (cfg.showCume && state.cume) { title = 'Cumulative ' + title; }
 			if (cfg.showYears && state.year) { title = state.year + ' ' + title; }
-			el.textContent = title;
+			el.textContent = (cfg.headingPrefix != null ? cfg.headingPrefix : 'Custom: ') + title;
 		}
 		function load() {
 			updateHeading();
@@ -813,9 +856,15 @@
 			syncModeUi();
 			if (!state.json) { return; }
 			if (state.mode === 'single') {
-				renderIntraday(cfg.containerId, state.json, state.type);
+				renderIntraday(cfg.containerId, state.json, state.type, {
+					title: state.num + '-day ' + (INTRA_TABS[state.type] || INTRA_TABS.temp).name
+				});
 			} else {
-				multiChart(cfg.containerId, state.json, state.mode);
+				multiChart(cfg.containerId, state.json, state.mode, {
+					title: state.num + '-day ' + (state.mode === 'wgp'
+						? 'wind speed, gust & pressure'
+						: 'temperature, humidity, rain')
+				});
 			}
 		}
 		function load() {
@@ -901,7 +950,7 @@
 		function drawMain() {
 			var r = ranges[state.rangeIdx];
 			fetchSet(r.days, r.maxpts, function (json) {
-				renderIntraday(cfg.mainId, sliceWindow(json, r.h), state.variable);
+				renderIntraday(cfg.mainId, sliceWindow(json, r.h), state.variable, { hours: r.h });
 			}, cfg.mainId);
 		}
 		function drawMulti() {

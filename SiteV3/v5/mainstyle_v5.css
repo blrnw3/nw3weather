@@ -1050,32 +1050,19 @@ select.timelapse {
 	flex: 1 1 90%;
 }
 #wx-map {
-	width: 1200px;
-	margin-top: 2rem;
-}
-@media only screen and (max-width: 1430px) {
-	#wx-map {
-		width: 1000px;
-	}
-}
-@media only screen and (max-width: 1230px) {
-	#wx-map {
-		width: 820px;
-	}
-}
-@media only screen and (max-width: 1030px) {
-	#wx-map {
-		width: 630px;
-	}
+	width: 100%;
+	max-width: 1200px;
+	height: 600px;
+	margin-top: 1rem;
 }
 @media only screen and (max-width: 830px) {
 	#wx-map {
-		width: 460px;
+		height: 420px;
 	}
 }
 @media only screen and (max-width: 630px) {
 	#wx-map {
-		width: 320px;
+		height: 360px;
 	}
 }
 
@@ -1111,6 +1098,13 @@ select.timelapse {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
 	gap: 1.5rem;
+}
+/* Date labels under values in detail tables */
+.wx-date {
+	font-style: italic;
+	font-weight: normal;
+	color: #555;
+	font-size: 0.92em;
 }
 @media only screen and (max-width: 1230px) {
 	.detail-grid {
@@ -1423,7 +1417,12 @@ select.timelapse {
 	.home-lower { grid-template-columns: 1fr; }
 }
 .home-chart-panel { min-width: 0; }
-.home-chart-more { margin: 0 0.3rem; }
+.home-31d {
+	margin: 0.5rem 0 1rem;
+}
+.home-31d .home-chart-more {
+	margin-top: 0.25rem;
+}
 
 /* Webcam: fills the right half, capped at natural size */
 .home-cam { min-width: 0; }

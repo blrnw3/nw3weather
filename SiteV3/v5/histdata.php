@@ -62,7 +62,9 @@ $out = [
 	'colour'      => $colour,
 	'unit'        => strip_tags(Wx::getUnits($convType)),
 	'precision'   => $precision,
-	'yMinZero'    => ($convType !== Wx::Pressure),
+	// Pin to zero for rain/wind/etc. Temperature (and pressure) auto-scale so
+	// 31-day (and other) charts aren't crushed against a useless zero baseline.
+	'yMinZero'    => !in_array($convType, [Wx::Pressure, Wx::Temperature, Wx::AbsTemp], true),
 	'mode'        => $mode,
 	'chartType'   => 'column',
 	'xType'       => 'category',
@@ -213,9 +215,24 @@ if ($mode === 'annual') {
 				return $series;
 			};
 			$thisYear = $buildYear($yr);
+			// With multi-year overlays, stretch the axis to the full calendar year so
+			// prior years / Normal continue past the latest observation. Otherwise
+			// keep the axis to the observed span of the selected year.
+			$axisLen = count($thisYear);
+			$fitYear = null;
+			if (isset($_GET['multiyr'])) {
+				$daysInYear = (int)date('z', strtotime($yr . '-12-31')) + 1;
+				$axisLen = $daysInYear;
+				$fitYear = function($series) use ($daysInYear) {
+					$n = count($series);
+					if ($n >= $daysInYear) { return array_slice($series, 0, $daysInYear); }
+					return array_pad($series, $daysInYear, null);
+				};
+				$thisYear = $fitYear($thisYear);
+			}
 			// Month-start ticks only (keeps labels short/horizontal); tips carry the full day.
 			$tickPositions = [];
-			for ($z = 0; $z < count($thisYear); $z++) {
+			for ($z = 0; $z < $axisLen; $z++) {
 				$ts = Date::mkz($z, $yr);
 				$out['categories'][] = date('M', $ts);
 				$out['categoryTips'][] = date('j M', $ts);
@@ -227,25 +244,50 @@ if ($mode === 'annual') {
 			$out['series'][] = ['name' => (string)$yr, 'data' => $thisYear, 'color' => $colour, 'type' => 'line'];
 
 			if (isset($_GET['multiyr'])) {
-				$overlayYrs = $_GET['multiyr'] === 'last'
+				$isLastOnly = $_GET['multiyr'] === 'last';
+				$overlayYrs = $isLastOnly
 					? [(int)Date::$dyear - 1]
 					: array_map('intval', array_filter(explode(',', $_GET['multiyr'])));
 				$palette = ['#2f9e44', '#ffb473', '#555577', '#138086', '#333366', '#aac', '#349'];
 				foreach ($overlayYrs as $i => $oy) {
 					if ($oy == $yr) { continue; }
-					$out['series'][] = ['name' => (string)$oy, 'data' => $buildYear($oy),
-						'color' => $palette[$i % count($palette)], 'type' => 'line'];
+					$oyData = $fitYear($buildYear($oy));
+					// Last year (multiyr=last): faint gray, matching legacy graph_daily_trend.
+					if ($isLastOnly) {
+						$out['series'][] = [
+							'name' => (string)$oy,
+							'data' => $oyData,
+							'color' => '#999999',
+							'type' => 'line',
+							'lineWidth' => 1.25,
+							'opacity' => 0.55,
+						];
+					} else {
+						$out['series'][] = [
+							'name' => (string)$oy,
+							'data' => $oyData,
+							'color' => $palette[$i % count($palette)],
+							'type' => 'line',
+						];
+					}
 				}
 			}
 			if (isset($_GET['lta']) && $ltaDaily) {
 				$ltaSeries = []; $run = 0;
-				for ($z = 0; $z < count($thisYear); $z++) {
+				for ($z = 0; $z < $axisLen; $z++) {
 					$lv = isset($ltaDaily[$z]) ? cv($ltaDaily[$z]) : null;
 					if ($cume) { $run += ($lv === null ? 0 : $lv); $ltaSeries[] = round($run, 2); }
 					else { $ltaSeries[] = $lv; }
 				}
-				$out['series'][] = ['name' => 'Normal', 'data' => $ltaSeries, 'color' => '#999999',
-					'type' => 'line', 'dashStyle' => 'Dash'];
+				// Same colour as the main series, dotted (legacy jpgraph style).
+				$out['series'][] = [
+					'name' => 'Normal',
+					'data' => $ltaSeries,
+					'color' => $colour,
+					'type' => 'line',
+					'dashStyle' => 'Dot',
+					'lineWidth' => 1.5,
+				];
 			}
 			$out['title'] = $yr . ($cume ? ' cumulative ' : ' ') . $meta['description'];
 		} else {

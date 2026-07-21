@@ -324,8 +324,8 @@ class Wx {
 		//Bad value checking and special cases
 		if($type === self::None) {
 			return $val;
-		} elseif( is_null($val) ) {
-			return 'null';
+		} elseif( is_null($val) || (is_string($val) && Util::isBlank($val)) ) {
+			return ($val === null) ? 'null' : '';
 		} elseif($type === 'wdir' || $type === self::Direction) {
 			return self::degname((int)$val);
 		} elseif($type === self::Timestamp) {
@@ -917,9 +917,24 @@ class LTA {
 		unset($obj);
 	}
 
+	/** Resolve dynamic LTA types (tmean = mid of tmin/tmax, trange = spread). */
+	private static function resolveDynamic($type) {
+		if ($type === 'tmean' || $type === 'trange') {
+			return ['tmin', 'tmax'];
+		}
+		return null;
+	}
+
 	public static function getDailyAnom($type, $month, $day, $yr = null) {
 		if($yr === null) {
 			$yr = Date::$dyear;
+		}
+		$pair = self::resolveDynamic($type);
+		if ($pair !== null) {
+			$a = self::getDailyAnom($pair[0], $month, $day, $yr);
+			$b = self::getDailyAnom($pair[1], $month, $day, $yr);
+			if (!is_numeric($a) || !is_numeric($b)) { return null; }
+			return ($type === 'trange') ? ($b - $a) : (($a + $b) / 2);
 		}
 		$z = date("z", Date::mkdate($month, $day, $yr));
 		if(!isset(self::$vars[$type]["daily"][$z])) {
@@ -929,6 +944,13 @@ class LTA {
 	}
 
 	public static function getMonthlyAnom($type, $month) {
+		$pair = self::resolveDynamic($type);
+		if ($pair !== null) {
+			$a = self::getMonthlyAnom($pair[0], $month);
+			$b = self::getMonthlyAnom($pair[1], $month);
+			if (!is_numeric($a) || !is_numeric($b)) { return null; }
+			return ($type === 'trange') ? ($b - $a) : (($a + $b) / 2);
+		}
 		if(!isset(self::$vars[$type]) || !is_array(self::$vars[$type]) || !isset(self::$vars[$type]["monthly"])) {
 			return null;
 		}
@@ -936,6 +958,13 @@ class LTA {
 	}
 	
 	public static function getYearlyAnom($type) {
+		$pair = self::resolveDynamic($type);
+		if ($pair !== null) {
+			$a = self::getYearlyAnom($pair[0]);
+			$b = self::getYearlyAnom($pair[1]);
+			if (!is_numeric($a) || !is_numeric($b)) { return null; }
+			return ($type === 'trange') ? ($b - $a) : (($a + $b) / 2);
+		}
 		if(!isset(self::$vars[$type]) || !is_array(self::$vars[$type])) {
 			return null;
 		}
@@ -944,11 +973,36 @@ class LTA {
 	}
 
 	public static function getSeasonAnom($type, $season) {
+		$pair = self::resolveDynamic($type);
+		if ($pair !== null) {
+			$a = self::getSeasonAnom($pair[0], $season);
+			$b = self::getSeasonAnom($pair[1], $season);
+			if (!is_numeric($a) || !is_numeric($b)) { return null; }
+			return ($type === 'trange') ? ($b - $a) : (($a + $b) / 2);
+		}
 		if(!isset(self::$vars[$type]) || !is_array(self::$vars[$type])) {
 			return null;
 		}
 		$key = (isset(Wx::$daily[$type]["summable"]) && Wx::$daily[$type]["summable"]) ? "season_sum" : "season_mean";
 		return isset(self::$vars[$type][$key][$season]) ? self::$vars[$type][$key][$season] : null;
+	}
+
+	/**
+	 * Mean of daily normals over the last $days calendar days ending today
+	 * (matches TagGen MTD / recent-period mean anomalies).
+	 */
+	public static function getRecentPeriodMeanAnom($type, $days) {
+		$sum = 0;
+		$n = 0;
+		for ($i = 0; $i < $days; $i++) {
+			$ts = Date::mkdate(Date::$dmonth, Date::$dday - $i, Date::$dyear);
+			$norm = self::getDailyAnom($type, (int)date('n', $ts), (int)date('j', $ts), (int)date('Y', $ts));
+			if (is_numeric($norm)) {
+				$sum += $norm;
+				$n++;
+			}
+		}
+		return $n > 0 ? $sum / $n : null;
 	}
 
 	public static function getDateEndingAnom($type, $end, $duration) {

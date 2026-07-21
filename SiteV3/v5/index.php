@@ -300,6 +300,23 @@ $moonName = isset($moonphasename) ? trim($moonphasename) : 'Moon phase';
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <?php include 'charts-home.php'; ?>
 
+<h2>31-day trends</h2>
+<div class="charts home-31d">
+<?php
+Charts::dailySelectable(
+	array('mode' => 'daily', 'length' => 31),
+	array(
+		'height' => 300,
+		'groups' => Charts::simpleGroups(),
+		'headingPrefix' => '',
+	),
+	null,
+	'tmean'
+);
+?>
+<p class="home-chart-more"><a href="wx3.php" title="Latest graphs and more chart options">More graphs &amp; options &rarr;</a></p>
+</div>
+
 <?php if ($forecast): ?>
 <h2>Forecast</h2>
 <div class="home-forecast">

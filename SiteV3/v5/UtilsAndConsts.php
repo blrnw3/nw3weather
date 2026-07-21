@@ -105,15 +105,19 @@ class Date {
 	}
 
 	/**
-	 * Formats a date. Returns 'Today' if that condition is true. Pass null on y, m, or d to not display that in the output
-	 * @param int $year [=false]
-	 * @param int $month [=false]
-	 * @param int $day [=false]
-	 * @param boolean $current [=false] whether to display 'current' or 'Today' as the message if the date is today
-	 * @param int $tstamp [=false] use a timestamp instead of d/m/y
-	 * @param string $debug [=false] prints some debug information
-	 * @param string $format [='js M Y'] date format for full dates
-	 * @return string the formatted date or message
+	 * Formats a date. Returns 'Today' / 'Yesterday' (red) when applicable.
+	 * Pass null/false on y, m, or d to omit that part from the output (when not
+	 * today/yesterday). Truthiness of y/m/d is used as display flags when $tstamp
+	 * is set — same as legacy today() in functions.php.
+	 *
+	 * @param int|bool $year [=false]
+	 * @param int|bool $month [=false]
+	 * @param int|bool $day [=false]
+	 * @param boolean $current [=false] use 'Current' instead of 'Today'
+	 * @param int|string|false $tstamp [=false] unix timestamp or Y-m-d string
+	 * @param string $debug [=false]
+	 * @param string $format [='jS M Y']
+	 * @return string
 	 */
 	public static function today($year = false, $month = false, $day = false, $current = false, $tstamp = false, $debug = false, $format = 'jS M Y') {
 		if($current) { $message = 'Current'; } else { $message = 'Today'; }
@@ -137,16 +141,16 @@ class Date {
 		if( $record == self::$dtstamp ) {
 			return '<span style="color:red">'.$message.'</span>';
 		}
-		else {
-			//echo ' post-fail ';
-			if(!$month && !$day) { return $year_new; }
-			elseif(!$month && !$year) { return Date::datefull($day_new); }
-			elseif(!$year && !$day) { return Date::monthfull($month_new); }
-			elseif(!$day) { return Date::monthfull($month) . ' ' . $year_new; }
-			elseif(!$month) { return 'Day ' . $day_new . ', ' . $year_new; }
-			elseif(!$year) { return Date::datefull($day_new) . ' ' . Date::monthfull($month_new); }
-			else { return date($format, Date::mkdate($month_new, $day_new,$year_new)); }
+		if( $record == self::$dtstamp_yest ) {
+			return '<span style="color:red">Yesterday</span>';
 		}
+		if(!$month && !$day) { return $year_new; }
+		elseif(!$month && !$year) { return Date::datefull($day_new); }
+		elseif(!$year && !$day) { return Date::monthfull($month_new); }
+		elseif(!$day) { return Date::monthfull($month_new) . ' ' . $year_new; }
+		elseif(!$month) { return 'Day ' . $day_new . ', ' . $year_new; }
+		elseif(!$year) { return Date::datefull($day_new) . ' ' . Date::monthfull($month_new); }
+		else { return date($format, Date::mkdate($month_new, $day_new,$year_new)); }
 	}
 	/**
 	 * mktime(0,0,0, m, d, y) shortcut

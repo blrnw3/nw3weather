@@ -351,6 +351,7 @@ class DataSummarizer {
 			$periodSummaries[$k] = $this->getBaseSummary($this->pastNDays[$period]);
 			$periodSummaries[$k]['minDateFmt'] = Date::today(null, $period > 31, true, null, $periodSummaries[$k]['minDate']);
 			$periodSummaries[$k]['maxDateFmt'] = Date::today(null, $period > 31, true, null, $periodSummaries[$k]['maxDate']);
+			$this->addAnomalies($periodSummaries[$k], LTA::getRecentPeriodMeanAnom($this->varName, $period));
 		}
 		return $periodSummaries;
 	}
@@ -389,6 +390,22 @@ class DataSummarizer {
 	}
 
 	private function getFixedPeriodSummaries() {
+		$currMonth = $this->getBaseSummary($this->currentMonth);
+		$this->addAnomalies($currMonth, LTA::getRecentPeriodMeanAnom($this->varName, max(1, (int)Date::$dday)));
+
+		$currYear = $this->getBaseSummary($this->currentYear);
+		$doy = (int)date('z', Date::mkdate(Date::$dmonth, Date::$dday, Date::$dyear)) + 1;
+		$this->addAnomalies($currYear, LTA::getRecentPeriodMeanAnom($this->varName, $doy));
+
+		$alltime = $this->getBaseSummary($this->vals);
+		$this->addAnomalies($alltime, LTA::getYearlyAnom($this->varName));
+
+		$allThisMonth = $this->getBaseSummary($this->currentMonthAll);
+		$this->addAnomalies($allThisMonth, LTA::getMonthlyAnom($this->varName, (int)Date::$dmonth));
+
+		$allThisDate = $this->getBaseSummary($this->currentDateAll);
+		$this->addAnomalies($allThisDate, LTA::getDailyAnom($this->varName, (int)Date::$dmonth, (int)Date::$dday));
+
 		return [
 			'today' => [
 				'val' => Data::get($this->varName, Date::$dyear, Date::$dmonth, Date::$dday),
@@ -398,11 +415,11 @@ class DataSummarizer {
 				'val' => Data::get($this->varName, Date::$yr_yest, Date::$mon_yest, Date::$day_yest),
 				'time' => Data::getTime($this->varName, Date::$yr_yest, Date::$mon_yest, Date::$day_yest),
 			],
-			'curr_month' => $this->getBaseSummary($this->currentMonth),
-			'curr_year' => $this->getBaseSummary($this->currentYear),
-			'alltime' => $this->getBaseSummary($this->vals),
-			'all_this_month' => $this->getBaseSummary($this->currentMonthAll),
-			'all_this_date' => $this->getBaseSummary($this->currentDateAll),
+			'curr_month' => $currMonth,
+			'curr_year' => $currYear,
+			'alltime' => $alltime,
+			'all_this_month' => $allThisMonth,
+			'all_this_date' => $allThisDate,
 		];
 	}
 

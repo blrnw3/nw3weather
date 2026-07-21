@@ -57,7 +57,8 @@ DATA_FILTERS=(
 #   serialised_datNow      : today's running min/max/mean snapshot (cards)
 #   serialised_datHr24     : 24hr trends/changes (cards' arrows & trend rows)
 #   serialised_datYest     : yesterday summary (cards' "Yesterday" rows)
-#   goodlog.txt            : 24hr rolling log (interactive charts endpoint)
+#   goodlog.txt            : 24hr rolling log (home chart / chartdata.php)
+#   logfiles/daily/todaylog.txt : same-day per-minute log (wx3 / intradaydata.php)
 #   pm25_latest.txt        : latest air-quality reading
 #   METAR.txt              : current-conditions decode line
 #   forecast_v5.json       : today/tomorrow forecast block
@@ -72,6 +73,9 @@ HOME_LIVE_FILTERS=(
   --include='serialised_datHr24.txt'
   --include='serialised_datYest.txt'
   --include='goodlog.txt'
+  --include='logfiles/'
+  --include='logfiles/daily/'
+  --include='logfiles/daily/todaylog.txt'
   --include='pm25_latest.txt'
   --include='METAR.txt'
   --include='forecast_v5.json'

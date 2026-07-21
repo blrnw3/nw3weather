@@ -26,7 +26,7 @@ require Site::$rareTags;
 		<img src="https://www.yr.no/en/content/2-2647553/meteogram.svg?mode=dark" alt="Yr.no meteogram for nw3" title="Yr.no meteogram for nw3" width="95%" height="100%" />
 	</div>
 
-	<div style="height: 550px; max-width: 900px;";>
+	<div style="height: 550px; max-width: 900px;">
 		<h2>Forecast for NW3</h2>
 		<iframe src="https://www.yr.no/en/content/2-2647553/table.html?mode=dark" width="95%" height="90%" frameborder="0" scrolling="no" title="Yr.no forecast for nw3"></iframe>
 	</div>
@@ -41,12 +41,13 @@ require Site::$rareTags;
 <div>
 	<h2>Area Weather Map</h2>
 	<div id="wx-map"
+		style="height:600px"
 		data-windywidget="map"
 		data-thememode="white"
 		data-spotid="5980477"
 		data-appid="widgets_2467d6af6b">
 	</div>
-	<script async="true" data-cfasync="false" type="text/javascript" src="//windy.app/widget3/windy_map_async.js?v324"></script>
+	<script async="true" data-cfasync="false" type="text/javascript" src="https://windy.app/widget3/windy_map_async.js?v415"></script>
 </div>
 
 <?php Page::End(); ?>
