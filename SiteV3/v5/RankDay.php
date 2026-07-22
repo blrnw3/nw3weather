@@ -2,7 +2,7 @@
 require "Page.php";
 require "Report.php";
 Page::init([
-	"fileNum" => 42,
+	"fileNum" => 41,
 	"title" => "Ranked Daily Data",
 	"description" => "Historical ranked daily weather values for Hampstead, London (NW3) - temperature, rainfall, wind and more.",
 	"needValcolStyle" => true,

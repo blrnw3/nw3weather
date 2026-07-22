@@ -115,7 +115,7 @@ class Page {
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
-		<link rel="stylesheet" type="text/css" href="/v5/$styleSheet.css?20260717" media="screen" title="screen" />
+		<link rel="stylesheet" type="text/css" href="/v5/$styleSheet.css?20260721c" media="screen" title="screen" />
 		$colorCss
 		$scripts
 	</head>
@@ -218,6 +218,13 @@ END;
 	}
 
 	private static function sidebarGroup($items) {
+		// Pages that share a vartype selector — keep it when hopping Daily ↔ Monthly etc.
+		$vartypePages = array('wxdataday', 'TablesDataMonth', 'RankDay', 'RankMonth');
+		$vartype = isset($_GET['vartype']) ? (string)$_GET['vartype'] : '';
+		if ($vartype !== '' && !preg_match('/^[a-z0-9]+$/i', $vartype)) {
+			$vartype = '';
+		}
+
 		$html = "";
 		foreach($items as $item) {
 			$cond = (self::$fileNum== $item["num"]);
@@ -235,7 +242,12 @@ END;
 			// v5-native pages link relatively; pages still on the legacy root use an absolute path
 			$isV5 = file_exists(__DIR__ . '/' . $item["page"] . '.php');
 			$href = ($isV5 ? '' : '/') . $item["page"] . '.php';
-			$html .= '<a href="'. $href . '"' . $class . ' title="'. $item["text"]. '">'. $item["title"]. '</a>
+			$keepVt = in_array($item["page"], $vartypePages, true);
+			if ($keepVt && $vartype !== '') {
+				$href .= '?vartype=' . rawurlencode($vartype);
+			}
+			$keepAttr = $keepVt ? ' data-keep-vartype="1"' : '';
+			$html .= '<a href="'. $href . '"' . $class . $keepAttr . ' title="'. $item["text"]. '">'. $item["title"]. '</a>
 			';
 		}
 		return $html;

@@ -890,7 +890,7 @@ class LTA {
 			$dtanomcc = explode(',', $dtfanomcc[$z]);
 			self::$vars["tmin"]["daily"][$z] = floatval($dtanomcc[0]);
 			self::$vars["tmax"]["daily"][$z] = floatval($dtanomcc[1]);
-			self::$vars["maxsun"]["daily"][$z] = $dsuncc[$z];
+			self::$vars["maxsun"]["daily"][$z] = floatval($dsuncc[$z]);
 			$month_idx = date('n', Date::mkdate(1, min($z+1, 365), 2023)) - 1;
 			$month_days = date('t', Date::mkdate(1, min($z+1, 365), 2023));
 			$month_midpoint_idx = date("z", Date::mkdate($month_idx + 1, 15, Date::$dyear));

@@ -321,7 +321,7 @@ class Charts {
 	 * non-numeric / unsupported series.
 	 */
 	public static function selectableVars() {
-		$skip = array('comms', 'extra', 'issues', 'away', 'cloud', 'spare', 'sunhrp', 'wethrp');
+		$skip = array('comms', 'extra', 'issues', 'away', 'cloud', 'spare');
 		$vars = array();
 		foreach (Wx::$daily as $key => $meta) {
 			if (in_array($key, $skip, true)) { continue; }
@@ -384,13 +384,15 @@ class Charts {
 				'options' => array(
 					'tmean' => 'Mean', 'tmin' => 'Min', 'tmax' => 'Max', 'trange' => 'Range',
 					'nightmin' => 'Night min', 'daymax' => 'Day max',
+					'fmean' => 'Feels mean', 'fmin' => 'Feels min', 'fmax' => 'Feels max',
 				),
 			),
 			array(
 				'id' => 'rain', 'label' => 'Rain', 'icon' => $img . 'icon-rain.svg',
 				'options' => array(
 					'rain' => 'Total', 'hrmax' => 'Max hour', '10max' => 'Max 10-min',
-					'ratemax' => 'Max rate', 'ratemean' => 'Mean rate', 'wethr' => 'Wet hours',
+					'ratemax' => 'Max rate', 'ratemean' => 'Mean rate',
+					'wethr' => 'Wet hours', 'wethrp' => 'Wet % of day',
 				),
 			),
 			array(
@@ -419,12 +421,6 @@ class Charts {
 				),
 			),
 			array(
-				'id' => 'feel', 'label' => 'Feels-like', 'icon' => $img . 'thermom8_small.png',
-				'options' => array(
-					'fmean' => 'Mean', 'fmin' => 'Min', 'fmax' => 'Max',
-				),
-			),
-			array(
 				'id' => 'aq', 'label' => 'Air quality', 'icon' => $img . 'icon-airpollution.svg',
 				'options' => array(
 					'aqmean' => 'Mean', 'aqmin' => 'Min', 'aqmax' => 'Max',
@@ -433,7 +429,7 @@ class Charts {
 			array(
 				'id' => 'sun', 'label' => 'Sun', 'icon' => $img . 'icon-sun.svg',
 				'options' => array(
-					'sunhr' => 'Hours',
+					'sunhr' => 'Hours', 'sunhrp' => '% of max',
 				),
 			),
 			array(

@@ -52,11 +52,11 @@
 .leveldegr_5 { background-color: #CED8F6; border: 1px solid #6C8288; text-align: center; }
 .leveldegr_6 { background-color: #CEB3FA; border: 1px solid #6C8288; text-align: center; }
 .leveldegr_7 { background-color: #F6CEE3; border: 1px solid #6C8288; text-align: center; }
-.levelrain_0 { background-color: #94939A; border: 1px solid #6C8288; text-align: center; }
-.levelrain_1 { background-color: #918AA7; border: 1px solid #6C8288; text-align: center; }
-.levelrain_2 { background-color: #CCFFFF; border: 1px solid #6C8288; text-align: center; }
-.levelrain_3 { background-color: #99FFCC; border: 1px solid #6C8288; text-align: center; }
-.levelrain_4 { background-color: #9EDFFD; border: 1px solid #6C8288; text-align: center; }
+.levelrain_0 { background-color: #dff7f7; border: 1px solid #6C8288; text-align: center; }
+.levelrain_1 { background-color: #c9eef1; border: 1px solid #6C8288; text-align: center; }
+.levelrain_2 { background-color: #b1e5f4; border: 1px solid #6C8288; text-align: center; }
+.levelrain_3 { background-color: #8edef5; border: 1px solid #6C8288; text-align: center; }
+.levelrain_4 { background-color: #88c0fe; border: 1px solid #6C8288; text-align: center; }
 .levelrain_5 { background-color: #9AACFF; border: 1px solid #6C8288; text-align: center; }
 .levelrain_6 { background-color: #7980FF; border: 1px solid #6C8288; text-align: center; }
 .levelrain_7 { background-color: #3F48F9; color: white; border: 1px solid #6C8288; text-align: center; }
@@ -117,6 +117,18 @@
 .leveldhrs_9 { background-color: #EB8965; border: 1px solid #6C8288; text-align: center; }
 .leveldhrs_10 { background-color: #E46B3F; color: white; border: 1px solid #6C8288; text-align: center; }
 .leveldhrs_11 { background-color: #D85A3A; color: white; border: 1px solid #6C8288; text-align: center; }
+
+/* UK DAQI PM2.5 bands 1–10 (greens → ambers → reds → maroon) */
+.levelaqi_0 { background-color: #7ac74f; border: 1px solid #6C8288; text-align: center; }
+.levelaqi_1 { background-color: #4caf2f; border: 1px solid #6C8288; text-align: center; }
+.levelaqi_2 { background-color: #2f8f1f; color: white; border: 1px solid #6C8288; text-align: center; }
+.levelaqi_3 { background-color: #f2d500; border: 1px solid #6C8288; text-align: center; }
+.levelaqi_4 { background-color: #f2a900; border: 1px solid #6C8288; text-align: center; }
+.levelaqi_5 { background-color: #f27900; border: 1px solid #6C8288; text-align: center; }
+.levelaqi_6 { background-color: #ef5350; color: white; border: 1px solid #6C8288; text-align: center; }
+.levelaqi_7 { background-color: #e02b1d; color: white; border: 1px solid #6C8288; text-align: center; }
+.levelaqi_8 { background-color: #a31515; color: white; border: 1px solid #6C8288; text-align: center; }
+.levelaqi_9 { background-color: #7d0023; color: white; border: 1px solid #6C8288; text-align: center; }
 
 .labels {
 	background-color: #666666;

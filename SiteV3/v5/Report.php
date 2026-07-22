@@ -32,6 +32,7 @@ class Report {
 	public $isNotSummarisable;  // wdir / cloud
 	public $isDerived;          // computed from other variables
 	public $startYear;          // first year data exists for this variable
+	public $yearDefaulted;      // true when requested year was before startYear
 	public $valcolConvert;      // convert value before colour lookup?
 	public $hasToday;           // has a meaningful current-day value
 
@@ -65,7 +66,7 @@ class Report {
 		'w10max' => 3,
 		'fmin' => 0, 'fmax' => 0, 'fmean' => 0,
 		'afhrs' => 10,
-		'aqmin' => 11, 'aqmax' => 11, 'aqmean' => 11,
+		'aqmin' => 14, 'aqmax' => 14, 'aqmean' => 14,
 		'trange' => 0, 'hrange' => 8, 'prange' => 9, 'ratemean' => 5,
 		'sunhr' => 10, 'wethr' => 10, 'cloud' => 10, 'snow' => 10, 'lysnw' => 10,
 		'hail' => 10, 'thunder' => 10, 'fog' => 10, 'comms' => 10, 'extra' => 10,
@@ -77,7 +78,7 @@ class Report {
 	private static $valcolLevel = [
 		0 => 'temp', 1 => 'humi', 2 => 'press', 3 => 'wind', 4 => 'degr', 5 => 'rain',
 		6 => 'rtmax', 7 => 'tchg', 8 => 'hchg', 9 => 'prng', 10 => 'dhrs', 11 => 'dhrs',
-		12 => 'temp', 13 => 'dhrs',
+		12 => 'temp', 13 => 'dhrs', 14 => 'aqi',
 	];
 
 	/** Variable grouping for the colgroup drop-down (legacy $categories). */
@@ -88,7 +89,7 @@ class Report {
 		'Humidity' => ['hmin', 'hmax', 'hmean'],
 		'Pressure' => ['pmin', 'pmax', 'pmean'],
 		'Dew Point' => ['dmin', 'dmax', 'dmean'],
-		'Observations' => ['sunhr', 'wethr', 'ratemean', 'snow', 'lysnw', 'hail', 'thunder', 'fog', 'pond'],
+		'Observations' => ['sunhr', 'sunhrp', 'wethr', 'wethrp', 'ratemean', 'snow', 'lysnw', 'hail', 'thunder', 'fog', 'pond'],
 		'Range' => ['trange', 'hrange', 'prange'],
 		'Change' => ['tc10max', 'tchrmax', 'hchrmax', 'tc10min', 'tchrmin', 'hchrmin'],
 		'Misc.' => ['nightmin', 'daymax', 'w10max', 'afhrs'],
@@ -124,7 +125,11 @@ class Report {
 
 		// Year / month selection
 		$this->year = isset($_GET['year']) ? (int)$_GET['year'] : (int)Date::$yr_yest;
-		if ($this->year < $this->startYear) { $this->year = (int)Date::$yr_yest; }
+		$this->yearDefaulted = false;
+		if ($this->year < $this->startYear) {
+			$this->year = min((int)Date::$dyear, $this->startYear);
+			$this->yearDefaulted = true;
+		}
 		if ($this->year > (int)Date::$dyear) { $this->year = (int)Date::$dyear; }
 		$this->month = isset($_GET['month']) ? (int)$_GET['month'] : 0;
 		if ($this->month < 0 || $this->month > 12) { $this->month = 0; }
@@ -133,13 +138,10 @@ class Report {
 		$this->rankLimit = isset($_GET['rankLimit']) ? (int)$_GET['rankLimit'] : 25;
 		if (!in_array($this->rankLimit, self::$ranknumOptions, true)) { $this->rankLimit = 25; }
 
-		$this->startYearOptions = [(int)Date::$yr_yest - 1, 2020, 2009];
-		if ($this->startYear < 2009) { array_push($this->startYearOptions, 2000, 1990, 1980, 1970, 1950); }
-		if ($this->startYear < 1949) { $this->startYearOptions[] = 1910; }
-		if ($this->startYear < 1910) { $this->startYearOptions[] = $this->startYear; }
+		$this->startYearOptions = [1871, 1910, 1950, 1980, 2000, 2009, 2020];
 		$this->startYrReport = isset($_GET['start_year_rep']) ? (int)$_GET['start_year_rep'] : 2009;
 		if (!in_array($this->startYrReport, $this->startYearOptions, true)) {
-			$this->startYrReport = end($this->startYearOptions);
+			$this->startYrReport = 2009;
 		}
 
 		// Available monthly-summary tab types (mirrors wxdatagen)
@@ -187,6 +189,8 @@ class Report {
 			11 => [0, 10, 20, 25, 35, 50, 65, 75, 85, 90, 95],
 			12 => [-10, -5, -2, 0, 2, 5, 10, 15, 20],
 			13 => [25, 50, 75, 90, 100, 110, 125, 150, 175, 200, 250],
+			// UK DAQI PM2.5 breakpoints (µg/m³ upper bound of bands 1–9; >70 → band 10)
+			14 => [11, 23, 35, 41, 47, 53, 58, 64, 70],
 		];
 		self::$thresholdsReady = true;
 	}
@@ -262,9 +266,14 @@ class Report {
 	/**
 	 * Renders the page heading plus variable/year/month selection form.
 	 * @param array $o flags: heading, showYear, showMonth, showStartYear,
-	 *                 isDaily, linkToOther, showTabs
+	 *                 isDaily, linkToOther, showTabs, buttonSelectors
 	 */
 	public function controls($o = []) {
+		if (!empty($o['buttonSelectors'])) {
+			$this->controlsButtonSelectors($o);
+			return;
+		}
+
 		$heading = isset($o['heading']) ? $o['heading'] : 'Data Tables';
 		$showYear = isset($o['showYear']) ? $o['showYear'] : true;
 		$showMonth = !empty($o['showMonth']);
@@ -372,6 +381,200 @@ class Report {
 		}
 	}
 
+	/**
+	 * Button-style selectors (group → measure), optional year / start-year chips,
+	 * and optional summary-type chips. Optional $o['ajaxFragment'] loads the table
+	 * body without a full page reload.
+	 *
+	 * Extra flags: showYear, showStartYear, showSummary, ajaxFragment, ajaxBodyId
+	 */
+	private function controlsButtonSelectors($o = []) {
+		require_once __DIR__ . '/ChartHelper.php';
+
+		$heading = isset($o['heading']) ? $o['heading'] : 'Data Tables';
+		$showYear = !empty($o['showYear']);
+		$showStartYear = !empty($o['showStartYear']);
+		$showSummary = !empty($o['showSummary']);
+		$ajaxFragment = isset($o['ajaxFragment']) ? $o['ajaxFragment'] : '';
+		$ajaxBodyId = isset($o['ajaxBodyId']) ? $o['ajaxBodyId'] : 'dd-ajax';
+		$mode = $showStartYear ? 'monthly' : 'daily';
+
+		$titleSuffix = $this->description . ' / ' . strip_tags(Wx::getUnits($this->unit));
+		echo '<h1 id="report-sel-heading">' . htmlspecialchars($heading) . ' - '
+			. htmlspecialchars($titleSuffix) . '</h1>';
+
+		$groups = self::buttonSelectorGroups();
+		foreach ($groups as &$g) {
+			foreach (array_keys($g['options']) as $optType) {
+				if (in_array($optType, $this->badCats, true) && $optType !== $this->type) {
+					unset($g['options'][$optType]);
+				}
+			}
+		}
+		unset($g);
+		$groups = array_values(array_filter($groups, function ($g) {
+			return !empty($g['options']);
+		}));
+
+		$activeGroup = $groups[0]['id'];
+		foreach ($groups as $g) {
+			if (isset($g['options'][$this->type])) { $activeGroup = $g['id']; break; }
+		}
+
+		$selUrl = function ($overrides) use ($mode) {
+			$params = array('vartype' => $this->type);
+			if ($mode === 'monthly') {
+				$params['start_year_rep'] = $this->startYrReport;
+				$params['summary_type'] = $this->summaryType;
+			} else {
+				$params['year'] = $this->year;
+			}
+			foreach ($overrides as $k => $v) { $params[$k] = $v; }
+			return htmlspecialchars(Page::$pageName . '?' . http_build_query($params));
+		};
+
+		echo '<div class="report-sel" id="report-sel" data-mode="' . htmlspecialchars($mode) . '"'
+			. ' data-type="' . htmlspecialchars($this->type) . '"'
+			. ' data-year="' . (int)$this->year . '"'
+			. ' data-start-year-rep="' . (int)$this->startYrReport . '"'
+			. ' data-summary-type="' . (int)$this->summaryType . '"'
+			. ' data-body="' . htmlspecialchars($ajaxBodyId) . '"'
+			. ($ajaxFragment !== '' ? ' data-fragment="' . htmlspecialchars($ajaxFragment) . '"' : '')
+			. ' data-heading="' . htmlspecialchars($heading) . '">';
+
+		echo '<div class="report-sel-row">';
+		echo '<div class="wxsel-groups" role="tablist">';
+		foreach ($groups as $g) {
+			$active = ($g['id'] === $activeGroup) ? ' active' : '';
+			$firstType = array_keys($g['options'])[0];
+			$icon = isset($g['icon'])
+				? '<img src="' . htmlspecialchars($g['icon']) . '" alt="" width="16" height="16" />'
+				: '';
+			echo '<button type="button" class="' . trim($active) . '" data-group="'
+				. htmlspecialchars($g['id']) . '" data-default-type="' . htmlspecialchars($firstType)
+				. '" title="' . htmlspecialchars($g['label']) . '">'
+				. $icon . '<span>' . htmlspecialchars($g['label']) . '</span></button>';
+		}
+		echo '</div></div>';
+
+		echo '<div class="report-sel-row">';
+		echo '<div class="wxsel-subtypes" role="tablist">';
+		foreach ($groups as $g) {
+			if ($g['id'] !== $activeGroup) { continue; }
+			foreach ($g['options'] as $type => $label) {
+				$active = ($type === $this->type) ? ' active' : '';
+				echo '<a class="wxsel-chip' . $active . '" data-vartype="' . htmlspecialchars($type)
+					. '" href="' . $selUrl(array('vartype' => $type)) . '">'
+					. htmlspecialchars($label) . '</a>';
+			}
+		}
+		echo '</div></div>';
+
+		if ($showSummary) {
+			echo '<div class="report-sel-row report-sel-labelled">';
+			echo '<div class="wxsel-label">Monthly</div>';
+			echo '<div class="wxsel-scale wxsel-summary" role="tablist">';
+			foreach ($this->availSummaryTypes as $st) {
+				$active = ($st === $this->summaryType) ? ' active' : '';
+				$label = ucfirst(Data::$SUMMARY_NAMES[$st]);
+				echo '<a class="wxsel-chip' . $active . '" data-summary="' . (int)$st
+					. '" href="' . $selUrl(array('summary_type' => $st)) . '">'
+					. htmlspecialchars($label) . '</a>';
+			}
+			echo '</div></div>';
+		}
+
+		if ($showYear) {
+			$dyear = (int)Date::$dyear;
+			$yearFloor = $dyear;
+			foreach ($groups as $g) {
+				foreach (array_keys($g['options']) as $t) {
+					$sy = isset(Wx::$daily[$t]['start_year']) ? (int)Wx::$daily[$t]['start_year'] : Site::BASE_YEAR;
+					if ($sy < $yearFloor) { $yearFloor = $sy; }
+				}
+			}
+			$recent = array();
+			for ($i = 0; $i < 5; $i++) {
+				$y = $dyear - $i;
+				if ($y >= $yearFloor) { $recent[] = $y; }
+			}
+			$older = array();
+			for ($y = $dyear - 5; $y >= $yearFloor; $y--) {
+				$older[] = $y;
+			}
+			$yearInRecent = in_array($this->year, $recent, true);
+
+			echo '<div class="report-sel-row">';
+			echo '<div class="wxsel-scale wxsel-years" role="tablist">';
+			foreach ($recent as $y) {
+				$active = ($y === $this->year) ? ' active' : '';
+				echo '<a class="wxsel-chip' . $active . '" data-year="' . $y
+					. '" href="' . $selUrl(array('year' => $y)) . '">' . $y . '</a>';
+			}
+			if (count($older)) {
+				$sumCls = $yearInRecent ? '' : ' active';
+				$sumLabel = $yearInRecent ? 'Older' : (string)$this->year;
+				echo '<details class="wxsel-overflow">';
+				echo '<summary class="wxsel-chip' . $sumCls . '">' . htmlspecialchars($sumLabel) . '</summary>';
+				echo '<div class="wxsel-overflow-menu">';
+				foreach ($older as $y) {
+					$active = ($y === $this->year) ? ' active' : '';
+					echo '<a class="wxsel-chip' . $active . '" data-year="' . $y
+						. '" href="' . $selUrl(array('year' => $y)) . '">' . $y . '</a>';
+				}
+				echo '</div></details>';
+			}
+			echo '</div></div>';
+		}
+
+		if ($showStartYear) {
+			echo '<div class="report-sel-row report-sel-labelled">';
+			echo '<div class="wxsel-label">Start year</div>';
+			echo '<div class="wxsel-scale wxsel-start-years" role="tablist">';
+			foreach ($this->startYearOptions as $opt) {
+				$active = ($opt === $this->startYrReport) ? ' active' : '';
+				echo '<a class="wxsel-chip' . $active . '" data-start-year="' . (int)$opt
+					. '" href="' . $selUrl(array('start_year_rep' => $opt)) . '" title="Show data from this year">'
+					. (int)$opt . '</a>';
+			}
+			echo '</div></div>';
+		}
+
+		echo '</div>'; // .report-sel
+
+		$warnText = ($showYear && $this->yearDefaulted)
+			? ('No data for ' . $this->description . ' in the selected year; '
+				. 'defaulted to ' . (int)$this->year . ' (earliest available).')
+			: '';
+		echo '<p id="report-year-warn" class="report-year-warn"'
+			. (($showYear && $this->yearDefaulted) ? '' : ' hidden') . '>'
+			. htmlspecialchars($warnText) . '</p>';
+
+		echo '<a name="start"> </a>';
+
+		$sumLabels = array();
+		foreach (Data::$SUMMARY_NAMES as $i => $name) {
+			$sumLabels[$i] = ucfirst($name);
+		}
+
+		$cfg = array(
+			'groups' => $groups,
+			'mode' => $mode,
+			'type' => $this->type,
+			'year' => (int)$this->year,
+			'startYearRep' => (int)$this->startYrReport,
+			'summaryType' => (int)$this->summaryType,
+			'summaryTypes' => $this->availSummaryTypes,
+			'summaryLabels' => $sumLabels,
+			'page' => Page::$pageName,
+			'fragment' => $ajaxFragment !== '' ? $ajaxFragment : null,
+			'bodyId' => $ajaxBodyId,
+			'headingPrefix' => $heading,
+			'fragId' => $mode === 'monthly' ? 'dm-fragment' : 'dd-fragment',
+		);
+		echo '<script>NW3_reportSel(' . json_encode($cfg) . ');</script>';
+	}
+
 	private function flatCats() {
 		$flat = [];
 		foreach (self::$categories as $v) {
@@ -381,6 +584,49 @@ class Report {
 			}
 		}
 		return $flat;
+	}
+
+	/**
+	 * Full variable/measure groups for button selectors: chart selectableGroups
+	 * plus any daily-table variables from $categories that those omit (e.g. Change).
+	 */
+	private static function buttonSelectorGroups() {
+		require_once __DIR__ . '/ChartHelper.php';
+		$groups = Charts::selectableGroups();
+		$covered = [];
+		foreach ($groups as $g) {
+			foreach (array_keys($g['options']) as $type) {
+				$covered[$type] = true;
+			}
+		}
+
+		// Short labels for leftover category vars (mainly the Change set).
+		$extraLabels = [
+			'tc10max' => 'T 10m max',
+			'tchrmax' => 'T 1h max',
+			'hchrmax' => 'H 1h max',
+			'tc10min' => 'T 10m min',
+			'tchrmin' => 'T 1h min',
+			'hchrmin' => 'H 1h min',
+		];
+		$extrasByCat = [];
+		foreach (self::$categories as $cat => $types) {
+			foreach ($types as $type) {
+				if (isset($covered[$type]) || !isset(Wx::$daily[$type])) { continue; }
+				$label = isset($extraLabels[$type])
+					? $extraLabels[$type]
+					: (isset(Wx::$daily[$type]['description']) ? Wx::$daily[$type]['description'] : $type);
+				$extrasByCat[$cat][$type] = $label;
+			}
+		}
+		foreach ($extrasByCat as $cat => $options) {
+			$groups[] = [
+				'id' => 'cat-' . preg_replace('/[^a-z0-9]+/', '-', strtolower($cat)),
+				'label' => $cat,
+				'options' => $options,
+			];
+		}
+		return $groups;
 	}
 
 	public function historicalInfo() {

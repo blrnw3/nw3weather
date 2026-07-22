@@ -540,6 +540,11 @@ class Data {
 	}
 
 	public static function datDerived($varName, $include_historic) {
+		// Percent-of-climate / percent-of-day series (legacy Anomalies group).
+		if ($varName === 'sunhrp' || $varName === 'wethrp') {
+			return self::datAnomPercent($varName, $include_historic);
+		}
+
 		$srcMap = ["ratemean" => ["rain", "wethr"], "trange" => ["tmin", "tmax"], "hrange" => ["hmin", "hmax"], "prange" => ["pmin", "pmax"]];
 		if(!isset($srcMap[$varName])) {
 			return [];
@@ -559,6 +564,40 @@ class Data {
 					else {
 						$res[$year][$month][$day] = $var2[$year][$month][$day] - $val;
 					}
+				}
+			}
+		}
+		return $res;
+	}
+
+	/**
+	 * Daily percent series: sunhrp = sun hours / max possible × 100;
+	 * wethrp = wet hours / 24 × 100. Mirrors legacy datAnom() for *p vars.
+	 */
+	private static function datAnomPercent($varName, $include_historic) {
+		$srcName = ($varName === 'sunhrp') ? 'sunhr' : 'wethr';
+		$source = self::varToDatArray($srcName, $include_historic);
+		$res = [];
+		foreach ($source as $year => $months) {
+			foreach ($months as $month => $days) {
+				foreach ($days as $day => $v) {
+					if (!is_numeric($v)) {
+						$res[$year][$month][$day] = $v;
+						continue;
+					}
+					if ($varName === 'sunhrp') {
+						$clim = LTA::getDailyAnom('maxsun', (int)$month, (int)$day, (int)$year);
+						$clim = is_string($clim) ? trim($clim) : $clim;
+						if (!is_numeric($clim) || (float)$clim <= 0) {
+							$res[$year][$month][$day] = null;
+							continue;
+						}
+						$val = ((float)$v / (float)$clim) * 100;
+					} else {
+						$val = ((float)$v / 24) * 100;
+					}
+					if ($val > 100) { $val = 100; }
+					$res[$year][$month][$day] = round($val, 1);
 				}
 			}
 		}
