@@ -5,18 +5,28 @@ Page::init([
 	"title" => "Monthly Reports",
 	"description" => "Detailed historical monthly breakdown and summary weather reports for Hampstead, London (NW3).",
 	"isSubFile" => true,
+	"needValcolStyle" => true,
 ]);
+require_once __DIR__ . '/Report.php';
 Page::Start();
 
+$TYPES = ['tmin','tmax','tmean','hmin','hmax','hmean','pmin','pmax','pmean','wmean','wmax','gust','wdir','rain','hrmax','10max','ratemax',
+	'dmin','dmax','dmean','nightmin','daymax','tc10max','tchrmax','hchrmax','tc10min','tchrmin','hchrmin','w10max','fmin','fmax','fmean','afhrs',
+	'aqmin','aqmax','aqmean'];
 $DESC = ['Minimum Temperature','Maximum Temperature','Mean Temperature','Minimum Humidity','Maximum Humidity','Mean Humidity',
 	'Minimum Pressure','Maximum Pressure','Mean Pressure','Mean Wind Speed','Maximum Wind Speed','Maximum Gust','Mean Wind Direction',
 	'Rainfall','Maximum Hourly Rain','Maximum 10-min Rain','Maximum Rain Rate','Minimum Dew Point','Maximum Dew Point','Mean Dew Point',
 	'Night Minimum (21-09)','Day Maximum (09-21)','Max 10m Temp Rise','Max 1hr Temp Rise','Max 1hr Hum Rise','Max 10m Temp Fall',
-	'Max 1hr Temp Fall','Max 1hr Hum Fall','Max 10m Wind Speed','Minimum Feels-like','Maximum Feels-like','Mean Feels-like','Air-frost Hrs'];
-$T = Wx::Temperature; $H = Wx::Humidity; $P = Wx::Pressure; $W = Wx::Wind; $D = Wx::Direction; $R = Wx::Rain; $RR = Wx::RainRate; $HR = Wx::Hours;
-$UNIT = [$T,$T,$T, $H,$H,$H, $P,$P,$P, $W,$W,$W, $D, $R,$R,$R, $RR, $T,$T,$T, $T,$T, $T,$T,$H,$T,$T,$H, $W, $T,$T,$T, $HR];
-$CNUM = [4,4,4, 0,0,0, 6,6,6, 3,3,3,3, 2,2,2,2, 0,0,0, 4,4, 4,4,0,4,4,0, 3, 4,4,4, 4];
+	'Max 1hr Temp Fall','Max 1hr Hum Fall','Max 10m Wind Speed','Minimum Feels-like','Maximum Feels-like','Mean Feels-like','Air-frost Hrs',
+	'Minimum PM2.5','Maximum PM2.5','Mean PM2.5'];
+$SHORT = ['Tmin','Tmax','Tmean','Hmin','Hmax','Hmean','Pmin','Pmax','Pmean','Wmean','Wmax','Gust','Wdir','Rain','Hr max','10m rain','Rate',
+	'Dmin','Dmax','Dmean','Night','Daymax','T+10m','T+1h','H+1h','T-10m','T-1h','H-1h','W10m','Fmin','Fmax','Fmean','AF hrs',
+	'AQmin','AQmax','AQmean'];
+$T = Wx::Temperature; $H = Wx::Humidity; $P = Wx::Pressure; $W = Wx::Wind; $D = Wx::Direction; $R = Wx::Rain; $RR = Wx::RainRate; $HR = Wx::Hours; $AQ = Wx::Pm25;
+$UNIT = [$T,$T,$T, $H,$H,$H, $P,$P,$P, $W,$W,$W, $D, $R,$R,$R, $RR, $T,$T,$T, $T,$T, $T,$T,$H,$T,$T,$H, $W, $T,$T,$T, $HR, $AQ,$AQ,$AQ];
+$CNUM = [4,4,4, 0,0,0, 6,6,6, 3,3,3,3, 2,2,2,2, 0,0,0, 4,4, 4,4,0,4,4,0, 3, 4,4,4, 4, 2,2,2];
 $NCOL = count($DESC);
+$AFHRS_IDX = 32; // air-frost hours (summable); AQ columns follow
 
 // ---- Date validation ----
 $mproc = isset($_GET['month']) ? intval($_GET['month']) : ((int)Date::$dmonth == 1 ? 12 : (int)Date::$dmonth - 1);
@@ -103,7 +113,7 @@ $manomm = [['', '', ''], ['', '', '']];
 if ($haveData) {
 	$mtdat[13][2] = 'Mean: ' . Wx::conv($msdat[13][2], Wx::Rain, true);
 	if (is_numeric($msdat[13][2])) { $msdat[13][2] *= $dim; }
-	if (is_numeric($msdat[$NCOL - 1][2])) { $msdat[$NCOL - 1][2] *= $dim; }
+	if (is_numeric($msdat[$AFHRS_IDX][2])) { $msdat[$AFHRS_IDX][2] *= $dim; }
 
 	if ($tminN !== null && is_numeric($msdat[0][2])) { $manom[0][2] = ' (' . Wx::conv($msdat[0][2] - $tminN, Wx::AbsTemp, false, true) . ')'; }
 	if ($tmaxN !== null && is_numeric($msdat[1][2])) { $manom[1][2] = ' (' . Wx::conv($msdat[1][2] - $tmaxN, Wx::AbsTemp, false, true) . ')'; }
@@ -130,7 +140,7 @@ if ($haveData) {
 	}
 }
 // Times that are not meaningful
-foreach ([2, 5, 8, 9, 12, 13, 19] as $ni) { if (isset($msdatt[$ni])) { $msdatt[$ni] = ''; } }
+foreach ([2, 5, 8, 9, 12, 13, 19, 35] as $ni) { if (isset($msdatt[$ni])) { $msdatt[$ni] = ''; } }
 ?>
 
 <h1>Monthly Report for <?php echo $toofar ? 'Invalid Month!' : date('F Y', $sproc); ?></h1>
@@ -142,13 +152,13 @@ if ($num_adv > 0) { echo '<p>Based on the first ' . $dim . ' days available.</p>
 $prevs = $sproc - 86400 * $dim; $nexts = $sproc + 86400 * (2 + $num_adv);
 echo '<table width="800"><tr><td align="left">';
 if ($sproc1 > Date::mkdate(2, 10, 2009) && $sproc < Date::mkdate((int)Date::$dmonth, (int)Date::$dday, (int)Date::$dyear) && !$toofar) {
-	echo '<a href="/wxhistmonth.php?year=' . date('Y', $prevs) . '&amp;month=' . date('n', $prevs) . '" title="Previous month">&lt;&lt;Previous Month</a>';
+	echo '<a href="wxhistmonth.php?year=' . date('Y', $prevs) . '&amp;month=' . date('n', $prevs) . '" title="Previous month">&lt;&lt;Previous Month</a>';
 } else { echo '&lt;&lt;Previous Month'; }
 echo '</td><td align="center"><form method="get" action="">';
 HTML::dateFormMaker($yproc, $mproc);
-echo '<input type="submit" value="View Report" /></form> <a href="/wxhistmonth.php" title="Most recent month">Reset</a></td><td align="right">';
+echo '<input type="submit" value="View Report" /></form> <a href="wxhistmonth.php" title="Most recent month">Reset</a></td><td align="right">';
 if ($sproc < Date::mkdate((int)Date::$dmonth, (int)Date::$dday - 1, (int)Date::$dyear) && Date::mkdate($mproc, 3, $yproc) > Date::mkdate(1, 1, 2009)) {
-	echo '<a href="/wxhistmonth.php?year=' . date('Y', $nexts) . '&amp;month=' . date('n', $nexts) . '" title="Next month">Next Month&gt;&gt;</a>';
+	echo '<a href="wxhistmonth.php?year=' . date('Y', $nexts) . '&amp;month=' . date('n', $nexts) . '" title="Next month">Next Month&gt;&gt;</a>';
 } else { echo 'Next Month&gt;&gt;'; }
 echo '</td></tr></table>';
 
@@ -276,16 +286,60 @@ if ($daysofRn[2] > 0) {
 	echo 'Nothing to report<br />';
 }
 
-// ---- Charts (replacing legacy JPGraph embeds) ----
+// ---- Charts: selectable daily series for the month, plus rose ----
 echo '<h2>Graphs and Charts</h2>';
-Charts::daily(['type' => 'tmean', 'mode' => 'daily', 'year' => $yproc, 'month' => $mproc], ['height' => 360]);
-echo '<p><a href="/charts.php?vartype=tmean&year=' . $yproc . '&month=' . $mproc . '">View more charts for this month</a></p>';
-echo '<h3>Daily detail across the month</h3>';
-$lastStamp = date('Ymd', $sproc);
-Charts::intradayPanel(['date' => $lastStamp, 'num' => $dim], null, ['height' => 420]);
+Charts::dailySelectable(
+	['mode' => 'daily', 'year' => $yproc, 'month' => $mproc],
+	['height' => 360, 'headingPrefix' => ''],
+	null,
+	'tmean'
+);
+echo '<p><a href="charts.php?vartype=tmean&amp;year=' . $yproc . '&amp;month=' . $mproc . '">View more charts for this month</a></p>';
 echo '<h2>Wind rose</h2>';
 Charts::rose(['st' => $yproc . Util::zerolead($mproc) . '01', 'en' => 'month'], ['height' => 460]);
 
-echo '<p><a href="/wxhistday.php?day=1&amp;month=' . $mproc . '&amp;year=' . $yproc . '" title="Daily report for 1st ' . Date::monthfull($mproc) . ' ' . $yproc . '">View daily breakdown for the month</a></p>';
+// ---- Day-by-day breakdown (all CSV columns, valcol styling, horizontal scroll) ----
+echo '<h2 id="day-breakdown">Daily breakdown</h2>';
+echo '<p class="hm-break-note">Scroll horizontally to see all measures. Day numbers link to the detailed daily report.</p>';
+echo '<div class="hm-break-scroll">';
+echo '<table class="hm-break">';
+echo '<thead><tr><th class="hm-day" scope="col">Day</th>';
+for ($v = 0; $v < $NCOL; $v++) {
+	echo '<th scope="col" title="' . htmlspecialchars($DESC[$v]) . '">' . htmlspecialchars($SHORT[$v]) . '</th>';
+}
+echo '</tr></thead><tbody>';
+
+$blank = function ($v) {
+	return $v === '' || $v === '-' || $v === null || !is_numeric($v);
+};
+for ($d = 1; $d <= $dim; $d++) {
+	$zed = (int)date('z', Date::mkdate($mproc, $d, $yproc)) + 1;
+	$row = isset($datLines[$zed]) ? explode(',', $datLines[$zed]) : [];
+	$dayHref = 'wxhistday.php?year=' . $yproc . '&amp;month=' . $mproc . '&amp;day=' . $d;
+	echo '<tr>';
+	echo '<th class="hm-day" scope="row"><a class="hidden-link" href="' . $dayHref . '">' . $d . '</a></th>';
+	for ($v = 0; $v < $NCOL; $v++) {
+		$raw = isset($row[$v]) ? $row[$v] : '';
+		$type = $TYPES[$v];
+		$unit = $UNIT[$v];
+		if ($blank($raw)) {
+			echo '<td class="reportday">-</td>';
+			continue;
+		}
+		if ($type === 'wdir') {
+			$disp = round((float)$raw) . '&deg;';
+			$class = Report::valcolForType($type, (float)$raw);
+		} else {
+			$disp = Wx::conv($raw, $unit, false);
+			$num = Wx::convNum($raw, $unit);
+			$class = Report::valcolForType($type, ($num === null ? (float)$raw : $num));
+		}
+		echo '<td class="' . htmlspecialchars($class) . '">' . $disp . '</td>';
+	}
+	echo '</tr>';
+}
+echo '</tbody></table></div>';
+
+echo '<p><a href="wxhistday.php?day=1&amp;month=' . $mproc . '&amp;year=' . $yproc . '" title="Daily report for 1st ' . Date::monthfull($mproc) . ' ' . $yproc . '">View daily report for the 1st</a></p>';
 
 Page::End();

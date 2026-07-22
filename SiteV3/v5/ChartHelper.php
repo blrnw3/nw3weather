@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/v5/wxcharts.js?20260720c"></script>' . "\n";
+		echo '<script src="/v5/wxcharts.js?20260722b"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */
@@ -86,7 +86,8 @@ class Charts {
 		if ($vars === null) {
 			$vars = array(
 				'temp' => 'Temp', 'dewp' => 'Dew pt', 'humi' => 'Humidity',
-				'pres' => 'Pressure', 'wind' => 'Wind', 'rain' => 'Rain', 'wdir' => 'Direction'
+				'pres' => 'Pressure', 'wind' => 'Wind', 'rain' => 'Rain',
+				'pm25' => 'Air quality', 'wdir' => 'Direction',
 			);
 		}
 		$panelId = 'wxp' . (self::$seq + 1);
@@ -103,6 +104,63 @@ class Charts {
 		$initial = isset($opts['initial']) ? $opts['initial'] : $first;
 		self::run('NW3.intradayPanel(' . json_encode($id) . ',' . json_encode($url) . ','
 			. json_encode($initial) . ',' . json_encode('#' . $panelId . '-vars button') . ');');
+	}
+
+	/**
+	 * Fixed report graph block (no toggles): two multi-var charts (temp/hum/dew/rain
+	 * and wind/gust/pressure), then wind direction, air quality, and a wind rose.
+	 * $params go to intradaydata.php; $roseParams to rosedata.php.
+	 */
+	public static function reportIntraday($params, $roseParams, $opts = array()) {
+		self::assets();
+		$multiH = isset($opts['multiHeight']) ? (int)$opts['multiHeight'] : 420;
+		$singleH = isset($opts['height']) ? (int)$opts['height'] : 300;
+		$roseH = isset($opts['roseHeight']) ? (int)$opts['roseHeight'] : 460;
+
+		// Longer windows (e.g. a full month) need server decimation.
+		$num = isset($params['num']) ? (int)$params['num'] : 1;
+		if ($num > 3 && !isset($params['maxpts'])) {
+			$params['maxpts'] = 1440;
+		}
+
+		$idA = 'wxc' . (++self::$seq);
+		$idB = 'wxc' . (++self::$seq);
+		$idDir = 'wxc' . (++self::$seq);
+		$idAq = 'wxc' . (++self::$seq);
+
+		echo '<div class="wx3-multi">' . "\n";
+		echo '<div id="' . $idA . '" class="wx3-chart wxchart-loading" style="min-height:' . $multiH . 'px;"></div>' . "\n";
+		echo '<div id="' . $idB . '" class="wx3-chart wxchart-loading" style="min-height:' . $multiH . 'px;"></div>' . "\n";
+		echo '</div>' . "\n";
+		echo '<div class="wx3-multi wx3-multi-singles">' . "\n";
+		echo '<div class="wx3-chart-wrap">' . "\n";
+		echo '<h3>Wind direction</h3>' . "\n";
+		echo '<div id="' . $idDir . '" class="wx3-chart wxchart-loading" style="min-height:' . $singleH . 'px;"></div>' . "\n";
+		echo '</div>' . "\n";
+		echo '<div class="wx3-chart-wrap">' . "\n";
+		echo '<h3>Air quality</h3>' . "\n";
+		echo '<div id="' . $idAq . '" class="wx3-chart wxchart-loading" style="min-height:' . $singleH . 'px;"></div>' . "\n";
+		echo '</div>' . "\n";
+		echo '</div>' . "\n";
+
+		$cfg = array(
+			'url' => self::url('intradaydata.php', $params),
+			'multi' => array(
+				array('id' => $idA, 'kind' => 'thrd'),
+				array('id' => $idB, 'kind' => 'wgp'),
+			),
+			'singles' => array(
+				array('id' => $idDir, 'var' => 'wdir'),
+				array('id' => $idAq, 'var' => 'pm25'),
+			),
+		);
+		if (!empty($opts['dateLabel'])) {
+			$cfg['dateLabel'] = $opts['dateLabel'];
+		}
+		self::run('NW3.intradayFixed(' . json_encode($cfg) . ');');
+
+		echo '<h2>Wind rose</h2>' . "\n";
+		self::rose($roseParams, array('height' => $roseH));
 	}
 
 	/** Wind rose (polar stacked column) from rosedata.php. Pass $opts['legend']=false to hide the legend. */

@@ -115,7 +115,7 @@ class Page {
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
-		<link rel="stylesheet" type="text/css" href="/v5/$styleSheet.css?20260721c" media="screen" title="screen" />
+		<link rel="stylesheet" type="text/css" href="/v5/$styleSheet.css?20260722b" media="screen" title="screen" />
 		$colorCss
 		$scripts
 	</head>
@@ -219,7 +219,7 @@ END;
 
 	private static function sidebarGroup($items) {
 		// Pages that share a vartype selector — keep it when hopping Daily ↔ Monthly etc.
-		$vartypePages = array('wxdataday', 'TablesDataMonth', 'RankDay', 'RankMonth');
+		$vartypePages = array('wxdataday', 'TablesDataMonth', 'RankDay', 'RankMonth', 'RankYear');
 		$vartype = isset($_GET['vartype']) ? (string)$_GET['vartype'] : '';
 		if ($vartype !== '' && !preg_match('/^[a-z0-9]+$/i', $vartype)) {
 			$vartype = '';
@@ -372,6 +372,13 @@ END;
 					"text" => "Monthly ranked data by weather variable",
 					"page" => "RankMonth",
 					"num" => 42,
+					"subhead" => true,
+				],
+				[
+					"title" => "Annual",
+					"text" => "Annual ranked data by weather variable",
+					"page" => "RankYear",
+					"num" => 42.1,
 					"subhead" => true,
 				],
 				[

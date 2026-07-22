@@ -193,7 +193,7 @@ function nw3_dataday_render(Report $report) {
 	}
 	echo '</p>';
 
-	$report->historicalInfo();
+	$report->historicalInfo($year);
 
 	$unitLabel = strip_tags(Wx::getUnits($unit));
 	return array(

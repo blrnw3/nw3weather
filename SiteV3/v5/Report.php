@@ -201,9 +201,20 @@ class Report {
 	 * @param bool $countable use the day-count scale instead of the value scale
 	 */
 	public function valcolr($value, $countable = false) {
-		if ($this->valcolIdx === null) { return 'reportday'; }
-		$level = self::$valcolLevel[$this->valcolIdx];
-		$values = $countable ? [0, 1, 3, 5, 7, 10, 15, 20, 25, 30, 31] : self::$thresholds[$this->valcolIdx];
+		return self::valcolForType($this->type, $value, $countable);
+	}
+
+	/**
+	 * Value-colour CSS class for any daily variable (does not require a Report instance).
+	 * $value should already be in display units when the variable uses unit conversion.
+	 */
+	public static function valcolForType($type, $value, $countable = false) {
+		self::initThresholds();
+		if (!isset(self::$valcolMap[$type])) { return 'reportday'; }
+		$idx = self::$valcolMap[$type];
+		if (!isset(self::$valcolLevel[$idx], self::$thresholds[$idx])) { return 'reportday'; }
+		$level = self::$valcolLevel[$idx];
+		$values = $countable ? [0, 1, 3, 5, 7, 10, 15, 20, 25, 30, 31] : self::$thresholds[$idx];
 		for ($i = 0; $i < count($values); $i++) {
 			if ($value <= $values[$i]) { return 'level' . $level . '_' . $i; }
 		}
@@ -382,22 +393,33 @@ class Report {
 	}
 
 	/**
-	 * Button-style selectors (group → measure), optional year / start-year chips,
-	 * and optional summary-type chips. Optional $o['ajaxFragment'] loads the table
-	 * body without a full page reload.
+	 * Button-style selectors (group → measure) plus optional year / month /
+	 * start-year / summary / rank-limit chips. Optional $o['ajaxFragment'] loads
+	 * the body without a full page reload.
 	 *
-	 * Extra flags: showYear, showStartYear, showSummary, ajaxFragment, ajaxBodyId
+	 * $o['mode']: daily | monthly | rank-daily | rank-monthly | rank-annual
 	 */
 	private function controlsButtonSelectors($o = []) {
 		require_once __DIR__ . '/ChartHelper.php';
 
 		$heading = isset($o['heading']) ? $o['heading'] : 'Data Tables';
 		$showYear = !empty($o['showYear']);
+		$showMonth = !empty($o['showMonth']);
 		$showStartYear = !empty($o['showStartYear']);
 		$showSummary = !empty($o['showSummary']);
+		$showRankLimit = !empty($o['showRankLimit']);
 		$ajaxFragment = isset($o['ajaxFragment']) ? $o['ajaxFragment'] : '';
 		$ajaxBodyId = isset($o['ajaxBodyId']) ? $o['ajaxBodyId'] : 'dd-ajax';
-		$mode = $showStartYear ? 'monthly' : 'daily';
+		if (isset($o['mode'])) {
+			$mode = $o['mode'];
+		} elseif ($showYear) {
+			$mode = 'daily';
+		} elseif ($showSummary) {
+			$mode = 'monthly';
+		} else {
+			$mode = 'daily';
+		}
+		$isRank = ($mode === 'rank-daily' || $mode === 'rank-monthly' || $mode === 'rank-annual');
 
 		$titleSuffix = $this->description . ' / ' . strip_tags(Wx::getUnits($this->unit));
 		echo '<h1 id="report-sel-heading">' . htmlspecialchars($heading) . ' - '
@@ -421,13 +443,24 @@ class Report {
 			if (isset($g['options'][$this->type])) { $activeGroup = $g['id']; break; }
 		}
 
-		$selUrl = function ($overrides) use ($mode) {
+		$selUrl = function ($overrides) use ($mode, $isRank) {
 			$params = array('vartype' => $this->type);
-			if ($mode === 'monthly') {
+			if ($mode === 'daily') {
+				$params['year'] = $this->year;
+			} elseif ($mode === 'monthly') {
 				$params['start_year_rep'] = $this->startYrReport;
 				$params['summary_type'] = $this->summaryType;
-			} else {
-				$params['year'] = $this->year;
+			} elseif ($isRank) {
+				$params['start_year_rep'] = $this->startYrReport;
+				if ($mode !== 'rank-annual') {
+					$params['rankLimit'] = $this->rankLimit;
+				}
+				if ($mode === 'rank-daily' || $mode === 'rank-monthly') {
+					$params['month'] = $this->month;
+				}
+				if ($mode === 'rank-monthly' || $mode === 'rank-annual') {
+					$params['summary_type'] = $this->summaryType;
+				}
 			}
 			foreach ($overrides as $k => $v) { $params[$k] = $v; }
 			return htmlspecialchars(Page::$pageName . '?' . http_build_query($params));
@@ -436,8 +469,10 @@ class Report {
 		echo '<div class="report-sel" id="report-sel" data-mode="' . htmlspecialchars($mode) . '"'
 			. ' data-type="' . htmlspecialchars($this->type) . '"'
 			. ' data-year="' . (int)$this->year . '"'
+			. ' data-month="' . (int)$this->month . '"'
 			. ' data-start-year-rep="' . (int)$this->startYrReport . '"'
 			. ' data-summary-type="' . (int)$this->summaryType . '"'
+			. ' data-rank-limit="' . (int)$this->rankLimit . '"'
 			. ' data-body="' . htmlspecialchars($ajaxBodyId) . '"'
 			. ($ajaxFragment !== '' ? ' data-fragment="' . htmlspecialchars($ajaxFragment) . '"' : '')
 			. ' data-heading="' . htmlspecialchars($heading) . '">';
@@ -471,8 +506,11 @@ class Report {
 		echo '</div></div>';
 
 		if ($showSummary) {
+			if ($mode === 'rank-annual') { $sumLabel = 'Annual'; }
+			elseif ($mode === 'rank-monthly' || $mode === 'monthly') { $sumLabel = 'Monthly'; }
+			else { $sumLabel = 'Summary'; }
 			echo '<div class="report-sel-row report-sel-labelled">';
-			echo '<div class="wxsel-label">Monthly</div>';
+			echo '<div class="wxsel-label">' . htmlspecialchars($sumLabel) . '</div>';
 			echo '<div class="wxsel-scale wxsel-summary" role="tablist">';
 			foreach ($this->availSummaryTypes as $st) {
 				$active = ($st === $this->summaryType) ? ' active' : '';
@@ -480,6 +518,22 @@ class Report {
 				echo '<a class="wxsel-chip' . $active . '" data-summary="' . (int)$st
 					. '" href="' . $selUrl(array('summary_type' => $st)) . '">'
 					. htmlspecialchars($label) . '</a>';
+			}
+			echo '</div></div>';
+		}
+
+		if ($showMonth) {
+			echo '<div class="report-sel-row report-sel-labelled">';
+			echo '<div class="wxsel-label">Month</div>';
+			echo '<div class="wxsel-scale wxsel-months" role="tablist">';
+			$active = ($this->month === 0) ? ' active' : '';
+			echo '<a class="wxsel-chip' . $active . '" data-month="0" href="'
+				. $selUrl(array('month' => 0)) . '">All</a>';
+			for ($m = 1; $m <= 12; $m++) {
+				$active = ($m === $this->month) ? ' active' : '';
+				echo '<a class="wxsel-chip' . $active . '" data-month="' . $m
+					. '" href="' . $selUrl(array('month' => $m)) . '">'
+					. Date::$months3[$m - 1] . '</a>';
 			}
 			echo '</div></div>';
 		}
@@ -540,6 +594,19 @@ class Report {
 			echo '</div></div>';
 		}
 
+		if ($showRankLimit) {
+			echo '<div class="report-sel-row report-sel-labelled">';
+			echo '<div class="wxsel-label">Show</div>';
+			echo '<div class="wxsel-scale wxsel-rank-limit" role="tablist">';
+			foreach (self::$ranknumOptions as $opt) {
+				$active = ($opt === $this->rankLimit) ? ' active' : '';
+				echo '<a class="wxsel-chip' . $active . '" data-rank-limit="' . (int)$opt
+					. '" href="' . $selUrl(array('rankLimit' => $opt)) . '">'
+					. (int)$opt . '</a>';
+			}
+			echo '</div></div>';
+		}
+
 		echo '</div>'; // .report-sel
 
 		$warnText = ($showYear && $this->yearDefaulted)
@@ -557,20 +624,29 @@ class Report {
 			$sumLabels[$i] = ucfirst($name);
 		}
 
+		$fragIds = array(
+			'daily' => 'dd-fragment',
+			'monthly' => 'dm-fragment',
+			'rank-daily' => 'rd-fragment',
+			'rank-monthly' => 'rm-fragment',
+			'rank-annual' => 'ry-fragment',
+		);
 		$cfg = array(
 			'groups' => $groups,
 			'mode' => $mode,
 			'type' => $this->type,
 			'year' => (int)$this->year,
+			'month' => (int)$this->month,
 			'startYearRep' => (int)$this->startYrReport,
 			'summaryType' => (int)$this->summaryType,
 			'summaryTypes' => $this->availSummaryTypes,
 			'summaryLabels' => $sumLabels,
+			'rankLimit' => (int)$this->rankLimit,
 			'page' => Page::$pageName,
 			'fragment' => $ajaxFragment !== '' ? $ajaxFragment : null,
 			'bodyId' => $ajaxBodyId,
 			'headingPrefix' => $heading,
-			'fragId' => $mode === 'monthly' ? 'dm-fragment' : 'dd-fragment',
+			'fragId' => isset($fragIds[$mode]) ? $fragIds[$mode] : 'dd-fragment',
 		);
 		echo '<script>NW3_reportSel(' . json_encode($cfg) . ');</script>';
 	}
@@ -629,9 +705,20 @@ class Report {
 		return $groups;
 	}
 
-	public function historicalInfo() {
-		if ($this->startYear < 2009 && $this->year < 2009) {
-			echo '<p>*Data from before 2009 are mostly from the historical site at Whitestone Pond in Hampstead. '
+	/**
+	 * Footnote for pre-2009 (MIDAS / Whitestone) data. Pass the earliest year
+	 * actually shown on the page (daily year, or monthly/rank window start).
+	 * @param int|null $windowStart earliest year of data on this page
+	 */
+	public function historicalInfo($windowStart = null) {
+		if ($windowStart === null) {
+			$windowStart = ((int)$this->startYrReport < Site::BASE_YEAR)
+				? (int)$this->startYrReport
+				: (int)$this->year;
+		}
+		$windowStart = max((int)$windowStart, (int)$this->startYear);
+		if ((int)$this->startYear < Site::BASE_YEAR && $windowStart < Site::BASE_YEAR) {
+			echo '<p class="hist-note">*Data from before 2009 are mostly from the historical site at Whitestone Pond in Hampstead. '
 				. 'Where data from that record is missing, other nearby sites were used, including St James Park, Heathrow, and Kew Gardens (pre-1910). '
 				. 'Best efforts have been made to adjust for site differences, but uncertainties are somewhat greater for this data. '
 				. 'I am grateful to the Met Office for making this data available for free through the '
@@ -649,47 +736,59 @@ class Report {
 	 * @param bool $alignLeft float table left (else centre)
 	 * @param bool $showToday include the 'today' footer row
 	 * @param bool $showFoot  include the today/yesterday footer rows
-	 * @param bool $isDaily   daily (vs monthly) labels in the footer
+	 * @param bool|string $isDaily  true/'daily', false/'monthly', or 'annual' footer labels
 	 * @param bool $isCount   values are plain counts (no unit conversion)
 	 * @param float $sumfix   divisor applied before colour lookup
 	 */
 	public function rankTable($values, $dates, $rankNum, $title, $alignLeft, $showToday, $showFoot, $isDaily = true, $isCount = false, $sumfix = 1) {
-		$align = $alignLeft ? 'left' : 'center';
-		HTML::table('table1', '49%" align="' . $align, 3);
-		HTML::tableHead($title);
-		HTML::tr();
-		HTML::td('Rank'); HTML::td('Value'); HTML::td('Date');
-		HTML::tr_end();
+		$side = $alignLeft ? 'rk-left' : 'rk-right';
+		echo '<div class="rk-grid ' . $side . '">';
+		echo '<div class="rk-caption">' . htmlspecialchars($title) . '</div>';
+		echo '<div class="rk-row rk-head">';
+		echo '<div class="rk-lab">#</div><div class="rk-lab">Value</div><div class="rk-lab">Date</div>';
+		echo '</div>';
 
 		for ($i = 1; $i <= $rankNum; $i++) {
 			if (!isset($values[$i])) { continue; }
-			HTML::tr('row' . HTML::colcol($i));
-			HTML::td($i);
-			HTML::td($this->rankVal($values[$i], $isCount), $this->rankClass($values[$i], $isCount, $sumfix));
-			HTML::td(isset($dates[$i]) ? $dates[$i] : '');
-			HTML::tr_end();
+			echo '<div class="rk-row">';
+			echo '<div class="rk-rank">' . $i . '</div>';
+			echo '<div class="rk-val ' . $this->rankClass($values[$i], $isCount, $sumfix) . '">'
+				. $this->rankVal($values[$i], $isCount) . '</div>';
+			echo '<div class="rk-date">' . (isset($dates[$i]) ? $dates[$i] : '') . '</div>';
+			echo '</div>';
 		}
 
+		$period = is_string($isDaily) ? $isDaily : ($isDaily ? 'daily' : 'monthly');
 		if ($showFoot) {
-			$todayLbl = $isDaily ? 'Today' : 'Current Month';
-			$yestLbl = $isDaily ? 'Yesterday' : 'Last Month';
+			if ($period === 'annual') {
+				$todayLbl = 'Current year';
+				$yestLbl = 'Last year';
+			} elseif ($period === 'monthly') {
+				$todayLbl = 'Current month';
+				$yestLbl = 'Last month';
+			} else {
+				$todayLbl = 'Today';
+				$yestLbl = 'Yesterday';
+			}
 			if ($showToday && isset($values['today'])) {
-				HTML::tr('tblfoot" style="border-top:3px solid #6F7;');
-				HTML::td(isset($dates['today']) ? $dates['today'] : '');
-				HTML::td($this->rankVal($values['today'], $isCount), $this->rankClass($values['today'], $isCount, $sumfix));
-				HTML::td($todayLbl);
-				HTML::tr_end();
+				echo '<div class="rk-row rk-foot rk-foot-today">';
+				echo '<div class="rk-rank">' . (isset($dates['today']) ? $dates['today'] : '') . '</div>';
+				echo '<div class="rk-val ' . $this->rankClass($values['today'], $isCount, $sumfix) . '">'
+					. $this->rankVal($values['today'], $isCount) . '</div>';
+				echo '<div class="rk-date">' . $todayLbl . '</div>';
+				echo '</div>';
 			}
 			if (isset($values['yest']) && $values['yest'] !== null) {
-				HTML::tr('tblfoot');
-				HTML::td(isset($dates['yest']) ? $dates['yest'] : '');
-				HTML::td($this->rankVal($values['yest'], $isCount), $this->rankClass($values['yest'], $isCount, $sumfix));
-				HTML::td($yestLbl);
-				HTML::tr_end();
+				echo '<div class="rk-row rk-foot">';
+				echo '<div class="rk-rank">' . (isset($dates['yest']) ? $dates['yest'] : '') . '</div>';
+				echo '<div class="rk-val ' . $this->rankClass($values['yest'], $isCount, $sumfix) . '">'
+					. $this->rankVal($values['yest'], $isCount) . '</div>';
+				echo '<div class="rk-date">' . $yestLbl . '</div>';
+				echo '</div>';
 			}
 		}
 
-		HTML::table_end();
+		echo '</div>';
 	}
 
 	private function rankVal($v, $isCount) {

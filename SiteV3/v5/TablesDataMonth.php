@@ -13,6 +13,7 @@ Page::Start();
 $report = new Report(["default" => "rain", "badCats" => ["cloud"]]);
 $report->controls([
 	"heading" => "Monthly Data Tables",
+	"mode" => "monthly",
 	"showYear" => false,
 	"showStartYear" => true,
 	"showSummary" => true,

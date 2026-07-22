@@ -597,7 +597,9 @@ class Data {
 						$val = ((float)$v / 24) * 100;
 					}
 					if ($val > 100) { $val = 100; }
-					$res[$year][$month][$day] = round($val, 1);
+					// Match Wx::Percentage display: 0 dp, or 1 dp when under 10%.
+					$dp = ($val > 0 && $val < 10) ? 1 : 0;
+					$res[$year][$month][$day] = round($val, $dp);
 				}
 			}
 		}

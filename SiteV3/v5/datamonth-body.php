@@ -46,9 +46,10 @@ function tdmMakeTable($report, $DAT, $t, $heading, $startYr) {
 
 	for ($y = $yrYest; $y >= $fromYr; $y--) {
 		echo '<div class="dm-row">';
+		$yrLabel = $y . ($y < Site::BASE_YEAR ? '*' : '');
 		echo '<div class="dm-year"><a href="/wxdataday.php?vartype='
 			. htmlspecialchars($report->type) . '&year=' . $y
-			. '" title="View full data for year">' . $y . '</a></div>';
+			. '" title="View full data for year">' . $yrLabel . '</a></div>';
 
 		for ($m = 1; $m <= 12; $m++) {
 			$isFuture = ($y === $yrYest && $m > $monYest);
@@ -179,7 +180,7 @@ function nw3_datamonth_render(Report $report) {
 			. "(the anomaly for the current month is unadjusted for the month's degree of completeness).</p>";
 	}
 
-	$report->historicalInfo();
+	$report->historicalInfo($fromYr);
 
 	$unitLabel = strip_tags(Wx::getUnits($report->unit));
 	return array(

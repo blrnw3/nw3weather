@@ -8,15 +8,16 @@ Page::init([
 ]);
 Page::Start();
 
-// ---- Column metadata (matches the dat{year}.csv layout, 33 data columns) ----
+// ---- Column metadata (matches the dat{year}.csv layout, 36 data columns) ----
 $DESC = ['Minimum Temperature','Maximum Temperature','Mean Temperature','Minimum Humidity','Maximum Humidity','Mean Humidity',
 	'Minimum Pressure','Maximum Pressure','Mean Pressure','Mean Wind Speed','Maximum Wind Speed','Maximum Gust','Mean Wind Direction',
 	'Rainfall','Maximum Hourly Rain','Maximum 10-min Rain','Maximum Rain Rate','Minimum Dew Point','Maximum Dew Point','Mean Dew Point',
 	'Night Minimum (21-09)','Day Maximum (09-21)','Max 10m Temp Rise','Max 1hr Temp Rise','Max 1hr Hum Rise','Max 10m Temp Fall',
-	'Max 1hr Temp Fall','Max 1hr Hum Fall','Max 10m Wind Speed','Minimum Feels-like','Maximum Feels-like','Mean Feels-like','Air-frost Hrs'];
-$T = Wx::Temperature; $H = Wx::Humidity; $P = Wx::Pressure; $W = Wx::Wind; $D = Wx::Direction; $R = Wx::Rain; $RR = Wx::RainRate; $HR = Wx::Hours;
-$UNIT = [$T,$T,$T, $H,$H,$H, $P,$P,$P, $W,$W,$W, $D, $R,$R,$R, $RR, $T,$T,$T, $T,$T, $T,$T,$H,$T,$T,$H, $W, $T,$T,$T, $HR];
-$CNUM = [4,4,4, 0,0,0, 6,6,6, 3,3,3,3, 2,2,2,2, 0,0,0, 4,4, 4,4,0,4,4,0, 3, 4,4,4, 4];
+	'Max 1hr Temp Fall','Max 1hr Hum Fall','Max 10m Wind Speed','Minimum Feels-like','Maximum Feels-like','Mean Feels-like','Air-frost Hrs',
+	'Minimum PM2.5','Maximum PM2.5','Mean PM2.5'];
+$T = Wx::Temperature; $H = Wx::Humidity; $P = Wx::Pressure; $W = Wx::Wind; $D = Wx::Direction; $R = Wx::Rain; $RR = Wx::RainRate; $HR = Wx::Hours; $AQ = Wx::Pm25;
+$UNIT = [$T,$T,$T, $H,$H,$H, $P,$P,$P, $W,$W,$W, $D, $R,$R,$R, $RR, $T,$T,$T, $T,$T, $T,$T,$H,$T,$T,$H, $W, $T,$T,$T, $HR, $AQ,$AQ,$AQ];
+$CNUM = [4,4,4, 0,0,0, 6,6,6, 3,3,3,3, 2,2,2,2, 0,0,0, 4,4, 4,4,0,4,4,0, 3, 4,4,4, 4, 2,2,2];
 $NCOL = count($DESC);
 $ccd = ['c'=>'Sunny','f'=>'Mostly Sunny','p'=>'Partly Cloudy','b'=>'Mostly Cloudy','o'=>'Overcast','-'=>'transitioned to',
 	';'=>'with periods of','/'=>'or','h'=>'Hazy','u'=>'unknown'];
@@ -83,13 +84,15 @@ if ($isToday) {
 			$g('mean','rain'),$g('max','rnhr'),$g('max','rn10'),$g('max','rate'), $g('min','dewp'),$g('max','dewp'),$g('mean','dewp'),
 			$g('min','night'),$g('max','day'), $g('max','tchange10'),$g('max','tchangehr'),$g('max','hchangehr'),
 			$g('min','tchange10'),$g('min','tchangehr'),$g('min','hchangehr'), $g('max','w10m'),
-			$g('min','feel'),$g('max','feel'),$g('mean','feel'), $g('misc','frosthrs')];
+			$g('min','feel'),$g('max','feel'),$g('mean','feel'), $g('misc','frosthrs'),
+			$g('min','pm25'),$g('max','pm25'),$g('mean','pm25')];
 		$ddatt = [$g('timeMin','temp'),$g('timeMax','temp'),'', $g('timeMin','humi'),$g('timeMax','humi'),'',
 			$g('timeMin','pres'),$g('timeMax','pres'),'', '',$g('timeMax','wind'),$g('timeMax','gust'),'',
 			'',$g('timeMax','rnhr'),$g('timeMax','rn10'),$g('timeMax','rate'), $g('timeMin','dewp'),$g('timeMax','dewp'),'',
 			$g('timeMin','night'),$g('timeMax','day'), $g('timeMax','tchange10'),$g('timeMax','tchangehr'),$g('timeMax','hchangehr'),
 			$g('timeMin','tchange10'),$g('timeMin','tchangehr'),$g('timeMin','hchangehr'), $g('timeMax','w10m'),
-			$g('timeMin','feel'),$g('timeMax','feel'),''];
+			$g('timeMin','feel'),$g('timeMax','feel'),'', '',
+			$g('timeMin','pm25'),$g('timeMax','pm25'),''];
 	}
 }
 
@@ -192,38 +195,47 @@ for ($xi = 0; $xi < 3; $xi++) {
 $ddanomx0 = (!$blank($ddat[0]) && !$blank($ddat[1])) ? ' (' . Wx::conv(($ddat[1] - $ddat[0]) - $dtanom[3], Wx::AbsTemp, false, true) . ')' : '';
 
 // ---- Manual observations decode ----
-$decodeCloud = function ($ts) use ($ccd) {
+$ccdGet = function ($key) use ($ccd) { return isset($ccd[$key]) ? $ccd[$key] : ''; };
+$decodeCloud = function ($ts) use ($ccd, $ccdGet) {
 	if ($ts === '' || $ts === null) { return 'not available'; }
 	if (strpos($ts, ':') !== false) {
-		$parts = explode(':', $ts); $out = [];
+		$parts = explode(':', $ts); $out = array();
 		foreach ($parts as $pi => $p) {
-			if (strlen($p) > 1) { $cs = str_split($p); $out[$pi] = trim(($ccd[$cs[0]] ?? '') . ' ' . ($ccd[$cs[1]] ?? '') . ' ' . (isset($cs[2]) ? ($ccd[$cs[2]] ?? '') : '')); }
-			else { $out[$pi] = $ccd[$p] ?? $p; }
+			if (strlen($p) > 1) {
+				$cs = str_split($p);
+				$out[$pi] = trim($ccdGet($cs[0]) . ' ' . $ccdGet($cs[1]) . ' ' . (isset($cs[2]) ? $ccdGet($cs[2]) : ''));
+			} else {
+				$out[$pi] = isset($ccd[$p]) ? $ccd[$p] : $p;
+			}
 		}
-		return 'am: ' . ($out[0] ?? '') . '<br /> pm: ' . ($out[1] ?? '');
+		return 'am: ' . (isset($out[0]) ? $out[0] : '') . '<br /> pm: ' . (isset($out[1]) ? $out[1] : '');
 	}
-	if (strlen($ts) > 1) { $cs = str_split($ts); return trim(($ccd[$cs[0]] ?? '') . ' ' . ($ccd[$cs[1]] ?? '') . ' ' . (isset($cs[2]) ? ($ccd[$cs[2]] ?? '') : '')); }
-	if (strlen($ts) > 0) { return $ccd[$ts] ?? $ts; }
+	if (strlen($ts) > 1) {
+		$cs = str_split($ts);
+		return trim($ccdGet($cs[0]) . ' ' . $ccdGet($cs[1]) . ' ' . (isset($cs[2]) ? $ccdGet($cs[2]) : ''));
+	}
+	if (strlen($ts) > 0) { return isset($ccd[$ts]) ? $ccd[$ts] : $ts; }
 	return 'not available';
 };
-$cloudText = $decodeCloud($ddatm[2] ?? '');
+$cloudText = $decodeCloud(isset($ddatm[2]) ? $ddatm[2] : '');
 
-$events = []; $afFlag = (isset($ddat[20]) && is_numeric($ddat[20]) && $ddat[20] < 0);
-$sn = $ddatm[3] ?? ''; if ($sn !== '') { $events[] = 'Snowfall' . ($sn === '0.1' ? ' (trace)' : ''); }
-$ly = $ddatm[4] ?? ''; if ($ly !== '') { $events[] = 'Lying Snow' . ($ly === '0.1' ? ' (trace)' : ''); }
-$hl = $ddatm[5] ?? ''; if ($hl !== '') { $events[] = 'Hail (' . ($hl == '1' ? 'small' : ($hl == '2' ? 'medium' : 'large')) . ' stones)'; }
-$th = $ddatm[6] ?? ''; if ($th !== '') { $events[] = ($th == 1 ? 'Thunder' : ($th == '2' ? 'Light Thunderstorm' : ($th == '3' ? 'Moderate Thunderstorm' : 'Severe Thunderstorm'))); }
-$fg = $ddatm[7] ?? ''; if ($fg !== '') { $events[] = 'Dense Fog'; }
+$events = array(); $afFlag = (isset($ddat[20]) && is_numeric($ddat[20]) && $ddat[20] < 0);
+$sn = isset($ddatm[3]) ? $ddatm[3] : ''; if ($sn !== '') { $events[] = 'Snowfall' . ($sn === '0.1' ? ' (trace)' : ''); }
+$ly = isset($ddatm[4]) ? $ddatm[4] : ''; if ($ly !== '') { $events[] = 'Lying Snow' . ($ly === '0.1' ? ' (trace)' : ''); }
+$hl = isset($ddatm[5]) ? $ddatm[5] : ''; if ($hl !== '') { $events[] = 'Hail (' . ($hl == '1' ? 'small' : ($hl == '2' ? 'medium' : 'large')) . ' stones)'; }
+$th = isset($ddatm[6]) ? $ddatm[6] : ''; if ($th !== '') { $events[] = ($th == 1 ? 'Thunder' : ($th == '2' ? 'Light Thunderstorm' : ($th == '3' ? 'Moderate Thunderstorm' : 'Severe Thunderstorm'))); }
+$fg = isset($ddatm[7]) ? $ddatm[7] : ''; if ($fg !== '') { $events[] = 'Dense Fog'; }
 if ($afFlag) { $events[] = 'Air Frost'; }
 $eventsText = count($events) ? implode(', ', $events) : 'None';
 
-$comments = trim($ddatm[8] ?? '');
+$comments = trim(isset($ddatm[8]) ? $ddatm[8] : '');
 $awayText = (isset($ddatm[11]) && $ddatm[11] == 1) ? 'Yes - observations may be unreliable' : 'No';
 $pondText = (isset($ddatm[12]) && $ddatm[12] !== '') ? Wx::conv($ddatm[12], Wx::Temperature, true) : 'n/a';
 $sunMax = isset($sunLines[$zidx]) ? (float)$sunLines[$zidx] : 0;
-$sunVal = ($ddatm[0] ?? '') === 'b' ? 0 : ($ddatm[0] ?? '');
+$sunRaw = isset($ddatm[0]) ? $ddatm[0] : '';
+$sunVal = ($sunRaw === 'b') ? 0 : $sunRaw;
 $sunText = is_numeric($sunVal) ? (round($sunVal, 1) . ' hrs' . ($sunMax > 0 ? ' [' . HTML::acronym('Out of ' . round($sunMax) . ' hrs possible', round($sunVal / $sunMax * 100) . '%', true) . ']' : '')) : 'n/a';
-$wetText = is_numeric($ddatm[1] ?? '') ? round($ddatm[1], 1) . ' hrs' : 'n/a';
+$wetText = (isset($ddatm[1]) && is_numeric($ddatm[1])) ? round($ddatm[1], 1) . ' hrs' : 'n/a';
 ?>
 
 <h1>Daily Report for <?php echo date('jS F Y', $sproc); ?></h1>
@@ -234,13 +246,13 @@ if ($badMessage) { echo "<p><b>Bad date specified. Defaulted to $badMessage repo
 $prevs = $sproc - 86400; $nexts = $sproc + 86400;
 echo '<table width="800"><tr><td align="left">';
 if ($sproc > Date::mkdate(2, 1, 2009)) {
-	echo '<a href="/wxhistday.php?year=' . date('Y', $prevs) . '&amp;month=' . date('n', $prevs) . '&amp;day=' . date('j', $prevs) . '" title="View previous day">&lt;&lt;Previous Day</a>';
+	echo '<a href="wxhistday.php?year=' . date('Y', $prevs) . '&amp;month=' . date('n', $prevs) . '&amp;day=' . date('j', $prevs) . '" title="View previous day">&lt;&lt;Previous Day</a>';
 } else { echo '&lt;&lt;Previous Day'; }
 echo '</td><td align="center"><form method="get" action="">';
 HTML::dateFormMaker($yproc, $mproc, $dproc);
-echo '<input type="submit" value="View Report" /></form> <a href="/wxhistday.php" title="Most recent day">Reset</a></td><td align="right">';
+echo '<input type="submit" value="View Report" /></form> <a href="wxhistday.php" title="Most recent day">Reset</a></td><td align="right">';
 if ($sproc < Date::mkdate((int)Date::$dmonth, (int)Date::$dday, (int)Date::$dyear)) {
-	echo '<a href="/wxhistday.php?year=' . date('Y', $nexts) . '&amp;month=' . date('n', $nexts) . '&amp;day=' . date('j', $nexts) . '" title="View next day">Next Day&gt;&gt;</a>';
+	echo '<a href="wxhistday.php?year=' . date('Y', $nexts) . '&amp;month=' . date('n', $nexts) . '&amp;day=' . date('j', $nexts) . '" title="View next day">Next Day&gt;&gt;</a>';
 } else { echo 'Next Day&gt;&gt;'; }
 echo '</td></tr></table>';
 
@@ -317,15 +329,20 @@ echo '<dl><dt>Notes</dt><dd>Detailed daily weather report for Hampstead, NW3, Lo
 	. 'Cumulative anomalies are relative to the expected value for the month-to-date. '
 	. 'Sun and wet hours are derived from webcam/rainfall analysis and may be adjusted. Data should be viewed with appropriate caution.</dd></dl>';
 
-echo '<p><a href="/wxhistmonth.php?month=' . $mproc . '&amp;year=' . $yproc . '" title="Monthly report for ' . Date::monthfull($mproc) . ' ' . $yproc . '">View monthly summary</a></p>';
+echo '<p><a href="wxhistmonth.php?month=' . $mproc . '&amp;year=' . $yproc . '" title="Monthly report for ' . Date::monthfull($mproc) . ' ' . $yproc . '">View monthly summary</a></p>';
 
-// ---- Charts (replacing legacy JPGraph day graphs) ----
+// ---- Charts (fixed multi-var + direction + AQ + rose; no toggles) ----
 echo '<h2>Daily Graph of Conditions</h2>';
-Charts::intradayPanel(['date' => $stamp, 'num' => 1], null, ['height' => 420]);
-echo '<h3>Wind direction</h3>';
-Charts::intraday(['date' => $stamp, 'num' => 1], 'wdir', ['height' => 280]);
-echo '<h2>Wind rose</h2>';
-Charts::rose(['st' => $stamp, 'en' => $stamp], ['height' => 460]);
+Charts::reportIntraday(
+	['date' => $stamp, 'num' => 1],
+	['st' => $stamp, 'en' => $stamp],
+	[
+		'multiHeight' => 420,
+		'height' => 300,
+		'roseHeight' => 460,
+		'dateLabel' => date('j M Y', $sproc),
+	]
+);
 
 // ---- Webcam / timelapse (best-effort, files live on mounted volumes) ----
 echo '<h2>Webcam Summary of Cloud Conditions</h2>';

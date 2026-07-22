@@ -32,6 +32,7 @@ class Wx {
 	const Pressure = 'pres';
 	const Wind = 'wind';
 	const Humidity = 'humi';
+	const Percentage = 'pct'; // 0–100% series (e.g. sun % of max)
 	const Snow = 'snow';
 	const Distance = 'dist';
 	const Days = 'days';
@@ -121,6 +122,14 @@ class Wx {
 			'thresholds_day' => [30,40,50, 60,70,80, 90,98],
 			'threshold_colours' => ['f3e2a9','f7d358','fb0', 'd7df01','a5df00','74df00', '31b404','329511','0b6121'],
 			'threshold_txtcolours' => [false,false,false, false,false,false, false,false, 'C4C9C2']
+		],
+		self::Percentage => [
+			'name' => self::Percentage,
+			'unit' => '%',
+			'precision' => 0,
+			'precison_increase_threshold' => 10, // show 1 dp when under 10%
+			'summable' => false,
+			'round_size' => 10,
 		],
 		self::Snow => [
 			'name' => self::Snow,
@@ -346,7 +355,7 @@ class Wx {
 
 		//Prettifier preparation
 		$value = $abs ? abs((float)$val) : (float)$val;
-		$space = ($type === self::Humidity) ? '' : ' ';
+		$space = ($type === self::Humidity || $type === self::Percentage) ? '' : ' ';
 		$unit = $show_unit ? $space. $var['unit'] : '';
 		$sign = $show_sign ? '+' : '';
 		$precision = $var['precision'] + $dpa;
@@ -756,14 +765,14 @@ class Wx {
 		],
 		'sunhrp' => [
 			'description' => 'Sun % of max possible',
-			'unit' => Wx::None,
+			'unit' => Wx::Percentage,
 			'colour' => '#ceca4a',
 			'start_year' => 1910,
 			'derived' => true,
 		],
 		'wethrp' => [
 			'description' => 'Wet % of day',
-			'unit' => Wx::None,
+			'unit' => Wx::Percentage,
 			'colour' => '#1cbfbf',
 			'start_year' => 2009,
 			'derived' => true,

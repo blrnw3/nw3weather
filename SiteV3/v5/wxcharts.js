@@ -268,6 +268,53 @@
 		});
 	}
 
+	/** Format Ymd → "15 Jun 2025"; optional multi-day range ending on that date. */
+	function reportPeriodLabel(json, override) {
+		if (override) { return override; }
+		var ymd = json && json.date ? String(json.date) : '';
+		if (!/^\d{8}$/.test(ymd)) { return null; }
+		var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+		var y = parseInt(ymd.slice(0, 4), 10);
+		var m = parseInt(ymd.slice(4, 6), 10) - 1;
+		var d = parseInt(ymd.slice(6, 8), 10);
+		var end = d + ' ' + months[m] + ' ' + y;
+		var num = (json && json.num) ? parseInt(json.num, 10) : 1;
+		if (!num || num <= 1) { return end; }
+		var startDt = new Date(y, m, d - (num - 1));
+		return startDt.getDate() + ' ' + months[startDt.getMonth()] + ' ' + startDt.getFullYear() + ' \u2013 ' + end;
+	}
+
+	// Fixed report layout: one fetch → two multi-var charts + any single-var charts.
+	// cfg: { url, multi: [{id, kind}], singles: [{id, var}], dateLabel? }
+	function intradayFixed(cfg) {
+		var ids = [];
+		(cfg.multi || []).forEach(function (m) { ids.push(m.id); });
+		(cfg.singles || []).forEach(function (s) { ids.push(s.id); });
+		setLoading(ids, true);
+		return $.getJSON(cfg.url, function (json) {
+			setLoading(ids, false);
+			var period = reportPeriodLabel(json, cfg.dateLabel);
+			(cfg.multi || []).forEach(function (m) {
+				var suffix = (m.kind === 'wgp')
+					? ' wind speed, gust & pressure'
+					: ' temperature, humidity, rain';
+				var opts = period ? { title: period + suffix } : {};
+				multiChart(m.id, json, m.kind, opts);
+			});
+			(cfg.singles || []).forEach(function (s) {
+				var v = s['var'] || s.variable;
+				var name = (INTRA_TABS[v] || INTRA_TABS.temp).name;
+				var opts = period ? { title: period + ' ' + name } : {};
+				renderIntraday(s.id, json, v, opts);
+			});
+		}).fail(function () {
+			setLoading(ids, false);
+			ids.forEach(function (id) {
+				$('#' + id).html('<p>Could not load chart.</p>');
+			});
+		});
+	}
+
 	// ---- Multi-day / rolling-window dashboard ----
 	// Fetches one intraday dataset (typically num=2, ie yesterday+today) and drives
 	// a main single-variable chart (with a client-side range slice) plus any number
@@ -1017,6 +1064,7 @@
 	window.NW3.histChart = histChart;
 	window.NW3.intradayChart = intradayChart;
 	window.NW3.intradayPanel = intradayPanel;
+	window.NW3.intradayFixed = intradayFixed;
 	window.NW3.intradayPage = intradayPage;
 	window.NW3.multiChart = multiChart;
 	window.NW3.histSelect = histSelect;

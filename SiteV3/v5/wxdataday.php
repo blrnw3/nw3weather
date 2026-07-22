@@ -13,8 +13,8 @@ Page::Start();
 $report = new Report(["default" => "rain", "badCats" => ["cloud"]]);
 $report->controls([
 	"heading" => "Daily Data Tables",
+	"mode" => "daily",
 	"showYear" => true,
-	"isDaily" => true,
 	"buttonSelectors" => true,
 	"ajaxFragment" => "datadaydata.php",
 ]);
