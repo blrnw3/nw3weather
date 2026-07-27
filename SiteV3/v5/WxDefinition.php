@@ -24,6 +24,7 @@ class Wx {
 	static function _conv_pres($val) { return $val / 33.864; }
 	static function _conv_snow($val) { return $val / 2.54; }
 	static function _conv_density($val) { return $val / 1.262; }
+	static function _conv_dist($val) { return $val / 0.3048; }
 
 	// Units Enum
 	const None = 0;
@@ -312,7 +313,8 @@ class Wx {
 			'cadetblue' => '#3a7a86', 'sienna' => '#a0522d', 'rosybrown' => '#bc8f8f',
 			'green' => '#2f9e44', 'darkred' => '#8b0000', 'black' => '#333333',
 			'cyan' => '#1cb5bf', 'yellow' => '#e6c000', 'aqua' => '#1cbfbf',
-			'gold' => '#d4a017',
+			'gold' => '#d4a017', 'blueviolet' => '#8a2be2', 'brown' => '#a52a2a',
+			'aquamarine' => '#7fffd4', 'darkblue' => '#00008b', 'blue' => '#4169e1',
 		];
 		return isset($map[$base]) ? $map[$base] : (isset($map[$name]) ? $map[$name] : '#4f81bd');
 	}
@@ -372,7 +374,7 @@ class Wx {
 
 		//Actual conversion
 		if(key_exists('conversion', $var)) {
-			$value = call_user_func('Wx::_conv_'. $var['name'], [$value]);
+			$value = call_user_func('Wx::_conv_'. $var['name'], $value);
 		}
 
 		//Format
@@ -794,6 +796,49 @@ class Wx {
 			'anomaly' => true,
 			'start_year' => 2009,
 		],
+		// Climate-normals-only (used by wxaverages / histdata mode=climate)
+		'rdays' => [
+			'description' => 'Rain Days > 1mm',
+			'unit' => Wx::Days,
+			'colour' => 'cadetblue4',
+			'summable' => true,
+			'start_year' => 1871,
+		],
+		'maxsun' => [
+			'description' => 'Max Sun Hours',
+			'unit' => Wx::Hours,
+			'colour' => 'gold3',
+			'summable' => true,
+			'start_year' => 1910,
+		],
+		'afdays' => [
+			'description' => 'Air Frosts',
+			'unit' => Wx::Days,
+			'colour' => 'darkblue',
+			'summable' => true,
+			'start_year' => 2009,
+		],
+		'tsdays' => [
+			'description' => 'Thunder Days',
+			'unit' => Wx::Days,
+			'colour' => 'darkgoldenrod1',
+			'summable' => true,
+			'start_year' => 2009,
+		],
+		'lsdays' => [
+			'description' => 'Days Of Lying Snow',
+			'unit' => Wx::Days,
+			'colour' => 'cyan',
+			'summable' => true,
+			'start_year' => 2009,
+		],
+		'fsdays' => [
+			'description' => 'Days Of Falling Snow',
+			'unit' => Wx::Days,
+			'colour' => 'cyan3',
+			'summable' => true,
+			'start_year' => 2009,
+		],
 		'cloud' => [
 			'description' => 'Cloud Cover',
 			'unit' => Wx::None,
@@ -1052,9 +1097,9 @@ class LTA {
 		],
 		"wmean" => [
 			"monthly" => [5.2,5.1,5.2,4.9,4.7,4.4,4.3,4.0,3.9,4.1,4.6,5.1],
-			"desription" => "Rain Days > 1mm",
-			"unit" => false,
-			"color" => "cadetblue4"
+			"desription" => "Wind Speed",
+			"unit" => 4,
+			"color" => "brown3"
 		],
 		"sunhr" => [
 			"monthly" => [69,78,113,161,189,194,195,185,147,118,84,65],
@@ -1072,9 +1117,33 @@ class LTA {
 		],
 		"wethr" => [
 			"monthly" => [67,52,53,46,40,37,34,38,41,49,63,62],
-			"desription" => "Max Sun hours",
+			"desription" => "Wet Hours",
 			"unit" => false,
 			"color" => "aquamarine4"
+		],
+		"afdays" => [
+			"monthly" => [6,6,3,0.7,0.0,0,0,0,0,0.3,2,5],
+			"desription" => "Air Frosts",
+			"unit" => false,
+			"color" => "darkblue"
+		],
+		"tsdays" => [
+			"monthly" => [0.4,0.3,0.6,1.0,2.0,3.0,2.5,2.5,2.0,1.0,0.4,0.3],
+			"desription" => "Thunder Days",
+			"unit" => false,
+			"color" => "darkgoldenrod1"
+		],
+		"lsdays" => [
+			"monthly" => [2.5,2.5,0.4,0.2,0,0,0,0,0,0,0.3,1],
+			"desription" => "Days Of Lying Snow",
+			"unit" => false,
+			"color" => "cyan"
+		],
+		"fsdays" => [
+			"monthly" => [5,5,4,2,0,0,0,0,0,0,1,3],
+			"desription" => "Days Of Falling Snow",
+			"unit" => false,
+			"color" => "cyan3"
 		],
 	];
 

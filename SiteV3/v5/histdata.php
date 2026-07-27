@@ -34,12 +34,22 @@ LTA::init();
 
 header('Content-Type: application/json; charset=utf-8');
 
-$type = isset($_GET['type']) ? preg_replace('/[^a-z0-9]/', '', $_GET['type']) : 'tmin';
+$mode = isset($_GET['mode']) ? $_GET['mode'] : 'daily';
+$typesParam = isset($_GET['types']) ? $_GET['types'] : '';
+$climateTypes = [];
+if ($mode === 'climate' && $typesParam !== '') {
+	foreach (explode(',', $typesParam) as $t) {
+		$t = preg_replace('/[^a-z0-9]/', '', $t);
+		if ($t !== '' && isset(Wx::$daily[$t])) { $climateTypes[] = $t; }
+	}
+}
+$type = isset($_GET['type']) ? preg_replace('/[^a-z0-9]/', '', $_GET['type']) : '';
+if ($type === '' && count($climateTypes)) { $type = $climateTypes[0]; }
+if ($type === '') { $type = 'tmin'; }
 if (!isset(Wx::$daily[$type])) {
 	echo json_encode(['error' => 'unknown type']);
 	exit;
 }
-$mode = isset($_GET['mode']) ? $_GET['mode'] : 'daily';
 $meta = Wx::$daily[$type];
 $convType = Data::typeToConvType($type);
 $summable = isset($meta['summable']) && $meta['summable'];
@@ -78,14 +88,16 @@ function ltaMonthly($type) {
 	if (isset(LTA::$vars[$type]) && is_array(LTA::$vars[$type]) && isset(LTA::$vars[$type]['monthly'])) {
 		return LTA::$vars[$type]['monthly'];
 	}
-	// Mean temperature normal isn't stored directly; derive it from tmin/tmax.
-	if ($type === 'tmean'
+	// tmean / trange aren't stored directly; derive from tmin/tmax.
+	if (($type === 'tmean' || $type === 'trange')
 		&& isset(LTA::$vars['tmin']['monthly']) && isset(LTA::$vars['tmax']['monthly'])) {
-		$mean = array();
+		$out = array();
 		for ($m = 0; $m < 12; $m++) {
-			$mean[$m] = (LTA::$vars['tmin']['monthly'][$m] + LTA::$vars['tmax']['monthly'][$m]) / 2;
+			$lo = LTA::$vars['tmin']['monthly'][$m];
+			$hi = LTA::$vars['tmax']['monthly'][$m];
+			$out[$m] = ($type === 'trange') ? ($hi - $lo) : (($lo + $hi) / 2);
 		}
-		return $mean;
+		return $out;
 	}
 	return null;
 }
@@ -94,21 +106,34 @@ function ltaDaily($type) {
 	if (isset(LTA::$vars[$type]) && is_array(LTA::$vars[$type]) && isset(LTA::$vars[$type]['daily']) && count(LTA::$vars[$type]['daily'])) {
 		return LTA::$vars[$type]['daily'];
 	}
-	// Mean temperature normal isn't stored directly; derive it from tmin/tmax.
-	if ($type === 'tmean'
+	// tmean / trange aren't stored directly; derive from tmin/tmax.
+	if (($type === 'tmean' || $type === 'trange')
 		&& !empty(LTA::$vars['tmin']['daily']) && !empty(LTA::$vars['tmax']['daily'])) {
-		$mean = array();
+		$out = array();
 		$n = max(count(LTA::$vars['tmin']['daily']), count(LTA::$vars['tmax']['daily']));
 		for ($z = 0; $z < $n; $z++) {
 			if (!isset(LTA::$vars['tmin']['daily'][$z]) || !isset(LTA::$vars['tmax']['daily'][$z])) {
-				$mean[$z] = null;
+				$out[$z] = null;
 				continue;
 			}
-			$mean[$z] = (LTA::$vars['tmin']['daily'][$z] + LTA::$vars['tmax']['daily'][$z]) / 2;
+			$lo = LTA::$vars['tmin']['daily'][$z];
+			$hi = LTA::$vars['tmax']['daily'][$z];
+			$out[$z] = ($type === 'trange') ? ($hi - $lo) : (($lo + $hi) / 2);
 		}
-		return $mean;
+		return $out;
 	}
 	return null;
+}
+
+/** Colour for a climate series: prefer LTA palette, else Wx::$daily. */
+function climateColour($type) {
+	if (isset(LTA::$vars[$type]) && is_array(LTA::$vars[$type]) && isset(LTA::$vars[$type]['color'])) {
+		return Wx::colourHex(LTA::$vars[$type]['color']);
+	}
+	if (isset(Wx::$daily[$type]['colour'])) {
+		return Wx::colourHex(Wx::$daily[$type]['colour']);
+	}
+	return '#999999';
 }
 
 if ($mode === 'annual') {
@@ -178,15 +203,46 @@ if ($mode === 'annual') {
 	}
 
 } elseif ($mode === 'climate') {
-	// Monthly climate normals (+ daily if available)
-	$lta = ltaMonthly($type);
-	$data = [];
+	// Monthly climate normals — one or more series (types=a,b or type=a)
+	$seriesTypes = count($climateTypes) ? $climateTypes : [$type];
 	for ($m = 0; $m < 12; $m++) {
 		$out['categories'][] = Date::$months3[$m];
-		$data[] = $lta ? cv($lta[$m]) : null;
 	}
-	$out['title'] = 'Climate normal ' . $meta['description'];
-	$out['series'][] = ['name' => 'Normal', 'data' => $data, 'color' => '#999999', 'type' => 'column'];
+	$descs = [];
+	foreach ($seriesTypes as $st) {
+		if (!isset(Wx::$daily[$st])) { continue; }
+		$stMeta = Wx::$daily[$st];
+		$stConv = Data::typeToConvType($st);
+		// LTA day/hour counts are often fractional (e.g. 0.7 frost days) — keep 1dp.
+		$stPrec = isset(Wx::$UNITS[$stConv]['precision']) ? Wx::$UNITS[$stConv]['precision'] : 1;
+		if ($stConv === Wx::Days || $stConv === Wx::Hours || $stConv === Wx::None) {
+			$stPrec = 1;
+		}
+		$lta = ltaMonthly($st);
+		$data = [];
+		for ($m = 0; $m < 12; $m++) {
+			if ($lta === null || !isset($lta[$m]) || !is_numeric($lta[$m])) {
+				$data[] = null;
+			} else {
+				$data[] = Wx::convNum($lta[$m], $stConv, $stPrec);
+			}
+		}
+		$descs[] = $stMeta['description'];
+		$out['series'][] = [
+			'name' => $stMeta['description'],
+			'data' => $data,
+			'color' => climateColour($st),
+			'type' => 'column',
+		];
+	}
+	// Shared axis uses the first series' unit (legacy graphs group compatible vars).
+	$out['unit'] = strip_tags(Wx::getUnits($convType));
+	$out['precision'] = ($convType === Wx::Days || $convType === Wx::Hours || $convType === Wx::None) ? 1 : $precision;
+	$out['yMinZero'] = !in_array($convType, [Wx::Pressure, Wx::Temperature, Wx::AbsTemp], true);
+	$out['title'] = 'LTA for ' . implode(' & ', $descs);
+	if (count($out['series']) === 1) {
+		$out['series'][0]['name'] = 'Normal';
+	}
 
 } else {
 	// ----- daily -----

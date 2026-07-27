@@ -3,7 +3,7 @@ require "Page.php";
 Page::init([
 	"fileNum" => 20,
 	"title" => "Climate",
-	"description" => "Long-term climate averages for Hampstead, North London NW3. 30-year period weather averages for rain, temperature, air frost, thunder, wind, snow and sun.",
+	"description" => "Long-term climate averages for Hampstead, North London NW3. 30-year period weather averages/means/sums/totals for rain, temperature, air frost, thunder, wind, snow and sun",
 ]);
 Page::Start();
 
@@ -18,10 +18,10 @@ $wind = LTA::$vars['wmean']['monthly'];
 $wethr = LTA::$vars['wethr']['monthly'];
 $sun = LTA::$vars['sunhr']['monthly'];
 $maxsun = LTA::$vars['maxsun']['monthly'];
-$AF = [6, 6, 3, 0.7, 0.0, 0, 0, 0, 0, 0.3, 2, 5];
-$TS = [0.4, 0.3, 0.6, 1.0, 2.0, 3.0, 2.5, 2.5, 2.0, 1.0, 0.4, 0.3];
-$LS = [2.5, 2.5, 0.4, 0.2, 0, 0, 0, 0, 0, 0, 0.3, 1];
-$FS = [5, 5, 4, 2, 0, 0, 0, 0, 0, 0, 1, 3];
+$AF = LTA::$vars['afdays']['monthly'];
+$TS = LTA::$vars['tsdays']['monthly'];
+$LS = LTA::$vars['lsdays']['monthly'];
+$FS = LTA::$vars['fsdays']['monthly'];
 
 // Column order matches the table (13 displayed columns; sun uses maxsun for %).
 $vars = [$tmin, $tmax, $tmean, $trange, $rain, $rdays, $wind, $AF, $TS, $LS, $FS, $wethr, $sun];
@@ -34,27 +34,37 @@ $cv = function ($v, $type, $dpa = 0) { return Wx::conv($v, $type, false, false, 
 ?>
 
 <h1>Climate of NW3</h1>
-<p>Much like the rest of London, NW3's climate is a function of its proximity to the European continent, its position close to the North
-	Atlantic and North Sea, the Urban Heat Island effect, and London's northerly latitude. With the prevailing wind being broadly
-	south-westerly, bringing tropical maritime air, London has consistent rainfall throughout the year, relatively low sunshine totals,
-	few snow days, and a lack of temperature extremes - those generally coming when the wind switches to the Arctic north or polar
-	north-east (cold), or to the continental south or south-east (heat).</p>
-<p>Thunderstorms are infrequent and generally weak compared with those of the near continent. The main weather hazards in NW3 are
-	strong winds, dense fog, and the occasional heat wave or icy cold snap. Although not subject to river flooding (NW3 is home to
-	inner London's highest point, Whitestone Pond, 134 m), brief flash flooding has occurred from
-	localised slow-moving thunderstorms.</p>
+
+<p>
+	Much like the rest of London, NW3's climate is a function of its proximity to the European continent, positioning close to the North Atlantic
+	and the North Sea, and to some extent the Urban Heat Island effect and London's rather northerly latitude.
+	The direction of the wind and the air mass this brings is largely responsible for which of these sources most influences the day-to-day weather.
+	With the prevailing wind being broadly south-westerly, bringing tropical maritime air, this gives London its climate of consistent rainfall throughout the year,
+	relatively low sunshine total and few snow days, as well as a lack of extremes of temperature, those generally coming when the wind switches away from this direction
+	- to the Arctic north or Polar north-east for cold, and to the Continental south or south east for heat.
+</p>
+<p>
+	Thunderstorms are not frequent, and generally comparatively weak
+	compared to those of the near continent. The main weather hazards in NW3 are strong winds, dense fog, and the odd heat wave or icy cold snap.
+	Although not subject to river flooding since we are home to inner London's highest point (Whitestone Pond, <?php echo Wx::conv(134, Wx::Distance); ?>),
+	we have also experienced occasional brief flash flooding, typically from localised slow-moving thunderstorms.
+</p>
 
 <h1>Long-term Climate Averages</h1>
-<p>These are estimates for the long-term average conditions at NW3, derived from data for 1991-2020 - the
-	<acronym title="World Meteorological Organisation">WMO</acronym> standard reference period - from nearby official Met Office
-	sites (Heathrow and Northolt), adjusted for local differences.</p>
+
+<p>
+	These are estimates for the long-term average weather conditions, i.e. the climate, at NW3.
+	<br /> They were derived from data for the period 1991-2020 - the <acronym title="World Meteorological Organisation">WMO</acronym>
+	 standard reference period - from nearby official Met Office sites
+	 (Heathrow and Northolt) by comparing observed data for recent years and adjusting accordingly.
+</p>
 
 <table class="table1" width="100%" cellpadding="2" cellspacing="0">
 <tr class="table-top">
 <td rowspan="2" class="td4">&nbsp;</td>
 <td colspan="4" width="30%" class="td14C">Temperature / <?php echo strip_tags(Wx::getUnits(Wx::Temperature)); ?></td>
 <td colspan="2" width="16%" class="td12C">Rain / <?php echo strip_tags(Wx::getUnits(Wx::Rain)); ?></td>
-<td rowspan="2" width="8%" class="td13C">Wind<br />Speed / <?php echo strip_tags(Wx::getUnits(Wx::Wind)); ?></td>
+<td rowspan="2" width="8%" class="td13C">Wind<br />Speed<br />/ <?php echo strip_tags(Wx::getUnits(Wx::Wind)); ?></td>
 <td colspan="2" width="15%" class="td4C">Days Of</td>
 <td colspan="2" width="14%" class="td4C">Days Of Snow</td>
 <td rowspan="2" width="7%" class="td19C">Wet<br />Hours</td>
@@ -68,10 +78,10 @@ $cv = function ($v, $type, $dpa = 0) { return Wx::conv($v, $type, false, false, 
 </tr>
 <?php
 $sunCell = function ($sun, $maxsun) {
-	return $sun . ' (' . HTML::acronym('Maximum possible: ' . round($maxsun) . ' hrs', round(100 * $sun / $maxsun), true) . '%)';
+	return $sun . ' (' . HTML::acronym('Maximum Possible: ' . $maxsun . ' hrs', round(100 * $sun / $maxsun), true) . '%)';
 };
 $wetCell = function ($wet, $maxhrs) {
-	return HTML::acronym(Util::roundi(100 * $wet / $maxhrs) . '% of a possible ' . $maxhrs . ' hrs', $wet);
+	return HTML::acronym(Util::roundi(100 * $wet / $maxhrs) . '% of a maximum possible: ' . $maxhrs . ' hrs', $wet);
 };
 
 // Monthly rows
@@ -91,7 +101,7 @@ echo '<tr class="rowlight"><td class="td4" colspan="' . ($ncol + 1) . '">&nbsp;<
 
 // Seasonal rows
 for ($s = 0; $s < 4; $s++) {
-	$style = ($s % 2 == 1) ? 'light' : 'dark';
+	$style = (($s + 1) == (int)Date::$season) ? 'hlite' : (($s % 2 == 1) ? 'light' : 'dark');
 	echo '<tr class="row' . $style . '"><td class="td4" style="font-weight:bold">' . Date::$snames[$s] . '</td>';
 	$seasonVals = [];
 	for ($v = 0; $v < $ncol; $v++) {
@@ -112,20 +122,22 @@ for ($s = 0; $s < 4; $s++) {
 }
 echo '<tr class="rowdark"><td class="td4" colspan="' . ($ncol + 1) . '">&nbsp;</td></tr>';
 
-// Sum row
+// Sum / Annual / Range aggregates (annual means rounded to 1dp, matching legacy)
 $annualSum = []; $annualAv = []; $annualRange = [];
 for ($v = 0; $v < $ncol; $v++) {
 	$annualSum[$v] = array_sum($vars[$v]);
-	$annualAv[$v] = Util::mean($vars[$v]);
+	$annualAv[$v] = round(Util::mean($vars[$v]), 1);
 	$annualRange[$v] = max($vars[$v]) - min($vars[$v]);
 }
-$annualMaxSun = array_sum($maxsun);
+$annualMaxSunSum = array_sum($maxsun);
+$annualMaxSunAv = round(Util::mean($maxsun), 1);
+
 echo '<tr class="rowlight"><td class="td4" style="font-weight:bold">Sum</td>';
 for ($v = 0; $v < $ncol; $v++) {
 	if (!$sumorno[$v]) { echo '<td class="td' . $stype[$v] . 'C">&nbsp;</td>'; continue; }
 	$dpa = ($v == 4 || $v == 7) ? -1 : 0;
 	$val = $cv($annualSum[$v], $ctype[$v], $dpa);
-	if ($v == 12) { $val = $sunCell($annualSum[12], $annualMaxSun); }
+	if ($v == 12) { $val = $sunCell($annualSum[12], $annualMaxSunSum); }
 	if ($v == 11) { $val = $wetCell($annualSum[11], 365 * 24); }
 	echo '<td class="td' . $stype[$v] . 'C">' . $val . '</td>';
 }
@@ -136,7 +148,7 @@ echo '<tr class="rowdark"><td class="td4" style="font-weight:bold">Annual</td>';
 for ($v = 0; $v < $ncol; $v++) {
 	$dpa = ($v == 4) ? -1 : 0;
 	$val = $cv($annualAv[$v], $ctype[$v], $dpa);
-	if ($v == 12) { $val = $sunCell($annualAv[12], $annualMaxSun / 12); }
+	if ($v == 12) { $val = $sunCell($annualAv[12], $annualMaxSunAv); }
 	if ($v == 11) { $val = $wetCell($annualAv[11], 365 * 24 / 12); }
 	echo '<td class="td' . $stype[$v] . 'C">' . $val . '</td>';
 }
@@ -157,7 +169,22 @@ echo '</tr>';
 
 <h2>Climate charts</h2>
 <?php
-foreach (['tmax' => 'Maximum Temperature', 'tmin' => 'Minimum Temperature', 'rain' => 'Rainfall', 'sunhr' => 'Sun Hours', 'wmean' => 'Wind Speed'] as $cvar => $lbl) {
-	Charts::daily(['type' => $cvar, 'mode' => 'climate'], ['height' => 300]);
+// Match legacy graphclim.php groupings (paired / grouped LTA bars).
+$climCharts = [
+	['tmin', 'tmax'],
+	['tmean', 'trange'],
+	['rain'],
+	['rdays'],
+	['wmean'],
+	['afdays', 'tsdays', 'lsdays', 'fsdays'],
+	['wethr'],
+	['maxsun', 'sunhr'],
+];
+foreach ($climCharts as $types) {
+	Charts::daily([
+		'mode' => 'climate',
+		'types' => implode(',', $types),
+		'type' => $types[0],
+	], ['height' => count($types) > 1 ? 350 : 300]);
 }
 Page::End();
