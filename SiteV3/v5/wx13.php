@@ -23,10 +23,8 @@ $conv = [Wx::Wind, Wx::Wind, Wx::Wind, Wx::Wind, Wx::Wind, Wx::None,
 
 $mainTables->currentLatest($measures, $values, $conv);
 
-$measures2 = array('Lowest Daily Gust', 'Highest Daily Speed', 'Highest Daily Gust', 'Lowest Daily Speed',
-	'Calmest Day', 'Windiest Day', 'Averages', 'Mean Speed', 'Mean Daily Gust', 'Mean Daily Speed');
-$mainTables->avgsExtrmsRecs($measures2);
-$mainTables->pastYearAvgsExtrms($measures2);
+$mainTables->avgsExtrmsRecs();
+$mainTables->pastYearAvgsExtrms();
 $mainTables->rankTables();
 ?>
 
@@ -41,11 +39,10 @@ $mainTables->rankTables();
 <h3>Latest wind charts</h3>
 <?php
 Charts::intradayPanel(['num' => 1], ['wind' => 'Speed &amp; gust', 'wdir' => 'Direction'], ['height' => 400]);
-Charts::daily(['type' => 'wmean', 'mode' => 'daily', 'year' => Date::$yr_yest, 'month' => 0, 'lta' => 1], ['height' => 440]);
 ?>
 
-<h3>All-time wind rose for NW3</h3>
-<?php Charts::rose(['en' => 'now', 'st' => '20090101'], ['height' => 640]); ?>
+<h3>All-time wind rose for NW3 (2009-present)</h3>
+<?php Charts::rose(['en' => 'now', 'st' => '20090101'], ['height' => 480]); ?>
 
 <h2>Notes</h2>
 <ul>

@@ -496,6 +496,16 @@ div.charts > .wxsel-wrap {
 	width: auto;
 	margin: 0;
 }
+.wxsel-chart.wxsel-chart-selector-below {
+	flex-direction: column;
+}
+.wxsel-chart.wxsel-chart-selector-below .wxchart {
+	width: 100%;
+}
+.wxsel-chart.wxsel-chart-selector-below .wxsel-panel {
+	width: 100%;
+	max-width: none;
+}
 .wxsel-panel {
 	flex: 1 1 0;
 	min-width: 9rem;
@@ -759,6 +769,10 @@ div.charts-with-title .wxchart {
 .rowhlite {
 	color: black;
 	background-color: #CCF5B1;
+}
+.rowcurrent {
+	color: black;
+	background-color: #dce8f5;
 }
 
 .td12 {

@@ -180,17 +180,21 @@ class DataSummarizer {
 		$this->anomable = array_key_exists("anomaly", Wx::$daily[$this->varName]);
 		$this->summaryKey = $this->summable ? "sum" : "mean";
 
-		$this->startYear = $startYear === null ? Site::BASE_YEAR : $startYear;
-		$this->monthSummaries = $this->getMonthlySummaries();
-		$this->yearSummaries = $this->getYearlySummaries();
-		$this->seasonSummaries = $this->getSeasonSummaries();
+		$requested = $startYear === null ? Site::BASE_YEAR : (int)$startYear;
+		$varStart = isset(Wx::$daily[$varName]['start_year'])
+			? (int)Wx::$daily[$varName]['start_year'] : Site::BASE_YEAR;
+		$this->startYear = max($requested, $varStart);
 
 		$this->monthIdx = date('m');  // 01-12
 		$this->dayIdx = date('d');  // 01-31
 
-		// Re-index vals by year-month-day
+		// Include pre-2009 historic series when the requested start is before BASE_YEAR.
+		$raw = Data::varToDatArray($varName, $this->startYear);
+
+		// Re-index vals by year-month-day (floored at startYear)
 		$this->vals = [];
-		foreach (Data::getAllData($varName) as $year => $arr1) {
+		foreach ($raw as $year => $arr1) {
+			if ((int)$year < $this->startYear) { continue; }
 			foreach ($arr1 as $month => $arr2) {
 				$monthIdx = Util::zerolead($month);
 				foreach ($arr2 as $day => $val) {
@@ -199,6 +203,11 @@ class DataSummarizer {
 				}
 			}
 		}
+
+		$this->monthSummaries = $this->getMonthlySummariesFromRaw($raw);
+		$this->yearSummaries = $this->getYearlySummaries();
+		$this->seasonSummaries = $this->getSeasonSummaries();
+
 		$this->currentMonth = Util::array_filter_keys($this->vals, function($key) {
 			return substr($key, 0, 7) === Date::$dyear . '-' . $this->monthIdx;
 		});
@@ -237,13 +246,119 @@ class DataSummarizer {
 
 	public function summarize() {
 		$period_summaries = $this->getFixedPeriodSummaries() + $this->getRecentNdaySummaries() + $this->getRecordFixedPeriodMeans() + $this->getRecordNdayMeans();
-		return [
+		$result = [
 			"period_summaries" => $period_summaries,
 			'year_summaries' => $this->yearSummaries,
 			'month_summaries' => $this->monthSummaries,
 			"season_summaries" => $this->seasonSummaries,
 			'ranks' => $this->getRanks()
 		];
+		if ($this->varName === 'rain') {
+			$result['spells'] = $this->getRainSpells();
+		}
+		return $result;
+	}
+
+	/**
+	 * Wet/dry spell summaries for rainfall.
+	 *
+	 * A wet day has at least 0.2 mm; all other stored days are dry, matching
+	 * legacy cron_tags.php. Month attribution uses the spell's earlier midpoint
+	 * for even-length spells: end - floor(length / 2).
+	 *
+	 * @return array current spell plus wet/dry records by scope
+	 */
+	private function getRainSpells() {
+		$vals = $this->vals;
+		ksort($vals);
+
+		$runs = [];
+		$runType = null;
+		$runDates = [];
+		foreach ($vals as $dt => $val) {
+			$type = (!Util::isBlank($val) && (float)$val >= 0.2) ? 'wet' : 'dry';
+			if ($runType !== null && $type !== $runType) {
+				$runs[] = $this->makeRainSpell($runType, $runDates, false);
+				$runDates = [];
+			}
+			$runType = $type;
+			$runDates[] = $dt;
+		}
+		if ($runType !== null && count($runDates)) {
+			$runs[] = $this->makeRainSpell($runType, $runDates, true);
+		}
+
+		$empty = ['wet' => null, 'dry' => null];
+		$result = [
+			'threshold' => 0.2,
+			'current' => count($runs) ? $runs[count($runs) - 1] : null,
+			'current_month' => $empty,
+			'current_year' => $empty,
+			'alltime' => $empty,
+			'alltime_current_month' => $empty,
+			'top' => ['wet' => [], 'dry' => []],
+		];
+
+		$monthStart = sprintf('%04d-%02d-01', (int)Date::$dyear, (int)Date::$dmonth);
+		$yearStart = sprintf('%04d-01-01', (int)Date::$dyear);
+		$today = sprintf('%04d-%02d-%02d', (int)Date::$dyear, (int)Date::$dmonth, (int)Date::$dday);
+		$currentMonth = (int)Date::$dmonth;
+
+		foreach ($runs as $spell) {
+			$type = $spell['type'];
+			$this->keepLongerSpell($result['alltime'][$type], $spell);
+			$this->keepTopSpell($result['top'][$type], $spell, 10);
+
+			// Legacy current-month/year records include a spell crossing the
+			// boundary, and count its full length.
+			if ($spell['endDate'] >= $monthStart && $spell['startDate'] <= $today) {
+				$this->keepLongerSpell($result['current_month'][$type], $spell);
+			}
+			if ($spell['endDate'] >= $yearStart && $spell['startDate'] <= $today) {
+				$this->keepLongerSpell($result['current_year'][$type], $spell);
+			}
+
+			// Legacy all-time "current month" records assign a cross-month spell
+			// to the month containing its midpoint.
+			if ((int)substr($spell['midpointDate'], 5, 2) === $currentMonth) {
+				$this->keepLongerSpell($result['alltime_current_month'][$type], $spell);
+			}
+		}
+		return $result;
+	}
+
+	private function makeRainSpell($type, $dates, $ongoing) {
+		$length = count($dates);
+		$midpointIdx = $length - 1 - (int)floor($length / 2);
+		return [
+			'type' => $type,
+			'length' => $length,
+			'startDate' => $dates[0],
+			'endDate' => $dates[$length - 1],
+			'midpointDate' => $dates[$midpointIdx],
+			'ongoing' => (bool)$ongoing,
+		];
+	}
+
+	private function keepLongerSpell(&$record, $candidate) {
+		// Strictly greater preserves the first occurrence on ties, as legacy did.
+		if ($record === null || $candidate['length'] > $record['length']) {
+			$record = $candidate;
+		}
+	}
+
+	/** Keep the top N longest spells; on ties, keep the earliest first. */
+	private function keepTopSpell(&$list, $candidate, $n) {
+		$list[] = $candidate;
+		usort($list, function ($a, $b) {
+			if ($a['length'] !== $b['length']) {
+				return ($a['length'] > $b['length']) ? -1 : 1;
+			}
+			return strcmp($a['startDate'], $b['startDate']);
+		});
+		if (count($list) > $n) {
+			$list = array_slice($list, 0, $n);
+		}
 	}
 
 	private function getBaseSummary($arr) {
@@ -297,10 +412,12 @@ class DataSummarizer {
 		}
 	}
 
-	private function getMonthlySummaries() {
+	/** Build monthly summaries from a [year][month][day] array already floored/merged. */
+	private function getMonthlySummariesFromRaw($raw) {
 		$allMonthSummary = [];
-		for ($year = $this->startYear; $year <= Date::$dyear; $year++) {
-			foreach (Data::getYearlyData($this->varName, $year) as $month => $dailyData) {
+		foreach ($raw as $year => $months) {
+			if ((int)$year < $this->startYear) { continue; }
+			foreach ($months as $month => $dailyData) {
 				$month = strval(Util::zerolead($month));
 				$summary = $this->getBaseSummary($dailyData);
 				$summary['minDate'] = $year . '-' . $month . '-' . Util::zerolead($summary['minDate']);
@@ -440,6 +557,8 @@ class DataSummarizer {
 	}
 
 	private function extractHighLow($arr, $n) {
+		// Days/months with no reading must not rank as the lowest.
+		$arr = Util::numericOnly($arr);
 		asort($arr);  // NB: this is in-place
 		// Get bottom N
 		$bottom = array_slice($arr, 0, $n, true);
@@ -461,6 +580,8 @@ class DataSummarizer {
 			"daily_all_this_date" => $this->extractHighLow($this->currentDateAll, 5),
 			"month_mean_alltime" => $this->extractHighLow(Util::array_pluck($this->monthSummariesFlat, $this->summaryKey), 10),
 			"month_mean_all_this_month" => $this->extractHighLow(Util::array_pluck($this->currentMonthSummariesFlat, $this->summaryKey), 10),
+			"month_count_alltime" => $this->extractHighLow(Util::array_pluck($this->monthSummariesFlat, 'count_nonzero'), 10),
+			"month_count_all_this_month" => $this->extractHighLow(Util::array_pluck($this->currentMonthSummariesFlat, 'count_nonzero'), 10),
 		];
 	}
 }

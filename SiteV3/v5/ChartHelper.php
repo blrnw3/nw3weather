@@ -667,6 +667,8 @@ class Charts {
 		$isMonthly = (isset($params['mode']) && $params['mode'] === 'monthly');
 		$headingPrefix = array_key_exists('headingPrefix', $opts) ? $opts['headingPrefix'] : 'Custom: ';
 		$showHeading = !isset($opts['showHeading']) || !empty($opts['showHeading']);
+		$hideGroups = !empty($opts['hideGroups']) || count($groups) <= 1;
+		$selectorBelow = !empty($opts['selectorBelow']);
 
 		$defaultGroup = $groups[0]['id'];
 		foreach ($groups as $g) {
@@ -691,9 +693,14 @@ class Charts {
 			echo '<h3 id="' . $headingId . '" class="wxsel-heading">'
 				. htmlspecialchars($headingPrefix . $headingInit) . '</h3>' . "\n";
 		}
-		echo '<div class="wxsel-chart">' . "\n";
+		echo '<div class="wxsel-chart' . ($selectorBelow ? ' wxsel-chart-selector-below' : '') . '">' . "\n";
+		if ($selectorBelow) {
+			echo '<div id="' . $id . '" class="wxchart wxchart-loading" style="min-height:' . $height . 'px;"></div>' . "\n";
+		}
 		echo '<div id="' . $panelId . '" class="wxsel-panel" role="group" aria-label="Chart variable">' . "\n";
-		self::emitGroupButtons($groups, $defaultGroup);
+		if (!$hideGroups) {
+			self::emitGroupButtons($groups, $defaultGroup);
+		}
 		echo '<div class="wxsel-label">Measure</div>' . "\n";
 		echo '<div class="wxsel-subtypes" role="tablist"></div>' . "\n";
 		if ($isMonthly) {
@@ -706,7 +713,9 @@ class Charts {
 				. '</div>' . "\n";
 		}
 		echo '</div>' . "\n";
-		echo '<div id="' . $id . '" class="wxchart wxchart-loading" style="min-height:' . $height . 'px;"></div>' . "\n";
+		if (!$selectorBelow) {
+			echo '<div id="' . $id . '" class="wxchart wxchart-loading" style="min-height:' . $height . 'px;"></div>' . "\n";
+		}
 		echo '</div>' . "\n"; // wxsel-chart
 		echo '</div>' . "\n"; // wxsel-wrap
 

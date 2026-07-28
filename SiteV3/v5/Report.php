@@ -138,10 +138,18 @@ class Report {
 		$this->rankLimit = isset($_GET['rankLimit']) ? (int)$_GET['rankLimit'] : 25;
 		if (!in_array($this->rankLimit, self::$ranknumOptions, true)) { $this->rankLimit = 25; }
 
-		$this->startYearOptions = [1871, 1910, 1950, 1980, 2000, 2009, 2020];
+		$allStartOpts = [1871, 1950, 1980, 2000, 2009];
+		$this->startYearOptions = [];
+		foreach ($allStartOpts as $y) {
+			if ($y >= $this->startYear) { $this->startYearOptions[] = $y; }
+		}
+		if (!count($this->startYearOptions)) {
+			$this->startYearOptions[] = max(2009, $this->startYear);
+		}
 		$this->startYrReport = isset($_GET['start_year_rep']) ? (int)$_GET['start_year_rep'] : 2009;
 		if (!in_array($this->startYrReport, $this->startYearOptions, true)) {
-			$this->startYrReport = 2009;
+			$this->startYrReport = in_array(2009, $this->startYearOptions, true)
+				? 2009 : $this->startYearOptions[0];
 		}
 
 		// Available monthly-summary tab types (mirrors wxdatagen)

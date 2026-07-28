@@ -796,6 +796,18 @@ class Util {
 	 * @param string $key The key whose values to extract.
 	 * @return array The array of values.
 	 */
+	/** Drop blank/non-numeric entries and cast the rest to float, preserving keys. */
+	public static function numericOnly($array) {
+		$result = [];
+		if (!is_array($array)) { return $result; }
+		foreach ($array as $k => $val) {
+			if ($val === null || is_array($val)) { continue; }
+			if (Util::isBlank($val) || !is_numeric($val)) { continue; }
+			$result[$k] = floatval($val);
+		}
+		return $result;
+	}
+
 	public static function array_pluck($array, $key) {
 		$result = [];
 		foreach ($array as $k => $val) {

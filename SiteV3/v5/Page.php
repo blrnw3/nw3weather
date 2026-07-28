@@ -163,6 +163,14 @@ END;
 
 	public static function End() {
 		$year = date("Y");
+		$phpload = round(microtime(true) - self::$start, 3);
+		$sessCount = isset($_SESSION['count'][self::$fileNum]) ? $_SESSION['count'][self::$fileNum] : 0;
+		$pageLoad = HTML::acronym('Session count: ' . $sessCount, 'page load: ' . $phpload . ' s');
+		if (self::$me) {
+			$memUsage = round(memory_get_usage() / 1024 / 1024, 1);
+			$memPeak = round(memory_get_peak_usage() / 1024 / 1024, 1);
+			$pageLoad .= "; Mem: $memUsage, Peak: $memPeak";
+		}
 		echo <<<END
 		</div> <!-- main -->
 		</div> <!-- nav-wrapper -->
@@ -180,7 +188,7 @@ END;
 			<div>
 				<p><a href="contact.php" title="E-mail me">&#x1F4E7;&#xFE0E; Contact / Social</a></p>
 				<p>&copy; nw3weather 2010-$year</p>
-				<p>&#x1F527;&#xFE0E; Site version 5.0</p>
+				<p>&#x1F527;&#xFE0E; Site version 5.0 <span style="font-size:85%">($pageLoad)</span></p>
 			</div>
 		</div>
 	</body>

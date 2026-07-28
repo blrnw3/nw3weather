@@ -1042,8 +1042,8 @@ class LTA {
 	}
 
 	/**
-	 * Mean of daily normals over the last $days calendar days ending today
-	 * (matches TagGen MTD / recent-period mean anomalies).
+	 * Climate normal for the last $days calendar days ending today.
+	 * Mean variables: mean of daily normals. Summable variables (rain, etc.): sum of daily normals.
 	 */
 	public static function getRecentPeriodMeanAnom($type, $days) {
 		$sum = 0;
@@ -1056,7 +1056,9 @@ class LTA {
 				$n++;
 			}
 		}
-		return $n > 0 ? $sum / $n : null;
+		if ($n <= 0) { return null; }
+		$isSummable = isset(Wx::$daily[$type]['summable']) && Wx::$daily[$type]['summable'];
+		return $isSummable ? $sum : ($sum / $n);
 	}
 
 	public static function getDateEndingAnom($type, $end, $duration) {

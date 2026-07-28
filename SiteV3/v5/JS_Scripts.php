@@ -540,5 +540,97 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		});
 	}
 	NW3_dmCrosshair();
+
+	/**
+	 * Start-year chips for detail-page sections (averages + rankings).
+	 * Multiple sections share one start year: changing either reloads all and updates the URL.
+	 */
+	var NW3_detailStartYear = {
+		sections: [],
+		curStart: 2009,
+		page: '',
+		reqSeq: 0,
+		bound: false
+	};
+	function NW3_detailStartYearSel(cfg) {
+		var root = document.getElementById(cfg.selId || 'vd-avg-sel');
+		var body = document.getElementById(cfg.bodyId || 'vd-avg-ajax');
+		if (!root || !body) { return; }
+		var st = NW3_detailStartYear;
+		st.curStart = parseInt(cfg.startYearRep, 10) || st.curStart || 2009;
+		st.page = cfg.page || st.page || window.location.pathname;
+		st.sections.push({
+			root: root,
+			body: body,
+			group: cfg.group,
+			fragment: cfg.fragment || '/v5/detailavgdata.php'
+		});
+
+		function pageUrl(y) {
+			var page = st.page;
+			var base = page.indexOf('?') >= 0 ? page.substring(0, page.indexOf('?')) : page;
+			return base + '?start_year_rep=' + encodeURIComponent(y);
+		}
+		function syncChips() {
+			st.sections.forEach(function (sec) {
+				sec.root.querySelectorAll('a.wxsel-chip[data-start-year]').forEach(function (a) {
+					var y = parseInt(a.getAttribute('data-start-year'), 10);
+					a.classList.toggle('active', y === st.curStart);
+					a.setAttribute('href', pageUrl(y));
+				});
+			});
+		}
+		function loadSection(sec, y, seq) {
+			var url = sec.fragment + '?group=' + encodeURIComponent(sec.group)
+				+ '&start_year_rep=' + encodeURIComponent(y);
+			sec.body.classList.add('wxsel-loading');
+			return fetch(url, { credentials: 'same-origin' }).then(function (res) {
+				return res.text();
+			}).then(function (html) {
+				if (seq !== st.reqSeq) { return; }
+				sec.body.innerHTML = html;
+				sec.body.classList.remove('wxsel-loading');
+			}).catch(function () {
+				if (seq !== st.reqSeq) { return; }
+				sec.body.classList.remove('wxsel-loading');
+				window.location = pageUrl(y);
+			});
+		}
+		function load(y) {
+			st.curStart = y;
+			syncChips();
+			if (window.history && history.replaceState) {
+				history.replaceState({ start_year_rep: y }, '', pageUrl(y));
+			}
+			if (!window.fetch) {
+				window.location = pageUrl(y);
+				return;
+			}
+			var seq = ++st.reqSeq;
+			st.sections.forEach(function (sec) { loadSection(sec, y, seq); });
+		}
+		if (!st.bound) {
+			st.bound = true;
+			document.addEventListener('click', function (ev) {
+				var a = ev.target.closest ? ev.target.closest('a.wxsel-chip[data-start-year]') : null;
+				if (!a) { return; }
+				var owned = false;
+				for (var i = 0; i < st.sections.length; i++) {
+					if (st.sections[i].root.contains(a)) { owned = true; break; }
+				}
+				if (!owned) { return; }
+				ev.preventDefault();
+				var y = parseInt(a.getAttribute('data-start-year'), 10);
+				if (!isNaN(y) && y !== st.curStart) { load(y); }
+			});
+		}
+		syncChips();
+	}
+	// Back-compat alias used by older inline calls.
+	function NW3_detailAvgSel(cfg) {
+		if (!cfg.selId) { cfg.selId = 'vd-avg-sel'; }
+		if (!cfg.bodyId) { cfg.bodyId = 'vd-avg-ajax'; }
+		NW3_detailStartYearSel(cfg);
+	}
 	//]]>
 </script>
