@@ -46,7 +46,7 @@ class Wx {
 	const RainRate = 'rnrt';
 	const Direction = 'dir';
 	const DirectionRaw = 'dir_raw';
-	const Pm25 = 'pm25'; // Air quality (raw PM2.5); banded to UK DAQI for display
+	const Pm25 = 'pm25'; // Air pollution (raw PM2.5); banded to UK DAQI for display
 
 	public static $windlabels = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
 		'S', 'SSW','SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];

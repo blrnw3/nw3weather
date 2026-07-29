@@ -125,7 +125,7 @@ function nw3_yest_range($var, $unit) {
 	if ($lo === null && $hi === null) {
 		return '-';
 	}
-	return (($lo === null) ? '-' : '<b>' . Wx::conv($lo, $unit) . '</b>') . ' &rarr; ' . (($hi === null) ? '-' : '<b>' . Wx::conv($hi, $unit) . '</b>');
+	return (($lo === null) ? '-' : '<b>' . Wx::conv($lo, $unit, false) . '</b>') . ' &rarr; ' . (($hi === null) ? '-' : '<b>' . Wx::conv($hi, $unit, false) . '</b>');
 }
 
 /** Beaufort force number (e.g. "F4"), linked to the scale page. */
@@ -205,10 +205,10 @@ function nw3_render_cards() {
 	$nowHtml = '<span id="var4">' . Wx::conv(Live::$wind, Wx::Wind) . '</span> ' . Wx::conv(Live::$wdir, Wx::Direction);
 	nw3_card('wind', 'icon-wind.svg', 'Wind', 'wx13.php', 'Detailed wind data',
 		$nowHtml,
-		'Gusting to <b>' . Wx::conv(Live::$gustRaw, Wx::Wind) . '</b> &middot; ' . nw3_bft_force(Live::$wind),
+		'Gusting to <b>' . Wx::conv(Live::$gustRaw, Wx::Wind, true, false, -1) . '</b> &middot; ' . nw3_bft_force(Live::$wind),
 		array(
-			array('Max gust', nw3_at($maxGust, Wx::Wind, nw3_live_get($NOW, 'timeMax', 'gust'))),
-			array('Max hr gust', (Live::$maxgsthr === null ? '-' : '<b>' . Wx::conv(Live::$maxgsthr, Wx::Wind) . '</b>')),
+			array('Max gust', nw3_at($maxGust, Wx::Wind, nw3_live_get($NOW, 'timeMax', 'gust'), -1)),
+			array('Max hr gust', (Live::$maxgsthr === null ? '-' : '<b>' . Wx::conv(Live::$maxgsthr, Wx::Wind, true, false, -1) . '</b>')),
 			array('Today avg', nw3_at(nw3_live_get($NOW, 'mean', 'wind'), Wx::Wind, null)),
 			array('Yesterday avg', nw3_yest_val('mean', 'wind', Wx::Wind)),
 		));
@@ -222,6 +222,7 @@ function nw3_render_cards() {
 		array(
 			array('Low', nw3_at(nw3_live_get($NOW, 'min', 'humi'), Wx::Humidity, nw3_live_get($NOW, 'timeMin', 'humi'))),
 			array('High', nw3_at(nw3_live_get($NOW, 'max', 'humi'), Wx::Humidity, nw3_live_get($NOW, 'timeMax', 'humi'))),
+			array('24hr avg', nw3_at(nw3_live_get($HR, 'mean', 'humi'), Wx::Humidity, null)),
 			array('Yesterday', nw3_yest_range('humi', Wx::Humidity)),
 			array('24hr trend', nw3_delta(nw3_live_get($HR, 'changeDay', 'humi'), Wx::Humidity)),
 		));
@@ -235,6 +236,7 @@ function nw3_render_cards() {
 		array(
 			array('Low', nw3_at(nw3_live_get($NOW, 'min', 'dewp'), Wx::Temperature, nw3_live_get($NOW, 'timeMin', 'dewp'))),
 			array('High', nw3_at(nw3_live_get($NOW, 'max', 'dewp'), Wx::Temperature, nw3_live_get($NOW, 'timeMax', 'dewp'))),
+			array('24hr avg', nw3_at(nw3_live_get($HR, 'mean', 'dewp'), Wx::Temperature, null)),
 			array('Yesterday', nw3_yest_range('dewp', Wx::Temperature)),
 			array('24hr trend', nw3_delta(nw3_live_get($HR, 'changeDay', 'dewp'), Wx::AbsTemp)),
 		));
@@ -248,6 +250,7 @@ function nw3_render_cards() {
 		array(
 			array('Low', nw3_at(nw3_live_get($NOW, 'min', 'pres'), Wx::Pressure, nw3_live_get($NOW, 'timeMin', 'pres'))),
 			array('High', nw3_at(nw3_live_get($NOW, 'max', 'pres'), Wx::Pressure, nw3_live_get($NOW, 'timeMax', 'pres'))),
+			array('24hr avg', nw3_at(nw3_live_get($HR, 'mean', 'pres'), Wx::Pressure, null)),
 			array('Yesterday', nw3_yest_range('pres', Wx::Pressure)),
 			array('24hr trend', nw3_delta(nw3_live_get($HR, 'changeDay', 'pres'), Wx::Pressure)),
 		));

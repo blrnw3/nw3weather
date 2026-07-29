@@ -87,7 +87,7 @@ class Charts {
 			$vars = array(
 				'temp' => 'Temp', 'dewp' => 'Dew pt', 'humi' => 'Humidity',
 				'pres' => 'Pressure', 'wind' => 'Wind', 'rain' => 'Rain',
-				'pm25' => 'Air quality', 'wdir' => 'Direction',
+				'pm25' => 'Air pollution', 'wdir' => 'Direction',
 			);
 		}
 		$panelId = 'wxp' . (self::$seq + 1);
@@ -108,7 +108,7 @@ class Charts {
 
 	/**
 	 * Fixed report graph block (no toggles): two multi-var charts (temp/hum/dew/rain
-	 * and wind/gust/pressure), then wind direction, air quality, and a wind rose.
+	 * and wind/gust/pressure), then wind direction, air pollution, and a wind rose.
 	 * $params go to intradaydata.php; $roseParams to rosedata.php.
 	 */
 	public static function reportIntraday($params, $roseParams, $opts = array()) {
@@ -138,7 +138,7 @@ class Charts {
 		echo '<div id="' . $idDir . '" class="wx3-chart wxchart-loading" style="min-height:' . $singleH . 'px;"></div>' . "\n";
 		echo '</div>' . "\n";
 		echo '<div class="wx3-chart-wrap">' . "\n";
-		echo '<h3>Air quality</h3>' . "\n";
+		echo '<h3>Air pollution</h3>' . "\n";
 		echo '<div id="' . $idAq . '" class="wx3-chart wxchart-loading" style="min-height:' . $singleH . 'px;"></div>' . "\n";
 		echo '</div>' . "\n";
 		echo '</div>' . "\n";
@@ -192,7 +192,7 @@ class Charts {
 			'humi' => array('Humidity', 'humidity_small.png'),
 			'dewp' => array('Dew point', 'dewy_small.png'),
 			'pres' => array('Pressure', 'pressure2_small.png'),
-			'pm25' => array('Air quality', 'icon-airpollution.svg'),
+			'pm25' => array('Air pollution', 'icon-airpollution.svg'),
 			'wdir' => array('Wind dir', 'icon-compass.svg'),
 		);
 		// Each range: hours window, days to fetch (cover the window across midnight),
@@ -264,7 +264,7 @@ class Charts {
 			'humi' => array('Humidity', 'humidity_small.png'),
 			'dewp' => array('Dew point', 'dewy_small.png'),
 			'pres' => array('Pressure', 'pressure2_small.png'),
-			'pm25' => array('Air quality', 'icon-airpollution.svg'),
+			'pm25' => array('Air pollution', 'icon-airpollution.svg'),
 			'wdir' => array('Wind dir', 'icon-compass.svg'),
 		);
 	}
@@ -424,7 +424,7 @@ class Charts {
 				'options' => array('sunhr' => 'Total'),
 			),
 			array(
-				'id' => 'aq', 'label' => 'Air quality', 'icon' => $img . 'icon-airpollution.svg',
+				'id' => 'aq', 'label' => 'Air pollution', 'icon' => $img . 'icon-airpollution.svg',
 				'options' => array('aqmean' => 'Mean', 'aqmin' => 'Min', 'aqmax' => 'Max'),
 			),
 		);
@@ -479,7 +479,7 @@ class Charts {
 				),
 			),
 			array(
-				'id' => 'aq', 'label' => 'Air quality', 'icon' => $img . 'icon-airpollution.svg',
+				'id' => 'aq', 'label' => 'Air pollution', 'icon' => $img . 'icon-airpollution.svg',
 				'options' => array(
 					'aqmean' => 'Mean', 'aqmin' => 'Min', 'aqmax' => 'Max',
 				),

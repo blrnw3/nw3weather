@@ -27,8 +27,8 @@
 			series: [{ key: 'wdir', name: 'Wind direction', col: '#555' }] },
 		rain: { title: 'rainfall', yTitle: 'Rainfall', unit: 'mm', dp: 1, area: true,
 			series: [{ key: 'rain', name: 'Rainfall', col: '#2554c7' }] },
-		pm25: { title: 'air quality', yTitle: 'PM2.5', unit: '\u00B5g/m\u00B3', dp: 1,
-			series: [{ key: 'pm25', name: 'Air quality (PM2.5)', grad: ['#4f7a4a', '#9ac98f'] }] }
+		pm25: { title: 'air pollution', yTitle: 'PM2.5', unit: '\u00B5g/m\u00B3', dp: 1,
+			series: [{ key: 'pm25', name: 'Air pollution (PM2.5)', grad: ['#4f7a4a', '#9ac98f'] }] }
 	};
 
 	var currentRange = 12;

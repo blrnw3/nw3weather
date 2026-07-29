@@ -1,7 +1,7 @@
 <?php
 /**
  * HTML fragment endpoint for the daily data matrix (wxdataday AJAX updates).
- * Params: vartype, year (same as wxdataday.php).
+ * Params: vartype, year, agg (same as wxdataday.php).
  */
 require __DIR__ . '/Page.php';
 require __DIR__ . '/Report.php';
@@ -30,6 +30,7 @@ $warn = !empty($meta['yearDefaulted'])
 echo '<div id="dd-fragment"'
 	. ' data-type="' . htmlspecialchars($meta['type']) . '"'
 	. ' data-year="' . (int)$meta['year'] . '"'
+	. ' data-agg="' . htmlspecialchars($meta['agg']) . '"'
 	. ' data-start-year="' . (int)$meta['startYear'] . '"'
 	. ' data-title="' . htmlspecialchars($meta['title']) . '"'
 	. ' data-year-defaulted="' . (!empty($meta['yearDefaulted']) ? '1' : '0') . '"'

@@ -21,6 +21,10 @@ class Report {
 	public $startYrReport;      // start year for multi-year reports
 	public $rankLimit;          // rows shown on ranking pages
 	public $summaryType;        // Data::SUMMARY_* chosen via the tab buttons
+	public $spellDir;           // 'above' | 'below' (spell rankings)
+	public $spellThreshold;     // numeric threshold for spell rankings
+	public $spellThresholds;    // preset chips for the current variable
+	public $dayAgg;             // '' | 'min' | 'max' | 'mean' (calendar-day all-years)
 
 	// ---- Derived metadata for $type ----
 	public $meta;               // Wx::$daily[$type]
@@ -123,14 +127,24 @@ class Report {
 		$this->valcolIdx = isset(self::$valcolMap[$this->type]) ? self::$valcolMap[$this->type] : null;
 		$this->valcolConvert = !in_array($this->type, ['hail', 'thunder', 'wdir'], true);
 
+		// Calendar-day all-years aggregation (daily tables): min | max | mean
+		$agg = isset($_GET['agg']) ? $_GET['agg'] : '';
+		$this->dayAgg = in_array($agg, array('min', 'max', 'mean'), true) ? $agg : '';
+
 		// Year / month selection
 		$this->year = isset($_GET['year']) ? (int)$_GET['year'] : (int)Date::$yr_yest;
 		$this->yearDefaulted = false;
-		if ($this->year < $this->startYear) {
-			$this->year = min((int)Date::$dyear, $this->startYear);
-			$this->yearDefaulted = true;
+		if ($this->dayAgg === '') {
+			if ($this->year < $this->startYear) {
+				$this->year = min((int)Date::$dyear, $this->startYear);
+				$this->yearDefaulted = true;
+			}
+			if ($this->year > (int)Date::$dyear) { $this->year = (int)Date::$dyear; }
+		} else {
+			if ($this->year < $this->startYear || $this->year > (int)Date::$dyear) {
+				$this->year = (int)Date::$yr_yest;
+			}
 		}
-		if ($this->year > (int)Date::$dyear) { $this->year = (int)Date::$dyear; }
 		$this->month = isset($_GET['month']) ? (int)$_GET['month'] : 0;
 		if ($this->month < 0 || $this->month > 12) { $this->month = 0; }
 
@@ -150,6 +164,27 @@ class Report {
 		if (!in_array($this->startYrReport, $this->startYearOptions, true)) {
 			$this->startYrReport = in_array(2009, $this->startYearOptions, true)
 				? 2009 : $this->startYearOptions[0];
+		}
+
+		// Spell ranking selectors
+		$this->spellDir = (isset($_GET['spell_dir']) && $_GET['spell_dir'] === 'below') ? 'below' : 'above';
+		$this->spellThresholds = Spells::thresholdPresets($this->type);
+		$defThresh = Spells::defaultThreshold($this->type);
+		if (isset($_GET['threshold']) && is_numeric($_GET['threshold'])) {
+			$this->spellThreshold = (float)$_GET['threshold'];
+		} else {
+			$this->spellThreshold = $defThresh;
+		}
+		$matched = false;
+		foreach ($this->spellThresholds as $p) {
+			if (abs($p - $this->spellThreshold) < 1e-9) {
+				$this->spellThreshold = $p;
+				$matched = true;
+				break;
+			}
+		}
+		if (!$matched) {
+			$this->spellThreshold = $defThresh;
 		}
 
 		// Available monthly-summary tab types (mirrors wxdatagen)
@@ -405,7 +440,7 @@ class Report {
 	 * start-year / summary / rank-limit chips. Optional $o['ajaxFragment'] loads
 	 * the body without a full page reload.
 	 *
-	 * $o['mode']: daily | monthly | rank-daily | rank-monthly | rank-annual
+	 * $o['mode']: daily | monthly | rank-daily | rank-monthly | rank-annual | rank-spells
 	 */
 	private function controlsButtonSelectors($o = []) {
 		require_once __DIR__ . '/ChartHelper.php';
@@ -416,6 +451,7 @@ class Report {
 		$showStartYear = !empty($o['showStartYear']);
 		$showSummary = !empty($o['showSummary']);
 		$showRankLimit = !empty($o['showRankLimit']);
+		$showSpell = !empty($o['showSpell']);
 		$ajaxFragment = isset($o['ajaxFragment']) ? $o['ajaxFragment'] : '';
 		$ajaxBodyId = isset($o['ajaxBodyId']) ? $o['ajaxBodyId'] : 'dd-ajax';
 		if (isset($o['mode'])) {
@@ -427,9 +463,16 @@ class Report {
 		} else {
 			$mode = 'daily';
 		}
-		$isRank = ($mode === 'rank-daily' || $mode === 'rank-monthly' || $mode === 'rank-annual');
+		$isRank = ($mode === 'rank-daily' || $mode === 'rank-monthly' || $mode === 'rank-annual' || $mode === 'rank-spells');
 
 		$titleSuffix = $this->description . ' / ' . strip_tags(Wx::getUnits($this->unit));
+		if ($mode === 'daily' && $this->dayAgg !== '') {
+			$aggTitle = array('min' => 'Min', 'max' => 'Max', 'mean' => 'Mean');
+			$titleSuffix .= ' · ' . $aggTitle[$this->dayAgg] . ' (all years)';
+		}
+		if ($mode === 'rank-spells') {
+			$titleSuffix .= ' · ' . Spells::directionLabel($this->type, $this->spellDir, $this->spellThreshold);
+		}
 		echo '<h1 id="report-sel-heading">' . htmlspecialchars($heading) . ' - '
 			. htmlspecialchars($titleSuffix) . '</h1>';
 
@@ -451,10 +494,14 @@ class Report {
 			if (isset($g['options'][$this->type])) { $activeGroup = $g['id']; break; }
 		}
 
-		$selUrl = function ($overrides) use ($mode, $isRank) {
+		$selUrl = function ($overrides) use ($mode, $isRank, $showSpell) {
 			$params = array('vartype' => $this->type);
 			if ($mode === 'daily') {
-				$params['year'] = $this->year;
+				if ($this->dayAgg !== '') {
+					$params['agg'] = $this->dayAgg;
+				} else {
+					$params['year'] = $this->year;
+				}
 			} elseif ($mode === 'monthly') {
 				$params['start_year_rep'] = $this->startYrReport;
 				$params['summary_type'] = $this->summaryType;
@@ -463,24 +510,35 @@ class Report {
 				if ($mode !== 'rank-annual') {
 					$params['rankLimit'] = $this->rankLimit;
 				}
-				if ($mode === 'rank-daily' || $mode === 'rank-monthly') {
+				if ($mode === 'rank-daily' || $mode === 'rank-monthly' || $mode === 'rank-spells') {
 					$params['month'] = $this->month;
 				}
 				if ($mode === 'rank-monthly' || $mode === 'rank-annual') {
 					$params['summary_type'] = $this->summaryType;
 				}
+				if ($mode === 'rank-spells' || $showSpell) {
+					$params['spell_dir'] = $this->spellDir;
+					$params['threshold'] = $this->spellThreshold;
+				}
 			}
 			foreach ($overrides as $k => $v) { $params[$k] = $v; }
+			if ($mode === 'daily') {
+				if (isset($overrides['year'])) { unset($params['agg']); }
+				if (isset($overrides['agg'])) { unset($params['year']); }
+			}
 			return htmlspecialchars(Page::$pageName . '?' . http_build_query($params));
 		};
 
 		echo '<div class="report-sel" id="report-sel" data-mode="' . htmlspecialchars($mode) . '"'
 			. ' data-type="' . htmlspecialchars($this->type) . '"'
 			. ' data-year="' . (int)$this->year . '"'
+			. ' data-agg="' . htmlspecialchars($this->dayAgg) . '"'
 			. ' data-month="' . (int)$this->month . '"'
 			. ' data-start-year-rep="' . (int)$this->startYrReport . '"'
 			. ' data-summary-type="' . (int)$this->summaryType . '"'
 			. ' data-rank-limit="' . (int)$this->rankLimit . '"'
+			. ' data-spell-dir="' . htmlspecialchars($this->spellDir) . '"'
+			. ' data-threshold="' . htmlspecialchars((string)$this->spellThreshold) . '"'
 			. ' data-body="' . htmlspecialchars($ajaxBodyId) . '"'
 			. ($ajaxFragment !== '' ? ' data-fragment="' . htmlspecialchars($ajaxFragment) . '"' : '')
 			. ' data-heading="' . htmlspecialchars($heading) . '">';
@@ -513,6 +571,36 @@ class Report {
 		}
 		echo '</div></div>';
 
+		if ($showSpell) {
+			echo '<div class="report-sel-row report-sel-labelled">';
+			echo '<div class="wxsel-label">Spell</div>';
+			echo '<div class="wxsel-scale wxsel-spell-dir" role="tablist">';
+			foreach (['above' => 'Above / Wet', 'below' => 'Below / Dry'] as $dir => $lab) {
+				if ($this->type === 'rain') {
+					$lab = ($dir === 'above') ? 'Wet' : 'Dry';
+				} else {
+					$lab = ($dir === 'above') ? 'Above' : 'Below';
+				}
+				$active = ($dir === $this->spellDir) ? ' active' : '';
+				echo '<a class="wxsel-chip' . $active . '" data-spell-dir="' . $dir
+					. '" href="' . $selUrl(array('spell_dir' => $dir)) . '">'
+					. htmlspecialchars($lab) . '</a>';
+			}
+			echo '</div></div>';
+
+			echo '<div class="report-sel-row report-sel-labelled">';
+			echo '<div class="wxsel-label">Threshold</div>';
+			echo '<div class="wxsel-scale wxsel-threshold" role="tablist">';
+			foreach ($this->spellThresholds as $th) {
+				$active = (abs($th - $this->spellThreshold) < 1e-9) ? ' active' : '';
+				$label = strip_tags(Wx::conv($th, $this->unit, false));
+				echo '<a class="wxsel-chip' . $active . '" data-threshold="' . htmlspecialchars((string)$th)
+					. '" href="' . $selUrl(array('threshold' => $th)) . '">'
+					. htmlspecialchars($label) . '</a>';
+			}
+			echo '</div></div>';
+		}
+
 		if ($showSummary) {
 			if ($mode === 'rank-annual') { $sumLabel = 'Annual'; }
 			elseif ($mode === 'rank-monthly' || $mode === 'monthly') { $sumLabel = 'Monthly'; }
@@ -531,8 +619,9 @@ class Report {
 		}
 
 		if ($showMonth) {
+			$monthLabel = ($mode === 'rank-spells') ? 'Midpoint month' : 'Month';
 			echo '<div class="report-sel-row report-sel-labelled">';
-			echo '<div class="wxsel-label">Month</div>';
+			echo '<div class="wxsel-label">' . htmlspecialchars($monthLabel) . '</div>';
 			echo '<div class="wxsel-scale wxsel-months" role="tablist">';
 			$active = ($this->month === 0) ? ' active' : '';
 			echo '<a class="wxsel-chip' . $active . '" data-month="0" href="'
@@ -564,28 +653,41 @@ class Report {
 			for ($y = $dyear - 5; $y >= $yearFloor; $y--) {
 				$older[] = $y;
 			}
-			$yearInRecent = in_array($this->year, $recent, true);
+			$yearInRecent = ($this->dayAgg === '') && in_array($this->year, $recent, true);
 
 			echo '<div class="report-sel-row">';
 			echo '<div class="wxsel-scale wxsel-years" role="tablist">';
 			foreach ($recent as $y) {
-				$active = ($y === $this->year) ? ' active' : '';
+				$active = ($this->dayAgg === '' && $y === $this->year) ? ' active' : '';
 				echo '<a class="wxsel-chip' . $active . '" data-year="' . $y
 					. '" href="' . $selUrl(array('year' => $y)) . '">' . $y . '</a>';
 			}
 			if (count($older)) {
-				$sumCls = $yearInRecent ? '' : ' active';
-				$sumLabel = $yearInRecent ? 'Older' : (string)$this->year;
+				$sumCls = ($this->dayAgg === '' && !$yearInRecent) ? ' active' : '';
+				$sumLabel = ($this->dayAgg === '' && !$yearInRecent) ? (string)$this->year : 'Older';
 				echo '<details class="wxsel-overflow">';
 				echo '<summary class="wxsel-chip' . $sumCls . '">' . htmlspecialchars($sumLabel) . '</summary>';
 				echo '<div class="wxsel-overflow-menu">';
 				foreach ($older as $y) {
-					$active = ($y === $this->year) ? ' active' : '';
+					$active = ($this->dayAgg === '' && $y === $this->year) ? ' active' : '';
 					echo '<a class="wxsel-chip' . $active . '" data-year="' . $y
 						. '" href="' . $selUrl(array('year' => $y)) . '">' . $y . '</a>';
 				}
 				echo '</div></details>';
 			}
+			$aggOpts = array('min' => 'Min', 'max' => 'Max', 'mean' => 'Mean');
+			$aggActive = ($this->dayAgg !== '');
+			$aggSumLabel = $aggActive ? $aggOpts[$this->dayAgg] : 'Avg/Extreme';
+			echo '<details class="wxsel-overflow wxsel-day-agg">';
+			echo '<summary class="wxsel-chip' . ($aggActive ? ' active' : '') . '">'
+				. htmlspecialchars($aggSumLabel) . '</summary>';
+			echo '<div class="wxsel-overflow-menu">';
+			foreach ($aggOpts as $aggKey => $aggLabel) {
+				$active = ($this->dayAgg === $aggKey) ? ' active' : '';
+				echo '<a class="wxsel-chip' . $active . '" data-agg="' . $aggKey
+					. '" href="' . $selUrl(array('agg' => $aggKey)) . '">' . $aggLabel . '</a>';
+			}
+			echo '</div></details>';
 			echo '</div></div>';
 		}
 
@@ -638,18 +740,24 @@ class Report {
 			'rank-daily' => 'rd-fragment',
 			'rank-monthly' => 'rm-fragment',
 			'rank-annual' => 'ry-fragment',
+			'rank-spells' => 'rs-fragment',
 		);
 		$cfg = array(
 			'groups' => $groups,
 			'mode' => $mode,
 			'type' => $this->type,
 			'year' => (int)$this->year,
+			'agg' => $this->dayAgg,
 			'month' => (int)$this->month,
 			'startYearRep' => (int)$this->startYrReport,
 			'summaryType' => (int)$this->summaryType,
 			'summaryTypes' => $this->availSummaryTypes,
 			'summaryLabels' => $sumLabels,
 			'rankLimit' => (int)$this->rankLimit,
+			'spellDir' => $this->spellDir,
+			'threshold' => $this->spellThreshold,
+			'thresholds' => $this->spellThresholds,
+			'unit' => (int)$this->unit,
 			'page' => Page::$pageName,
 			'fragment' => $ajaxFragment !== '' ? $ajaxFragment : null,
 			'bodyId' => $ajaxBodyId,
@@ -815,5 +923,41 @@ class Report {
 			echo '<option value="' . $opt . '"' . ($opt === $this->rankLimit ? ' selected="selected"' : '') . '>' . $opt . '</option>';
 		}
 		echo '</select></form>';
+	}
+
+	/**
+	 * Spell ranking table: # / Length / Period.
+	 * @param array $spells list of spell records from Spells::rankLongest
+	 * @param string $title
+	 */
+	public function spellRankTable($spells, $title) {
+		echo '<div class="rk-grid rk-left" style="float:none;width:100%;max-width:42rem;">';
+		echo '<div class="rk-caption">' . htmlspecialchars($title) . '</div>';
+		echo '<div class="rk-row rk-head">';
+		echo '<div class="rk-lab">#</div><div class="rk-lab">Length</div><div class="rk-lab">Period</div>';
+		echo '</div>';
+
+		$yearSecs = 86400 * 365;
+		foreach ($spells as $i => $spell) {
+			$n = (int)$spell['length'];
+			$startTs = strtotime($spell['startDate']);
+			$endTs = strtotime($spell['endDate']);
+			$startLbl = $startTs ? date('j M Y', $startTs) : $spell['startDate'];
+			$endLbl = !empty($spell['ongoing']) ? 'Current' : ($endTs ? date('j M Y', $endTs) : $spell['endDate']);
+			$period = $startLbl . ' – ' . $endLbl;
+			if ($startTs && (Date::$dtstamp - $startTs) < $yearSecs) {
+				$period = '<b>' . $period . '</b>';
+			}
+			echo '<div class="rk-row">';
+			echo '<div class="rk-rank">' . ($i + 1) . '</div>';
+			echo '<div class="rk-val">' . $n . ' day' . ($n === 1 ? '' : 's') . '</div>';
+			echo '<div class="rk-date">' . $period . '</div>';
+			echo '</div>';
+		}
+		if (!count($spells)) {
+			echo '<div class="rk-row"><div class="rk-rank">–</div>'
+				. '<div class="rk-val">No spells</div><div class="rk-date"></div></div>';
+		}
+		echo '</div>';
 	}
 }

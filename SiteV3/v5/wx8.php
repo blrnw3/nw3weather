@@ -254,8 +254,11 @@ class Traffic {
 		<img src='/static-images/P1010076.JPG' alt='Wind Sensors close-up'  width='448' height='336'   title='Wind Sensors close-up'   />
 	</a>-->
 	<p>
-		Additionally, there are two webcams used to monitor sky and ground conditions, which along with traditional techniques (pending AI assistance) I use
+		Additionally, there is a webcam used to monitor sky conditions, which along with traditional techniques I use
 		to collect data for extra weather variables - sun hours, cloud cover, wet hours, snowfall, lying snow, fog, hail, and thunder(storms).
+		Sun hours are estimated daily from the webcam data using an automated classification model trained on historical data.
+		Wet hours are estimated in near real-time from the rain gauge data using a heuristic algorithm.
+		Other variables are estimated via manual observations and webcam data, and input manually by me.
 	</p>
 
 
@@ -267,16 +270,24 @@ class Traffic {
 		I started collecting data at this site on 28th July 2010.
 		Prior to that I had been running the same setup in East Finchley, a town 5 km north of here, since February 2009,
 		but I have kept daily temperature records since March 2008 (albeit not integrated into this website).
-		Consequently, any records from before July 2010 are for East Finchley, though given the small distance involved, any data comparisons are largely valid.
+		Consequently, any records from Feb 2009 to July 2010 are for East Finchley, though given the small distance involved, any data comparisons are largely valid.
+	</p>
+	<p>Data from before 2009 are mostly from the historical site at Whitestone Pond in Hampstead.
+		Where data from that record is missing, other nearby sites were used, including St James Park, Heathrow, and Kew Gardens (pre-1910).
+		Best efforts have been made to adjust for site differences, but uncertainties are somewhat greater for this data.
+		I am grateful to the Met Office for making this data available for free through the
+		<a href="https://data.ceda.ac.uk/badc/ukmo-midas-open/">MIDAS Open database</a>.
 	</p>
 	<p>
-		The sky-facing webcam (Logitech C300) was added to the station on 1st August 2010; The ground-facing one on 19th December 2010.
+		The first sky-facing webcam (Logitech C300) was added to the station on 1st August 2010.
 	</p>
 	<p> In 2016 the original Oregon Scientific WMR-200 sensors began to fail due to age.
 		In Feb '16 the wind sensor failed, followed by the T/H sensor in Sept '16 (replaced a month later),	and the rain sensor in March '17.
 		In Sept '17 I therefore <a href="./news.php#post-20170906" title="Full details in blog post">replaced the entire station</a> with a Davis VP2, a better model.
 	</p>
 	<p>In June 2018 I <a href="./news.php#post-20180621" title="Full details in blog post">installed a new high-resolution network camera</a> to replace the original webcam.</p>
+
+	<p>In July 2026 I began collecting air pollution data using nearby sensors.</p>
 
 	<h3>Technical history</h3>
 	<ul>
@@ -298,9 +309,8 @@ class Traffic {
 	<h2>Website</h2>
 
 	<p>
-		The site was developed in Firefox but other modern browsers have been tested and found to display most things correctly.
-		<br /><code>nw3weather.co.uk</code> launched on 10th September 2010, I having acquired the domain name soon after moving here in July.
-		The most recent version (v3) launched on 22nd May 2013. <br />
+		<code>nw3weather.co.uk</code> launched on 10th September 2010, I having acquired the domain name soon after moving here in July.
+		The most recent version (v5) launched in late July 2026. <br />
 		Within a month or so, I submit manual observations for prior days to the system, as well as fixing glitches and correcting misreads.
 		These changes are reflected on the site almost immediately.
 	</p>
@@ -331,9 +341,19 @@ class Traffic {
 	All old site versions are still available to view, but are no longer maintained and may not display the latest data.
 
 	<p>
-		<b><a href="/oldSites/sitev3">Site version 3</a></b> (May 2013 - July 2026). <br />
+		<b>Site version 5</b> (Current version). <br />
 		Substantial rewrite of the backend and frontend, focussing on responsiveness, graph generation, and ease-of-development.
-		Also added air quality data using nearby air quality sensors.
+		Also added air pollution data using nearby sensors.
+	</p>
+
+	<p>
+		<b>Site version 4</b> (Never released). <br />
+		Complete rewrite, sadly abandoned mid-way through development due to complexity and time constraints.
+	</p>
+
+	<p>
+		<b><a href="/oldSites/sitev3">Site version 3</a></b> (May 2013 - July 2026). <br />
+		This was active for a long time and contained mostly incremental improvements and fixes.
 	</p>
 
 	<p>
@@ -491,7 +511,7 @@ $traffic->prepare_annual_data_table();
 	<p>
 		I studied Physics and Computer Science, both of which I was largely motivated to study by my love of the weather, and went on
 		to work as a software engineer.
-		In 2015 I left London and <a href="/news.php#post-20151107">moved to New York</a>. I currently live and work in the San Francisco Bay Area, California.
+		In 2015 I left London and <a href="/news.php#post-20151107">moved to New York</a>. I currently live and work in the San Francisco Bay Area.
 		The weather station back home in London is lovingly cared for by my mother and other relatives, and me when I come back every year or so (pandemics-permitting).
 	</p>
 	<p>
@@ -502,6 +522,7 @@ $traffic->prepare_annual_data_table();
 			And <a href="https://www.camdennewjournal.co.uk/article/you-can-see-it-from-the-heath-enthusiasts-own-weather-station-charts-record-temperatures"> again</a> for the record-breaking July 2022 heatwave.
 
 	</p>
+	<p>I also operate a weather station at my home in Redwood City, California: <a href="https://rwcweather.com">rwcweather.com</a></p>
 
 
 <?php Page::End(); ?>

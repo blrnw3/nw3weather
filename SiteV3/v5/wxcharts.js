@@ -136,7 +136,7 @@
 		wind: { name: 'Wind speed', grad: ['#c01717', '#f06a6a'], dp: 1, area: false, extra: 'gust' },
 		gust: { name: 'Gust', grad: ['#c23b86', '#f08fc0'], dp: 1, area: false },
 		rain: { name: 'Rainfall', col: '#2554c7', dp: 1, area: false },
-		pm25: { name: 'Air quality (PM2.5)', grad: ['#4f7a4a', '#9ac98f'], dp: 1, area: false },
+		pm25: { name: 'Air pollution (PM2.5)', grad: ['#4f7a4a', '#9ac98f'], dp: 1, area: false },
 		wdir: { name: 'Wind direction', col: '#555', dp: 0, dir: true }
 	};
 

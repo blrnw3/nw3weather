@@ -18,7 +18,7 @@ $rn24 = isset(Live::$HR24['trendRn'][0]) ? Live::$HR24['trendRn'][0] : null;
 $rn10 = (isset($rn24) && isset(Live::$HR24['trendRn']['10m']))
 	? $rn24 - Live::$HR24['trendRn']['10m'] : null;
 $measures = ['Rainfall Today', 'Rain Last 10 mins', 'Rain Rate', 'Rain Last Hour', 'Rain Last 24 hrs',
-	'Wet Hours Today', 'Rain Duration', 'Most Recent Rain'];
+	'Wet Hours Today', 'Last 24hrs Wet', 'Most Recent Rain'];
 $values = [
 	Live::$rain,
 	$rn10,
@@ -26,7 +26,7 @@ $values = [
 	(isset($rn24, Live::$HR24['trendRn'][1])) ? $rn24 - Live::$HR24['trendRn'][1] : null,
 	$rn24,
 	Live::$NOW['misc']['wethrs'],
-	Live::$NOW['misc']['rnduration'],
+	Live::$HR24['misc']['wethrs'],
 	Live::$HR24['misc']['rnlast'],
 ];
 $conv = [Wx::Rain, Wx::Rain, Wx::RainRate, Wx::Rain, Wx::Rain, Wx::Hours, Wx::Hours, Wx::None];

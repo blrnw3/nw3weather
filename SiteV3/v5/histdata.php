@@ -300,16 +300,26 @@ if ($mode === 'annual') {
 			$out['series'][] = ['name' => (string)$yr, 'data' => $thisYear, 'color' => $colour, 'type' => 'line'];
 
 			if (isset($_GET['multiyr'])) {
-				$isLastOnly = $_GET['multiyr'] === 'last';
-				$overlayYrs = $isLastOnly
-					? [(int)Date::$dyear - 1]
-					: array_map('intval', array_filter(explode(',', $_GET['multiyr'])));
+				$parts = array_map('trim', explode(',', (string)$_GET['multiyr']));
+				$overlayYrs = [];
+				$lastYearStyle = [];
+				foreach ($parts as $p) {
+					if ($p === '' || $p === '0') { continue; }
+					if ($p === 'last') {
+						$oy = (int)Date::$dyear - 1;
+						$overlayYrs[] = $oy;
+						$lastYearStyle[$oy] = true;
+					} else {
+						$overlayYrs[] = (int)$p;
+					}
+				}
 				$palette = ['#2f9e44', '#ffb473', '#555577', '#138086', '#333366', '#aac', '#349'];
-				foreach ($overlayYrs as $i => $oy) {
+				$palIdx = 0;
+				foreach ($overlayYrs as $oy) {
 					if ($oy == $yr) { continue; }
 					$oyData = $fitYear($buildYear($oy));
 					// Last year (multiyr=last): faint gray, matching legacy graph_daily_trend.
-					if ($isLastOnly) {
+					if (!empty($lastYearStyle[$oy])) {
 						$out['series'][] = [
 							'name' => (string)$oy,
 							'data' => $oyData,
@@ -322,9 +332,10 @@ if ($mode === 'annual') {
 						$out['series'][] = [
 							'name' => (string)$oy,
 							'data' => $oyData,
-							'color' => $palette[$i % count($palette)],
+							'color' => $palette[$palIdx % count($palette)],
 							'type' => 'line',
 						];
+						$palIdx++;
 					}
 				}
 			}

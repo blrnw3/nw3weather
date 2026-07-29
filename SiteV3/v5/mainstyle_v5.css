@@ -416,7 +416,7 @@ div.charts-with-title > img {
 }
 .wx3-live-range button:hover { background: #eef5ef; }
 .wx3-live-range button.active {
-	background: #15866A;
+	background: #052e24;
 	color: #fff;
 	border-color: #15866A;
 }
@@ -568,7 +568,7 @@ div.charts > .wxsel-wrap {
 .wxsel-subtypes button.active,
 .wxsel-agg button.active,
 .wxsel-toggle.active {
-	background: #15866A;
+	background: #052e24;
 	border-color: #15866A;
 	color: #fff;
 }
@@ -612,7 +612,7 @@ div.charts > .wxsel-wrap {
 }
 .wxsel-scale button:hover { background: #e8f2eb; }
 .wxsel-scale button.active {
-	background: #15866A;
+	background: #052e24;
 	border-color: #15866A;
 	color: #fff;
 }
@@ -1395,7 +1395,7 @@ select.timelapse {
 .wx-card-pm25 .wx-card-now { font-size: 1.5rem; }
 .wx-card-head .wx-card-label { color: inherit; }
 
-/* Air-quality DAQI status: small green/yellow/red indicator dot + label */
+/* Air-pollution DAQI status: small green/yellow/red indicator dot + label */
 .daqi-status {
 	display: inline-flex;
 	align-items: center;
@@ -1775,7 +1775,7 @@ body.cam-modal-open {
 }
 .home-chart-vars button:hover { background: #e0eee3; }
 .home-chart-vars button.active {
-	background: #02261d;
+	background: #052e24;
 	border-color: #15866A;
 }
 
@@ -1797,7 +1797,7 @@ body.cam-modal-open {
 }
 .home-graph-controls button:hover { background: #eef5ef; }
 .home-graph-controls button.active {
-	background: #15866A;
+	background: #052e24;
 	color: #fff;
 	border-color: #15866A;
 }
@@ -1958,10 +1958,23 @@ body.cam-modal-open {
 #dm-ajax.dd-ajax-loading,
 #rd-ajax.dd-ajax-loading,
 #rm-ajax.dd-ajax-loading,
-#ry-ajax.dd-ajax-loading {
+#ry-ajax.dd-ajax-loading,
+#rs-ajax.dd-ajax-loading,
+#vd-avg-ajax.wxsel-loading,
+#vd-rank-ajax.wxsel-loading,
+.wxsel-loading {
 	opacity: 0.55;
 	pointer-events: none;
 	transition: opacity 0.15s ease;
+}
+.vd-avg-sel.wxsel-busy,
+.vd-rank-sel.wxsel-busy {
+	opacity: 0.7;
+	pointer-events: none;
+}
+.vd-avg-sel.wxsel-busy .wxsel-chip,
+.vd-rank-sel.wxsel-busy .wxsel-chip {
+	cursor: wait;
 }
 
 /****************** Daily data grid (wxdataday) ***************************/

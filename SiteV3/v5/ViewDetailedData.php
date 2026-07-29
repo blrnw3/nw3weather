@@ -46,18 +46,18 @@ class ViewDetailedData {
 
 	public static $periods = array('latest_7d','curr_month','latest_31d','curr_year','latest_365d','alltime','all_this_month','all_this_date');
 	public static $measuresGeneric = array('Lowest Min','Highest Max','Highest Min','Lowest Max','Lowest Mean','Highest Mean','Averages','Mean','Avg Low','Avg High');
-	public static $startYearOptions = [1871, 1950, 1980, 2000, 2009];
+	public static $startYearOptions = [1871, 1910, 1950, 1980, 2000, 2009];
 
 	public $periods_all;
 	public $startYrReport;
 	public static $periodCnt;
 
 	// LTA daily-anomaly available for these (tmean resolved dynamically via LTA)
-	private static $ltaDailyTypes = array('tmin', 'tmax', 'tmean', 'rain');
+	private static $ltaDailyTypes = array('tmin', 'tmax', 'tmean', 'rain', 'sunhr');
 
 
 	/**
-	 * @param string $groupName temp|baro|wind|rain|hum|dew
+	 * @param string $groupName temp|baro|wind|rain|hum|dew|sun
 	 * @param array|int|null $opts startYear int, or ['startYear'=>N, 'avgOnly'=>bool, 'rankOnly'=>bool]
 	 */
 	function __construct($groupName, $opts = null) {
@@ -155,6 +155,38 @@ class ViewDetailedData {
 					['label' => 'Rain Days', 'stat' => 'rdays', 'unit' => Wx::Days],
 				],
 			],
+			"sun" => [
+				"name" => "Sunshine",
+				"unit" => Wx::Hours,
+				"var_min" => "sunhr",
+				"var_max" => "sunhr",
+				"var_mean" => "sunhr",
+				"var_extra" => "sunhrp",
+				"superlativeLo" => "Dullest",
+				"superlativeHi" => "Sunniest",
+				"letter" => "s",
+				"class" => 11,
+				"anomaly" => true,
+				"anomPct" => true,
+				"chartGroup" => "sun",
+				"measures" => ['Total', 'Sunniest Day', 'Sun Days', 'Dullest Day', 'Mean % of Max'],
+				"measureConvs" => [Wx::Hours, Wx::Hours, Wx::Days, Wx::Hours, Wx::Percentage],
+				"rankDailyCols" => [
+					['label' => 'Total', 'j' => 2, 'unit' => Wx::Hours],
+					['label' => '% of Max', 'j' => 3, 'unit' => Wx::Percentage],
+				],
+				"rankMonthlyCols" => [
+					['label' => 'Total', 'j' => 2, 'unit' => Wx::Hours],
+					['label' => 'Sun Days', 'j' => 4, 'unit' => Wx::Days],
+					['label' => '% of Max', 'j' => 3, 'unit' => Wx::Percentage],
+				],
+				"rankDailyHiOnly" => true,
+				"seasonCols" => [
+					['label' => 'Total', 'stat' => 'mean', 'unit' => Wx::Hours],
+					['label' => 'Sun Days', 'stat' => 'sdays', 'unit' => Wx::Days],
+					['label' => 'Mean % of Max', 'stat' => 'extra', 'unit' => Wx::Percentage],
+				],
+			],
 			"hum" => [
 				"name" => "Humidity",
 				"unit" => Wx::Humidity,
@@ -194,7 +226,8 @@ class ViewDetailedData {
 		$this->varMin = $this->group["var_min"];
 		$this->varMax = $this->group["var_max"];
 		$this->varMean = $this->group["var_mean"];
-		$this->intradayVar = isset(Wx::$mappingsToDailyDataKey[$this->letter]) ? Wx::$mappingsToDailyDataKey[$this->letter] : 'temp';
+		$this->intradayVar = isset(Wx::$mappingsToDailyDataKey[$this->letter])
+			? Wx::$mappingsToDailyDataKey[$this->letter] : null;
 		$this->label = $this->group["name"];
 		$this->cssClass = "td12";
 		$this->type = $groupName;
@@ -206,13 +239,25 @@ class ViewDetailedData {
 		if (!in_array($start, $validStarts, true)) { $start = in_array(2009, $validStarts, true) ? 2009 : $validStarts[0]; }
 		$this->startYrReport = $start;
 
-		$this->datMins = new DataSummarizer($this->group["var_min"], $this->startYrReport);
-		$this->datMaxs = new DataSummarizer($this->group["var_max"], $this->startYrReport);
 		$this->datMeans = new DataSummarizer($this->group["var_mean"], $this->startYrReport);
-
-		$this->minSum = $this->datMins->summarize();
-		$this->maxSum = $this->datMaxs->summarize();
 		$this->meanSum = $this->datMeans->summarize();
+		if ($this->group["var_min"] === $this->group["var_mean"]) {
+			$this->datMins = $this->datMeans;
+			$this->minSum = $this->meanSum;
+		} else {
+			$this->datMins = new DataSummarizer($this->group["var_min"], $this->startYrReport);
+			$this->minSum = $this->datMins->summarize();
+		}
+		if ($this->group["var_max"] === $this->group["var_mean"]) {
+			$this->datMaxs = $this->datMeans;
+			$this->maxSum = $this->meanSum;
+		} elseif ($this->group["var_max"] === $this->group["var_min"]) {
+			$this->datMaxs = $this->datMins;
+			$this->maxSum = $this->minSum;
+		} else {
+			$this->datMaxs = new DataSummarizer($this->group["var_max"], $this->startYrReport);
+			$this->maxSum = $this->datMaxs->summarize();
+		}
 
 		$this->extraSum = null;
 		if (!empty($this->group['var_extra'])) {
@@ -294,6 +339,18 @@ class ViewDetailedData {
 		return Charts::selectableGroups();
 	}
 
+	/** Rain/sun-style summable detail pages (totals, day counts, % anomalies). */
+	private function isSummableDetail() {
+		return $this->groupName === 'rain' || $this->groupName === 'sun';
+	}
+
+	/** Adapter key for wet/sun day counts, or null. */
+	private function dayCountKey() {
+		if ($this->groupName === 'rain') { return 'rdays'; }
+		if ($this->groupName === 'sun') { return 'sdays'; }
+		return null;
+	}
+
 	/**
 	 * Row labels + value sources for Recent / Station Lifetime (and past-year monthly).
 	 * Each values entry is a $dat[stat][rank]-shaped array (period keys, or month index keys).
@@ -323,6 +380,18 @@ class ViewDetailedData {
 					$dat['max'][1],   // Max Hourly
 					$dat['min'][1],   // Max 10-min
 					isset($dat['extra'][2]) ? $dat['extra'][2] : [], // Wet Hours
+				],
+			];
+		}
+		if ($this->groupName === 'sun') {
+			return [
+				$measures,
+				[
+					$dat['mean'][2],  // Total
+					$dat['mean'][1],  // Sunniest Day
+					isset($dat['sdays'][2]) ? $dat['sdays'][2] : [], // Sun Days
+					$dat['mean'][0],  // Dullest Day
+					isset($dat['extra'][2]) ? $dat['extra'][2] : [], // Mean % of Max
 				],
 			];
 		}
@@ -404,6 +473,33 @@ class ViewDetailedData {
 				],
 			];
 		}
+		if ($this->groupName === 'sun') {
+			$extra = isset($curr['extra']) ? $curr['extra'] : ['days' => [], 'anoms' => []];
+			$sdays = isset($curr['sdays']) ? $curr['sdays'] : ['anoms' => []];
+			return [
+				[
+					isset($curr['mean'][2]) ? $curr['mean'][2] : null,
+					isset($curr['mean'][1]) ? $curr['mean'][1] : null,
+					isset($sdays[2]) ? $sdays[2] : null,
+					isset($curr['mean'][0]) ? $curr['mean'][0] : null,
+					isset($extra[2]) ? $extra[2] : null,
+				],
+				[
+					null,
+					isset($curr['mean']['days'][1]) ? $curr['mean']['days'][1] : null,
+					null,
+					isset($curr['mean']['days'][0]) ? $curr['mean']['days'][0] : null,
+					null,
+				],
+				[
+					isset($curr['mean']['anoms'][2]) ? $curr['mean']['anoms'][2] : null,
+					null, // single-day total — no anomaly
+					null,
+					null,
+					isset($extra['anoms'][2]) ? $extra['anoms'][2] : null,
+				],
+			];
+		}
 		return [
 			[
 				$curr['min'][0], $curr['max'][1], $curr['min'][1], $curr['max'][0],
@@ -461,17 +557,22 @@ class ViewDetailedData {
 					$meanVal = $this->sval($s, 'mean');
 					$this->dat[$stat]['avg'][$pk] = $meanVal;
 					if ($this->getAnom) {
-						if ($stat === 'mean') {
-							$this->dat[$stat]['avg'][$pk . 'anom'] = $this->rainMeanPeriodAnom($pk, $meanVal);
+						if ($stat === 'mean' && $this->isSummableDetail()) {
+							$this->dat[$stat]['avg'][$pk . 'anom'] = $this->summableMeanPeriodAnom($pk, $meanVal, $this->varMean);
 						} elseif ($stat === 'extra' && $this->groupName === 'rain') {
 							$this->dat[$stat]['avg'][$pk . 'anom'] = $this->wetHoursMeanPeriodAnom($pk, $meanVal);
 						}
 					}
 				}
 				if ($this->getAnom) {
-					$this->dat[$stat][0][$pk . 'anom'] = $this->eventDayAnom($varForStat, $minVal, $minDate);
-					// Rain: no anomalies on single-day totals (wettest day).
-					if (!($this->groupName === 'rain' && $stat === 'mean')) {
+					// Rain/sun: no anomalies on single-day totals (wettest/sunniest day).
+					// Sun: also no anomaly on dullest day.
+					$skipMinAnom = ($this->groupName === 'sun' && $stat === 'mean');
+					$skipMaxAnom = ($this->isSummableDetail() && $stat === 'mean');
+					if (!$skipMinAnom) {
+						$this->dat[$stat][0][$pk . 'anom'] = $this->eventDayAnom($varForStat, $minVal, $minDate);
+					}
+					if (!$skipMaxAnom) {
 						$this->dat[$stat][1][$pk . 'anom'] = $this->eventDayAnom($varForStat, $maxVal, $maxDate);
 					}
 					$this->dat[$stat][2][$pk . 'anom'] = $this->periodAnom($s);
@@ -494,18 +595,19 @@ class ViewDetailedData {
 			}
 		}
 
-		if ($this->groupName === 'rain') {
-			$this->dat['rdays'] = [2 => [], 'avg' => []];
+		$dayKey = $this->dayCountKey();
+		if ($dayKey !== null) {
+			$this->dat[$dayKey] = [2 => [], 'avg' => []];
 			$ps = $this->meanSum['period_summaries'];
 			foreach (self::$periods as $pk) {
 				$s = isset($ps[$pk]) ? $ps[$pk] : null;
 				$cnz = $this->sval($s, 'count_nonzero');
-				$this->dat['rdays'][2][$pk] = $cnz;
-				$meanRdays = $this->rainDaysMeanForPeriod($pk, $s);
-				$this->dat['rdays']['avg'][$pk] = $meanRdays;
-				if ($this->getAnom) {
-					$this->dat['rdays'][2][$pk . 'anom'] = $this->rainDaysPeriodAnom($pk, $cnz);
-					$this->dat['rdays']['avg'][$pk . 'anom'] = $this->rainDaysMeanPeriodAnom($pk, $meanRdays);
+				$this->dat[$dayKey][2][$pk] = $cnz;
+				$meanDays = $this->dayCountMeanForPeriod($pk, $s);
+				$this->dat[$dayKey]['avg'][$pk] = $meanDays;
+				if ($this->getAnom && $this->groupName === 'rain') {
+					$this->dat[$dayKey][2][$pk . 'anom'] = $this->rainDaysPeriodAnom($pk, $cnz);
+					$this->dat[$dayKey]['avg'][$pk . 'anom'] = $this->rainDaysMeanPeriodAnom($pk, $meanDays);
 				}
 			}
 		}
@@ -584,6 +686,9 @@ class ViewDetailedData {
 		if ($this->groupName === 'rain') {
 			$this->datMM['rdays'] = [];
 			$this->datMMCurr['rdays'] = [];
+		} elseif ($this->groupName === 'sun') {
+			$this->datMM['sdays'] = [];
+			$this->datMMCurr['sdays'] = [];
 		}
 		foreach ($statSums as $stat => $sum) {
 			$ms = $sum['month_summaries'];
@@ -614,16 +719,22 @@ class ViewDetailedData {
 				$days[0][$mt] = $this->dayOf($minDate);
 				$days[1][$mt] = $this->dayOf($maxDate);
 				if ($this->getAnom) {
-					$anoms[0][$mt] = $this->eventDayAnom($varForStat, $minVal, $minDate);
-					// Rain: no anomalies on single-day totals (wettest day of month).
-					if (!($this->groupName === 'rain' && $stat === 'mean')) {
+					// Rain/sun: no anomalies on single-day totals (wettest/sunniest day of month).
+					// Sun: also no anomaly on dullest day.
+					$skipMinAnom = ($this->groupName === 'sun' && $stat === 'mean');
+					$skipMaxAnom = ($this->isSummableDetail() && $stat === 'mean');
+					if (!$skipMinAnom) {
+						$anoms[0][$mt] = $this->eventDayAnom($varForStat, $minVal, $minDate);
+					}
+					if (!$skipMaxAnom) {
 						$anoms[1][$mt] = $this->eventDayAnom($varForStat, $maxVal, $maxDate);
 					}
 					$anoms[2][$mt] = $this->periodAnom($s);
 				}
-				if ($stat === 'mean' && $this->groupName === 'rain') {
+				if ($stat === 'mean' && $this->isSummableDetail()) {
+					$dayKey = $this->dayCountKey();
 					$rdaysCollect[$mt] = $this->sval($s, 'count_nonzero');
-					if ($this->getAnom) {
+					if ($this->getAnom && $this->groupName === 'rain') {
 						$rdaysAnoms[$mt] = $this->rainDaysMonthAnom((int)date('n', $ts), $rdaysCollect[$mt]);
 					}
 				}
@@ -640,9 +751,10 @@ class ViewDetailedData {
 				}
 				$this->datMM[$stat][$rank] = $entry;
 			}
-			if ($stat === 'mean' && $this->groupName === 'rain') {
+			if ($stat === 'mean' && $this->isSummableDetail()) {
+				$dayKey = $this->dayCountKey();
 				$numeric = array_filter($rdaysCollect, 'is_numeric');
-				$this->datMM['rdays'][2] = [
+				$this->datMM[$dayKey][2] = [
 					'extr' => [$numeric ? min($numeric) : null, $numeric ? max($numeric) : null],
 					0 => $rdaysCollect,
 					2 => $rdaysAnoms,
@@ -664,16 +776,17 @@ class ViewDetailedData {
 				'days' => [0 => $this->dayOf($cMinDate), 1 => $this->dayOf($cMaxDate)],
 				'anoms' => $this->getAnom ? [
 					0 => $this->eventDayAnom($varForStat, $cMin, $cMinDate),
-					1 => ($this->groupName === 'rain' && $stat === 'mean')
+					1 => ($this->isSummableDetail() && $stat === 'mean')
 						? null : $this->eventDayAnom($varForStat, $cMax, $cMaxDate),
 					2 => $this->periodAnom($cs),
 				] : [0 => null, 1 => null, 2 => null],
 			];
-			if ($stat === 'mean' && $this->groupName === 'rain') {
+			if ($stat === 'mean' && $this->isSummableDetail()) {
 				$cRdays = $this->sval($cs, 'count_nonzero');
-				$this->datMMCurr['rdays'] = [
+				$this->datMMCurr[$this->dayCountKey()] = [
 					2 => $cRdays,
-					'anoms' => [2 => $this->getAnom ? $this->rainDaysMonthAnom((int)Date::$dmonth, $cRdays) : null],
+					'anoms' => [2 => ($this->getAnom && $this->groupName === 'rain')
+						? $this->rainDaysMonthAnom((int)Date::$dmonth, $cRdays) : null],
 				];
 			}
 		}
@@ -689,6 +802,9 @@ class ViewDetailedData {
 		if ($this->groupName === 'rain') {
 			$this->datSS['rdays'] = [];
 			$this->datSSanom['rdays'] = [];
+		} elseif ($this->groupName === 'sun') {
+			$this->datSS['sdays'] = [];
+			$this->datSSanom['sdays'] = [];
 		}
 		foreach ($statSums as $stat => $sum) {
 			$ss = $sum['season_summaries'];
@@ -702,10 +818,11 @@ class ViewDetailedData {
 				$s = isset($ss[$key]) ? $ss[$key] : null;
 				$this->datSS[$stat][$i] = $this->sval($s, $aggKey);
 				$this->datSSanom[$stat][$i] = ($this->getAnom) ? $this->periodAnom($s) : null;
-				if ($stat === 'mean' && $this->groupName === 'rain') {
+				if ($stat === 'mean' && $this->isSummableDetail()) {
+					$dayKey = $this->dayCountKey();
 					$rdays = $this->sval($s, 'count_nonzero');
-					$this->datSS['rdays'][$i] = $rdays;
-					$this->datSSanom['rdays'][$i] = ($this->getAnom)
+					$this->datSS[$dayKey][$i] = $rdays;
+					$this->datSSanom[$dayKey][$i] = ($this->getAnom && $this->groupName === 'rain')
 						? $this->anomFromNorm($rdays, LTA::getSeasonAnom('rdays', $i)) : null;
 				}
 			}
@@ -723,6 +840,7 @@ class ViewDetailedData {
 			'monthly' => 'month_mean_alltime',
 			'dailyCM' => 'daily_all_this_month',
 			'monthlyCM' => 'month_mean_all_this_month',
+			'annual' => 'year_mean_alltime',
 		];
 		foreach ($rankSums as $j => $sum) {
 			$r = $sum['ranks'];
@@ -741,12 +859,13 @@ class ViewDetailedData {
 				}
 			}
 		}
-		// Rain days = monthly count of wet days (j=4), for monthly rank tables only.
-		if ($this->groupName === 'rain' && isset($this->meanSum['ranks'])) {
+		// Day counts = monthly/annual count of wet/sunny days (j=4).
+		if ($this->isSummableDetail() && isset($this->meanSum['ranks'])) {
 			$r = $this->meanSum['ranks'];
 			$countMap = [
 				'monthly' => 'month_count_alltime',
 				'monthlyCM' => 'month_count_all_this_month',
+				'annual' => 'year_count_alltime',
 			];
 			foreach ($countMap as $typeOut => $typeIn) {
 				$src = isset($r[$typeIn]) ? $r[$typeIn] : ['lo' => [], 'hi' => []];
@@ -800,9 +919,16 @@ class ViewDetailedData {
 	 *   monthly   → "Jul 2018", or red "Current" for this month
 	 *   dailyCM   → "Day N, YYYY" / Today / Yesterday
 	 *   monthlyCM → same as monthly
+	 *   annual    → year, or red "Current" for this year
 	 */
 	private function fmtRankDate($raw, $type) {
 		if ($raw === null || $raw === '') return '';
+		if ($type === 'annual') {
+			if (preg_match('/^(\d{4})/', (string)$raw, $m)) {
+				return Date::today((int)$m[1], false, false, true);
+			}
+			return (string)$raw;
+		}
 		$ts = $this->parseDateTs($raw);
 		if ($ts === null) return (string) $raw;
 		if ($type === 'monthly' || $type === 'monthlyCM') {
@@ -923,38 +1049,48 @@ class ViewDetailedData {
 		return null;
 	}
 
-	/** % anomaly for a period mean daily rainfall vs climate normal. */
-	private function rainMeanPeriodAnom($pk, $meanVal) {
+	/** % anomaly for a period mean of a summable var vs climate normal. */
+	private function summableMeanPeriodAnom($pk, $meanVal, $ltaVar) {
 		if (!$this->getAnom || !is_numeric($meanVal)) return null;
 		if ($pk === 'alltime' || $pk === 'curr_year' || $pk === 'latest_365d') {
-			$yearSum = LTA::getYearlyAnom('rain');
+			$yearSum = LTA::getYearlyAnom($ltaVar);
 			if (!is_numeric($yearSum)) return null;
 			return $this->anomFromNorm($meanVal, $yearSum / 365.0);
 		}
 		if ($pk === 'all_this_month' || $pk === 'curr_month' || $pk === 'latest_31d') {
-			$mon = LTA::getMonthlyAnom('rain', (int)Date::$dmonth);
+			$mon = LTA::getMonthlyAnom($ltaVar, (int)Date::$dmonth);
 			$dim = (int)date('t', Date::mkdate(Date::$dmonth, 15, Date::$dyear));
 			if (!is_numeric($mon)) return null;
 			return $this->anomFromNorm($meanVal, $mon / max(1, $dim));
 		}
 		if ($pk === 'all_this_date') {
-			$norm = LTA::getDailyAnom('rain', (int)Date::$dmonth, (int)Date::$dday);
+			$norm = LTA::getDailyAnom($ltaVar, (int)Date::$dmonth, (int)Date::$dday);
 			return $this->anomFromNorm($meanVal, $norm);
 		}
 		if ($pk === 'latest_7d') {
-			$norm = LTA::getRecentPeriodMeanAnom('rain', 7);
+			$norm = LTA::getRecentPeriodMeanAnom($ltaVar, 7);
 			if (!is_numeric($norm)) return null;
 			return $this->anomFromNorm($meanVal, $norm / 7.0);
 		}
 		return null;
 	}
 
-	/** Percentage of observed days with rain in a period. */
-	private function rainDaysMeanForPeriod($pk, $summary) {
+	/** Percentage of observed days with rain/sun in a period. */
+	private function dayCountMeanForPeriod($pk, $summary) {
 		$count = $this->sval($summary, 'count');
 		$cnz = $this->sval($summary, 'count_nonzero');
 		if (!is_numeric($count) || $count <= 0 || !is_numeric($cnz)) { return null; }
 		return $cnz / $count * 100;
+	}
+
+	/** @deprecated use summableMeanPeriodAnom */
+	private function rainMeanPeriodAnom($pk, $meanVal) {
+		return $this->summableMeanPeriodAnom($pk, $meanVal, 'rain');
+	}
+
+	/** @deprecated use dayCountMeanForPeriod */
+	private function rainDaysMeanForPeriod($pk, $summary) {
+		return $this->dayCountMeanForPeriod($pk, $summary);
 	}
 
 	/** % anomaly for mean wet hours vs climate normal. */
@@ -1077,7 +1213,22 @@ class ViewDetailedData {
 		}
 		echo ' </div>';
 		echo '<div class="detail-graph">';
-		Charts::intraday(['num' => 1, 'ts' => 12], $this->intradayVar, ['height' => 300]);
+		if ($this->intradayVar !== null) {
+			Charts::intraday(['num' => 1, 'ts' => 12], $this->intradayVar, ['height' => 300]);
+		} else {
+			Charts::dailySelectable(
+				['mode' => 'daily', 'length' => 31, 'lta' => 1],
+				[
+					'height' => 300,
+					'headingPrefix' => 'Last 31 days: ',
+					'groups' => $this->chartGroups(),
+					'hideGroups' => true,
+					'selectorBelow' => true,
+				],
+				null,
+				$this->varMean
+			);
+		}
 		echo '</div>';
 		echo '</div>';
 
@@ -1172,6 +1323,49 @@ class ViewDetailedData {
 					'anomaly' => null,
 				],
 			];
+		} elseif ($this->groupName === 'sun') {
+			$seasIdx = (int)Date::$season - 1;
+			$seasName = isset(Date::$snames[$seasIdx]) ? Date::$snames[$seasIdx] : 'Season';
+			$yestSun = isset($this->datYest[0]['mean']) ? $this->datYest[0]['mean'] : null;
+			$yestPct = Data::get('sunhrp', Date::$yr_yest, Date::$mon_yest, Date::$day_yest);
+			$seasTot = isset($this->datSS['mean'][$seasIdx]) ? $this->datSS['mean'][$seasIdx] : null;
+			$seasAnom = isset($this->datSSanom['mean'][$seasIdx]) ? $this->datSSanom['mean'][$seasIdx] : null;
+			$monthTot = isset($this->dat['mean'][2]['curr_month']) ? $this->dat['mean'][2]['curr_month'] : null;
+			$monthAnom = isset($this->dat['mean'][2]['curr_monthanom']) ? $this->dat['mean'][2]['curr_monthanom'] : null;
+			$yearTot = isset($this->dat['mean'][2]['curr_year']) ? $this->dat['mean'][2]['curr_year'] : null;
+			$yearAnom = isset($this->dat['mean'][2]['curr_yearanom']) ? $this->dat['mean'][2]['curr_yearanom'] : null;
+			$data = [
+				[
+					'label' => "Yesterday's Sun",
+					'value' => $this->disp($yestSun, Wx::Hours),
+					'time' => null,
+					'anomaly' => null,
+				],
+				[
+					'label' => "Yesterday's % of Max",
+					'value' => $this->disp($yestPct, Wx::Percentage),
+					'time' => null,
+					'anomaly' => null,
+				],
+				[
+					'label' => 'Monthly Sun',
+					'value' => $this->disp($monthTot, Wx::Hours),
+					'time' => null,
+					'anomaly' => $monthAnom,
+				],
+				[
+					'label' => 'Annual Sun',
+					'value' => $this->disp($yearTot, Wx::Hours),
+					'time' => null,
+					'anomaly' => $yearAnom,
+				],
+				[
+					'label' => $seasName . ' Total',
+					'value' => $this->disp($seasTot, Wx::Hours),
+					'time' => null,
+					'anomaly' => $seasAnom,
+				],
+			];
 		}
 		echo '<div class="detail-grid">';
 		echo ' <div class="kv-table">';
@@ -1196,18 +1390,25 @@ class ViewDetailedData {
 		echo ' </div>';
 
 		echo ' <div class="detail-graph">';
-		Charts::dailySelectable(
-			['mode' => 'daily', 'length' => 31],
-			[
-				'height' => 350,
-				'headingPrefix' => 'Last 31 days: ',
-				'groups' => $this->chartGroups(),
-				'hideGroups' => true,
-				'selectorBelow' => true,
-			],
-			null,
-			$this->varMean
-		);
+		if ($this->intradayVar !== null) {
+			Charts::dailySelectable(
+				['mode' => 'daily', 'length' => 31],
+				[
+					'height' => 350,
+					'headingPrefix' => 'Last 31 days: ',
+					'groups' => $this->chartGroups(),
+					'hideGroups' => true,
+					'selectorBelow' => true,
+				],
+				null,
+				$this->varMean
+			);
+		} elseif ($this->groupName === 'sun') {
+			Charts::daily(
+				['type' => 'sunhrp', 'mode' => 'daily', 'length' => 31],
+				['height' => 350]
+			);
+		}
 		echo ' </div>';
 		echo '</div>';
 
@@ -1215,6 +1416,12 @@ class ViewDetailedData {
 			echo '<h3>Last 12 months rainfall</h3>';
 			Charts::daily(
 				['type' => 'rain', 'mode' => 'monthly', 'length' => 12, 'summary_type' => Data::SUMMARY_SUM, 'lta' => 1],
+				['height' => 350]
+			);
+		} elseif ($this->groupName === 'sun') {
+			echo '<h3>Last 12 months sunshine</h3>';
+			Charts::daily(
+				['type' => 'sunhr', 'mode' => 'monthly', 'length' => 12, 'summary_type' => Data::SUMMARY_SUM, 'lta' => 1],
 				['height' => 350]
 			);
 		}
@@ -1380,9 +1587,9 @@ class ViewDetailedData {
 	 */
 	function renderAvgsExtrmsRecsBody($measures = null, $wid = 99) {
 		$dat = $this->dat;
-		// Wind/rain (and any group with custom measures) always uses periodMeasureRows().
+		// Wind/rain/sun (and any group with custom measures) always uses periodMeasureRows().
 		// Other callers may still pass explicit labels with the classic value mapping.
-		if ($measures === null || $this->groupName === 'wind' || $this->groupName === 'rain') {
+		if ($measures === null || $this->groupName === 'wind' || $this->isSummableDetail()) {
 			list($measures, $values) = $this->periodMeasureRows($dat);
 		} else {
 			$values = array(
@@ -1444,9 +1651,9 @@ class ViewDetailedData {
 		for ($r = 0; $r < count($measures); $r++) {
 			$sep = $this->isSeparatorRow($measures[$r]);
 			Html::tr($sep ? 'table-top' : Html::colcol($r));
-			// Rain lifetime: show means instead of period totals.
+			// Rain/sun lifetime: show means instead of period totals.
 			$rowLabel = $measures[$r];
-			if ($this->groupName === 'rain' && $measures[$r] === 'Total') {
+			if ($this->isSummableDetail() && $measures[$r] === 'Total') {
 				$rowLabel = 'Mean';
 			}
 			Html::td(str_ireplace(' ', '<br />', $rowLabel), $this->cssClass);
@@ -1469,11 +1676,23 @@ class ViewDetailedData {
 							$cell = $dat['rdays']['avg'][$pk];
 							$anomVal = null;
 						}
+					} elseif ($this->groupName === 'sun') {
+						if ($measures[$r] === 'Total' && isset($dat['mean']['avg'][$pk])) {
+							$cell = $dat['mean']['avg'][$pk];
+							$anomVal = isset($dat['mean']['avg'][$pk . 'anom'])
+								? $dat['mean']['avg'][$pk . 'anom'] : $anomVal;
+						} elseif ($measures[$r] === 'Sun Days' && isset($dat['sdays']['avg'][$pk])) {
+							$cell = $dat['sdays']['avg'][$pk];
+							$anomVal = null;
+						}
 					}
 					$anom = $this->anomHint($anomVal);
 					$date = $this->dateHtml(isset($values[$r][$pk . 'date']) ? $values[$r][$pk . 'date'] : '');
-					$cellConv = ($this->groupName === 'rain' && $measures[$r] === 'Rain Days')
-						? Wx::Percentage : $this->measureConv($r);
+					$cellConv = $this->measureConv($r);
+					if (($this->groupName === 'rain' && $measures[$r] === 'Rain Days')
+						|| ($this->groupName === 'sun' && $measures[$r] === 'Sun Days')) {
+						$cellConv = Wx::Percentage;
+					}
 					Html::td('<b>' . $this->disp($cell, $cellConv) . '</b>' . $anom . $date, $this->cssClass);
 				} else {
 					Html::td('&nbsp;', $this->cssClass);
@@ -1507,6 +1726,19 @@ class ViewDetailedData {
 				'lta' => 1,
 			], ['height' => 470]);
 			echo '</div>';
+		} elseif ($this->groupName === 'sun') {
+			echo '<h3>Cumulative sunshine vs last year and normal</h3>';
+			echo '<div class="charts">';
+			Charts::daily([
+				'type' => 'sunhr',
+				'mode' => 'daily',
+				'year' => $yr,
+				'month' => 0,
+				'cume' => 1,
+				'multiyr' => 'last',
+				'lta' => 1,
+			], ['height' => 470]);
+			echo '</div>';
 		} else {
 			echo '<h3>Current year vs last year daily trends for ' . $this->label . '</h3>';
 			echo '<div class="charts">';
@@ -1533,7 +1765,7 @@ class ViewDetailedData {
 				'lta' => 1,
 			], ['height' => 350]);
 			echo '</div>';
-		} elseif ($this->groupName !== 'rain') {
+		} elseif (!$this->isSummableDetail()) {
 			echo '<h3>This year min/max daily trends in detail for ' . $this->label . '</h3>';
 			echo '<div class="detail-grid charts">';
 			echo '<div>';
@@ -1556,7 +1788,7 @@ class ViewDetailedData {
 		}
 
 		$dat = $this->datMM;
-		if ($measures === null || $this->groupName === 'wind' || $this->groupName === 'rain') {
+		if ($measures === null || $this->groupName === 'wind' || $this->isSummableDetail()) {
 			list($measures, $values) = $this->periodMeasureRows($dat);
 		} else {
 			$values = array($dat['min'][0], $dat['max'][1], $dat['min'][1], $dat['max'][0], $dat['mean'][0], $dat['mean'][1], '---', $dat['mean'][2], $dat['min'][2], $dat['max'][2]);
@@ -1586,10 +1818,10 @@ class ViewDetailedData {
 				if ($this->isSeparatorRow($measures[$r])) { continue; }
 				$cell = isset($values[$r][0][$mt]) ? $values[$r][0][$mt] : null;
 				if ($cell !== null && isset($values[$r]['extr'][1]) && $cell == $values[$r]['extr'][1]) {
-					$colour = ($this->groupName === 'rain')
+					$colour = ($this->isSummableDetail())
 						? '" style="color:#0101DF' : '" style="color:#DF7401';
 				} elseif ($cell !== null && isset($values[$r]['extr'][0]) && $cell == $values[$r]['extr'][0]) {
-					$colour = ($this->groupName === 'rain')
+					$colour = ($this->isSummableDetail())
 						? '" style="color:#DF7401' : '" style="color:#0101DF';
 				} else {
 					$colour = '';
@@ -1622,23 +1854,41 @@ class ViewDetailedData {
 
 		Html::table_end();
 
-		echo '<p>View daily tables of
-			<a href="/wxdataday.php?vartype=' . $this->letter . 'min">min</a> /
-			<a href="/wxdataday.php?vartype=' . $this->letter . 'max">max</a> /
-			<a href="/wxdataday.php?vartype=' . $this->letter . 'mean">mean</a>
-			 ' . $this->label . ' data for the past year <br />View monthly tables of
-			<a href="/TablesDataMonth.php?vartype=' . $this->letter . 'min">min</a> /
-			<a href="/TablesDataMonth.php?vartype=' . $this->letter . 'max">max</a> /
-			<a href="/TablesDataMonth.php?vartype=' . $this->letter . 'mean">mean</a>
-			 ' . $this->label . ' data for all months in the station history.
-			</p>';
+		if ($this->groupName === 'sun') {
+			echo '<p>View daily tables of
+				<a href="/wxdataday.php?vartype=sunhr">sunshine hours</a>
+				 / <a href="/wxdataday.php?vartype=sunhrp">% of max</a>
+				 for the past year <br />View monthly tables of
+				<a href="/TablesDataMonth.php?vartype=sunhr">sunshine hours</a>
+				 / <a href="/TablesDataMonth.php?vartype=sunhrp">% of max</a>
+				 for all months in the station history.
+				</p>';
+		} else {
+			echo '<p>View daily tables of
+				<a href="/wxdataday.php?vartype=' . $this->letter . 'min">min</a> /
+				<a href="/wxdataday.php?vartype=' . $this->letter . 'max">max</a> /
+				<a href="/wxdataday.php?vartype=' . $this->letter . 'mean">mean</a>
+				 ' . $this->label . ' data for the past year <br />View monthly tables of
+				<a href="/TablesDataMonth.php?vartype=' . $this->letter . 'min">min</a> /
+				<a href="/TablesDataMonth.php?vartype=' . $this->letter . 'max">max</a> /
+				<a href="/TablesDataMonth.php?vartype=' . $this->letter . 'mean">mean</a>
+				 ' . $this->label . ' data for all months in the station history.
+				</p>';
+		}
 
 		$this->seasonalAvgs();
 
 		echo '<h3>Past 24hrs and past 12 months trends for ' . $this->label . '</h3>';
 		echo '<div class="detail-grid">';
 		echo '<div>';
-		Charts::intraday(['num' => 1], $this->intradayVar, ['height' => 330]);
+		if ($this->intradayVar !== null) {
+			Charts::intraday(['num' => 1], $this->intradayVar, ['height' => 330]);
+		} else {
+			Charts::daily(
+				['type' => $this->varMean, 'mode' => 'daily', 'length' => 31, 'lta' => 1],
+				['height' => 330]
+			);
+		}
 		echo '</div><div>';
 		Charts::dailySelectable(
 			['mode' => 'monthly', 'length' => 12, 'lta' => 1],
@@ -1729,6 +1979,15 @@ class ViewDetailedData {
 				isset($dat['extra'][0]) ? $dat['extra'][0] : [],
 			);
 			$rowConvs = array(Wx::Rain, Wx::Rain, Wx::Hours, Wx::Hours);
+		} elseif ($this->groupName === 'sun') {
+			$measures = array('Sunniest', 'Dullest', 'Highest Mean % of Max', 'Lowest Mean % of Max');
+			$values = array(
+				$dat['mean'][1],
+				$dat['mean'][0],
+				isset($dat['extra'][1]) ? $dat['extra'][1] : [],
+				isset($dat['extra'][0]) ? $dat['extra'][0] : [],
+			);
+			$rowConvs = array(Wx::Hours, Wx::Hours, Wx::Percentage, Wx::Percentage);
 		} else {
 			$measures = array($this->superlativeLow, $this->superlativeHigh, 'Lowest Mean Daily-Min', 'Highest Mean Daily-Min', 'Lowest Mean Daily-Max', 'Highest Mean Daily-Max');
 			$values = array($dat['mean'][0], $dat['mean'][1], $dat['min'][0], $dat['min'][1], $dat['max'][0], $dat['max'][1]);
@@ -1829,7 +2088,7 @@ class ViewDetailedData {
 		}
 	}
 
-	function rankTables($rankNum = 10, $rankNumM = 10, $rankNumCM = 5) {
+	function rankTables($rankNum = 10, $rankNumM = 10, $rankNumCM = 5, $rankNumY = 5) {
 		$validStarts = $this->validStartYearOptions();
 		$start = isset($_GET['start_year_rep']) ? (int)$_GET['start_year_rep'] : $this->startYrReport;
 		if (!in_array($start, $validStarts, true)) {
@@ -1851,9 +2110,9 @@ class ViewDetailedData {
 		echo '<div id="vd-rank-ajax">';
 		if ($start !== $this->startYrReport) {
 			$alt = new ViewDetailedData($this->groupName, ['startYear' => $start, 'rankOnly' => true]);
-			$alt->renderRankTablesBody($rankNum, $rankNumM, $rankNumCM);
+			$alt->renderRankTablesBody($rankNum, $rankNumM, $rankNumCM, $rankNumY);
 		} else {
-			$this->renderRankTablesBody($rankNum, $rankNumM, $rankNumCM);
+			$this->renderRankTablesBody($rankNum, $rankNumM, $rankNumCM, $rankNumY);
 		}
 		echo '</div>';
 
@@ -1871,7 +2130,7 @@ class ViewDetailedData {
 	/**
 	 * Body of the rankings section. Used by the full page and by detailrankdata.php.
 	 */
-	function renderRankTablesBody($rankNum = 10, $rankNumM = 10, $rankNumCM = 5) {
+	function renderRankTablesBody($rankNum = 10, $rankNumM = 10, $rankNumCM = 5, $rankNumY = 5) {
 		$vt = $this->varMean;
 		$mon = (int)Date::$dmonth;
 		$monName = Date::$monthname;
@@ -1879,12 +2138,17 @@ class ViewDetailedData {
 
 		$dailyCols = !empty($this->group['rankDailyCols']) ? $this->group['rankDailyCols'] : null;
 		$monthlyCols = !empty($this->group['rankMonthlyCols']) ? $this->group['rankMonthlyCols'] : null;
+		$annualCols = !empty($this->group['rankAnnualCols'])
+			? $this->group['rankAnnualCols']
+			: $monthlyCols;
 		$dailyHiOnly = !empty($this->group['rankDailyHiOnly']);
 
 		$this->rankTablePair($this->ranks, $rankNum, 'daily', "Days", "Daily",
 			'/RankDay.php?vartype=' . rawurlencode($vt), $dailyCols, $dailyHiOnly);
 		$this->rankTablePair($this->ranks, $rankNumM, 'monthly', "Months", "Monthly",
 			'/RankMonth.php?vartype=' . rawurlencode($vt), $monthlyCols);
+		$this->rankTablePair($this->ranks, $rankNumY, 'annual', "Years", "Annual",
+			'/RankYear.php?vartype=' . rawurlencode($vt), $annualCols);
 		$this->rankTablePair($this->ranks, $rankNumCM, 'dailyCM', "Days in " . $monName, "Daily",
 			'/RankDay.php?vartype=' . rawurlencode($vt) . '&month=' . $mon, $dailyCols, $dailyHiOnly);
 		$this->rankTablePair($this->ranks, $rankNumCM, 'monthlyCM', $monPlural, "Monthly",

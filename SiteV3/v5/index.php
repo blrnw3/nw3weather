@@ -279,7 +279,7 @@ $moonName = isset($moonphasename) ? trim($moonphasename) : 'Moon phase';
 				<button type="button" data-var="humi" title="Humidity"><img src="<?php echo Site::IMG_ROOT; ?>humidity_small.png" alt="Humidity" width="26" height="26" /></button>
 				<button type="button" data-var="dewp" title="Dew point"><img src="<?php echo Site::IMG_ROOT; ?>dewy_small.png" alt="Dew point" width="26" height="26" /></button>
 				<button type="button" data-var="pres" title="Pressure"><img src="<?php echo Site::IMG_ROOT; ?>pressure2_small.png" alt="Pressure" width="26" height="26" /></button>
-				<button type="button" data-var="pm25" title="Air quality"><img src="<?php echo Site::IMG_ROOT; ?>icon-airpollution.svg" alt="Air quality" width="26" height="26" /></button>
+				<button type="button" data-var="pm25" title="Air pollution"><img src="<?php echo Site::IMG_ROOT; ?>icon-airpollution.svg" alt="Air pollution" width="26" height="26" /></button>
 				<button type="button" data-var="wdir" title="Wind direction"><img src="<?php echo Site::IMG_ROOT; ?>icon-compass.svg" alt="Wind direction" width="26" height="26" /></button>
 			</div>
 			<div class="home-graph-controls" role="group" aria-label="Chart time range">
@@ -306,16 +306,22 @@ $moonName = isset($moonphasename) ? trim($moonphasename) : 'Moon phase';
 Charts::dailySelectable(
 	array('mode' => 'daily', 'length' => 31),
 	array(
-		'height' => 300,
+		'height' => 320,
 		'groups' => Charts::simpleGroups(),
 		'headingPrefix' => '',
 	),
 	null,
-	'tmean'
+	'rain'
 );
 ?>
 <p class="home-chart-more"><a href="wx3.php" title="Latest graphs and more chart options">More graphs &amp; options &rarr;</a></p>
 </div>
+
+<?php $pond = nw3_live_get($HR24, 'misc', 'pondTemp'); ?>
+<?php if ($pond !== null): ?>
+<p>Latest Hampstead Heath pond temperature: <b><?php echo Wx::conv($pond, Wx::Temperature); ?></b>
+	&nbsp; <a href="/wxdataday.php?vartype=pond">see temperature history</a></p>
+<?php endif; ?>
 
 <?php if ($forecast): ?>
 <h2>Forecast</h2>
@@ -334,34 +340,12 @@ Charts::dailySelectable(
 </div>
 <?php endif; ?>
 
-<div class="home-links">
-	<b>Dive deeper:</b>
-	<a href="wx4.php">Records</a>
-	<a href="/wxdataday.php">Daily data</a>
-	<a href="/RankDay.php">Rankings</a>
-	<a href="/charts.php">Charts</a>
-	<a href="/wxaverages.php">Climate averages</a>
-	<a href="wx7.php">Photos</a>
-	<a href="wx8.php">About the station</a>
-</div>
-
 <div class="home-about">
 	<p><b>NW3 Weather</b> is a meteorological observation site located near Hampstead, in North London, UK.
 	The site was established with an <a href="wx8.php" title="Detailed station and website information">automatic personal weather station</a>
 	in July 2010 and runs continuously, with updates at least every 60s.</p>
 </div>
 
-<?php $pond = nw3_live_get($HR24, 'misc', 'pondTemp'); ?>
-<?php if ($pond !== null): ?>
-<p>Latest Hampstead Heath pond temperature: <b><?php echo Wx::conv($pond, Wx::Temperature); ?></b>
-	&nbsp; <a href="/wxdataday.php?vartype=pond">see temperature history</a></p>
-<?php endif; ?>
-
-<h1>Latest Monthly Weather Report</h1>
-<?php
-$repStamp = Date::mkdate(Date::$dmonth - 1, 1);
-displayMonthlyReport(date('n', $repStamp), date('Y', $repStamp));
-?>
 
 <?php
 $nowStamp = Date::mkdate(Date::$dmonth, Date::$dday, Date::$dyear);
@@ -371,9 +355,25 @@ $runDays = intval(($nowStamp - Date::mkdate(2, 1, 2009 + $runYears)) / (24 * 360
 $runStr = $runYears . ' year' . ($runYears === 1 ? '' : 's')
 	. ' and ' . $runDays . ' day' . ($runDays === 1 ? '' : 's');
 ?>
-<p style="margin-top: 2em;">This weather station has been recording data for
-<b><?php echo $runStr; ?></b> (Since 1st Feb 2009)
+<p>This weather station has been recording data for
+<b><?php echo $runStr; ?></b>
 </p>
+
+<div class="home-links">
+	<b>Dive deeper:</b>
+	<a href="wx2.php">Webcam</a>
+	<a href="wx3.php">Graphs</a>
+	<a href="/wxdataday.php">Data tables</a>
+	<a href="/RankDay.php">Rankings</a>
+	<a href="wx8.php">About the station</a>
+</div>
+
+<h1>Latest Monthly Weather Report</h1>
+<?php
+$repStamp = Date::mkdate(Date::$dmonth - 1, 1);
+displayMonthlyReport(date('n', $repStamp), date('Y', $repStamp));
+?>
+
 
 <?php
 Page::End();

@@ -14,7 +14,7 @@ class Live {
 	public static $wdir;
 	public static $dewp;
 	public static $feel;
-	public static $pm25; // Air quality: latest raw PM2.5 (ug/m3), null if unavailable
+	public static $pm25; // Air pollution: latest raw PM2.5 (ug/m3), null if unavailable
 
 	// 24hr / today
 	public static $NOW;
@@ -33,7 +33,7 @@ class Live {
 		self::$HR24 = unserialize(file_get_contents(ROOT . 'serialised_datHr24.txt'));
 
 		// TODO get from $NOW
-		// Air quality: latest PM2.5 reading (polled every 5 min by cron), null if absent
+		// Air pollution: latest PM2.5 reading (polled every 5 min by cron), null if absent
 		$pm25File = ROOT . 'pm25_latest.txt';
 		if(file_exists($pm25File)) {
 			$pm25Raw = trim(file_get_contents($pm25File));
@@ -272,22 +272,7 @@ class DataSummarizer {
 		$vals = $this->vals;
 		ksort($vals);
 
-		$runs = [];
-		$runType = null;
-		$runDates = [];
-		foreach ($vals as $dt => $val) {
-			$type = (!Util::isBlank($val) && (float)$val >= 0.2) ? 'wet' : 'dry';
-			if ($runType !== null && $type !== $runType) {
-				$runs[] = $this->makeRainSpell($runType, $runDates, false);
-				$runDates = [];
-			}
-			$runType = $type;
-			$runDates[] = $dt;
-		}
-		if ($runType !== null && count($runDates)) {
-			$runs[] = $this->makeRainSpell($runType, $runDates, true);
-		}
-
+		$runs = Spells::findWetDryRuns($vals, 0.2);
 		$empty = ['wet' => null, 'dry' => null];
 		$result = [
 			'threshold' => 0.2,
@@ -306,59 +291,25 @@ class DataSummarizer {
 
 		foreach ($runs as $spell) {
 			$type = $spell['type'];
-			$this->keepLongerSpell($result['alltime'][$type], $spell);
-			$this->keepTopSpell($result['top'][$type], $spell, 10);
+			Spells::keepLonger($result['alltime'][$type], $spell);
+			Spells::keepTop($result['top'][$type], $spell, 10);
 
 			// Legacy current-month/year records include a spell crossing the
 			// boundary, and count its full length.
 			if ($spell['endDate'] >= $monthStart && $spell['startDate'] <= $today) {
-				$this->keepLongerSpell($result['current_month'][$type], $spell);
+				Spells::keepLonger($result['current_month'][$type], $spell);
 			}
 			if ($spell['endDate'] >= $yearStart && $spell['startDate'] <= $today) {
-				$this->keepLongerSpell($result['current_year'][$type], $spell);
+				Spells::keepLonger($result['current_year'][$type], $spell);
 			}
 
 			// Legacy all-time "current month" records assign a cross-month spell
 			// to the month containing its midpoint.
 			if ((int)substr($spell['midpointDate'], 5, 2) === $currentMonth) {
-				$this->keepLongerSpell($result['alltime_current_month'][$type], $spell);
+				Spells::keepLonger($result['alltime_current_month'][$type], $spell);
 			}
 		}
 		return $result;
-	}
-
-	private function makeRainSpell($type, $dates, $ongoing) {
-		$length = count($dates);
-		$midpointIdx = $length - 1 - (int)floor($length / 2);
-		return [
-			'type' => $type,
-			'length' => $length,
-			'startDate' => $dates[0],
-			'endDate' => $dates[$length - 1],
-			'midpointDate' => $dates[$midpointIdx],
-			'ongoing' => (bool)$ongoing,
-		];
-	}
-
-	private function keepLongerSpell(&$record, $candidate) {
-		// Strictly greater preserves the first occurrence on ties, as legacy did.
-		if ($record === null || $candidate['length'] > $record['length']) {
-			$record = $candidate;
-		}
-	}
-
-	/** Keep the top N longest spells; on ties, keep the earliest first. */
-	private function keepTopSpell(&$list, $candidate, $n) {
-		$list[] = $candidate;
-		usort($list, function ($a, $b) {
-			if ($a['length'] !== $b['length']) {
-				return ($a['length'] > $b['length']) ? -1 : 1;
-			}
-			return strcmp($a['startDate'], $b['startDate']);
-		});
-		if (count($list) > $n) {
-			$list = array_slice($list, 0, $n);
-		}
 	}
 
 	private function getBaseSummary($arr) {
@@ -582,6 +533,8 @@ class DataSummarizer {
 			"month_mean_all_this_month" => $this->extractHighLow(Util::array_pluck($this->currentMonthSummariesFlat, $this->summaryKey), 10),
 			"month_count_alltime" => $this->extractHighLow(Util::array_pluck($this->monthSummariesFlat, 'count_nonzero'), 10),
 			"month_count_all_this_month" => $this->extractHighLow(Util::array_pluck($this->currentMonthSummariesFlat, 'count_nonzero'), 10),
+			"year_mean_alltime" => $this->extractHighLow(Util::array_pluck($this->yearSummaries, $this->summaryKey), 10),
+			"year_count_alltime" => $this->extractHighLow(Util::array_pluck($this->yearSummaries, 'count_nonzero'), 10),
 		];
 	}
 }
@@ -842,6 +795,42 @@ class Data {
 	public static function getDailyDataForYear($var, $year) {
 		$data = self::varToDatArray($var, $year);
 		return isset($data[$year]) ? $data[$year] : [];
+	}
+
+	/**
+	 * Aggregate each calendar day (month/day) across all available years.
+	 * Feb 29 only includes leap years that have a value.
+	 *
+	 * @param string $var variable name
+	 * @param string $agg 'min' | 'max' | 'mean'
+	 * @param int $start_year earliest year to include
+	 * @return array [month][day] = aggregated value
+	 */
+	public static function getDailyCalendarAgg($var, $agg, $start_year) {
+		$all = self::getDailyData($var, $start_year);
+		$out = [];
+		for ($m = 1; $m <= 12; $m++) {
+			$out[$m] = [];
+			$maxd = Date::get_days_in_month($m, 2000); // leap year → include 29 Feb
+			for ($d = 1; $d <= $maxd; $d++) {
+				$vals = [];
+				foreach ($all as $md) {
+					if (!isset($md[$m][$d])) { continue; }
+					$v = $md[$m][$d];
+					if (Util::isBlank($v)) { continue; }
+					$vals[] = $v;
+				}
+				if (count($vals) === 0) { continue; }
+				if ($agg === 'min') {
+					$out[$m][$d] = Util::mymin($vals);
+				} elseif ($agg === 'max') {
+					$out[$m][$d] = Util::mymax($vals);
+				} else {
+					$out[$m][$d] = Util::mean($vals);
+				}
+			}
+		}
+		return $out;
 	}
 
 	/**

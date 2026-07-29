@@ -29,17 +29,28 @@ function nw3_dataday_render(Report $report) {
 	$type = $report->type;
 	$year = $report->year;
 	$unit = $report->unit;
-	$data = Data::getDailyDataForYear($type, $year);
+	$dayAgg = $report->dayAgg;
+	$isAgg = ($dayAgg !== '');
+
+	if ($isAgg) {
+		$data = Data::getDailyCalendarAgg($type, $dayAgg, (int)$report->startYear);
+	} else {
+		$data = Data::getDailyDataForYear($type, $year);
+	}
 
 	$today = Date::mkdate(Date::$dmonth, Date::$dday, Date::$dyear);
-	$isCurrentYear = ($year == (int)Date::$dyear);
+	$isCurrentYear = (!$isAgg && $year == (int)Date::$dyear);
 	$curMonth = (int)Date::$dmonth;
 
 	$maxdays = [];
-	for ($m = 1; $m <= 12; $m++) { $maxdays[$m] = Date::get_days_in_month($m, $year); }
+	$refYear = $isAgg ? 2000 : $year; // leap year so Feb 29 can appear in agg mode
+	for ($m = 1; $m <= 12; $m++) { $maxdays[$m] = Date::get_days_in_month($m, $refYear); }
 
 	$cumuls = array_fill(1, 12, 0);
 	$cumcnts = array_fill(1, 12, 0);
+
+	$aggLabels = array('min' => 'minimum', 'max' => 'maximum', 'mean' => 'mean');
+	$aggShort = array('min' => 'Min', 'max' => 'Max', 'mean' => 'Mean');
 
 	echo '<div class="dd-grid">';
 
@@ -48,9 +59,13 @@ function nw3_dataday_render(Report $report) {
 	dd_lab('Day');
 	for ($m = 1; $m <= 12; $m++) {
 		$mon = Date::$months3[$m - 1];
-		$canLink = ($year < (int)Date::$yr_yest) || ($year == (int)Date::$yr_yest && $m <= (int)Date::$mon_yest);
-		$lnk = "/wxhistmonth.php?year=$year&month=$m";
-		$label = $canLink ? '<a class="hidden-link" href="' . $lnk . '" title="View detailed report for month">' . $mon . '</a>' : $mon;
+		if ($isAgg) {
+			$label = $mon;
+		} else {
+			$canLink = ($year < (int)Date::$yr_yest) || ($year == (int)Date::$yr_yest && $m <= (int)Date::$mon_yest);
+			$lnk = "/wxhistmonth.php?year=$year&month=$m";
+			$label = $canLink ? '<a class="hidden-link" href="' . $lnk . '" title="View detailed report for month">' . $mon . '</a>' : $mon;
+		}
 		dd_lab($label, dd_month_future($m, $isCurrentYear, $curMonth) ? 'dd-future-lab' : '');
 	}
 	echo '</div>';
@@ -72,17 +87,21 @@ function nw3_dataday_render(Report $report) {
 			} elseif (Util::isBlank($val)) {
 				$class = 'invalid';
 				$finalVal = '&nbsp;';
-				$showLink = true;
+				$showLink = !$isAgg;
 			} else {
 				$cumuls[$m] += $val;
 				$cumcnts[$m]++;
 				$finalVal = Wx::conv($val, $unit, false);
 				$num = $report->valcolConvert ? Wx::convNum($val, $unit) : (float)$val;
 				$class = $report->valcolr($num);
-				$showLink = true;
+				$showLink = !$isAgg;
 			}
-			$lnk = "/wxhistday.php?year=$year&month=$m&day=$day";
-			$cell = $showLink ? '<a class="hidden-link" href="' . $lnk . '" title="View detailed report for day">' . $finalVal . '</a>' : $finalVal;
+			if ($showLink) {
+				$lnk = "/wxhistday.php?year=$year&month=$m&day=$day";
+				$cell = '<a class="hidden-link" href="' . $lnk . '" title="View detailed report for day">' . $finalVal . '</a>';
+			} else {
+				$cell = $finalVal;
+			}
 			dd_cell($cell, $class);
 		}
 		echo '</div>';
@@ -122,7 +141,7 @@ function nw3_dataday_render(Report $report) {
 				$putConv = Wx::conv($put, $unit, false);
 				$num = $report->valcolConvert ? Wx::convNum($put, $unit) : (float)$put;
 				$class = $report->valcolr($num / $sumfix);
-				$anom = ($report->isAnom && $mm == 2) ? '<br />(' . $report->anomMonth($put, $m) . ')' : '';
+				$anom = (!$isAgg && $report->isAnom && $mm == 2) ? '<br />(' . $report->anomMonth($put, $m) . ')' : '';
 				dd_cell($putConv . $anom, $class, 'dd-sum-cell');
 			}
 			echo '</div>';
@@ -151,7 +170,7 @@ function nw3_dataday_render(Report $report) {
 
 		// Cumulative row
 		echo '<div class="dd-row dd-sum">';
-		dd_lab($report->isAnom ? 'Cumu-<br />lative' : 'Cumul', 'dd-sum-lab');
+		dd_lab((!$isAgg && $report->isAnom) ? 'Cumu-<br />lative' : 'Cumul', 'dd-sum-lab');
 		for ($m = 1; $m <= 12; $m++) {
 			if (dd_month_future($m, $isCurrentYear, $curMonth)) {
 				dd_cell('', 'dd-future', 'dd-sum-cell');
@@ -172,7 +191,7 @@ function nw3_dataday_render(Report $report) {
 			$putConv = Wx::conv($put, $unit, false);
 			$num = $report->valcolConvert ? Wx::convNum($put, $unit) : (float)$put;
 			$class = $report->valcolr($num / $sumfix);
-			$anom = $report->isAnom ? '<br />(' . $report->anomMonthCum($put, $m - 1) . ')' : '';
+			$anom = (!$isAgg && $report->isAnom) ? '<br />(' . $report->anomMonthCum($put, $m - 1) . ')' : '';
 			dd_cell($putConv . $anom, $class, 'dd-sum-cell');
 		}
 		echo '</div>';
@@ -182,27 +201,39 @@ function nw3_dataday_render(Report $report) {
 
 	$summaryText = $report->isNotSummarisable ? '.' : ' along with monthly summary: lowest, highest, '
 		. ($report->isSum ? 'total, count (days > 0)' : 'mean') . ', and the cumulative value for the year to the month\'s end.';
-	echo '<p>' . $report->description . ' in London, NW3, for every available day of ' . $year . $summaryText
-		. ' Data for ' . $report->description . ' begins in ' . (int)$report->startYear . '.';
-	if ($report->isAnom) {
-		echo '<br />Figures in brackets refer to departure from <strong>recent</strong> '
-			. '<a href="/wxaverages.php" title="Long-term NW3 climate averages">average conditions</a>.';
+	if ($isAgg) {
+		echo '<p>' . $report->description
+			. ' in London, NW3 — calendar-day ' . $aggLabels[$dayAgg]
+			. ' across all years from ' . (int)$report->startYear . ' onwards'
+			. $summaryText . '</p>';
+		$report->historicalInfo((int)$report->startYear);
+	} else {
+		echo '<p>' . $report->description . ' in London, NW3, for every available day of ' . $year . $summaryText
+			. ' Data for ' . $report->description . ' begins in ' . (int)$report->startYear . '.';
+		if ($report->isAnom) {
+			echo '<br />Figures in brackets refer to departure from <strong>recent</strong> '
+				. '<a href="/wxaverages.php" title="Long-term NW3 climate averages">average conditions</a>.';
+		}
+		if ($year == (int)Date::$dyear) {
+			echo '<br />Values for recent days are subject to quality control and may be adjusted at any time.';
+		}
+		echo '</p>';
+		$report->historicalInfo($year);
 	}
-	if ($year == (int)Date::$dyear) {
-		echo '<br />Values for recent days are subject to quality control and may be adjusted at any time.';
-	}
-	echo '</p>';
-
-	$report->historicalInfo($year);
 
 	$unitLabel = strip_tags(Wx::getUnits($unit));
+	$title = $report->description . ' / ' . $unitLabel;
+	if ($isAgg) {
+		$title .= ' · ' . $aggShort[$dayAgg] . ' (all years)';
+	}
 	return array(
 		'type' => $type,
 		'year' => $year,
+		'agg' => $dayAgg,
 		'startYear' => (int)$report->startYear,
-		'yearDefaulted' => !empty($report->yearDefaulted),
+		'yearDefaulted' => !$isAgg && !empty($report->yearDefaulted),
 		'description' => $report->description,
 		'unit' => $unitLabel,
-		'title' => $report->description . ' / ' . $unitLabel,
+		'title' => $title,
 	);
 }

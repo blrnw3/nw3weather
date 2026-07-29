@@ -1,12 +1,19 @@
 <?php
 error_reporting(E_ALL);
-ini_set("display_errors", 1);
+$host = isset($_SERVER['HTTP_HOST']) ? strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'])) : '';
+$isLocal = PHP_SAPI === 'cli'
+	|| in_array($host, array('', 'localhost', '127.0.0.1', '::1'), true)
+	|| substr($host, -6) === '.local'
+	|| substr($host, -5) === '.test';
+ini_set('display_errors', $isLocal ? '1' : '0');
+ini_set('log_errors', '1');
 date_default_timezone_set('Europe/London');
 
 // NB: see end of file for other inclusions and init
 require("UtilsAndConsts.php");
 require("WxDefinition.php");
 require("WxFn.php");
+require("Spells.php");
 require("ChartHelper.php");
 
 class Page {
@@ -70,7 +77,7 @@ class Page {
 		$_SESSION['count'][self::$fileNum]++;
 		// Refresh settings
 		$metaRefresh = "";
-		$metaRefreshable = in_array(self::$fileNum, array(3,4,10,12,13,14,15)) && !self::$isSubFile;
+		$metaRefreshable = in_array(self::$fileNum, array(3,4,10,11,12,13,14,15)) && !self::$isSubFile;
 		if(self::$auto && $metaRefreshable && !self::$isBot) {
 			if($_SESSION['count'][self::$fileNum] < 50) {
 				$reftime = 302 - ( time() - filemtime(ROOT.'serialised_datNow.txt') );
@@ -115,7 +122,7 @@ class Page {
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
-		<link rel="stylesheet" type="text/css" href="/v5/$styleSheet.css?20260722b" media="screen" title="screen" />
+		<link rel="stylesheet" type="text/css" href="/v5/$styleSheet.css?20260729a" media="screen" title="screen" />
 		$colorCss
 		$scripts
 	</head>
@@ -227,7 +234,7 @@ END;
 
 	private static function sidebarGroup($items) {
 		// Pages that share a vartype selector — keep it when hopping Daily ↔ Monthly etc.
-		$vartypePages = array('wxdataday', 'TablesDataMonth', 'RankDay', 'RankMonth', 'RankYear');
+		$vartypePages = array('wxdataday', 'TablesDataMonth', 'RankDay', 'RankMonth', 'RankYear', 'RankSpells');
 		$vartype = isset($_GET['vartype']) ? (string)$_GET['vartype'] : '';
 		if ($vartype !== '' && !preg_match('/^[a-z0-9]+$/i', $vartype)) {
 			$vartype = '';
@@ -323,6 +330,12 @@ END;
 					"num" => 12,
 				],
 				[
+					"title" => "Sunshine",
+					"text" => "Detailed Sunshine Data",
+					"page" => "wx11",
+					"num" => 11,
+				],
+				[
 					"title" => "Temperature",
 					"text" => "Detailed Temperature Data",
 					"page" => "wx14",
@@ -387,6 +400,13 @@ END;
 					"text" => "Annual ranked data by weather variable",
 					"page" => "RankYear",
 					"num" => 42.1,
+					"subhead" => true,
+				],
+				[
+					"title" => "Spells",
+					"text" => "Longest wet, dry and threshold spells",
+					"page" => "RankSpells",
+					"num" => 43,
 					"subhead" => true,
 				],
 				[
@@ -643,7 +663,7 @@ class DataPage extends Page {
 	 * @return string a query string beginning with '&'
 	 */
 	static function buildSlug($key, $val, $defaults = []) {
-		$keys = ["vartype", "year", "month", "summary_type", "start_year_rep", "rankLimit"];
+		$keys = ["vartype", "year", "month", "summary_type", "start_year_rep", "rankLimit", "spell_dir", "threshold"];
 		$slug = "";
 		foreach ($keys as $k) {
 			if($k === $key) {
