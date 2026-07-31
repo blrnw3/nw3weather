@@ -244,7 +244,7 @@ if ($badMessage) { echo "<p><b>Bad date specified. Defaulted to $badMessage repo
 
 // ---- Day navigation ----
 $prevs = $sproc - 86400; $nexts = $sproc + 86400;
-echo '<table width="800"><tr><td align="left">';
+echo '<table class="report-nav-table"><tr><td align="left">';
 if ($sproc > Date::mkdate(2, 1, 2009)) {
 	echo '<a href="wxhistday.php?year=' . date('Y', $prevs) . '&amp;month=' . date('n', $prevs) . '&amp;day=' . date('j', $prevs) . '" title="View previous day">&lt;&lt;Previous Day</a>';
 } else { echo '&lt;&lt;Previous Day'; }
@@ -269,6 +269,7 @@ $timeCell = function ($t) {
 	return str_replace('*', '', $t);
 };
 
+echo '<div class="report-table-scroll">';
 echo '<table class="table1" width="98%" cellpadding="2" cellspacing="0">';
 echo '<tr class="table-top"><td class="td4" width="22%">Measure</td><td class="td4" width="23%">Value (anomaly)</td><td class="td4" width="8%">Time</td>'
 	. '<td class="td4" width="17%">Month cumul.</td><td class="td4" width="15%">Record High</td><td class="td4" width="15%">Record Low</td></tr>';
@@ -307,6 +308,7 @@ for ($xi = 0; $xi < 3; $xi++) {
 		. '</tr>';
 }
 echo '</table>';
+echo '</div>';
 
 // Manual observations
 if ($isToday) {

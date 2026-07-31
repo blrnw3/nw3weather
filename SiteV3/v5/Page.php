@@ -109,6 +109,8 @@ class Page {
 		$title = self::$title;
 		$description = self::$description;
 		$styleSheet = self::$styleSheet;
+		$bodyClass = in_array(self::$fileNum, array(10, 11, 12, 13, 14, 16), true)
+			? ' class="detail-page"' : '';
 
 		echo <<<END
 <!doctype html>
@@ -122,11 +124,11 @@ class Page {
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
-		<link rel="stylesheet" type="text/css" href="/v5/$styleSheet.css?20260731d" media="screen" title="screen" />
+		<link rel="stylesheet" type="text/css" href="/v5/$styleSheet.css?20260731o" media="screen" title="screen" />
 		$colorCss
 		$scripts
 	</head>
-	<body>
+	<body$bodyClass>
 		<div id="background">
 			<div id="page">
 				<div id="header">
@@ -149,8 +151,16 @@ class Page {
 						<div id="last-updated">$updatedAt</div>
 					</div>
 				</div>
+				<div id="nav-toggle-bar">
+					<button type="button" id="nav-toggle" aria-expanded="false" aria-controls="nav" aria-label="Open menu">
+						<span class="nav-toggle-icon" aria-hidden="true"></span>
+						<span class="nav-toggle-label">Menu</span>
+					</button>
+					<a href="index.php" class="nav-toggle-brand"><span class="nw3">nw3</span> weather</a>
+				</div>
+				<div id="nav-backdrop" hidden></div>
 				<div id="nav-wrapper">
-				<div id="nav">
+				<nav id="nav" aria-label="Site">
 					$navBar
 					<div id="nav-settings">
 						<p>&#x2699;&#xFE0E; Site units</p>
@@ -160,7 +170,7 @@ class Page {
 							</form>
 						</div>
 					</div>
-				</div>
+				</nav>
 				<div id="main">
 					<div id="status">
 					$status
@@ -184,7 +194,7 @@ END;
 		<div id="footer">
 			<div>
 				<p><a href="#header">&#x2B06;&#xFE0E; Top</a></p>
-				<p><a href="mob.php" title="Very basic mobile browsing">&#x1F4F1;&#xFE0E; Mobile</a></p>
+				<p><a href="mob.php" title="Lite live-data view">&#x1F4F1;&#xFE0E; Lite view</a></p>
 				<p><a href="/" title="Browse to homepage">&#x1F3E0;&#xFE0E; Home</a></p>
 			</div>
 			<div>
@@ -268,9 +278,33 @@ END;
 		return $html;
 	}
 
-	private static function sidebarSubheading($title) {
-		return '<div class="nav-heading">'.$title.'</div>
-		';
+	/** True if any item in the group matches the current page. */
+	private static function sectionHasCurr($items) {
+		foreach($items as $item) {
+			if(self::$fileNum == $item["num"]) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * One collapsible nav section. On narrow screens Historical/Detailed start
+	 * collapsed unless they contain the current page; Main/Other stay open.
+	 */
+	private static function sidebarSection($id, $title, $items) {
+		$hasCurr = self::sectionHasCurr($items);
+		$defaultOpen = $hasCurr || $id === 'main' || $id === 'other';
+		$openClass = $defaultOpen ? ' nav-section-open' : '';
+		$expanded = $defaultOpen ? 'true' : 'false';
+		$html = '<div class="nav-section' . $openClass . '" data-section="' . htmlspecialchars($id) . '">';
+		$html .= '<button type="button" class="nav-heading" aria-expanded="' . $expanded
+			. '" aria-controls="nav-sec-' . htmlspecialchars($id) . '">'
+			. $title . '</button>';
+		$html .= '<div class="nav-section-body" id="nav-sec-' . htmlspecialchars($id) . '">';
+		$html .= self::sidebarGroup($items);
+		$html .= '</div></div>';
+		return $html;
 	}
 
 	private static function navBar() {
@@ -472,30 +506,26 @@ END;
 				],
 			]
 		];
-		$html = self::sidebarSubheading("Main");
-		$html .= self::sidebarGroup($items["main"]);
-		$html .= self::sidebarSubheading("Detailed Data");
-		$html .= self::sidebarGroup($items["detail"]);
-		$html .= self::sidebarSubheading("Historical Data");
-		$html .= self::sidebarGroup($items["historical"]);
-		$html .= self::sidebarSubheading("Other");
-		$html .= self::sidebarGroup($items["other"]);
+		$html = self::sidebarSection('main', 'Main', $items['main']);
+		$html .= self::sidebarSection('detail', 'Detailed Data', $items['detail']);
+		$html .= self::sidebarSection('historical', 'Historical Data', $items['historical']);
+		$html .= self::sidebarSection('other', 'Other', $items['other']);
 		return $html;
 	}
 
 	private static function getUnitsNav() {
 		$html = "";
-		$html .= '<label><input name="unit" type="radio" value="US" onclick="this.form.submit();"';
+		$html .= '<label class="unit-option' . (self::$units === UNIT_US ? ' active' : '') . '"><input name="unit" type="radio" value="US" onclick="this.form.submit();"';
 		if (self::$units === UNIT_US) {
 			$html .= ' checked="checked"';
 		}
 		$html .= ' />Imperial</label>
-			<label><input name="unit" type="radio" value="UK" onclick="this.form.submit();"';
+			<label class="unit-option' . (self::$units === UNIT_UK ? ' active' : '') . '"><input name="unit" type="radio" value="UK" onclick="this.form.submit();"';
 		if (self::$units === UNIT_UK) {
 			$html .= ' checked="checked"';
 		}
 		$html .= ' />UK</label>
-			<label><input name="unit" type="radio" value="EU" onclick="this.form.submit();"';
+			<label class="unit-option' . (self::$units === UNIT_EU ? ' active' : '') . '"><input name="unit" type="radio" value="EU" onclick="this.form.submit();"';
 		if (self::$units === UNIT_EU) {
 			$html .= ' checked="checked"';
 		}

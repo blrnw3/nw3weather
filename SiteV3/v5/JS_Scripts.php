@@ -829,3 +829,83 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 	}
 	//]]>
 </script>
+
+<script type="text/javascript">
+	//<![CDATA[
+	(function () {
+		var MQ = '(max-width: 900px)';
+		function isNarrow() {
+			return window.matchMedia && window.matchMedia(MQ).matches;
+		}
+		function setOpen(open) {
+			var btn = document.getElementById('nav-toggle');
+			var backdrop = document.getElementById('nav-backdrop');
+			var nav = document.getElementById('nav');
+			document.documentElement.classList.toggle('nav-open', open);
+			document.body.classList.toggle('nav-open', open);
+			if (btn) {
+				btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+				btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+			}
+			if (backdrop) {
+				if (open) { backdrop.removeAttribute('hidden'); }
+				else { backdrop.setAttribute('hidden', ''); }
+			}
+			if (open && nav) {
+				var focusable = nav.querySelector('a, button, input');
+				if (focusable) { try { focusable.focus(); } catch (e) {} }
+			} else if (!open && btn) {
+				try { btn.focus(); } catch (e) {}
+			}
+		}
+		function closeNav() { setOpen(false); }
+		function toggleNav() { setOpen(!document.body.classList.contains('nav-open')); }
+
+		function bind() {
+			var btn = document.getElementById('nav-toggle');
+			var backdrop = document.getElementById('nav-backdrop');
+			var nav = document.getElementById('nav');
+			if (!btn || !nav) { return; }
+
+			btn.addEventListener('click', function (ev) {
+				ev.preventDefault();
+				toggleNav();
+			});
+			if (backdrop) {
+				backdrop.addEventListener('click', closeNav);
+			}
+			document.addEventListener('keydown', function (ev) {
+				if (ev.key === 'Escape' && document.body.classList.contains('nav-open')) {
+					closeNav();
+				}
+			});
+			nav.addEventListener('click', function (ev) {
+				var a = ev.target.closest ? ev.target.closest('a') : null;
+				if (a && isNarrow()) { closeNav(); }
+			});
+
+			nav.querySelectorAll('.nav-heading').forEach(function (heading) {
+				heading.addEventListener('click', function () {
+					if (!isNarrow()) { return; }
+					var section = heading.closest('.nav-section');
+					if (!section) { return; }
+					var open = !section.classList.contains('nav-section-open');
+					section.classList.toggle('nav-section-open', open);
+					heading.setAttribute('aria-expanded', open ? 'true' : 'false');
+				});
+			});
+
+			if (window.matchMedia) {
+				window.matchMedia(MQ).addEventListener('change', function (e) {
+					if (!e.matches) { closeNav(); }
+				});
+			}
+		}
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', bind);
+		} else {
+			bind();
+		}
+	})();
+	//]]>
+</script>

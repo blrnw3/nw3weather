@@ -54,7 +54,6 @@ $windySrc = ($windyBundle !== '')
 <div>
 	<h2>Area Weather Map</h2>
 	<div id="wx-map"
-		style="height:600px"
 		data-windywidget="map"
 		data-thememode="white"
 		data-spotid="5980477"

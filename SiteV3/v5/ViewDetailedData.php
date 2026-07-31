@@ -1651,6 +1651,7 @@ class ViewDetailedData {
 		echo "<div>";
 		echo "<h3>Recent</h3>";
 
+		echo '<div class="detail-table-scroll">';
 		Html::table(null, $wid . '%" align="center', 6);
 		Html::tr();
 		Html::td($this->label, $this->cssClass, "10%");
@@ -1677,12 +1678,14 @@ class ViewDetailedData {
 			Html::tr_end();
 		}
 		Html::table_end();
+		echo '</div>';
 		echo "</div>";
 
 		echo "<div>";
 		$histLabel = ($this->startYrReport < 2009) ? 'Historical data' : 'Station Lifetime';
 		echo "<h3>" . $histLabel . " (" . $effStart . "-" . Date::$dyear . ")</h3>";
 
+		echo '<div class="detail-table-scroll">';
 		Html::table(null, $wid . '%" align="center', 6);
 		Html::tr();
 		Html::td($this->label, $this->cssClass, "10%");
@@ -1746,6 +1749,7 @@ class ViewDetailedData {
 			Html::tr_end();
 		}
 		Html::table_end();
+		echo '</div>';
 		echo "</div>";
 		echo "</div>";
 
@@ -1843,6 +1847,7 @@ class ViewDetailedData {
 		$currTs = Date::mkdate(Date::$dmonth, 15, Date::$dyear);
 		echo "<h2>Past Year Monthly Averages and Extremes ("
 			. date('F Y', $pastStart) . ' - ' . date('F Y', $currTs) . ")</h2>";
+		echo '<div class="detail-table-scroll detail-table-wide">';
 		Html::table(null, $wid . '%" align="center', 6);
 		Html::tr();
 		Html::td("Month", $this->cssClass);
@@ -1898,6 +1903,7 @@ class ViewDetailedData {
 		Html::tr_end();
 
 		Html::table_end();
+		echo '</div>';
 
 		if ($this->groupName === 'sun') {
 			echo '<p>View daily tables of
@@ -2066,6 +2072,7 @@ class ViewDetailedData {
 		}
 
 		echo "<h2>Record Period Averages</h2>";
+		echo '<div class="detail-table-scroll detail-table-wide">';
 		Html::table(null, $wid . '%" style="margin-bottom:28px;', 6);
 
 		Html::tr();
@@ -2089,6 +2096,7 @@ class ViewDetailedData {
 		}
 
 		Html::table_end();
+		echo '</div>';
 	}
 
 	private function rankTablePair($rankArray, $rankNum, $type, $title, $label, $moreHref = null, $cols = null, $hiOnly = false) {
@@ -2105,6 +2113,7 @@ class ViewDetailedData {
 
 		echo "<div>";
 		echo "<h3>" . $this->superlativeHigh . " " . $title . "</h3>";
+		echo '<div class="detail-table-scroll">';
 		Html::table("table1", '99%');
 		Html::tr();
 		Html::td("Rank", $this->cssClass);
@@ -2127,11 +2136,13 @@ class ViewDetailedData {
 			Html::tr_end();
 		}
 		Html::table_end();
+		echo '</div>';
 		echo "</div>";
 
 		if (!$hiOnly) {
 			echo "<div>";
 			echo "<h3>" . $this->superlativeLow . " " . $title . "</h3>";
+			echo '<div class="detail-table-scroll">';
 			Html::table("table1", '99%');
 			Html::tr();
 			Html::td("Rank", $this->cssClass);
@@ -2154,6 +2165,7 @@ class ViewDetailedData {
 				Html::tr_end();
 			}
 			Html::table_end();
+			echo '</div>';
 			echo "</div>";
 		}
 

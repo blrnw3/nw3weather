@@ -31,7 +31,12 @@
 ## Jul 21st 2026
 - Finished daily/monthly report migration polish: AQ (PM2.5) rows in tables, live today values, Highcharts intraday panels include air quality, monthly charts use dailySelectable
 
+## Jul 31st 2026
+- Responsive shell: collapsible hamburger + off-canvas nav drawer below 900px; accordion sections in drawer
+- Slimmer banner/sub-header on narrow; chart reflow on resize; dd/dm grids scroll with sticky first column; repyear/rose/wx5 map fixes
+- Footer “Mobile” → “Lite view” (mob.php retained)
+
 ## TODO
 - wx12
-- Improve responsive design - test all pages
+- Spot-check remaining legacy wide `<table width=…>` pages under `.table-scroll` if awkward on phones
 - Annual report (repyear) polish if needed

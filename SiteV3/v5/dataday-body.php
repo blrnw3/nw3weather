@@ -53,7 +53,7 @@ function nw3_dataday_render(Report $report) {
 	$aggLabels = array('min' => 'minimum', 'max' => 'maximum', 'mean' => 'mean');
 	$aggShort = array('min' => 'Min', 'max' => 'Max', 'mean' => 'Mean');
 
-	echo '<div class="dd-grid">';
+	echo '<div class="dd-scroll"><div class="dd-grid">';
 
 	// Month header row
 	echo '<div class="dd-row dd-head">';
@@ -198,7 +198,7 @@ function nw3_dataday_render(Report $report) {
 		echo '</div>';
 	}
 
-	echo '</div>';
+	echo '</div></div>'; // .dd-grid + .dd-scroll
 
 	$summaryText = $report->isNotSummarisable ? '.' : ' along with monthly summary: lowest, highest, '
 		. ($report->isSum ? 'total, count (days > 0)' : 'mean') . ', and the cumulative value for the year to the month\'s end.';

@@ -1119,4 +1119,52 @@
 	window.NW3.windRose = windRose;
 	window.NW3.meteogramChart = meteogramChart;
 	window.NW3.INTRA_TABS = INTRA_TABS;
+
+	/** Reflow all Highcharts instances after viewport/container size changes. */
+	function reflowCharts() {
+		if (typeof Highcharts === 'undefined' || !Highcharts.charts) { return; }
+		Highcharts.charts.forEach(function (c) {
+			if (c && typeof c.reflow === 'function') {
+				try { c.reflow(); } catch (e) {}
+			}
+		});
+	}
+	window.NW3.reflowCharts = reflowCharts;
+	var reflowTimer = null;
+	function scheduleReflow() {
+		if (reflowTimer) { clearTimeout(reflowTimer); }
+		reflowTimer = setTimeout(reflowCharts, 150);
+	}
+	window.addEventListener('resize', scheduleReflow);
+	window.addEventListener('orientationchange', function () {
+		setTimeout(reflowCharts, 250);
+	});
+	window.addEventListener('load', function () {
+		setTimeout(reflowCharts, 50);
+	});
+
+	/* Grid/sidebar changes can resize a chart without a window resize event. */
+	if (typeof ResizeObserver !== 'undefined') {
+		var observedWidths = new WeakMap();
+		var chartLayoutObserver = new ResizeObserver(function (entries) {
+			var changed = entries.some(function (entry) {
+				var width = entry.contentRect ? entry.contentRect.width : entry.target.clientWidth;
+				var previous = observedWidths.get(entry.target);
+				observedWidths.set(entry.target, width);
+				return previous != null && Math.abs(previous - width) > 1;
+			});
+			if (changed) { scheduleReflow(); }
+		});
+		function observeChartLayouts() {
+			document.querySelectorAll('#main, .detail-grid, .detail-graph').forEach(function (el) {
+				observedWidths.set(el, el.clientWidth);
+				chartLayoutObserver.observe(el);
+			});
+		}
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', observeChartLayouts);
+		} else {
+			observeChartLayouts();
+		}
+	}
 })(window);

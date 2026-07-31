@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/v5/wxcharts.js?20260731d"></script>' . "\n";
+		echo '<script src="/v5/wxcharts.js?20260731o"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */
@@ -234,7 +234,9 @@ class Charts {
 
 		echo '<h2>Detailed view</h2>';
 		echo '<div class="wx3-live-bar">' . "\n";
-		echo '<div id="wx3-vars" class="wx3-live-vars" role="tablist">';
+		echo '<div class="wx3-live-control wx3-live-control-vars">' . "\n";
+		echo '<div class="wx3-live-label">Variable</div>' . "\n";
+		echo '<div id="wx3-vars" class="wx3-live-vars" role="tablist" aria-label="Chart variable">';
 		foreach ($vars as $k => $v) {
 			$active = ($k === $defaultVar) ? ' active' : '';
 			echo '<button type="button" class="' . trim($active) . '" data-var="' . htmlspecialchars($k) . '" title="' . htmlspecialchars($v[0]) . '">'
@@ -242,11 +244,15 @@ class Charts {
 				. '<span>' . htmlspecialchars($v[0]) . '</span></button>';
 		}
 		echo '</div>' . "\n";
+		echo '</div>' . "\n";
+		echo '<div class="wx3-live-control wx3-live-control-range">' . "\n";
+		echo '<div class="wx3-live-label">Range</div>' . "\n";
 		echo '<div id="wx3-range" class="wx3-live-range" role="group" aria-label="Chart time range">';
 		foreach ($ranges as $i => $r) {
 			$active = ($i === $defaultRangeIdx) ? ' class="active"' : '';
 			echo '<button type="button"' . $active . ' data-idx="' . (int)$i . '">' . htmlspecialchars($r['label']) . '</button>';
 		}
+		echo '</div>' . "\n";
 		echo '</div>' . "\n";
 		echo '</div>' . "\n";
 
@@ -309,7 +315,7 @@ class Charts {
 		$id = 'gv-chart';
 		$panelId = 'gv-panel';
 
-		echo '<div class="wxsel-chart wxsel-viewer">' . "\n";
+		echo '<div class="wxsel-chart wxsel-viewer wxsel-graphviewer">' . "\n";
 		echo '<div id="' . $panelId . '" class="wxsel-panel" role="group" aria-label="Graph controls">' . "\n";
 
 		echo '<div class="wxsel-label">Chart type</div>' . "\n";

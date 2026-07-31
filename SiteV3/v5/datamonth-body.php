@@ -32,7 +32,7 @@ function tdmMakeTable($report, $DAT, $t, $heading, $startYr) {
 	// Never show years before this variable has data, even if an earlier Start year is selected.
 	$fromYr = max((int)$startYr, (int)$report->startYear);
 
-	echo '<div class="dm-grid">';
+	echo '<div class="dm-scroll"><div class="dm-grid">';
 	echo '<div class="dm-caption">' . htmlspecialchars($heading . ' ' . $report->description) . '</div>';
 
 	echo '<div class="dm-row dm-head">';
@@ -130,7 +130,7 @@ function tdmMakeTable($report, $DAT, $t, $heading, $startYr) {
 		echo '</div>';
 	}
 
-	echo '</div>'; // .dm-grid
+	echo '</div></div>'; // .dm-grid + .dm-scroll
 }
 
 /**

@@ -31,27 +31,27 @@ Charts::assets();
 
 	<div style="margin-left: 0.1em">
 		<h3>Monthly charts</h3>
-		<div id="ryc1" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc1" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc1","\/v5\/histdata.php?type=tmean&mode=monthly&year=2025&summary_type=0");
 //]]></script>
-		<div id="ryc2" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc2" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc2","\/v5\/histdata.php?type=rain&mode=monthly&year=2025&summary_type=0");
 //]]></script>
-		<div id="ryc3" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc3" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc3","\/v5\/histdata.php?type=tmaxa&mode=monthly&year=2025&summary_type=0");
 //]]></script>
-		<div id="ryc4" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc4" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc4","\/v5\/histdata.php?type=sunhr&mode=monthly&year=2025&summary_type=0");
 //]]></script>
 		<h3>Daily charts</h3>
 		<div style="margin:1em"></div>
-		<div id="ryc5" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc5" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc5","\/v5\/histdata.php?type=tmax&mode=daily&year=2025&month=0");
 //]]></script>
-		<div id="ryc6" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc6" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc6","\/v5\/histdata.php?type=tmin&mode=daily&year=2025&month=0");
 //]]></script>
-		<div id="ryc7" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:450px"></div><script>//<![CDATA[
+		<div id="ryc7" class="wxchart ry-chart ry-chart-tall"></div><script>//<![CDATA[
 NW3.histChart("ryc7","\/v5\/histdata.php?type=rain&mode=daily&year=2025&month=0");
 //]]></script>
 		<a href="/charts.php">More charts</a>
@@ -144,27 +144,27 @@ as a correction I was applying to the old rain gauge no longer applied. Unfortun
 
 	<div style="margin-left: 0.1em">
 		<h3>Monthly charts</h3>
-		<div id="ryc8" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc8" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc8","\/v5\/histdata.php?type=tmean&mode=monthly&year=2024&summary_type=0");
 //]]></script>
-		<div id="ryc9" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc9" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc9","\/v5\/histdata.php?type=rain&mode=monthly&year=2024&summary_type=0");
 //]]></script>
-		<div id="ryc10" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc10" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc10","\/v5\/histdata.php?type=tmaxa&mode=monthly&year=2024&summary_type=0");
 //]]></script>
-		<div id="ryc11" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc11" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc11","\/v5\/histdata.php?type=sunhr&mode=monthly&year=2024&summary_type=0");
 //]]></script>
 		<h3>Daily charts</h3>
 		<div style="margin:1em"></div>
-		<div id="ryc12" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc12" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc12","\/v5\/histdata.php?type=tmax&mode=daily&year=2024&month=0");
 //]]></script>
-		<div id="ryc13" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc13" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc13","\/v5\/histdata.php?type=tmin&mode=daily&year=2024&month=0");
 //]]></script>
-		<div id="ryc14" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:450px"></div><script>//<![CDATA[
+		<div id="ryc14" class="wxchart ry-chart ry-chart-tall"></div><script>//<![CDATA[
 NW3.histChart("ryc14","\/v5\/histdata.php?type=rain&mode=daily&year=2024&month=0");
 //]]></script>
 		<a href="/charts.php">More charts</a>
@@ -253,27 +253,27 @@ Your browser does not support the video tag.
 
 	<div style="margin-left: 0.1em">
 		<h3>Monthly charts</h3>
-		<div id="ryc15" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc15" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc15","\/v5\/histdata.php?type=tmax&mode=monthly&year=2023&summary_type=0");
 //]]></script>
-		<div id="ryc16" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc16" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc16","\/v5\/histdata.php?type=rain&mode=monthly&year=2023&summary_type=0");
 //]]></script>
-		<div id="ryc17" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc17" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc17","\/v5\/histdata.php?type=tmaxa&mode=monthly&year=2023&summary_type=0");
 //]]></script>
-		<div id="ryc18" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc18" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc18","\/v5\/histdata.php?type=sunhr&mode=monthly&year=2023&summary_type=0");
 //]]></script>
 		<h3>Daily charts</h3>
 		<div style="margin:1em"></div>
-		<div id="ryc19" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc19" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc19","\/v5\/histdata.php?type=tmax&mode=daily&year=2023&month=0");
 //]]></script>
-		<div id="ryc20" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc20" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc20","\/v5\/histdata.php?type=tmin&mode=daily&year=2023&month=0");
 //]]></script>
-		<div id="ryc21" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:450px"></div><script>//<![CDATA[
+		<div id="ryc21" class="wxchart ry-chart ry-chart-tall"></div><script>//<![CDATA[
 NW3.histChart("ryc21","\/v5\/histdata.php?type=rain&mode=daily&year=2023&month=0");
 //]]></script>
 		<a href="/charts.php">More charts</a>
@@ -361,27 +361,27 @@ Your browser does not support the video tag.
 
 	<div style="margin-left: 0.1em">
 		<h3>Monthly charts</h3>
-		<div id="ryc22" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc22" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc22","\/v5\/histdata.php?type=tmax&mode=monthly&year=2022&summary_type=0");
 //]]></script>
-		<div id="ryc23" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc23" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc23","\/v5\/histdata.php?type=rain&mode=monthly&year=2022&summary_type=0");
 //]]></script>
-		<div id="ryc24" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc24" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc24","\/v5\/histdata.php?type=tmaxa&mode=monthly&year=2022&summary_type=0");
 //]]></script>
-		<div id="ryc25" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc25" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc25","\/v5\/histdata.php?type=sunhr&mode=monthly&year=2022&summary_type=0");
 //]]></script>
 		<h3>Daily charts</h3>
 		<div style="margin:1em"></div>
-		<div id="ryc26" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc26" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc26","\/v5\/histdata.php?type=tmax&mode=daily&year=2022&month=0");
 //]]></script>
-		<div id="ryc27" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc27" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc27","\/v5\/histdata.php?type=rain&mode=daily&year=2022&month=0");
 //]]></script>
-		<div id="ryc28" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:450px"></div><script>//<![CDATA[
+		<div id="ryc28" class="wxchart ry-chart ry-chart-tall"></div><script>//<![CDATA[
 NW3.histChart("ryc28","\/v5\/histdata.php?type=tmaxa&mode=daily&year=2022&month=0");
 //]]></script>
 		<a href="/charts.php">More charts</a>
@@ -482,27 +482,27 @@ Your browser does not support the video tag.
 
 	<div style="margin-left: 0.1em">
 		<h3>Monthly charts</h3>
-		<div id="ryc29" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc29" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc29","\/v5\/histdata.php?type=tmax&mode=monthly&year=2021&summary_type=0");
 //]]></script>
-		<div id="ryc30" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc30" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc30","\/v5\/histdata.php?type=rain&mode=monthly&year=2021&summary_type=0");
 //]]></script>
-		<div id="ryc31" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc31" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc31","\/v5\/histdata.php?type=tmaxa&mode=monthly&year=2021&summary_type=0");
 //]]></script>
-		<div id="ryc32" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc32" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc32","\/v5\/histdata.php?type=sunhr&mode=monthly&year=2021&summary_type=0");
 //]]></script>
 		<h3>Daily charts</h3>
 		<div style="margin:1em"></div>
-		<div id="ryc33" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc33" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc33","\/v5\/histdata.php?type=tmax&mode=daily&year=2021&month=0");
 //]]></script>
-		<div id="ryc34" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc34" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc34","\/v5\/histdata.php?type=rain&mode=daily&year=2021&month=0");
 //]]></script>
-		<div id="ryc35" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:450px"></div><script>//<![CDATA[
+		<div id="ryc35" class="wxchart ry-chart ry-chart-tall"></div><script>//<![CDATA[
 NW3.histChart("ryc35","\/v5\/histdata.php?type=tmaxa&mode=daily&year=2021&month=0");
 //]]></script>
 		<a href="/charts.php">More charts</a>
@@ -611,30 +611,30 @@ Furthermore I applied an additional +10% ongoing correction to the rain gauge it
 
 	<div style="margin-left: 0.1em">
 		<h3>Monthly charts</h3>
-		<div id="ryc36" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc36" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc36","\/v5\/histdata.php?type=tmean&mode=monthly&year=2020&summary_type=0");
 //]]></script>
-		<div id="ryc37" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc37" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc37","\/v5\/histdata.php?type=rain&mode=monthly&year=2020&summary_type=0");
 //]]></script>
-		<div id="ryc38" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc38" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc38","\/v5\/histdata.php?type=tmeana&mode=monthly&year=2020&summary_type=0");
 //]]></script>
-		<div id="ryc39" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc39" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc39","\/v5\/histdata.php?type=sunhr&mode=monthly&year=2020&summary_type=0");
 //]]></script>
 		<h3>Daily charts</h3>
 		<div style="margin:1em"></div>
-		<div id="ryc40" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc40" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc40","\/v5\/histdata.php?type=tmax&mode=daily&year=2020&month=0");
 //]]></script>
-		<div id="ryc41" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc41" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc41","\/v5\/histdata.php?type=rain&mode=daily&year=2020&month=0");
 //]]></script>
-		<div id="ryc42" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc42" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc42","\/v5\/histdata.php?type=tmaxa&mode=daily&year=2020&month=0");
 //]]></script>
-		<div id="ryc43" class="wxchart" style="display:inline-block;width:48%;min-width:340px;min-height:240px"></div><script>//<![CDATA[
+		<div id="ryc43" class="wxchart ry-chart"></div><script>//<![CDATA[
 NW3.histChart("ryc43","\/v5\/histdata.php?type=wmean&mode=daily&year=2020&month=0");
 //]]></script>
 		<a href="/charts.php">More charts</a>

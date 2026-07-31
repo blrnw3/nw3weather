@@ -150,7 +150,7 @@ if ($num_adv > 0) { echo '<p>Based on the first ' . $dim . ' days available.</p>
 
 // Navigation
 $prevs = $sproc - 86400 * $dim; $nexts = $sproc + 86400 * (2 + $num_adv);
-echo '<table width="800"><tr><td align="left">';
+echo '<table class="report-nav-table"><tr><td align="left">';
 if ($sproc1 > Date::mkdate(2, 10, 2009) && $sproc < Date::mkdate((int)Date::$dmonth, (int)Date::$dday, (int)Date::$dyear) && !$toofar) {
 	echo '<a href="wxhistmonth.php?year=' . date('Y', $prevs) . '&amp;month=' . date('n', $prevs) . '" title="Previous month">&lt;&lt;Previous Month</a>';
 } else { echo '&lt;&lt;Previous Month'; }
@@ -171,6 +171,7 @@ if (!$haveData) {
 $fmt = function ($v, $unit) { return (is_numeric($v)) ? Wx::conv($v, $unit, true) : $v; };
 
 // ---- Summary table (column order: Measure | Mean/Sum (anom) | Min | Max | Mean Time) ----
+echo '<div class="report-table-scroll">';
 HTML::table();
 HTML::tableHead('Weather Summary', 5);
 HTML::tr();
@@ -212,6 +213,7 @@ for ($i = 0; $i < 2; $i++) {
 	HTML::tr_end();
 }
 HTML::table_end();
+echo '</div>';
 echo '<p><b>NB:</b> Hover over a value to see how many days of data it is from. Sun hrs, Wet hrs, Cloud cover and Events are based on manual observation and provided for interest only.</p>';
 
 // ---- Days Of... ----
@@ -258,6 +260,7 @@ for ($i = 0; $i < 5; $i++) {
 $daysofOther[5] = Util::cond_count(isset($mdat[11]) ? $mdat[11] : [], true, 30);
 $daysofOtherD[5] = 'Gusts &gt; 30mph'; $daysofOther[6] += $daysofOther[5]; $daysofOtherD[6] = 'Total Events';
 
+echo '<div class="report-table-scroll report-table-scroll-wide">';
 HTML::table();
 HTML::tableHead('Days Of...', 8);
 HTML::tr();
@@ -273,6 +276,7 @@ for ($i = 0; $i < 7; $i++) {
 	HTML::tr_end();
 }
 HTML::table_end();
+echo '</div>';
 
 // ---- Misc ----
 $snowfall = 0;
