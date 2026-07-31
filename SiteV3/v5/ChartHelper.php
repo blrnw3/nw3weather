@@ -91,12 +91,12 @@ class Charts {
 			);
 		}
 		$panelId = 'wxp' . (self::$seq + 1);
-		echo '<div id="' . $panelId . '-vars" class="wxchart-tabs">';
+		echo '<div id="' . $panelId . '-vars" class="wxsel-subtypes">';
 		$first = null;
 		foreach ($vars as $k => $label) {
 			if ($first === null) { $first = $k; }
 			echo '<button type="button" class="' . ($first === $k ? 'active' : '') . '" data-var="'
-				. htmlspecialchars($k) . '">' . $label . '</button> ';
+				. htmlspecialchars($k) . '">' . $label . '</button>';
 		}
 		echo '</div>' . "\n";
 		$id = self::container($opts);

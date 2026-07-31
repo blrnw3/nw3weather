@@ -30,6 +30,7 @@ $mainTables->rankTables();
 <h2>Notes:</h2>
 <ul>
 	<li>Valid Pressure records began in January 2009</li>
+	<?php $mainTables->historicalNoteItem(); ?>
 	<li>All figures, unless specified, relate to the period midnight-midnight, this being when daily extremes are reset</li>
 	<li>All values are accurate to &plusmn;0.2 mb since Sept 2017; before that, to within &plusmn;2 mb</li>
 </ul>

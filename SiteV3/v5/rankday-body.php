@@ -78,11 +78,12 @@ function nw3_rankday_render(Report $report) {
 
 	$report->historicalInfo($startY);
 
-	$unitLabel = strip_tags(Wx::getUnits($report->unit));
+	$unitLabel = Wx::getUnitsText($report->unit);
 	return array(
 		'type' => $type,
 		'month' => (int)$month,
 		'startYearRep' => (int)$report->startYrReport,
+		'startYearOptions' => array_map('intval', $report->startYearOptions),
 		'rankLimit' => (int)$report->rankLimit,
 		'title' => $report->description . ' / ' . $unitLabel,
 	);

@@ -82,10 +82,11 @@ function nw3_rankyear_render(Report $report) {
 
 	$report->historicalInfo($startY);
 
-	$unitLabel = strip_tags(Wx::getUnits($report->unit));
+	$unitLabel = Wx::getUnitsText($report->unit);
 	return array(
 		'type' => $type,
 		'startYearRep' => (int)$report->startYrReport,
+		'startYearOptions' => array_map('intval', $report->startYearOptions),
 		'summaryType' => (int)$report->summaryType,
 		'summaryTypes' => $report->availSummaryTypes,
 		'rankLimit' => (int)$report->rankLimit,

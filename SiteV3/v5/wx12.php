@@ -38,15 +38,10 @@ $mainTables->pastYearAvgsExtrms();
 $mainTables->rankTables();
 ?>
 
-<?php
-Charts::daily(['type' => 'rain', 'mode' => 'daily', 'year' => Date::$yr_yest, 'month' => 0, 'cume' => 1, 'lta' => 1], ['height' => 460]);
-?>
-
-<p><a href="/charts.php?dtype=rain">View more rain charts</a></p>
-
 <h2>Notes</h2>
 <ul>
 	<li>Rain records began in February 2009</li>
+	<?php $mainTables->historicalNoteItem(); ?>
 	<li>The minimum recordable rain (the rain gauge resolution) is 0.2 mm</li>
 	<li>Figures in brackets refer to departure from
 		<a href="/wxaverages.php" title="Long-term NW3 climate averages">average conditions</a>

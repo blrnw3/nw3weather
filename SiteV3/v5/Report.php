@@ -157,6 +157,14 @@ class Report {
 		foreach ($allStartOpts as $y) {
 			if ($y >= $this->startYear) { $this->startYearOptions[] = $y; }
 		}
+		// Offer the variable's own first year too, else its earliest data is
+		// unreachable (e.g. temperature from 1881 would be pegged at 1950).
+		if (count($this->startYearOptions) && $this->startYear < $this->startYearOptions[0]) {
+			if ($this->startYearOptions[0] - $this->startYear < 5) {
+				array_shift($this->startYearOptions);
+			}
+			array_unshift($this->startYearOptions, (int)$this->startYear);
+		}
 		if (!count($this->startYearOptions)) {
 			$this->startYearOptions[] = max(2009, $this->startYear);
 		}
@@ -347,7 +355,7 @@ class Report {
 		}
 
 		echo '<h1>' . $heading . ' - ' . $this->description . ' / '
-			. strip_tags(Wx::getUnits($this->unit)) . '</h1>';
+			. Wx::getUnitsText($this->unit) . '</h1>';
 
 		$disabled = ' disabled="disabled"';
 		echo '<div style="padding:10px">';
@@ -465,7 +473,7 @@ class Report {
 		}
 		$isRank = ($mode === 'rank-daily' || $mode === 'rank-monthly' || $mode === 'rank-annual' || $mode === 'rank-spells');
 
-		$titleSuffix = $this->description . ' / ' . strip_tags(Wx::getUnits($this->unit));
+		$titleSuffix = $this->description . ' / ' . Wx::getUnitsText($this->unit);
 		if ($mode === 'daily' && $this->dayAgg !== '') {
 			$aggTitle = array('min' => 'Min', 'max' => 'Max', 'mean' => 'Mean');
 			$titleSuffix .= ' · ' . $aggTitle[$this->dayAgg] . ' (all years)';
@@ -499,6 +507,7 @@ class Report {
 			if ($mode === 'daily') {
 				if ($this->dayAgg !== '') {
 					$params['agg'] = $this->dayAgg;
+					$params['start_year_rep'] = $this->startYrReport;
 				} else {
 					$params['year'] = $this->year;
 				}
@@ -523,7 +532,9 @@ class Report {
 			}
 			foreach ($overrides as $k => $v) { $params[$k] = $v; }
 			if ($mode === 'daily') {
-				if (isset($overrides['year'])) { unset($params['agg']); }
+				if (isset($overrides['year'])) {
+					unset($params['agg'], $params['start_year_rep']);
+				}
 				if (isset($overrides['agg'])) { unset($params['year']); }
 			}
 			return htmlspecialchars(Page::$pageName . '?' . http_build_query($params));
@@ -593,7 +604,7 @@ class Report {
 			echo '<div class="wxsel-scale wxsel-threshold" role="tablist">';
 			foreach ($this->spellThresholds as $th) {
 				$active = (abs($th - $this->spellThreshold) < 1e-9) ? ' active' : '';
-				$label = strip_tags(Wx::conv($th, $this->unit, false));
+				$label = Wx::plainText(Wx::conv($th, $this->unit, false));
 				echo '<a class="wxsel-chip' . $active . '" data-threshold="' . htmlspecialchars((string)$th)
 					. '" href="' . $selUrl(array('threshold' => $th)) . '">'
 					. htmlspecialchars($label) . '</a>';
@@ -691,8 +702,12 @@ class Report {
 			echo '</div></div>';
 		}
 
-		if ($showStartYear) {
-			echo '<div class="report-sel-row report-sel-labelled">';
+		// Daily avg/extreme mode also needs a start-year filter (hidden until agg is on).
+		$showStartForDailyAgg = ($mode === 'daily');
+		if ($showStartYear || $showStartForDailyAgg) {
+			$startHidden = ($showStartForDailyAgg && $this->dayAgg === '') ? ' hidden' : '';
+			echo '<div class="report-sel-row report-sel-labelled" id="report-sel-start-year"'
+				. $startHidden . '>';
 			echo '<div class="wxsel-label">Start year</div>';
 			echo '<div class="wxsel-scale wxsel-start-years" role="tablist">';
 			foreach ($this->startYearOptions as $opt) {
@@ -750,6 +765,7 @@ class Report {
 			'agg' => $this->dayAgg,
 			'month' => (int)$this->month,
 			'startYearRep' => (int)$this->startYrReport,
+			'startYearOptions' => array_map('intval', $this->startYearOptions),
 			'summaryType' => (int)$this->summaryType,
 			'summaryTypes' => $this->availSummaryTypes,
 			'summaryLabels' => $sumLabels,

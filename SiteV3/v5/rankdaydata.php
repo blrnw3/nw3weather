@@ -25,6 +25,7 @@ echo '<div id="rd-fragment"'
 	. ' data-type="' . htmlspecialchars($meta['type']) . '"'
 	. ' data-month="' . (int)$meta['month'] . '"'
 	. ' data-start-year-rep="' . (int)$meta['startYearRep'] . '"'
+	. ' data-start-years="' . htmlspecialchars(implode(',', $meta['startYearOptions'])) . '"'
 	. ' data-rank-limit="' . (int)$meta['rankLimit'] . '"'
 	. ' data-title="' . htmlspecialchars($meta['title']) . '"'
 	. '>';

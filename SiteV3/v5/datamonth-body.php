@@ -140,10 +140,11 @@ function tdmMakeTable($report, $DAT, $t, $heading, $startYr) {
 function nw3_datamonth_render(Report $report) {
 	if ($report->isNotSummarisable) {
 		echo '<p>' . htmlspecialchars($report->description) . ' has no meaningful monthly summary.</p>';
-		$unitLabel = strip_tags(Wx::getUnits($report->unit));
+		$unitLabel = Wx::getUnitsText($report->unit);
 		return array(
 			'type' => $report->type,
 			'startYearRep' => (int)$report->startYrReport,
+			'startYearOptions' => array_map('intval', $report->startYearOptions),
 			'summaryType' => (int)$report->summaryType,
 			'summaryTypes' => $report->availSummaryTypes,
 			'description' => $report->description,
@@ -182,10 +183,11 @@ function nw3_datamonth_render(Report $report) {
 
 	$report->historicalInfo($fromYr);
 
-	$unitLabel = strip_tags(Wx::getUnits($report->unit));
+	$unitLabel = Wx::getUnitsText($report->unit);
 	return array(
 		'type' => $report->type,
 		'startYearRep' => (int)$report->startYrReport,
+		'startYearOptions' => array_map('intval', $report->startYearOptions),
 		'summaryType' => (int)$report->summaryType,
 		'summaryTypes' => $report->availSummaryTypes,
 		'description' => $report->description,

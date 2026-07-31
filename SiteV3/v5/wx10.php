@@ -20,30 +20,24 @@ $E = 6.11 * pow(10, (7.5 * $Tdc / (237.7 + $Tdc)));
 $wetbulb = (((0.00066 * $P) * $Tc) + ((4098 * $E) / ( pow(($Tdc + 237.7), 2)) * $Tdc)) / ((0.00066 * $P) + (4098 * $E) / ( pow($Tdc + 237.7, 2)));
 
 
-$humType = isset($_GET['humtype']) ? $_GET['humtype'] : 'rel';
+$humType = isset($_GET['humtype']) && $_GET['humtype'] === 'dew' ? 'dew' : 'rel';
 if($humType == 'rel') {
-	$checkRel = Html::CHECK;
-	$checkDew = '';
 	$humLabel = 'Relative Humidity';
 	$mainTables = new ViewDetailedData("hum");
 	$measures = array('Relative Humidity','Humidity Trend','24hr Mean Humidity', 'Wet-Bulb Temperature','Absolute Humidity','Air Density');
 	$values = array(Live::$humi,Wx::conv(Live::$HR24['changeHr']['humi'],Wx::Humidity,1,1) . ' /hr',Live::$HR24['mean']['humi'], $wetbulb,$abshum,$airdensity);
 	$conv = array(Wx::Humidity,Wx::None,Wx::Humidity, Wx::Temperature,Wx::Density,Wx::None);
 } else {
-	$checkRel = '';
-	$checkDew = Html::CHECK;
 	$humLabel = 'Dew Point';
 	$mainTables = new ViewDetailedData("dew");
 	$measures = array('Dew Point','Dew Pt Trend','24hr Mean Dew Pt', 'Wet-Bulb Temperature','Absolute Humidity','Air Density');
 	$values = array(Live::$dewp,Wx::conv(Live::$HR24['changeHr']['dewp'],Wx::AbsTemp,1,1) . ' /hr',Live::$HR24['mean']['dewp'], $wetbulb,$abshum,$airdensity);
 	$conv = array(Wx::Temperature,Wx::None,Wx::Temperature, Wx::Temperature,Wx::Density,Wx::None);
 }
-echo 'Humidity Type:
-	<form style="margin-right:1em;" action="" method="get">
-	<label><input name="humtype" type="radio" value="rel" onclick="this.form.submit();" '. $checkRel . ' />
-	 Rel. Hum.</label>
-	<label><input style="margin-left:1.5em;" name="humtype" type="radio" value="dew" onclick="this.form.submit();" '. $checkDew . ' />
-	 Dew Point</label>
+echo '<div class="wxsel-label">Humidity Type</div>
+	<form class="wxsel-subtypes" style="margin-right:1em;" action="" method="get" aria-label="Humidity type">
+	<button type="submit" name="humtype" value="rel" class="'.($humType === 'rel' ? 'active' : '').'">Rel. Hum.</button>
+	<button type="submit" name="humtype" value="dew" class="'.($humType === 'dew' ? 'active' : '').'">Dew Point</button>
 	</form>
 	<a href="#help">Difference?</a>
 
@@ -60,6 +54,7 @@ $mainTables->rankTables();
 <h2>Notes:</h2>
 <ul>
 	<li>Valid humidity records began in February 2009</li>
+	<?php $mainTables->historicalNoteItem(); ?>
 	<li>All figures, unless specified, relate to the period midnight-midnight, this being when daily extremes are reset</li>
 	<li> 98% is the physical limit of the hygrometer (measuring RH); in reality this tends to means 100% saturation of the air.
 	This value is achieved fairly frequently, any record with this value is just the first instance it occurred in the relevant timeframe.</li>

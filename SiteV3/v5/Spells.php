@@ -267,7 +267,7 @@ class Spells {
 	public static function directionLabel($varName, $direction, $threshold) {
 		$thresh = is_numeric($threshold) ? (float)$threshold : 0;
 		$unit = isset(Wx::$daily[$varName]['unit']) ? Wx::$daily[$varName]['unit'] : Wx::None;
-		$threshTxt = strip_tags(Wx::conv($thresh, $unit, false));
+		$threshTxt = Wx::plainText(Wx::conv($thresh, $unit, false));
 		if ($varName === 'rain') {
 			return ($direction === 'above')
 				? 'Wet spells (≥ ' . $threshTxt . ')'

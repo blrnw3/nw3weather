@@ -24,6 +24,7 @@ $html = ob_get_clean();
 echo '<div id="ry-fragment"'
 	. ' data-type="' . htmlspecialchars($meta['type']) . '"'
 	. ' data-start-year-rep="' . (int)$meta['startYearRep'] . '"'
+	. ' data-start-years="' . htmlspecialchars(implode(',', $meta['startYearOptions'])) . '"'
 	. ' data-summary-type="' . (int)$meta['summaryType'] . '"'
 	. ' data-summary-types="' . htmlspecialchars(implode(',', $meta['summaryTypes'])) . '"'
 	. ' data-rank-limit="' . (int)$meta['rankLimit'] . '"'

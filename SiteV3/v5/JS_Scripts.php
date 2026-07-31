@@ -125,6 +125,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		var curSpellDir = cfg.spellDir || 'above';
 		var curThreshold = cfg.threshold != null ? parseFloat(cfg.threshold) : 0;
 		var curThresholds = cfg.thresholds || [];
+		var startYearOpts = (cfg.startYearOptions || []).map(function (x) { return parseInt(x, 10); });
 		var summaryTypes = cfg.summaryTypes || [];
 		var summaryLabels = cfg.summaryLabels || {};
 		var page = cfg.page;
@@ -158,8 +159,12 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				}
 			}
 			if (mode === 'daily') {
-				if (agg) { p.agg = agg; }
-				else { p.year = year; }
+				if (agg) {
+					p.agg = agg;
+					p.start_year_rep = curStart;
+				} else {
+					p.year = year;
+				}
 			} else if (mode === 'monthly') {
 				p.start_year_rep = curStart;
 				p.summary_type = curSummary;
@@ -254,6 +259,13 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				}
 				details.open = false;
 			}
+			syncStartYearVisibility();
+		}
+		function syncStartYearVisibility() {
+			var row = document.getElementById('report-sel-start-year');
+			if (!row || mode !== 'daily') { return; }
+			if (curAgg) { row.removeAttribute('hidden'); }
+			else { row.setAttribute('hidden', ''); }
 		}
 		function syncMonthChips() {
 			if (!monthsEl) { return; }
@@ -265,11 +277,15 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		}
 		function syncStartYearChips() {
 			if (!startEl) { return; }
-			startEl.querySelectorAll('a.wxsel-chip[data-start-year]').forEach(function (a) {
-				var y = parseInt(a.getAttribute('data-start-year'), 10);
-				a.classList.toggle('active', y === curStart);
-				a.setAttribute('href', pageUrl({ start_year_rep: y }));
-			});
+			// Options depend on the variable's first year of data, so re-render them.
+			var html = '', i, y;
+			for (i = 0; i < startYearOpts.length; i++) {
+				y = startYearOpts[i];
+				html += '<a class="wxsel-chip' + (y === curStart ? ' active' : '')
+					+ '" data-start-year="' + y + '" href="' + pageUrl({ start_year_rep: y })
+					+ '" title="Show data from this year">' + y + '</a>';
+			}
+			startEl.innerHTML = html;
 		}
 		function syncSummaryChips() {
 			if (!summaryEl) { return; }
@@ -376,7 +392,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 					rankLimit: curRankLimit, spell_dir: curSpellDir, threshold: curThreshold
 				};
 			}
-			return { vartype: curType, year: curYear, agg: curAgg };
+			return { vartype: curType, year: curYear, agg: curAgg, start_year_rep: curStart };
 		}
 		function applyMeta(meta) {
 			if (!meta) { return; }
@@ -394,6 +410,9 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			}
 			if (meta.summaryTypes) {
 				summaryTypes = meta.summaryTypes.map(function (x) { return parseInt(x, 10); });
+			}
+			if (meta.startYears && meta.startYears.length) {
+				startYearOpts = meta.startYears.map(function (x) { return parseInt(x, 10); });
 			}
 			root.setAttribute('data-type', curType);
 			root.setAttribute('data-year', String(curYear));
@@ -416,13 +435,16 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			syncRankLimitChips();
 			syncSpellDirChips();
 			syncThresholdChips();
+			syncStartYearVisibility();
 			if (mode === 'monthly' || mode === 'rank-monthly' || mode === 'rank-annual') { showSummaryTab(curSummary); }
 			syncNavVartype();
 		}
 		function sameState(o) {
 			if (o.type !== curType) { return false; }
 			if (mode === 'daily') {
-				return (o.agg || '') === (curAgg || '') && (o.agg ? true : o.year === curYear);
+				if ((o.agg || '') !== (curAgg || '')) { return false; }
+				if (o.agg) { return o.start === curStart; }
+				return o.year === curYear;
 			}
 			if (mode === 'monthly') { return o.start === curStart && o.summary === curSummary; }
 			if (mode === 'rank-daily') {
@@ -475,8 +497,12 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 
 			var urlOverrides = { vartype: type };
 			if (mode === 'daily') {
-				if (agg) { urlOverrides.agg = agg; }
-				else { urlOverrides.year = year; }
+				if (agg) {
+					urlOverrides.agg = agg;
+					urlOverrides.start_year_rep = start;
+				} else {
+					urlOverrides.year = year;
+				}
 			} else if (mode === 'monthly') {
 				urlOverrides.start_year_rep = start;
 				urlOverrides.summary_type = summary;
@@ -511,12 +537,14 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 					body.innerHTML = frag.innerHTML;
 					var stAttr = frag.getAttribute('data-summary-types') || '';
 					var thAttr = frag.getAttribute('data-thresholds') || '';
+					var syAttr = frag.getAttribute('data-start-years') || '';
 					applyMeta({
 						type: frag.getAttribute('data-type'),
 						year: frag.getAttribute('data-year'),
 						agg: frag.getAttribute('data-agg') || '',
 						month: frag.getAttribute('data-month'),
 						startYearRep: frag.getAttribute('data-start-year-rep'),
+						startYears: syAttr ? syAttr.split(',') : startYearOpts,
 						summaryType: frag.getAttribute('data-summary-type'),
 						rankLimit: frag.getAttribute('data-rank-limit'),
 						spellDir: frag.getAttribute('data-spell-dir'),
@@ -578,6 +606,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			if (agg != null) {
 				opts.agg = agg;
 				opts.year = curYear;
+				if (!curStart) { opts.start = 2009; }
 			} else if (year != null) {
 				opts.year = year;
 				opts.agg = '';
@@ -620,6 +649,9 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		syncNavVartype();
 		syncMonthChips();
 		syncRankLimitChips();
+		syncStartYearVisibility();
+		syncAggChips();
+		syncStartYearChips();
 	}
 
 	/**

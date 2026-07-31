@@ -62,9 +62,9 @@ $cv = function ($v, $type, $dpa = 0) { return Wx::conv($v, $type, false, false, 
 <table class="table1" width="100%" cellpadding="2" cellspacing="0">
 <tr class="table-top">
 <td rowspan="2" class="td4">&nbsp;</td>
-<td colspan="4" width="30%" class="td14C">Temperature / <?php echo strip_tags(Wx::getUnits(Wx::Temperature)); ?></td>
-<td colspan="2" width="16%" class="td12C">Rain / <?php echo strip_tags(Wx::getUnits(Wx::Rain)); ?></td>
-<td rowspan="2" width="8%" class="td13C">Wind<br />Speed<br />/ <?php echo strip_tags(Wx::getUnits(Wx::Wind)); ?></td>
+<td colspan="4" width="30%" class="td14C">Temperature / <?php echo Wx::getUnitsText(Wx::Temperature); ?></td>
+<td colspan="2" width="16%" class="td12C">Rain / <?php echo Wx::getUnitsText(Wx::Rain); ?></td>
+<td rowspan="2" width="8%" class="td13C">Wind<br />Speed<br />/ <?php echo Wx::getUnitsText(Wx::Wind); ?></td>
 <td colspan="2" width="15%" class="td4C">Days Of</td>
 <td colspan="2" width="14%" class="td4C">Days Of Snow</td>
 <td rowspan="2" width="7%" class="td19C">Wet<br />Hours</td>

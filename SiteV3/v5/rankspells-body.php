@@ -35,7 +35,7 @@ function nw3_rankspells_render(Report $report) {
 
 	$extraMon = ($month === 0) ? '' : ' with midpoint in ' . Date::$months3[$month - 1];
 	$rule = ($dir === 'above') ? '≥' : '<';
-	$threshTxt = strip_tags(Wx::conv($threshold, $report->unit, false));
+	$threshTxt = Wx::plainText(Wx::conv($threshold, $report->unit, false));
 
 	echo '<p class="rk-blurb">Longest consecutive-day spells from ' . $effStart
 		. ' to present for London, NW3. Rule: ' . htmlspecialchars($report->description)
@@ -48,11 +48,12 @@ function nw3_rankspells_render(Report $report) {
 
 	$report->historicalInfo($effStart);
 
-	$unitLabel = strip_tags(Wx::getUnits($report->unit));
+	$unitLabel = Wx::getUnitsText($report->unit);
 	return array(
 		'type' => $type,
 		'month' => (int)$month,
 		'startYearRep' => (int)$report->startYrReport,
+		'startYearOptions' => array_map('intval', $report->startYearOptions),
 		'rankLimit' => (int)$report->rankLimit,
 		'spellDir' => $dir,
 		'threshold' => $threshold,

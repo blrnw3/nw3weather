@@ -70,7 +70,7 @@ $out = [
 	'type'        => $type,
 	'description' => $meta['description'],
 	'colour'      => $colour,
-	'unit'        => strip_tags(Wx::getUnits($convType)),
+	'unit'        => Wx::getUnitsText($convType),
 	'precision'   => $precision,
 	// Pin to zero for rain/wind/etc. Temperature (and pressure) auto-scale so
 	// 31-day (and other) charts aren't crushed against a useless zero baseline.
@@ -236,7 +236,7 @@ if ($mode === 'annual') {
 		];
 	}
 	// Shared axis uses the first series' unit (legacy graphs group compatible vars).
-	$out['unit'] = strip_tags(Wx::getUnits($convType));
+	$out['unit'] = Wx::getUnitsText($convType);
 	$out['precision'] = ($convType === Wx::Days || $convType === Wx::Hours || $convType === Wx::None) ? 1 : $precision;
 	$out['yMinZero'] = !in_array($convType, [Wx::Pressure, Wx::Temperature, Wx::AbsTemp], true);
 	$out['title'] = 'LTA for ' . implode(' & ', $descs);

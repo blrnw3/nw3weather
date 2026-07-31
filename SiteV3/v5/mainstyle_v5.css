@@ -1123,6 +1123,9 @@ select.timelapse {
 	grid-template-columns: 1fr 1fr;
 	gap: 1.5rem;
 }
+.current-latest-grid > .kv-table {
+	align-self: start;
+}
 /* Date labels under values in detail tables */
 .wx-date {
 	font-style: italic;
@@ -1951,6 +1954,9 @@ body.cam-modal-open {
 	border-radius: 4px;
 }
 .report-year-warn[hidden] {
+	display: none !important;
+}
+#report-sel-start-year[hidden] {
 	display: none !important;
 }
 

@@ -32,8 +32,9 @@ function nw3_dataday_render(Report $report) {
 	$dayAgg = $report->dayAgg;
 	$isAgg = ($dayAgg !== '');
 
+	$aggFromYear = max((int)$report->startYrReport, (int)$report->startYear);
 	if ($isAgg) {
-		$data = Data::getDailyCalendarAgg($type, $dayAgg, (int)$report->startYear);
+		$data = Data::getDailyCalendarAgg($type, $dayAgg, $aggFromYear);
 	} else {
 		$data = Data::getDailyDataForYear($type, $year);
 	}
@@ -204,9 +205,9 @@ function nw3_dataday_render(Report $report) {
 	if ($isAgg) {
 		echo '<p>' . $report->description
 			. ' in London, NW3 — calendar-day ' . $aggLabels[$dayAgg]
-			. ' across all years from ' . (int)$report->startYear . ' onwards'
+			. ' across all years from ' . $aggFromYear . ' onwards'
 			. $summaryText . '</p>';
-		$report->historicalInfo((int)$report->startYear);
+		$report->historicalInfo($aggFromYear);
 	} else {
 		echo '<p>' . $report->description . ' in London, NW3, for every available day of ' . $year . $summaryText
 			. ' Data for ' . $report->description . ' begins in ' . (int)$report->startYear . '.';
@@ -221,7 +222,7 @@ function nw3_dataday_render(Report $report) {
 		$report->historicalInfo($year);
 	}
 
-	$unitLabel = strip_tags(Wx::getUnits($unit));
+	$unitLabel = Wx::getUnitsText($unit);
 	$title = $report->description . ' / ' . $unitLabel;
 	if ($isAgg) {
 		$title .= ' · ' . $aggShort[$dayAgg] . ' (all years)';
@@ -231,6 +232,8 @@ function nw3_dataday_render(Report $report) {
 		'year' => $year,
 		'agg' => $dayAgg,
 		'startYear' => (int)$report->startYear,
+		'startYearRep' => (int)$report->startYrReport,
+		'startYearOptions' => array_map('intval', $report->startYearOptions),
 		'yearDefaulted' => !$isAgg && !empty($report->yearDefaulted),
 		'description' => $report->description,
 		'unit' => $unitLabel,

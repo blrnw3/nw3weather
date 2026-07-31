@@ -25,6 +25,7 @@ $html = ob_get_clean();
 echo '<div id="dm-fragment"'
 	. ' data-type="' . htmlspecialchars($meta['type']) . '"'
 	. ' data-start-year-rep="' . (int)$meta['startYearRep'] . '"'
+	. ' data-start-years="' . htmlspecialchars(implode(',', $meta['startYearOptions'])) . '"'
 	. ' data-summary-type="' . (int)$meta['summaryType'] . '"'
 	. ' data-summary-types="' . htmlspecialchars(implode(',', $meta['summaryTypes'])) . '"'
 	. ' data-title="' . htmlspecialchars($meta['title']) . '"'

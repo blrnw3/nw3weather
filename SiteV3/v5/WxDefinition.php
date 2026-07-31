@@ -263,6 +263,23 @@ class Wx {
 	}
 
 	/**
+	 * Markup stripped to plain UTF-8 text, e.g. '&deg;C' becomes '°C'. Use for
+	 * anything that is later escaped, JSON-encoded or set as element text,
+	 * where an HTML entity would be shown literally.
+	 * @param string|null $html
+	 * @return string
+	 */
+	public static function plainText($html) {
+		if($html === null) { return ''; }
+		return html_entity_decode(strip_tags((string)$html), ENT_QUOTES, 'UTF-8');
+	}
+
+	/** Plain-text form of getUnits(); see plainText(). */
+	public static function getUnitsText($type) {
+		return self::plainText(self::getUnits($type));
+	}
+
+	/**
 	 * Numeric unit conversion for charting: returns the value converted to the
 	 * user's selected units as a float (no formatting/units string), or null for
 	 * blank input. Mirrors conv() but is safe to feed straight into a chart.

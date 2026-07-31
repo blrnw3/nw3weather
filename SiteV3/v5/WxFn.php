@@ -315,17 +315,20 @@ class DataSummarizer {
 	private function getBaseSummary($arr) {
 		list($min, $minDate) = Util::extremeValAndKey($arr, 0);
 		list($max, $maxDate) = Util::extremeValAndKey($arr, 1);
+		$count = Util::mycount($arr);
 		$summary = [
-			'count' => Util::mycount($arr),
+			'count' => $count,
 			'count_nonzero' => Util::cond_count($arr, true, 0),
 			'count_internal' => count($arr),
-			'sum' => array_sum($arr),
+			// A period with no readings at all has no total: leaving it as 0 would
+			// make gaps (e.g. wet hours before Apr 2009) rank as record lows.
+			'sum' => $count > 0 ? array_sum($arr) : null,
 			'min' => $min,
 			'minDate' => $minDate,
 			'max' => $max,
 			'maxDate' => $maxDate,
 		];
-		$summary['mean'] =  $summary['count'] > 0 ? $summary['sum'] / $summary['count'] : null;
+		$summary['mean'] =  $count > 0 ? $summary['sum'] / $count : null;
 		return $summary;
 	}
 
@@ -342,7 +345,9 @@ class DataSummarizer {
 			$summary['count'] += $ms['count'];
 			$summary['count_nonzero'] += $ms['count_nonzero'];
 			$summary['count_internal'] += $ms['count_internal'];
-			$summary['sum'] += $ms['sum'];
+			if ($ms['count'] > 0) {
+				$summary['sum'] += $ms['sum'];
+			}
 			if ($ms['min'] < $summary['min']) {
 				$summary['min'] = $ms['min'];
 				$summary['minDate'] = $ms['minDate'];
@@ -357,7 +362,7 @@ class DataSummarizer {
 	}
 
 	private function addAnomalies(&$summary, $anom) {
-		if($this->anomable && is_numeric($anom)) {
+		if($this->anomable && is_numeric($anom) && is_numeric($summary[$this->summaryKey])) {
 			$summary['anom'] = $summary[$this->summaryKey] - $anom;
 			$summary['anom_pct'] = $anom != 0 ? $summary['anom'] / $anom * 100 : null;
 		}
@@ -599,7 +604,41 @@ class Data {
 		return self::getYearlyData($name, $year)[$month];
 	}
 	public static function get($name, $year, $month, $day) {
-		return self::getMonthlyData($name, $year, $month)[$day];
+		// Derived series (sunhrp, wethrp, ranges, ratemean) have no serialised file,
+		// so compute the single day from its sources rather than returning nothing.
+		if (!empty(Wx::$daily[$name]['derived'])) {
+			return self::getDerivedDay($name, $year, $month, $day);
+		}
+		return self::getStoredDay($name, $year, $month, $day);
+	}
+
+	/** One day of a stored (non-derived) series, or null when absent. */
+	private static function getStoredDay($name, $year, $month, $day) {
+		$all = self::getAllData($name);
+		return isset($all[$year][$month][$day]) ? $all[$year][$month][$day] : null;
+	}
+
+	/** One day of a derived series, computed from its source variables. */
+	private static function getDerivedDay($name, $year, $month, $day) {
+		if ($name === 'sunhrp' || $name === 'wethrp') {
+			$src = ($name === 'sunhrp') ? 'sunhr' : 'wethr';
+			return self::percentOfMaxDay(
+				$name, self::getStoredDay($src, $year, $month, $day), $year, $month, $day
+			);
+		}
+		$srcMap = ["ratemean" => ["rain", "wethr"], "trange" => ["tmin", "tmax"], "hrange" => ["hmin", "hmax"], "prange" => ["pmin", "pmax"]];
+		if (!isset($srcMap[$name])) {
+			return null;
+		}
+		$a = self::getStoredDay($srcMap[$name][0], $year, $month, $day);
+		$b = self::getStoredDay($srcMap[$name][1], $year, $month, $day);
+		if (!is_numeric($a) || !is_numeric($b)) {
+			return null;
+		}
+		if ($name === "ratemean") {
+			return ($b > 0.4 && $a > 0.3) ? $a / $b : null;
+		}
+		return $b - $a;
 	}
 
 	public static function getTime($name, $year, $month, $day) {
@@ -655,29 +694,37 @@ class Data {
 		foreach ($source as $year => $months) {
 			foreach ($months as $month => $days) {
 				foreach ($days as $day => $v) {
-					if (!is_numeric($v)) {
-						$res[$year][$month][$day] = $v;
-						continue;
-					}
-					if ($varName === 'sunhrp') {
-						$clim = LTA::getDailyAnom('maxsun', (int)$month, (int)$day, (int)$year);
-						$clim = is_string($clim) ? trim($clim) : $clim;
-						if (!is_numeric($clim) || (float)$clim <= 0) {
-							$res[$year][$month][$day] = null;
-							continue;
-						}
-						$val = ((float)$v / (float)$clim) * 100;
-					} else {
-						$val = ((float)$v / 24) * 100;
-					}
-					if ($val > 100) { $val = 100; }
-					// Match Wx::Percentage display: 0 dp, or 1 dp when under 10%.
-					$dp = ($val > 0 && $val < 10) ? 1 : 0;
-					$res[$year][$month][$day] = round($val, $dp);
+					$res[$year][$month][$day] = is_numeric($v)
+						? self::percentOfMaxDay($varName, $v, $year, $month, $day)
+						: $v;
 				}
 			}
 		}
 		return $res;
+	}
+
+	/**
+	 * One day of sunhrp (sun hours / max possible) or wethrp (wet hours / 24), as a
+	 * percentage rounded to match Wx::Percentage display.
+	 */
+	private static function percentOfMaxDay($varName, $v, $year, $month, $day) {
+		if (!is_numeric($v)) {
+			return null;
+		}
+		if ($varName === 'sunhrp') {
+			$clim = LTA::getDailyAnom('maxsun', (int)$month, (int)$day, (int)$year);
+			$clim = is_string($clim) ? trim($clim) : $clim;
+			if (!is_numeric($clim) || (float)$clim <= 0) {
+				return null;
+			}
+			$val = ((float)$v / (float)$clim) * 100;
+		} else {
+			$val = ((float)$v / 24) * 100;
+		}
+		if ($val > 100) { $val = 100; }
+		// Match Wx::Percentage display: 0 dp, or 1 dp when under 10%.
+		$dp = ($val > 0 && $val < 10) ? 1 : 0;
+		return round($val, $dp);
 	}
 
 
@@ -713,6 +760,11 @@ class Data {
 
 
 	public static function summarize($arr, $summary_type) {
+		// No readings in the period (e.g. wet hours before Apr 2009) means no value:
+		// summing or counting a gap to 0 would plot it as a genuine zero.
+		if(!is_array($arr) || Util::mycount($arr) === 0) {
+			return null;
+		}
 		if($summary_type === Data::SUMMARY_MEAN) {
 			return Util::mean($arr);
 		}
