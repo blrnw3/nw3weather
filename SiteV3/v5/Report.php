@@ -169,15 +169,12 @@ class Report {
 			$this->startYearOptions[] = max(2009, $this->startYear);
 		}
 		$this->startYrReport = isset($_GET['start_year_rep']) ? (int)$_GET['start_year_rep'] : 2009;
-		if (!in_array($this->startYrReport, $this->startYearOptions, true)) {
-			$this->startYrReport = in_array(2009, $this->startYearOptions, true)
-				? 2009 : $this->startYearOptions[0];
-		}
+		$this->startYrReport = self::nearestStartYear($this->startYrReport, $this->startYearOptions);
 
 		// Spell ranking selectors
 		$this->spellDir = (isset($_GET['spell_dir']) && $_GET['spell_dir'] === 'below') ? 'below' : 'above';
 		$this->spellThresholds = Spells::thresholdPresets($this->type);
-		$defThresh = Spells::defaultThreshold($this->type);
+		$defThresh = Spells::defaultThreshold($this->type, $this->unit);
 		if (isset($_GET['threshold']) && is_numeric($_GET['threshold'])) {
 			$this->spellThreshold = (float)$_GET['threshold'];
 		} else {
@@ -277,6 +274,25 @@ class Report {
 		if ($this->valcolIdx === null) { return 1; }
 		$t = self::$thresholds[$this->valcolIdx];
 		return 250 / $t[count($t) - 1];
+	}
+
+	/**
+	 * Pick a start-year chip that exists for the current variable.
+	 * Prefer the same year, else the nearest earlier option; if none, the earliest.
+	 * @param int $want
+	 * @param int[] $opts ascending start-year options
+	 * @return int
+	 */
+	public static function nearestStartYear($want, $opts) {
+		if (!count($opts)) { return (int)$want; }
+		$want = (int)$want;
+		$best = null;
+		foreach ($opts as $y) {
+			$y = (int)$y;
+			if ($y === $want) { return $y; }
+			if ($y <= $want) { $best = $y; }
+		}
+		return $best !== null ? $best : (int)$opts[0];
 	}
 
 	// ---- Aggregation helper (legacy mom): 0=min 1=max 2=mean 3=count>0 ----
@@ -479,7 +495,9 @@ class Report {
 			$titleSuffix .= ' · ' . $aggTitle[$this->dayAgg] . ' (all years)';
 		}
 		if ($mode === 'rank-spells') {
-			$titleSuffix .= ' · ' . Spells::directionLabel($this->type, $this->spellDir, $this->spellThreshold);
+			// Unit belongs on the threshold ("Above 0.0 °C"), not after the measure name.
+			$titleSuffix = $this->description . ' · '
+				. Spells::directionLabel($this->type, $this->spellDir, $this->spellThreshold);
 		}
 		echo '<h1 id="report-sel-heading">' . htmlspecialchars($heading) . ' - '
 			. htmlspecialchars($titleSuffix) . '</h1>';
@@ -586,12 +604,7 @@ class Report {
 			echo '<div class="report-sel-row report-sel-labelled">';
 			echo '<div class="wxsel-label">Spell</div>';
 			echo '<div class="wxsel-scale wxsel-spell-dir" role="tablist">';
-			foreach (['above' => 'Above / Wet', 'below' => 'Below / Dry'] as $dir => $lab) {
-				if ($this->type === 'rain') {
-					$lab = ($dir === 'above') ? 'Wet' : 'Dry';
-				} else {
-					$lab = ($dir === 'above') ? 'Above' : 'Below';
-				}
+			foreach (Spells::directionChipLabels($this->type) as $dir => $lab) {
 				$active = ($dir === $this->spellDir) ? ' active' : '';
 				echo '<a class="wxsel-chip' . $active . '" data-spell-dir="' . $dir
 					. '" href="' . $selUrl(array('spell_dir' => $dir)) . '">'
@@ -771,6 +784,7 @@ class Report {
 			'summaryLabels' => $sumLabels,
 			'rankLimit' => (int)$this->rankLimit,
 			'spellDir' => $this->spellDir,
+			'spellDirLabels' => Spells::directionChipLabels($this->type),
 			'threshold' => $this->spellThreshold,
 			'thresholds' => $this->spellThresholds,
 			'unit' => (int)$this->unit,
@@ -966,7 +980,9 @@ class Report {
 			}
 			echo '<div class="rk-row">';
 			echo '<div class="rk-rank">' . ($i + 1) . '</div>';
-			echo '<div class="rk-val">' . $n . ' day' . ($n === 1 ? '' : 's') . '</div>';
+			echo '<div class="rk-val spell-length spell-length-'
+				. Spells::lengthColourLevel($n) . '">' . $n . ' day'
+				. ($n === 1 ? '' : 's') . '</div>';
 			echo '<div class="rk-date">' . $period . '</div>';
 			echo '</div>';
 		}

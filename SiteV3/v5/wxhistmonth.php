@@ -177,9 +177,10 @@ HTML::tr();
 HTML::td('Measure', null, 26); HTML::td('Mean / Sum (anomaly)', null, 22); HTML::td('Min', null, 22); HTML::td('Max', null, 22); HTML::td('Mean Time', null, 7);
 HTML::tr_end();
 $order = [2, 0, 1]; // mean, min, max
+$summaryRow = 0;
 for ($i = 0; $i < $NCOL; $i++) {
 	$c = 'td' . ($CNUM[$i] + 10) . 'C';
-	HTML::tr('row' . HTML::colcol($i));
+	HTML::tr(HTML::colcol($summaryRow++));
 	HTML::td($DESC[$i], $c);
 	foreach ($order as $idx) {
 		$disp = ($i == 12) ? $msdat[12][$idx] : $fmt($msdat[$i][$idx], $UNIT[$i]);
@@ -195,7 +196,7 @@ $rangeUnit = [Wx::AbsTemp, Wx::Humidity, Wx::Pressure];
 $rangeCNum = [4, 0, 6];
 for ($x = 0; $x < 3; $x++) {
 	$c = 'td' . ($rangeCNum[$x] + 10) . 'C';
-	HTML::tr('row' . HTML::colcol($x));
+	HTML::tr(HTML::colcol($summaryRow++));
 	HTML::td($rangeDesc[$x], $c);
 	foreach ($order as $idx) { HTML::td($fmt($msdatx[$x][$idx], $rangeUnit[$x]) . $manomx[$x][$idx], $c); }
 	HTML::td('', $c);
@@ -204,7 +205,7 @@ for ($x = 0; $x < 3; $x++) {
 // Manual sun/wet
 $mDesc = ['Sun Hours', 'Wet Hours'];
 for ($i = 0; $i < 2; $i++) {
-	HTML::tr('row' . HTML::colcol($i));
+	HTML::tr(HTML::colcol($summaryRow++));
 	HTML::td($mDesc[$i], 'td18C');
 	HTML::td($msdatm[$i][2] . $manomm[$i][2], 'td18C');
 	HTML::td('', 'td18C'); HTML::td('', 'td18C'); HTML::td('', 'td18C');
@@ -264,7 +265,7 @@ foreach (['Rainfall', 'Temperature', 'Sunshine', 'Other'] as $h) { HTML::td($h, 
 HTML::tr_end();
 $groups = [['Rn', $daysofRn, $daysofRnD, 12], ['Temp', $daysofTemp, $daysofTempD, 14], ['Sun', $daysofSun, $daysofSunD, 18], ['Other', $daysofOther, $daysofOtherD, 4]];
 for ($i = 0; $i < 7; $i++) {
-	HTML::tr('row' . HTML::colcol($i));
+	HTML::tr(HTML::colcol($i));
 	foreach ($groups as $g) {
 		HTML::td(isset($g[2][$i]) ? $g[2][$i] : '', 'td' . $g[3] . 'C', '17%');
 		HTML::td(isset($g[1][$i]) ? $g[1][$i] : '', 'td' . $g[3] . 'C', '8%');
@@ -295,50 +296,95 @@ Charts::dailySelectable(
 	'tmean'
 );
 echo '<p><a href="charts.php?vartype=tmean&amp;year=' . $yproc . '&amp;month=' . $mproc . '">View more charts for this month</a></p>';
+
+// Full-month per-minute series (server-decimated), one variable at a time.
+$monthEndStamp = date('Ymd', $sproc);
+echo '<h2>Intraday conditions</h2>';
+echo '<p class="hm-break-note">Per-minute readings across the month (downsampled for display). Choose a variable below.</p>';
+Charts::intradayPanel(
+	['date' => $monthEndStamp, 'num' => $dim],
+	null,
+	['height' => 400, 'initial' => 'temp']
+);
+
 echo '<h2>Wind rose</h2>';
 Charts::rose(['st' => $yproc . Util::zerolead($mproc) . '01', 'en' => 'month'], ['height' => 460]);
 
-// ---- Day-by-day breakdown (all CSV columns, valcol styling, horizontal scroll) ----
+// ---- Day-by-day breakdown (grouped for readability) ----
 echo '<h2 id="day-breakdown">Daily breakdown</h2>';
-echo '<p class="hm-break-note">Scroll horizontally to see all measures. Day numbers link to the detailed daily report.</p>';
-echo '<div class="hm-break-scroll">';
-echo '<table class="hm-break">';
-echo '<thead><tr><th class="hm-day" scope="col">Day</th>';
-for ($v = 0; $v < $NCOL; $v++) {
-	echo '<th scope="col" title="' . htmlspecialchars($DESC[$v]) . '">' . htmlspecialchars($SHORT[$v]) . '</th>';
-}
-echo '</tr></thead><tbody>';
+echo '<p class="hm-break-note">Day numbers link to the detailed daily report. Wide tables can be scrolled horizontally.</p>';
 
 $blank = function ($v) {
 	return $v === '' || $v === '-' || $v === null || !is_numeric($v);
 };
-for ($d = 1; $d <= $dim; $d++) {
-	$zed = (int)date('z', Date::mkdate($mproc, $d, $yproc)) + 1;
-	$row = isset($datLines[$zed]) ? explode(',', $datLines[$zed]) : [];
-	$dayHref = 'wxhistday.php?year=' . $yproc . '&amp;month=' . $mproc . '&amp;day=' . $d;
-	echo '<tr>';
-	echo '<th class="hm-day" scope="row"><a class="hidden-link" href="' . $dayHref . '">' . $d . '</a></th>';
-	for ($v = 0; $v < $NCOL; $v++) {
-		$raw = isset($row[$v]) ? $row[$v] : '';
-		$type = $TYPES[$v];
-		$unit = $UNIT[$v];
-		if ($blank($raw)) {
-			echo '<td class="reportday">-</td>';
-			continue;
-		}
-		if ($type === 'wdir') {
-			$disp = round((float)$raw) . '&deg;';
-			$class = Report::valcolForType($type, (float)$raw);
+
+// A column is either an index into datYYYY.csv, or the manual sunshine value
+// from column zero of datmYYYY.csv.
+$breakGroups = [
+	[
+		'title' => 'Temperature, rain, sunshine & wind',
+		'cols' => [0, 1, 2, 13, 14, 15, 16, 'sun', 9, 10, 11, 12, 28],
+	],
+	[
+		'title' => 'Humidity, dew point & pressure',
+		'cols' => [3, 4, 5, 17, 18, 19, 6, 7, 8],
+	],
+	[
+		'title' => 'Other measures',
+		'cols' => [20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32, 33, 34, 35],
+	],
+];
+
+foreach ($breakGroups as $breakGroup) {
+	echo '<h3 class="hm-break-title">' . htmlspecialchars($breakGroup['title']) . '</h3>';
+	echo '<div class="hm-break-scroll">';
+	echo '<table class="hm-break">';
+	echo '<thead><tr><th class="hm-day" scope="col">Day</th>';
+	foreach ($breakGroup['cols'] as $v) {
+		if ($v === 'sun') {
+			echo '<th scope="col" title="Sunshine Hours">Sun</th>';
 		} else {
-			$disp = Wx::conv($raw, $unit, false);
-			$num = Wx::convNum($raw, $unit);
-			$class = Report::valcolForType($type, ($num === null ? (float)$raw : $num));
+			echo '<th scope="col" title="' . htmlspecialchars($DESC[$v]) . '">' . htmlspecialchars($SHORT[$v]) . '</th>';
 		}
-		echo '<td class="' . htmlspecialchars($class) . '">' . $disp . '</td>';
 	}
-	echo '</tr>';
+	echo '</tr></thead><tbody>';
+
+	for ($d = 1; $d <= $dim; $d++) {
+		$zed = (int)date('z', Date::mkdate($mproc, $d, $yproc)) + 1;
+		$row = isset($datLines[$zed]) ? explode(',', $datLines[$zed]) : [];
+		$rowm = isset($datmLines[$zed]) ? explode(',', $datmLines[$zed]) : [];
+		$dayHref = 'wxhistday.php?year=' . $yproc . '&amp;month=' . $mproc . '&amp;day=' . $d;
+		echo '<tr>';
+		echo '<th class="hm-day" scope="row"><a class="hidden-link" href="' . $dayHref . '">' . $d . '</a></th>';
+
+		foreach ($breakGroup['cols'] as $v) {
+			if ($v === 'sun') {
+				$raw = isset($rowm[0]) ? $rowm[0] : '';
+				$type = 'sunhr';
+				$unit = Wx::Hours;
+			} else {
+				$raw = isset($row[$v]) ? $row[$v] : '';
+				$type = $TYPES[$v];
+				$unit = $UNIT[$v];
+			}
+			if ($blank($raw)) {
+				echo '<td class="reportday">-</td>';
+				continue;
+			}
+			if ($type === 'wdir') {
+				$disp = round((float)$raw) . '&deg;';
+				$class = Report::valcolForType($type, (float)$raw);
+			} else {
+				$disp = Wx::conv($raw, $unit, false);
+				$num = Wx::convNum($raw, $unit);
+				$class = Report::valcolForType($type, ($num === null ? (float)$raw : $num));
+			}
+			echo '<td class="' . htmlspecialchars($class) . '">' . $disp . '</td>';
+		}
+		echo '</tr>';
+	}
+	echo '</tbody></table></div>';
 }
-echo '</tbody></table></div>';
 
 echo '<p><a href="wxhistday.php?day=1&amp;month=' . $mproc . '&amp;year=' . $yproc . '" title="Daily report for 1st ' . Date::monthfull($mproc) . ' ' . $yproc . '">View daily report for the 1st</a></p>';
 

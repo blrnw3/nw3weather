@@ -90,6 +90,11 @@ class Charts {
 				'pm25' => 'Air pollution', 'wdir' => 'Direction',
 			);
 		}
+		// Longer windows (e.g. a full month) need server decimation.
+		$num = isset($params['num']) ? (int)$params['num'] : 1;
+		if ($num > 3 && !isset($params['maxpts'])) {
+			$params['maxpts'] = 1440;
+		}
 		$panelId = 'wxp' . (self::$seq + 1);
 		echo '<div id="' . $panelId . '-vars" class="wxsel-subtypes">';
 		$first = null;

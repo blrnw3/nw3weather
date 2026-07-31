@@ -34,13 +34,13 @@ function nw3_rankspells_render(Report $report) {
 	}
 
 	$extraMon = ($month === 0) ? '' : ' with midpoint in ' . Date::$months3[$month - 1];
-	$rule = ($dir === 'above') ? '≥' : '<';
-	$threshTxt = Wx::plainText(Wx::conv($threshold, $report->unit, false));
+	$rule = Spells::ruleSymbol($type, $dir, $threshold);
+	$threshTxt = Wx::plainText(Wx::conv($threshold, $report->unit, true));
 
 	echo '<p class="rk-blurb">Longest consecutive-day spells from ' . $effStart
 		. ' to present for London, NW3. Rule: ' . htmlspecialchars($report->description)
 		. ' ' . $rule . ' ' . htmlspecialchars($threshTxt)
-		. '. Found <b>' . $total . '</b> matching spell'
+		. '.<br />Found <b>' . $total . '</b> matching spell'
 		. ($total === 1 ? '' : 's') . $extraMon
 		. '. Showing top ' . min($limit, $total)
 		. '. Data for ' . htmlspecialchars($report->description)
@@ -48,7 +48,6 @@ function nw3_rankspells_render(Report $report) {
 
 	$report->historicalInfo($effStart);
 
-	$unitLabel = Wx::getUnitsText($report->unit);
 	return array(
 		'type' => $type,
 		'month' => (int)$month,
@@ -56,8 +55,9 @@ function nw3_rankspells_render(Report $report) {
 		'startYearOptions' => array_map('intval', $report->startYearOptions),
 		'rankLimit' => (int)$report->rankLimit,
 		'spellDir' => $dir,
+		'spellDirLabels' => Spells::directionChipLabels($type),
 		'threshold' => $threshold,
 		'thresholds' => $report->spellThresholds,
-		'title' => $report->description . ' / ' . $unitLabel . ' · ' . $dirLabel,
+		'title' => $report->description . ' · ' . $dirLabel,
 	);
 }

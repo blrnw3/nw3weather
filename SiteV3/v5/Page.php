@@ -122,7 +122,7 @@ class Page {
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
-		<link rel="stylesheet" type="text/css" href="/v5/$styleSheet.css?20260731a" media="screen" title="screen" />
+		<link rel="stylesheet" type="text/css" href="/v5/$styleSheet.css?20260731b" media="screen" title="screen" />
 		$colorCss
 		$scripts
 	</head>

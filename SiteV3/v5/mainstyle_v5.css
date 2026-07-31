@@ -2342,6 +2342,21 @@ body.cam-modal-open {
 	position: relative;
 	z-index: 1;
 }
+/* Universal spell-length scale: longer runs use progressively deeper green. */
+.rk-grid .spell-length {
+	font-weight: 600;
+	color: #173b24;
+}
+.rk-grid .spell-length-0 { background-color: #f0f8f2; }
+.rk-grid .spell-length-1 { background-color: #ddf0e2; }
+.rk-grid .spell-length-2 { background-color: #c7e6cf; }
+.rk-grid .spell-length-3 { background-color: #a9d8b7; }
+.rk-grid .spell-length-4 { background-color: #87c79d; }
+.rk-grid .spell-length-5 { background-color: #63b382; }
+.rk-grid .spell-length-6 { background-color: #469a68; }
+.rk-grid .spell-length-7 { background-color: #327e52; color: #fff; }
+.rk-grid .spell-length-8 { background-color: #20643e; color: #fff; }
+.rk-grid .spell-length-9 { background-color: #104b2d; color: #fff; }
 .rk-foot {
 	margin-top: 0.35rem;
 	font-weight: 600;

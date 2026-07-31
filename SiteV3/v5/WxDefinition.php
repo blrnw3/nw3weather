@@ -666,13 +666,13 @@ class Wx {
 		],
 		'tc10max' => [
 			'description' => 'Max 10m Temp Rise',
-			'unit' => Wx::Temperature,
+			'unit' => Wx::AbsTemp,
 			'colour' => 'tan1',
 			'start_year' => 2009,
 		],
 		'tchrmax' => [
 			'description' => 'Max 1hr Temp Rise',
-			'unit' => Wx::Temperature,
+			'unit' => Wx::AbsTemp,
 			'colour' => 'tan2',
 			'start_year' => 2009,
 		],
@@ -684,13 +684,13 @@ class Wx {
 		],
 		'tc10min' => [
 			'description' => 'Max 10m Temp Fall',
-			'unit' => Wx::Temperature,
+			'unit' => Wx::AbsTemp,
 			'colour' => 'darkgoldenrod2',
 			'start_year' => 2009,
 		],
 		'tchrmin' => [
 			'description' => 'Max 1hr Temp Fall',
-			'unit' => Wx::Temperature,
+			'unit' => Wx::AbsTemp,
 			'colour' => 'darkgoldenrod3',
 			'start_year' => 2009,
 		],

@@ -125,6 +125,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		var curSpellDir = cfg.spellDir || 'above';
 		var curThreshold = cfg.threshold != null ? parseFloat(cfg.threshold) : 0;
 		var curThresholds = cfg.thresholds || [];
+		var spellDirLabels = cfg.spellDirLabels || {};
 		var startYearOpts = (cfg.startYearOptions || []).map(function (x) { return parseInt(x, 10); });
 		var summaryTypes = cfg.summaryTypes || [];
 		var summaryLabels = cfg.summaryLabels || {};
@@ -275,10 +276,22 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				a.setAttribute('href', pageUrl({ month: m }));
 			});
 		}
+		function nearestStartYear(want, opts) {
+			if (!opts || !opts.length) { return want; }
+			want = parseInt(want, 10);
+			var best = null, i, y;
+			for (i = 0; i < opts.length; i++) {
+				y = parseInt(opts[i], 10);
+				if (y === want) { return y; }
+				if (y <= want) { best = y; }
+			}
+			return best != null ? best : parseInt(opts[0], 10);
+		}
 		function syncStartYearChips() {
 			if (!startEl) { return; }
 			// Options depend on the variable's first year of data, so re-render them.
 			var html = '', i, y;
+			curStart = nearestStartYear(curStart, startYearOpts);
 			for (i = 0; i < startYearOpts.length; i++) {
 				y = startYearOpts[i];
 				html += '<a class="wxsel-chip' + (y === curStart ? ' active' : '')
@@ -313,6 +326,8 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				var d = a.getAttribute('data-spell-dir');
 				a.classList.toggle('active', d === curSpellDir);
 				a.setAttribute('href', pageUrl({ spell_dir: d }));
+				// Rain reads as wet/dry, everything else as above/below.
+				if (spellDirLabels[d]) { a.textContent = spellDirLabels[d]; }
 			});
 		}
 		function syncThresholdChips() {
@@ -413,6 +428,9 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			}
 			if (meta.startYears && meta.startYears.length) {
 				startYearOpts = meta.startYears.map(function (x) { return parseInt(x, 10); });
+			}
+			if (meta.spellDirLabels && meta.spellDirLabels.length === 2) {
+				spellDirLabels = { above: meta.spellDirLabels[0], below: meta.spellDirLabels[1] };
 			}
 			root.setAttribute('data-type', curType);
 			root.setAttribute('data-year', String(curYear));
@@ -538,6 +556,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 					var stAttr = frag.getAttribute('data-summary-types') || '';
 					var thAttr = frag.getAttribute('data-thresholds') || '';
 					var syAttr = frag.getAttribute('data-start-years') || '';
+					var sdlAttr = frag.getAttribute('data-spell-dir-labels') || '';
 					applyMeta({
 						type: frag.getAttribute('data-type'),
 						year: frag.getAttribute('data-year'),
@@ -548,6 +567,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 						summaryType: frag.getAttribute('data-summary-type'),
 						rankLimit: frag.getAttribute('data-rank-limit'),
 						spellDir: frag.getAttribute('data-spell-dir'),
+						spellDirLabels: sdlAttr ? sdlAttr.split(',') : null,
 						threshold: frag.getAttribute('data-threshold'),
 						thresholds: thAttr ? thAttr.split(',') : curThresholds,
 						summaryTypes: stAttr ? stAttr.split(',') : summaryTypes,
