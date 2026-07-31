@@ -1,6 +1,7 @@
 <?php
 
 require("Page.php");
+require_once __DIR__ . '/Forecast.php';
 Page::init([
 	"fileNum" => 5,
 	"title" => "Forecast | Latest Maps",
@@ -12,30 +13,30 @@ require Site::$rareTags;
 ?>
 <h1>Latest Forecasts and Weather Maps</h1>
 
-<p><b>NB:</b> NW3 is an observation site, which means it cannot provide detailed forecasts and therefore uses those that are externally produced.<br />
-	Proper forecasting relies on running sophisticated computer models using data from a wide array of sources, including land-based observations sites like this one.
-	A full discussion of this can be found <a href="wx8.php#Forecasting" title="Found on the about page">here</a>. </p>
-<p>
-	Simplistic, local, live pressure-based forecast: <?php echo $vpforecasttext; ?>
+<p><b>NB:</b> NW3 is an observation site, which means it cannot provide its own detailed forecasts, and therefore uses those that are externally produced.<br />
+	Proper forecasting relies on running sophisticated computer models on large supercomputers using data from a wide array of sources, including land-based observations sites like this one.
+	A full discussion of this can be found <a href="wx8.php#Forecasting" title="Found on the about page">here</a>. 
+	Below are the latest forecasts and weather maps provided by external weather services.
 </p>
 
 
 <div id="widgets">
 	<div>
 		<h2>Hampstead Meteogram</h2>
-		<img src="https://www.yr.no/en/content/2-2647553/meteogram.svg?mode=dark" alt="Yr.no meteogram for nw3" title="Yr.no meteogram for nw3" width="95%" height="100%" />
+		<p class="hm-break-note">Hourly temperature, rain and wind for the next couple of days (Yr.no / MET Norway).</p>
+		<?php Charts::meteogram(null, ['height' => 420]); ?>
 	</div>
 
-	<div style="height: 550px; max-width: 900px;">
+	<div>
 		<h2>Forecast for NW3</h2>
-		<iframe src="https://www.yr.no/en/content/2-2647553/table.html?mode=dark" width="95%" height="90%" frameborder="0" scrolling="no" title="Yr.no forecast for nw3"></iframe>
+		<?php Forecast::renderDailyTable(); ?>
+		<?php Forecast::renderPeriodTable(8); ?>
 	</div>
-	
+
 	<div>
 		<h2>Surface Pressure Chart</h2>
 		<img src="https://www.weathercharts.net/noaa_ukmo_prognosis/PPVE89.gif" alt="fax" title="Surface pressure analysis chart from the Met Office" />
 	</div>
-
 </div>
 
 <?php

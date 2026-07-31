@@ -1251,7 +1251,40 @@ select.timelapse {
 	color: #3567EF;
 }
 .fcast-more {
+	margin-left: 0.4rem;
 	font-size: 0.9rem;
+}
+.fcast-src {
+	color: #666;
+	font-weight: 400;
+}
+.fcast-src a {
+	color: #666;
+}
+
+/****************** Forecast page (wx5) ***************************/
+.fc-table-wrap {
+	margin: 0.4rem 0 1rem;
+	overflow-x: auto;
+}
+.fc-table img {
+	width: 40px;
+	height: auto;
+	background-color: #CCCEEC;
+	border-radius: 4px;
+	vertical-align: middle;
+}
+.fc-table .fc-icon {
+	width: 3.2rem;
+	text-align: center;
+}
+.fc-credit {
+	margin: 0.2rem 0 1rem;
+	font-size: 0.85rem;
+	color: #666;
+}
+.fc-meteogram {
+	margin: 0.3rem 0 1.2rem;
 }
 
 .wx-cards {

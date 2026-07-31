@@ -247,30 +247,97 @@ if(false && $tstamp % 100 == 0) {
 	}
 }
 
-// Local forecast from Open-Meteo (free, no API key). Today + tomorrow.
-if(date('i') % 30 == 7) {
-	$fcUrl = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lng"
-		. "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
-		. "&timezone=Europe%2FLondon&forecast_days=2";
-	$fcRaw = @file_get_contents($fcUrl, false, stream_context_create(array('http' => array('timeout' => 6))));
+// Local forecast from Yr.no (same location as wx5: 2-2647553 Hampstead).
+// Full payload cached for homepage strip + wx5 table/meteogram.
+if(date('i') % 30 == 12) {
+	$fcUrl = 'https://www.yr.no/api/v0/locations/2-2647553/forecast';
+	$fcCtx = stream_context_create(array('http' => array(
+		'header' => "Accept: application/json\r\n"
+			. "User-Agent: nw3weather.co.uk/v5 (https://nw3weather.co.uk)\r\n",
+		'timeout' => 8,
+	)));
+	$fcRaw = @file_get_contents($fcUrl, false, $fcCtx);
 	$fcJson = $fcRaw ? json_decode($fcRaw, true) : null;
-	if($fcJson && isset($fcJson['daily']['time'])) {
-		$d = $fcJson['daily'];
-		$labels = array('Today', 'Tomorrow');
+	if($fcJson && !empty($fcJson['dayIntervals']) && is_array($fcJson['dayIntervals'])) {
+		$todayYmd = date('Y-m-d');
+		$tomorrowYmd = date('Y-m-d', strtotime($todayYmd . ' +1 day'));
+
 		$fcDays = array();
-		foreach($d['time'] as $i => $date) {
-			list($fcIcon, $fcDesc) = forecastIcon((int)$d['weather_code'][$i]);
+		foreach($fcJson['dayIntervals'] as $i => $day) {
+			$date = isset($day['start']) ? substr($day['start'], 0, 10) : '';
+			$sym = isset($day['twentyFourHourSymbol']) ? $day['twentyFourHourSymbol'] : '';
+			list($fcIcon, $fcDesc) = yrForecastIcon($sym);
+			if($date === $todayYmd) { $label = 'Today'; }
+			elseif($date === $tomorrowYmd) { $label = 'Tomorrow'; }
+			else { $label = $date ? date('D j M', strtotime($date)) : 'Day ' . ($i + 1); }
 			$fcDays[] = array(
-				'label' => isset($labels[$i]) ? $labels[$i] : date('D', strtotime($date)),
+				'label' => $label,
 				'date' => $date,
 				'icon' => $fcIcon,
 				'desc' => $fcDesc,
-				'tmax' => $d['temperature_2m_max'][$i],
-				'tmin' => $d['temperature_2m_min'][$i],
-				'pop'  => $d['precipitation_probability_max'][$i],
+				'symbol' => $sym,
+				'tmax' => isset($day['temperature']['max']) ? round((float)$day['temperature']['max'], 1) : null,
+				'tmin' => isset($day['temperature']['min']) ? round((float)$day['temperature']['min'], 1) : null,
+				'precip' => isset($day['precipitation']['value']) ? round((float)$day['precipitation']['value'], 1) : null,
+				'windMin' => isset($day['wind']['min']) ? yrMsToMph($day['wind']['min']) : null,
+				'windMax' => isset($day['wind']['max']) ? yrMsToMph($day['wind']['max']) : null,
 			);
 		}
-		file_put_contents(ROOT.'forecast_v5.json', json_encode(array('updated' => time(), 'days' => $fcDays)));
+
+		$fcHourly = array();
+		if(!empty($fcJson['shortIntervals']) && is_array($fcJson['shortIntervals'])) {
+			foreach($fcJson['shortIntervals'] as $iv) {
+				$sym = isset($iv['symbolCode']['next1Hour']) ? $iv['symbolCode']['next1Hour']
+					: (isset($iv['symbolCode']['next6Hours']) ? $iv['symbolCode']['next6Hours'] : '');
+				list($fcIcon, $fcDesc) = yrForecastIcon($sym);
+				$fcHourly[] = array(
+					't' => isset($iv['start']) ? (strtotime($iv['start']) * 1000) : null,
+					'temp' => isset($iv['temperature']['value']) ? round((float)$iv['temperature']['value'], 1) : null,
+					'precip' => isset($iv['precipitation']['value']) ? round((float)$iv['precipitation']['value'], 2) : null,
+					'wind' => isset($iv['wind']['speed']) ? yrMsToMph($iv['wind']['speed']) : null,
+					'windDir' => isset($iv['wind']['direction']) ? (int)round((float)$iv['wind']['direction']) : null,
+					'pressure' => isset($iv['pressure']['value']) ? round((float)$iv['pressure']['value'], 1) : null,
+					'icon' => $fcIcon,
+					'desc' => $fcDesc,
+					'symbol' => $sym,
+				);
+			}
+		}
+
+		$fcPeriods = array();
+		if(!empty($fcJson['longIntervals']) && is_array($fcJson['longIntervals'])) {
+			foreach($fcJson['longIntervals'] as $iv) {
+				$sym = isset($iv['symbolCode']['next6Hours']) ? $iv['symbolCode']['next6Hours']
+					: (isset($iv['symbolCode']['next1Hour']) ? $iv['symbolCode']['next1Hour'] : '');
+				list($fcIcon, $fcDesc) = yrForecastIcon($sym);
+				$startTs = isset($iv['start']) ? strtotime($iv['start']) : false;
+				$fcPeriods[] = array(
+					't' => $startTs ? ($startTs * 1000) : null,
+					'end' => isset($iv['end']) ? (strtotime($iv['end']) * 1000) : null,
+					'label' => $startTs ? date('D H:i', $startTs) : '',
+					'temp' => isset($iv['temperature']['value']) ? round((float)$iv['temperature']['value'], 1) : null,
+					'tmax' => isset($iv['temperature']['max']) ? round((float)$iv['temperature']['max'], 1) : null,
+					'tmin' => isset($iv['temperature']['min']) ? round((float)$iv['temperature']['min'], 1) : null,
+					'precip' => isset($iv['precipitation']['value']) ? round((float)$iv['precipitation']['value'], 2) : null,
+					'wind' => isset($iv['wind']['speed']) ? yrMsToMph($iv['wind']['speed']) : null,
+					'windDir' => isset($iv['wind']['direction']) ? (int)round((float)$iv['wind']['direction']) : null,
+					'icon' => $fcIcon,
+					'desc' => $fcDesc,
+					'symbol' => $sym,
+				);
+			}
+		}
+
+		if(count($fcDays)) {
+			file_put_contents(ROOT.'forecast_v5.json', json_encode(array(
+				'updated' => time(),
+				'source' => 'yr',
+				'location' => '2-2647553',
+				'days' => $fcDays,
+				'hourly' => $fcHourly,
+				'periods' => $fcPeriods,
+			)));
+		}
 	} else {
 		quick_log('forecast_bad.txt', substr((string)$fcRaw, 0, 200));
 	}
@@ -297,6 +364,22 @@ if(PURPLEAIR_SENSOR && (date('i') % 5 == 2) && defined('PURPLEAIR_KEY') && PURPL
 		file_put_contents(ROOT.'pm25_latest.txt', round((float)$pm25Now, 1));
 	} else {
 		quick_log('purpleair_bad.txt', substr((string)$paRaw, 0, 200));
+	}
+}
+
+// Windy.app map widget (wx5): their windy_map_async.js loader fetches manifest.json
+// cross-origin, but that response carries no CORS header, so the browser blocks it and
+// the widget never loads. Resolve the hashed bundle name here instead and cache it for
+// the page to script-src directly (classic scripts aren't CORS-checked).
+if(date('i') % 30 == 13) {
+	$wmRaw = @file_get_contents('https://windy.app/widget3/manifest.json', false,
+		stream_context_create(array('http' => array('timeout' => 6))));
+	$wmJson = $wmRaw ? json_decode($wmRaw, true) : null;
+	$wmFile = isset($wmJson['js'][0]) ? $wmJson['js'][0] : null;
+	if($wmFile !== null && preg_match('/^windy_map\.[a-z0-9]+\.js$/i', $wmFile)) {
+		file_put_contents(ROOT.'windy_widget.txt', $wmFile);
+	} else {
+		quick_log('windy_widget_bad.txt', substr((string)$wmRaw, 0, 200));
 	}
 }
 
@@ -422,8 +505,54 @@ echo "END: ". date('r'). "\n";
 ### Functions ###
 
 /**
- * Maps a WMO weather code (from Open-Meteo) to a [icon, description] pair.
+ * Maps a Yr.no / MET Norway symbol_code to a [icon, description] pair.
  * Icons match the *_lg.png set in static-images/.
+ */
+function yrForecastIcon($symbol) {
+	$base = preg_replace('/_(day|night|polartwilight)$/', '', (string)$symbol);
+	$map = array(
+		'clearsky' => array('clear', 'Clear sky'),
+		'fair' => array('clear', 'Fair'),
+		'partlycloudy' => array('partlycloudy', 'Partly cloudy'),
+		'cloudy' => array('cloudy', 'Cloudy'),
+		'fog' => array('fog', 'Fog'),
+		'lightrain' => array('rain', 'Light rain'),
+		'rain' => array('rain', 'Rain'),
+		'heavyrain' => array('rain', 'Heavy rain'),
+		'lightrainshowers' => array('rain_showers', 'Light showers'),
+		'rainshowers' => array('rain_showers', 'Showers'),
+		'heavyrainshowers' => array('rain_showers', 'Heavy showers'),
+		'lightrainandthunder' => array('tstorms', 'Light rain and thunder'),
+		'rainandthunder' => array('tstorms', 'Rain and thunder'),
+		'heavyrainandthunder' => array('tstorms', 'Heavy rain and thunder'),
+		'lightrainshowersandthunder' => array('tstorms_showers', 'Light showers and thunder'),
+		'rainshowersandthunder' => array('tstorms_showers', 'Showers and thunder'),
+		'heavyrainshowersandthunder' => array('tstorms_showers', 'Heavy showers and thunder'),
+		'lightsnow' => array('snow', 'Light snow'),
+		'snow' => array('snow', 'Snow'),
+		'heavysnow' => array('snow', 'Heavy snow'),
+		'lightsnowshowers' => array('snow_showers', 'Light snow showers'),
+		'snowshowers' => array('snow_showers', 'Snow showers'),
+		'heavysnowshowers' => array('snow_showers', 'Heavy snow showers'),
+		'lightsleet' => array('rain', 'Light sleet'),
+		'sleet' => array('rain', 'Sleet'),
+		'heavysleet' => array('rain', 'Heavy sleet'),
+		'lightsleetshowers' => array('rain_showers', 'Light sleet showers'),
+		'sleetshowers' => array('rain_showers', 'Sleet showers'),
+		'heavysleetshowers' => array('rain_showers', 'Heavy sleet showers'),
+	);
+	return isset($map[$base]) ? $map[$base] : array('cloudy', 'Cloudy');
+}
+
+/** Yr wind is m/s; site UK base unit for Wind is mph. */
+function yrMsToMph($ms) {
+	if($ms === null || $ms === '') { return null; }
+	return round((float)$ms * 2.236936, 1);
+}
+
+/**
+ * Maps a WMO weather code (from Open-Meteo) to a [icon, description] pair.
+ * Icons match the *_lg.png set in static-images/. Kept for reference / fallback.
  */
 function forecastIcon($code) {
 	$map = array(

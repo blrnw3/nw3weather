@@ -1060,6 +1060,51 @@
 		});
 	}
 
+	// Yr.no meteogram: temp line + precip columns + wind line (units already converted server-side).
+	function meteogramChart(containerId, data) {
+		setLoading(containerId, false);
+		if (!data || !data.temp || !data.temp.length) {
+			$('#' + containerId).html('<p>Forecast chart data is temporarily unavailable.</p>');
+			return;
+		}
+		var units = data.units || {};
+		var tempU = units.temp || '\u00B0C';
+		var rainU = units.precip || 'mm';
+		var windU = units.wind || 'mph';
+		Highcharts.chart(containerId, {
+			chart: { backgroundColor: '#ffffff', spacing: [14, 14, 12, 12], zoomType: 'x',
+				style: { color: TEXT } },
+			title: { text: 'Hampstead meteogram', style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
+			credits: { enabled: true, href: 'https://www.yr.no/en/forecast/graph/2-2647553/',
+				text: 'Data: Yr.no / MET Norway', style: { color: '#999', fontSize: '9px' } },
+			legend: { enabled: true, itemStyle: { color: TEXT } },
+			xAxis: { type: 'datetime', crosshair: true, gridLineWidth: 1, gridLineColor: '#ddd',
+				dateTimeLabelFormats: { hour: '%H:%M', day: '%a %e' }, labels: { style: { color: TEXT } } },
+			yAxis: [
+				{ title: { text: 'Temperature / ' + tempU, style: { color: '#DF7401' } },
+					labels: { style: { color: '#DF7401' } }, gridLineColor: '#eee' },
+				{ title: { text: 'Rain / ' + rainU, style: { color: '#3567EF' } },
+					labels: { style: { color: '#3567EF' } }, opposite: true, min: 0, gridLineWidth: 0 },
+				{ title: { text: 'Wind / ' + windU, style: { color: '#2D851B' } },
+					labels: { style: { color: '#2D851B' } }, opposite: true, min: 0, gridLineWidth: 0,
+					showEmpty: false }
+			],
+			tooltip: { shared: true, xDateFormat: '%a %e %b %H:%M' },
+			plotOptions: {
+				series: { animation: false, marker: { enabled: false } },
+				column: { borderWidth: 0, pointPadding: 0.05, groupPadding: 0.05 }
+			},
+			series: [
+				{ name: 'Temperature', type: 'spline', yAxis: 0, data: data.temp,
+					color: '#DF7401', tooltip: { valueSuffix: ' ' + tempU, valueDecimals: 1 }, zIndex: 3 },
+				{ name: 'Rain', type: 'column', yAxis: 1, data: data.precip,
+					color: 'rgba(53,103,239,0.55)', tooltip: { valueSuffix: ' ' + rainU, valueDecimals: 1 }, zIndex: 1 },
+				{ name: 'Wind', type: 'spline', yAxis: 2, data: data.wind,
+					color: '#2D851B', lineWidth: 1.5, tooltip: { valueSuffix: ' ' + windU, valueDecimals: 1 }, zIndex: 2 }
+			]
+		});
+	}
+
 	window.NW3 = window.NW3 || {};
 	window.NW3.histChart = histChart;
 	window.NW3.intradayChart = intradayChart;
@@ -1072,5 +1117,6 @@
 	window.NW3.histViewer = histViewer;
 	window.NW3.graphViewer = graphViewer;
 	window.NW3.windRose = windRose;
+	window.NW3.meteogramChart = meteogramChart;
 	window.NW3.INTRA_TABS = INTRA_TABS;
 })(window);

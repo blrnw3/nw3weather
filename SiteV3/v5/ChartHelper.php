@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/v5/wxcharts.js?20260722b"></script>' . "\n";
+		echo '<script src="/v5/wxcharts.js?20260731d"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */
@@ -175,6 +175,19 @@ class Charts {
 		$url = self::url('rosedata.php', $params);
 		$jsOpts = array('legend' => !(isset($opts['legend']) && $opts['legend'] === false));
 		self::run('NW3.windRose(' . json_encode($id) . ',' . json_encode($url) . ',' . json_encode($jsOpts) . ');');
+	}
+
+	/**
+	 * Yr-based meteogram: temperature, precipitation and wind from Forecast::meteogramSeries().
+	 * Pass prebuilt $series from Forecast::meteogramSeries(), or null to load it here.
+	 */
+	public static function meteogram($series = null, $opts = array()) {
+		require_once __DIR__ . '/Forecast.php';
+		self::assets();
+		if ($series === null) { $series = Forecast::meteogramSeries(); }
+		$height = isset($opts['height']) ? (int)$opts['height'] : 420;
+		$id = self::container(array_merge($opts, array('height' => $height, 'class' => 'wxchart fc-meteogram')));
+		self::run('NW3.meteogramChart(' . json_encode($id) . ',' . json_encode($series) . ');');
 	}
 
 	/**

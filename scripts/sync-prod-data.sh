@@ -41,6 +41,7 @@ DATA_FILTERS=(
   --include='METAR.txt'
   --include='WUforecast.txt'
   --include='pm25_latest.txt'
+  --include='windy_widget.txt'
   --include='*.json'
   --include='logfiles/'
   --include='logfiles/daily/'
@@ -61,11 +62,13 @@ DATA_FILTERS=(
 #   logfiles/daily/todaylog.txt : same-day per-minute log (wx3 / intradaydata.php)
 #   pm25_latest.txt        : latest air-quality reading
 #   METAR.txt              : current-conditions decode line
-#   forecast_v5.json       : today/tomorrow forecast block
+#   forecast_v5.json       : Yr.no cache (days + hourly + periods) for home strip + wx5
+#   windy_widget.txt       : hashed Windy map bundle name for wx5
 #   *Tags.php              : RainTags (month/year rain) + rareTags (console text)
 #   skycam_home.jpg        : v5 home-page webcam (auto-refreshed every 10s)
 #   skycam_wx2.jpg         : v5 wx2 near-full-width webcam
 #   skycam_wx2_sunset.jpg  : v5 wx2 latest-daylight image (shown after dark)
+# Forecast icons (*_lg.png) live under static-images/ — pull with --full if missing.
 HOME_LIVE_FILTERS=(
   --include='clientraw.txt'
   --include='clientrawBackup.txt'
@@ -79,6 +82,7 @@ HOME_LIVE_FILTERS=(
   --include='pm25_latest.txt'
   --include='METAR.txt'
   --include='forecast_v5.json'
+  --include='windy_widget.txt'
   --include='*Tags.php'
   --include='skycam_home.jpg'
   --include='skycam_wx2.jpg'
