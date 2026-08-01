@@ -3,8 +3,9 @@
 *.zip
 *.7z
 VMs
-Site_v4
+oldSites
 SiteV3old
-SiteV3/oldSites
+site/oldSites
 photos
 Images
+legacy

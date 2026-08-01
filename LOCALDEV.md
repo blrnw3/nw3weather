@@ -1,14 +1,29 @@
-# Local development for SiteV3
+# Local development
 
 Run the production weather site locally against **real prod data**, with no
 source changes. The container's docroot is `/var/www/html` — exactly what
-`basics.php` / `v5/UtilsAndConsts.php` hardcode — so `ROOT` just works.
+`basics.php` / `UtilsAndConsts.php` hardcode — so `ROOT` just works.
 
 ```
-  your editor ──▶ ./SiteV3 ──bind mount──▶ container:/var/www/html ──▶ Apache :8080
+  your editor ──▶ ./site ──bind mount──▶ container:/var/www/html ──▶ Apache :8080
                        ▲
   prod (SSH) ──rsync pull (one-way)──┘   clientraw.txt, dat*.csv, serialised_*, *Tags.php, graphs
+
+  ./oldSites ──bind mount──▶ container:/var/www/html/oldSites
 ```
+
+## Layout
+
+| Path | Role |
+| --- | --- |
+| `site/` | Current production site (docroot) |
+| `oldSites/sitev0` … `sitev3` | Archived earlier UIs |
+| `oldSites/Site_v4` | Abandoned CakePHP experiment |
+| `scripts/` | Local sync / cutover helpers |
+| `docker/` | Local PHP 5.4 Apache image |
+
+There is no `/v5/` URL. Historical pages are under `/oldSites/...` both locally
+and on the server.
 
 ## Prerequisites
 
@@ -75,15 +90,18 @@ docker compose up --build
 ```
 
 - Site:    http://localhost:8080
+- Archives: http://localhost:8080/oldSites/sitev3/ (and sitev0…sitev2)
 - Mailpit: http://localhost:8025  (catches any cron `mail()` — nothing is actually emailed)
 
-Edit files in `./SiteV3` and refresh — changes are live (bind mount).
+Edit files in `./site` and refresh — changes are live (bind mount).
+`./oldSites` is mounted over `/var/www/html/oldSites`, so the archives are
+browsable without copying anything into `site/`. That leaves an empty
+`site/oldSites/` directory on the host as the mount point — leave it alone.
+Deleting it while the container runs makes every `/oldSites/...` URL 404 until
+you `docker compose up -d --force-recreate web`.
 
-During the hard-cutover migration, the prepared site remains in `SiteV3/v5/`
-until the local promotion rehearsal. Its CSS, JavaScript and data endpoint URLs
-already target docroot, so complete end-to-end testing happens after moving the
-contents of `v5/` to `SiteV3/`. The production layout will have no `/v5/` URL;
-the superseded UI will be archived under `oldSites/sitev3/`.
+`CUTOVER.md` is the production hard-cutover runbook; `scripts/promote-v5.sh`
+holds the archive file list used for that move.
 
 ## Keeping data fresh
 
@@ -97,11 +115,25 @@ you work, run the live loop in a second terminal:
 Re-run `./scripts/sync-prod-data.sh` any time to refresh the generated files
 (daily CSVs, serialised caches, `*Tags.php`, graphs).
 
+## Deploying code to production
+
+`scripts/sync-code-to-prod.sh` pushes **code only** from `./site` to
+`/var/www/html`. Live data, generated caches, images, logs, `oldSites/`, and
+`secrets.php` are excluded.
+
+```bash
+./scripts/sync-code-to-prod.sh           # dry-run
+./scripts/sync-code-to-prod.sh --go      # push
+```
+
+Do not pass `--delete` unless you know you want remote files that are absent
+locally removed (excluded data paths are still preserved).
+
 ## Notes & limitations
 
-- **Sync is one-way (prod → local). It never writes to prod.** Your existing
-  deploy workflow (pushing to `/var/www`) is unchanged.
-- Synced data files are gitignored (`SiteV3/.gitignore`) so they won't be committed.
+- **Data sync is one-way (prod → local).** Code sync is the opposite
+  (`site` → prod) and is opt-in via `--go`.
+- Synced data files are gitignored (`site/.gitignore`) so they won't be committed.
 - **Crons are not run locally** — for page work the synced generated files are
   enough. If you later need to test cron logic, run a script by hand inside the
   container, e.g. `docker compose exec -w /var/www/html web php cron_main.php`,
@@ -111,6 +143,6 @@ Re-run `./scripts/sync-prod-data.sh` any time to refresh the generated files
   pages will show placeholders unless you sync samples.
 - `ffmpeg` isn't available on the jessie-based PHP 5.4 image, so
   `cron_cam.php` video generation can't run locally — not needed for pages.
-- `wxapp/` (the only MySQL part) is optional: start its DB with
-  `docker compose --profile wxapp up`, import `SiteV3/wxapp/EuroWeather.sql`, and
-  create `SiteV3/wxapp/config.php`.
+- `site/wxapp/` (the only MySQL part) is optional: start its DB with
+  `docker compose --profile wxapp up`, import `site/wxapp/EuroWeather.sql`, and
+  create `site/wxapp/config.php`.

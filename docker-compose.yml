@@ -1,4 +1,4 @@
-# Local dev stack for the SiteV3 weather site.
+# Local dev stack for the nw3weather site.
 # Usage: docker compose up --build   ->  http://localhost:8080
 services:
   web:
@@ -13,9 +13,12 @@ services:
     ports:
       - "8080:80"
     volumes:
-      # Your working tree is served directly. Prod data files synced into
-      # ./SiteV3 by scripts/sync-prod-data.sh appear here too (and are gitignored).
-      - ./SiteV3:/var/www/html
+      # Working tree is served directly. Prod data synced into ./site by
+      # scripts/sync-prod-data.sh appears here too (and is gitignored).
+      - ./site:/var/www/html
+      # Historical site versions live at the repo root; overlay them so
+      # /oldSites/sitev3/ etc. resolve without copying into ./site.
+      - ./oldSites:/var/www/html/oldSites
     environment:
       # Guard for any local-only behaviour you add to cron scripts
       # (e.g. skip emailing / external exec when set).

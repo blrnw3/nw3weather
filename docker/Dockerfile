@@ -1,6 +1,6 @@
-# Local-dev image for the SiteV3 weather site.
+# Local-dev image for the nw3weather site (./site bind-mounted as docroot).
 # Docroot is /var/www/html on purpose so the hardcoded ROOT in basics.php /
-# v5/UtilsAndConsts.php works without any code changes.
+# UtilsAndConsts.php works without any code changes.
 #
 # Prod runs PHP 5.4, whose official image is based on Debian 8 "jessie" (now
 # archived) — hence the apt-source rewrite and the legacy gd configure flags.

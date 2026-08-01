@@ -14,7 +14,7 @@
 #   PROD_SSH        ssh target          (default ben@188.166.156.109)
 #   PROD_SSH_PORT   ssh port            (default 8294)
 #   PROD_DOCROOT    remote docroot      (default /var/www/html)
-#   LOCAL_DOCROOT   local docroot       (default <repo>/SiteV3)
+#   LOCAL_DOCROOT   local docroot       (default <repo>/site)
 set -euo pipefail
 
 # --- config -----------------------------------------------------------------
@@ -22,7 +22,7 @@ PROD_SSH="${PROD_SSH:-ben@188.166.156.109}"
 PROD_SSH_PORT="${PROD_SSH_PORT:-8294}"
 PROD_DOCROOT="${PROD_DOCROOT:-/var/www/html}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-LOCAL_DOCROOT="${LOCAL_DOCROOT:-$REPO_ROOT/SiteV3}"
+LOCAL_DOCROOT="${LOCAL_DOCROOT:-$REPO_ROOT/site}"
 
 RSYNC_SSH=(-e "ssh -p ${PROD_SSH_PORT}")
 SRC="$PROD_SSH:$PROD_DOCROOT/"

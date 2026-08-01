@@ -4,22 +4,21 @@
 /other/
 /www/
 /jpgraph/
-/SiteV3/oldSites/
+/site/oldSites/
 */nbproject/
 *.zip
 *.7z
 VMs
 *Thumbs.db
-/Site_v4/SiteV3_original/nbproject/private/
+/oldSites/Site_v4/SiteV3_original/nbproject/private/
 /V3CoreFiles/
-Site_v4/static/img/*
+oldSites/Site_v4/static/img/*
 Images/bannerImage.doc
 /Tests/
 /WxApp/
-Site_v4/nw3/app/view/datadetail/newjavascript.js
+oldSites/Site_v4/nw3/app/view/datadetail/newjavascript.js
 Images/~$nnerImage.doc
 
-# API keys / secrets (cron-only; never commit). Template: SiteV3/secrets.example.php
-/SiteV3/secrets.php
-SiteV3/pm25_latest.txt
-SiteV3/pm25_latest.txt
+# API keys / secrets (cron-only; never commit). Template: site/secrets.example.php
+/site/secrets.php
+site/pm25_latest.txt
