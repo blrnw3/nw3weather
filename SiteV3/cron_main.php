@@ -128,6 +128,14 @@ if($fiveMinutely) {
 	//Serialise data
 	serialiseCSV('dat');
 
+	// Pre-warm v5 detail-page summarize() caches (wx10–wx16) so page loads
+	// reuse serialised_summary_{var}_{startYear}_{Ymd}.txt instead of
+	// recomputing ranks/spells/rolling windows on every request.
+	exec('/usr/bin/php -q '. ROOT .'warm_detail_summaries.php', $warmOut, $warmRc);
+	if($warmRc !== 0) {
+		quick_log('warm_detail_summaries_bad.txt', 'rc='. $warmRc .' '. substr(implode(' ', $warmOut), 0, 200));
+	}
+
 	//pre-run 24hr graphs
 	exec(EXEC_PATH. 'graphday.php 1.png');
 	exec(EXEC_PATH. 'graphday2.php 2.png');

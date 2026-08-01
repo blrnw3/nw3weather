@@ -5,7 +5,7 @@
  *
  * Each public method emits a container div plus the JS needed to populate it
  * from one of the JSON endpoints (histdata.php / intradaydata.php / rosedata.php),
- * which are rendered client-side by /v5/wxcharts.js (the NW3.* API).
+ * which are rendered client-side by /wxcharts.js (the NW3.* API).
  *
  * The Highcharts and wxcharts.js assets are injected once per page on first use.
  *
@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/v5/wxcharts.js?20260731o"></script>' . "\n";
+		echo '<script src="/wxcharts.js?20260731o"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */
@@ -43,10 +43,10 @@ class Charts {
 		echo '<script>//<![CDATA[' . "\n" . $js . "\n//]]></script>\n";
 	}
 
-	/** Build a URL for one of the JSON endpoints under /v5/. */
+	/** Build a URL for one of the JSON endpoints at the site root. */
 	public static function url($endpoint, $params = array()) {
 		$qs = http_build_query($params);
-		return '/v5/' . $endpoint . ($qs !== '' ? ('?' . $qs) : '');
+		return '/' . $endpoint . ($qs !== '' ? ('?' . $qs) : '');
 	}
 
 	/**

@@ -77,8 +77,13 @@ docker compose up --build
 - Site:    http://localhost:8080
 - Mailpit: http://localhost:8025  (catches any cron `mail()` — nothing is actually emailed)
 
-Edit files in `./SiteV3` and refresh — changes are live (bind mount). The v5
-refactor is at http://localhost:8080/v5/wx3.php etc.
+Edit files in `./SiteV3` and refresh — changes are live (bind mount).
+
+During the hard-cutover migration, the prepared site remains in `SiteV3/v5/`
+until the local promotion rehearsal. Its CSS, JavaScript and data endpoint URLs
+already target docroot, so complete end-to-end testing happens after moving the
+contents of `v5/` to `SiteV3/`. The production layout will have no `/v5/` URL;
+the superseded UI will be archived under `oldSites/sitev3/`.
 
 ## Keeping data fresh
 

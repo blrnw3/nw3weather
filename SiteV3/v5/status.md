@@ -8,9 +8,18 @@
 - wx8
 - wx9
 - wx10
+- wx11
+- wx12
+- wx13
 - wx14
+- wx15
+- wx16
 - wxhistday (daily reports, incl. PM2.5)
 - wxhistmonth / wxhistmonthB (monthly reports, incl. PM2.5)
+- wxhistyear
+- albgen / wx_albgen
+- BeaufortScale / wxtempltas
+- pondAdmin / datamod
 
 # Progress log
 
@@ -35,8 +44,11 @@
 - Responsive shell: collapsible hamburger + off-canvas nav drawer below 900px; accordion sections in drawer
 - Slimmer banner/sub-header on narrow; chart reflow on resize; dd/dm grids scroll with sticky first column; repyear/rose/wx5 map fixes
 - Footer “Mobile” → “Lite view” (mob.php retained)
+- Detail pages now use cached `DataSummarizer` output rather than `cron_tags` files
+- Hard-cutover phase 1: remaining public/admin pages ported to the Page shell; runtime URLs and AJAX endpoints de-prefixed for docroot deployment
+- Deprecated URL map prepared (`wx4` → daily rankings, legacy graphs → historical graphs, webcam archive → wx2)
 
 ## TODO
-- wx12
-- Spot-check remaining legacy wide `<table width=…>` pages under `.table-scroll` if awkward on phones
+- Rehearse the hard cutover locally: archive legacy UI under `oldSites/sitev3/`, move this directory's contents to docroot, and remove `v5/`
+- Spot-check remaining wide tables under `.table-scroll` on phones
 - Annual report (repyear) polish if needed

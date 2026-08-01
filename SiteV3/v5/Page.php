@@ -124,7 +124,7 @@ class Page {
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
-		<link rel="stylesheet" type="text/css" href="/v5/$styleSheet.css?20260731o" media="screen" title="screen" />
+		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20260731u" media="screen" title="screen" />
 		$colorCss
 		$scripts
 	</head>
@@ -232,8 +232,11 @@ END;
 
 	private static function getLastUpdateText() {
 		$dateTimeStamp = Live::$unix;
-		$timestampCrontags = filemtime(ROOT.'RainTags.php');
-		$timeStampBest = min($timestampCrontags, $dateTimeStamp); //oldest
+		$summaryFile = DataSummarizer::summaryCachePath('rain', Site::BASE_YEAR);
+		$dataFile = ROOT . 'serialised_dat_new_rain.txt';
+		$summaryStamp = is_file($summaryFile) ? filemtime($summaryFile)
+			: (is_file($dataFile) ? filemtime($dataFile) : $dateTimeStamp);
+		$timeStampBest = min($summaryStamp, $dateTimeStamp); // oldest
 		if(self::$fileNum== 20) return 'Last Updated: Jan 2022'; //climate
 		if(self::$fileNum== 7) return 'Last Upload: Sep 2017';
 		if(self::$fileNum== 8) return 'Last Updated: Mar 2023';
@@ -264,7 +267,7 @@ END;
 			}
 
 			$class = $classes ? ' class="'. implode(" ", $classes) . '"' : '';
-			// v5-native pages link relatively; pages still on the legacy root use an absolute path
+			// Pages in this shell link relatively; root utilities use an absolute path.
 			$isV5 = file_exists(__DIR__ . '/' . $item["page"] . '.php');
 			$href = ($isV5 ? '' : '/') . $item["page"] . '.php';
 			$keepVt = in_array($item["page"], $vartypePages, true);
@@ -278,29 +281,10 @@ END;
 		return $html;
 	}
 
-	/** True if any item in the group matches the current page. */
-	private static function sectionHasCurr($items) {
-		foreach($items as $item) {
-			if(self::$fileNum == $item["num"]) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * One collapsible nav section. On narrow screens Historical/Detailed start
-	 * collapsed unless they contain the current page; Main/Other stay open.
-	 */
+	/** One labelled navigation section. */
 	private static function sidebarSection($id, $title, $items) {
-		$hasCurr = self::sectionHasCurr($items);
-		$defaultOpen = $hasCurr || $id === 'main' || $id === 'other';
-		$openClass = $defaultOpen ? ' nav-section-open' : '';
-		$expanded = $defaultOpen ? 'true' : 'false';
-		$html = '<div class="nav-section' . $openClass . '" data-section="' . htmlspecialchars($id) . '">';
-		$html .= '<button type="button" class="nav-heading" aria-expanded="' . $expanded
-			. '" aria-controls="nav-sec-' . htmlspecialchars($id) . '">'
-			. $title . '</button>';
+		$html = '<div class="nav-section" data-section="' . htmlspecialchars($id) . '">';
+		$html .= '<div class="nav-heading">' . $title . '</div>';
 		$html .= '<div class="nav-section-body" id="nav-sec-' . htmlspecialchars($id) . '">';
 		$html .= self::sidebarGroup($items);
 		$html .= '</div></div>';
@@ -308,7 +292,7 @@ END;
 	}
 
 	private static function navBar() {
-		$lastPost = Date::mkdate(6,22,2018); //MUST KEEP UPDATED - latest blog post
+		$lastPost = Date::mkdate(7,31,2026); //MUST KEEP UPDATED - latest blog post
 		$lastAlbum = Date::mkdate(9,6,2017); //MUST KEEP UPDATED - latest album upload
 
 		$newLength = (3 * 3600 * 24);
@@ -458,8 +442,15 @@ END;
 					"subhead" => true,
 				],
 				[
-					"title" => "Annual",
-					"text" => "Annual detail reports",
+					"title" => "Annual Charts",
+					"text" => "Annual charts by weather variable",
+					"page" => "wxhistyear",
+					"num" => 87,
+					"subhead" => true,
+				],
+				[
+					"title" => "Annual Summary",
+					"text" => "Narrative annual weather summaries",
 					"page" => "repyear",
 					"num" => 87,
 					"subhead" => true,

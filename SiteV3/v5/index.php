@@ -180,7 +180,7 @@ $moonName = isset($moonphasename) ? trim($moonphasename) : 'Moon phase';
 			inFlight = true;
 			setBusy(true);
 			var oldData = readLiveData();
-			fetch('/v5/ajaxwxbody.php', { cache: 'no-store' })
+			fetch('/ajaxwxbody.php', { cache: 'no-store' })
 				.then(function (r) { return r.text(); })
 				.then(function (html) {
 					body.innerHTML = html;

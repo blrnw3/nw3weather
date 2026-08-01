@@ -22,17 +22,14 @@ class ViewDetailedData {
 	private $measureLabels;
 	private $measureConvs;
 
-	/** @var DataSummarizer */
-	private $datMins;
-	private $datMaxs;
-	private $datMeans;
-	private $datExtra; // optional 4th series (e.g. w10max for wind)
-
-	// summarize() outputs (associative arrays, not objects)
+	// summarize() outputs (associative arrays, not objects) — loaded via
+	// DataSummarizer::summarizeCached() so detail pages avoid recomputing
+	// ranks/spells/rolling windows on every request.
 	private $minSum;
 	private $maxSum;
 	private $meanSum;
 	private $extraSum;
+	private $meanStartYear;
 
 	// Legacy-shaped adapter arrays, built from the summaries above (replaces crontag globals)
 	private $dat;
@@ -241,31 +238,27 @@ class ViewDetailedData {
 		if (!in_array($start, $validStarts, true)) { $start = in_array(2009, $validStarts, true) ? 2009 : $validStarts[0]; }
 		$this->startYrReport = $start;
 
-		$this->datMeans = new DataSummarizer($this->group["var_mean"], $this->startYrReport);
-		$this->meanSum = $this->datMeans->summarize();
-		if ($this->group["var_min"] === $this->group["var_mean"]) {
-			$this->datMins = $this->datMeans;
-			$this->minSum = $this->meanSum;
-		} else {
-			$this->datMins = new DataSummarizer($this->group["var_min"], $this->startYrReport);
-			$this->minSum = $this->datMins->summarize();
+		// Load per-variable summarize() payloads from daily serialised cache
+		// (filled by first request or cron warm). Deduplicate by variable name.
+		$sumByVar = array();
+		foreach (array($this->group['var_mean'], $this->group['var_min'], $this->group['var_max']) as $v) {
+			if (!isset($sumByVar[$v])) {
+				$sumByVar[$v] = DataSummarizer::summarizeCached($v, $this->startYrReport);
+			}
 		}
-		if ($this->group["var_max"] === $this->group["var_mean"]) {
-			$this->datMaxs = $this->datMeans;
-			$this->maxSum = $this->meanSum;
-		} elseif ($this->group["var_max"] === $this->group["var_min"]) {
-			$this->datMaxs = $this->datMins;
-			$this->maxSum = $this->minSum;
-		} else {
-			$this->datMaxs = new DataSummarizer($this->group["var_max"], $this->startYrReport);
-			$this->maxSum = $this->datMaxs->summarize();
+		if (!empty($this->group['var_extra']) && !isset($sumByVar[$this->group['var_extra']])) {
+			$sumByVar[$this->group['var_extra']] = DataSummarizer::summarizeCached(
+				$this->group['var_extra'], $this->startYrReport
+			);
 		}
-
-		$this->extraSum = null;
-		if (!empty($this->group['var_extra'])) {
-			$this->datExtra = new DataSummarizer($this->group['var_extra'], $this->startYrReport);
-			$this->extraSum = $this->datExtra->summarize();
-		}
+		$this->meanSum = $sumByVar[$this->group['var_mean']];
+		$this->minSum = $sumByVar[$this->group['var_min']];
+		$this->maxSum = $sumByVar[$this->group['var_max']];
+		$this->extraSum = !empty($this->group['var_extra'])
+			? $sumByVar[$this->group['var_extra']] : null;
+		$this->meanStartYear = DataSummarizer::resolveStartYear(
+			$this->group['var_mean'], $this->startYrReport
+		);
 
 		$monthLabel = Date::$months[Date::$dmonth-1];
 		$this->periods_all = [
@@ -294,7 +287,7 @@ class ViewDetailedData {
 
 	/** Effective start year after flooring to the variable's own start_year. */
 	public function effectiveStartYear() {
-		return $this->datMeans->startYear;
+		return $this->meanStartYear;
 	}
 
 	/** Earliest start_year among this group's min/max/mean variables. */
@@ -1615,7 +1608,7 @@ class ViewDetailedData {
 		$cfg = [
 			'group' => $this->groupName,
 			'startYearRep' => $start,
-			'fragment' => '/v5/detailavgdata.php',
+			'fragment' => '/detailavgdata.php',
 			'selId' => 'vd-avg-sel',
 			'bodyId' => 'vd-avg-ajax',
 			'page' => basename(isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : 'wx14.php'),
@@ -1816,7 +1809,7 @@ class ViewDetailedData {
 			echo '</div>';
 		} elseif (!$this->isSummableDetail()) {
 			echo '<h3>This year min/max daily trends in detail for ' . $this->label . '</h3>';
-			echo '<div class="detail-grid charts">';
+			echo '<div class="detail-grid charts detail-chart-pair">';
 			echo '<div>';
 			Charts::daily([
 				'type' => $this->varMin,
@@ -2207,7 +2200,7 @@ class ViewDetailedData {
 		$cfg = [
 			'group' => $this->groupName,
 			'startYearRep' => $start,
-			'fragment' => '/v5/detailrankdata.php',
+			'fragment' => '/detailrankdata.php',
 			'selId' => 'vd-rank-sel',
 			'bodyId' => 'vd-rank-ajax',
 			'page' => basename(isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : 'wx14.php'),

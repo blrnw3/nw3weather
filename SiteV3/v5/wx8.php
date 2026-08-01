@@ -334,7 +334,7 @@ class Traffic {
 	<ul>
 		<li><a href='/dat2012.csv' title='Daily data from 2012'>Sample csv</a></li>
 		<li><a href='/sample.xhtml' title='Source-code for monthly data tables webpage'>Sample script</a></li>
-		<li><a href='/TemperatureTags.php?BLRdebugTags' title='Temperature variables'>Sample variable export</a></li>
+		<li><a href='/test.php?var=tmin' title='Cached temperature summary'>Sample serialised summary</a></li>
 	</ul>
 
 	<h3>History</h3>

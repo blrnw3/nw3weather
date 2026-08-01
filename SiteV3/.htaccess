@@ -84,7 +84,7 @@ RewriteCond %{HTTP_REFERER} .*semalt\.com [NC]
 RewriteRule .* - [F]
 
 RewriteCond %{HTTP_HOST} ^www\.nw3weather\.co\.uk [NC]
-RewriteRule ^(.*)$ http://nw3weather.co.uk/$1 [L,R=301]
+RewriteRule ^(.*)$ https://nw3weather.co.uk/$1 [L,R=301]
 
 redirect 301 /wx.php /
 redirect 301 /dailyreport.htm /dailyreport.php
@@ -94,11 +94,22 @@ redirect 301 /contact.html /contact.php
 redirect 301 /curr24hourgraph.gif /stitchedmaingraph_small.png
 redirect 301 /jpgwebcam.jpg /currcam.jpg
 
-redirect 301 /wxhistyear.php /oldSites/sitev2/wxhistyear.php
 redirect 301 /Historical.php /oldSites/sitev2/Historical.php
 redirect 301 /sitemap.php /
 redirect 301 /sitev3 /
 redirect 301 /wx100.php /wx10.php?humtype=dew
+
+# v5 hard-cutover compatibility: retired public pages
+redirect 301 /wx4.php /RankDay.php
+redirect 301 /wxdatadaySimple.php /wxdataday.php
+redirect 301 /wxhistmonthB.php /wxhistmonth.php
+redirect 301 /grapharchive.php /graphviewer.php
+redirect 301 /graph12.php /graphviewer.php
+redirect 301 /graph31.php /graphviewer.php
+redirect 301 /graph_annual.php /graphviewer.php
+redirect 301 /graph_daily_trend.php /graphviewer.php
+redirect 301 /windrose.php /windrose_viewer.php
+redirect 301 /wcarchive.php /wx2.php
 
 RewriteCond %{HTTP_HOST} ^.*$
 RewriteRule ^Beaufort\ Scale.html$ /BeaufortScale.php [R=301,L]
@@ -111,4 +122,4 @@ RewriteRule ^IMG_0417e?.JPG$ /photos/IMG_0417.JPG [R=301,L]
 
 RewriteCond %{HTTP_HOST} ^nw3weather\.co\.uk$ [OR]
 RewriteCond %{HTTP_HOST} ^www\.nw3weather\.co\.uk$
-RewriteRule ^index\.php$ "http\:\/\/nw3weather\.co\.uk\/" [R=301,L]
+RewriteRule ^index\.php$ "https\:\/\/nw3weather\.co\.uk\/" [R=301,L]

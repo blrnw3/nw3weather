@@ -163,8 +163,7 @@ body {
 #nav-toggle-bar {
 	display: none;
 	align-items: center;
-	gap: 0.75rem;
-	padding: 0.35rem 0.75rem;
+	gap: 0.45rem;
 	background: #0B6121;
 	color: #d3f4d0;
 	position: sticky;
@@ -175,9 +174,9 @@ body {
 #nav-toggle {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.45rem;
-	min-height: 2.75rem;
-	padding: 0.35rem 0.7rem;
+	gap: 0.35rem;
+	min-height: 2.3rem;
+	padding: 0.2rem 0.5rem;
 	border: 1px solid rgba(211, 244, 208, 0.45);
 	border-radius: 4px;
 	background: rgba(0, 0, 0, 0.18);
@@ -185,6 +184,7 @@ body {
 	font: inherit;
 	font-weight: 600;
 	cursor: pointer;
+	margin: 0.2em;
 }
 #nav-toggle:hover,
 #nav-toggle:focus-visible {
@@ -1380,6 +1380,11 @@ select.timelapse {
 .detail-grid > * {
 	min-width: 0;
 }
+.detail-chart-pair {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	width: 100%;
+}
 .current-latest-grid {
 	grid-template-columns: minmax(17rem, 0.75fr) minmax(0, 1.25fr);
 }
@@ -1410,7 +1415,7 @@ select.timelapse {
 }
 .detail-table-scroll > table {
 	width: 100% !important;
-	min-width: 34rem;
+	min-width: 28rem;
 	margin: 0 !important;
 }
 .detail-table-scroll.detail-table-wide > table {
@@ -1426,6 +1431,9 @@ select.timelapse {
 @media only screen and (max-width: 1230px) {
 	.detail-grid {
 		grid-template-columns: 1fr;
+	}
+	.detail-chart-pair {
+		grid-template-columns: minmax(0, 1fr);
 	}
 	.current-latest-grid {
 		grid-template-columns: minmax(0, 1fr);
@@ -2322,7 +2330,7 @@ body.cam-modal-open {
 	background: #fff;
 }
 .dd-grid {
-	width: max-content;
+	width: 100%;
 	min-width: 44rem;
 	margin: 0;
 	font-size: 0.84rem;
@@ -2335,6 +2343,11 @@ body.cam-modal-open {
 	column-gap: 0.55rem;
 	row-gap: 0;
 	margin: 0;
+}
+@media only screen and (max-width: 1100px) {
+	.dd-row {
+		column-gap: 0.2rem;
+	}
 }
 .dd-lab,
 .dd-day,
@@ -2529,7 +2542,7 @@ body.cam-modal-open {
 	background: #fff;
 }
 .dm-grid {
-	width: max-content;
+	width: 100%;
 	min-width: 48rem;
 	margin: 0;
 	padding: 0.35rem;
@@ -2813,34 +2826,14 @@ body.cam-modal-open {
 	#main h1 {
 		font-size: 1.5rem;
 	}
-	/* Accordion: collapse closed sections on narrow */
 	#nav .nav-heading {
-		cursor: pointer;
+		cursor: default;
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
 		min-height: 2.75rem;
 		padding: 0.45rem 0.75rem;
 		margin: 0.15rem 0;
 		border-radius: 0;
-	}
-	#nav .nav-heading::after {
-		content: '';
-		width: 0.45rem;
-		height: 0.45rem;
-		border-right: 2px solid #0B614B;
-		border-bottom: 2px solid #0B614B;
-		transform: rotate(45deg);
-		margin-right: 0.35rem;
-		transition: transform 0.15s ease;
-		flex-shrink: 0;
-	}
-	#nav .nav-section-open > .nav-heading::after {
-		transform: rotate(-135deg);
-		margin-top: 0.25rem;
-	}
-	#nav .nav-section:not(.nav-section-open) > .nav-section-body {
-		display: none;
 	}
 	#nav a {
 		min-height: 2.75rem;

@@ -7,6 +7,7 @@ date_default_timezone_set('Europe/London');
 require("UtilsAndConsts.php");
 require("WxDefinition.php");
 require("WxFn.php");
+require("Spells.php");
 
 Live::init();
 
@@ -14,10 +15,13 @@ $var = "tmin";
 if(isset($_GET['var'])) {
     $var = substr($_GET['var'], 0, 9);
 }
+if (!isset(Wx::$daily[$var])) {
+	http_response_code(400);
+	die('Unknown daily variable');
+}
 
 echo "<pre>";
-$s = new DataSummarizer($var);
-print_r($s->summarize());
+print_r(DataSummarizer::summarizeCached($var, Site::BASE_YEAR));
 // var_dump(Live::$NOW);
 echo "</pre>";
 

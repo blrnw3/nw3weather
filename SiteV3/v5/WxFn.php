@@ -259,6 +259,78 @@ class DataSummarizer {
 		return $result;
 	}
 
+	/** Effective start year after flooring to the variable's own start_year. */
+	public static function resolveStartYear($varName, $startYear = null) {
+		$requested = $startYear === null ? Site::BASE_YEAR : (int)$startYear;
+		$varStart = isset(Wx::$daily[$varName]['start_year'])
+			? (int)Wx::$daily[$varName]['start_year'] : Site::BASE_YEAR;
+		return max($requested, $varStart);
+	}
+
+	/** Path for a day's cached summarize() payload. */
+	public static function summaryCachePath($varName, $startYear = null) {
+		$sy = self::resolveStartYear($varName, $startYear);
+		return ROOT . 'serialised_summary_' . $varName . '_' . $sy . '_' . date('Ymd') . '.txt';
+	}
+
+	/**
+	 * Load summarize() from a daily serialised cache, or compute and store it.
+	 * Invalidates when the underlying serialised_dat_new_* (or historical) file
+	 * is newer than the cache — e.g. after cron refreshes today's CSV.
+	 */
+	public static function summarizeCached($varName, $startYear = null) {
+		$sy = self::resolveStartYear($varName, $startYear);
+		$path = self::summaryCachePath($varName, $sy);
+		$allSrc = ROOT . 'serialised_dat_new.txt';
+		$src = ROOT . "serialised_dat_new_{$varName}.txt";
+		$hist = ROOT . "serialised_historical_{$varName}.txt";
+
+		if (is_file($path)) {
+			$cacheM = filemtime($path);
+			// The aggregate file covers derived variables (sunhrp, ranges, etc.)
+			// which intentionally have no per-variable serialised source file.
+			$stale = (is_file($allSrc) && filemtime($allSrc) > $cacheM)
+				|| (is_file($src) && filemtime($src) > $cacheM)
+				|| ($sy < Site::BASE_YEAR && is_file($hist) && filemtime($hist) > $cacheM);
+			if (!$stale) {
+				$data = @unserialize(file_get_contents($path));
+				if (is_array($data) && isset($data['period_summaries'])) {
+					return $data;
+				}
+			}
+		}
+
+		$s = new self($varName, $sy);
+		$result = $s->summarize();
+		@file_put_contents($path, serialize($result), LOCK_EX);
+		return $result;
+	}
+
+	/**
+	 * Variables used by wx10–wx16 detail pages. Cron pre-warms these at the
+	 * default start year so the first visitor of the day is not cold.
+	 */
+	public static function detailPageVars() {
+		return array(
+			'tmin', 'tmax', 'tmean',
+			'pmin', 'pmax', 'pmean',
+			'gust', 'wmax', 'wmean', 'w10max',
+			'10max', 'hrmax', 'rain', 'wethr',
+			'sunhr', 'sunhrp',
+			'hmin', 'hmax', 'hmean',
+			'dmin', 'dmax', 'dmean',
+		);
+	}
+
+	/** Pre-compute and store summarize caches for detail-page variables. */
+	public static function warmDetailSummaries($startYear = null) {
+		$startYear = $startYear === null ? Site::BASE_YEAR : (int)$startYear;
+		foreach (self::detailPageVars() as $var) {
+			if (!isset(Wx::$daily[$var])) { continue; }
+			self::summarizeCached($var, $startYear);
+		}
+	}
+
 	/**
 	 * Wet/dry spell summaries for rainfall.
 	 *

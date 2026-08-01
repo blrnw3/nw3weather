@@ -37,7 +37,7 @@ Page::Start();
 
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/highcharts-more.js"></script>
-<script src="/v5/wxcharts.js"></script>
+<script src="/wxcharts.js"></script>
 <script>
 //<![CDATA[
 (function () {
@@ -52,7 +52,7 @@ Page::Start();
 		var params = { en: view };
 		if (view === 'month') { params.st = year + mon + '01'; }
 		else if (view === 'year') { params.st = year + '0101'; }
-		NW3.windRose('wr-chart', '/v5/rosedata.php?' + $.param(params));
+		NW3.windRose('wr-chart', '/rosedata.php?' + $.param(params));
 	}
 	$(function () {
 		$('#wr-view, #wr-month, #wr-year').on('change', load);

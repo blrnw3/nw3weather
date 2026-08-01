@@ -744,7 +744,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			root: root,
 			body: body,
 			group: cfg.group,
-			fragment: cfg.fragment || '/v5/detailavgdata.php'
+			fragment: cfg.fragment || '/detailavgdata.php'
 		});
 
 		function pageUrl(y) {
@@ -882,17 +882,6 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			nav.addEventListener('click', function (ev) {
 				var a = ev.target.closest ? ev.target.closest('a') : null;
 				if (a && isNarrow()) { closeNav(); }
-			});
-
-			nav.querySelectorAll('.nav-heading').forEach(function (heading) {
-				heading.addEventListener('click', function () {
-					if (!isNarrow()) { return; }
-					var section = heading.closest('.nav-section');
-					if (!section) { return; }
-					var open = !section.classList.contains('nav-section-open');
-					section.classList.toggle('nav-section-open', open);
-					heading.setAttribute('aria-expanded', open ? 'true' : 'false');
-				});
 			});
 
 			if (window.matchMedia) {

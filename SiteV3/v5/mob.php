@@ -9,7 +9,7 @@ $reload = isset($_GET['reload']) ? max(10, intval($_GET['reload'])) : 30;
 	<meta name="description" content="NW3 weather mobile site. Live data table and daily extremes. Optimised for mobile / handheld browsing." />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<meta http-equiv="pragma" content="no-cache" />
-	<link rel="stylesheet" type="text/css" href="/v5/mainstyle_v5.css" media="screen" />
+	<link rel="stylesheet" type="text/css" href="/mainstyle_v5.css" media="screen" />
 	<style>
 		body { margin: 0; padding: 0.5em; font-family: sans-serif; }
 		#mob-body { min-height: 200px; }

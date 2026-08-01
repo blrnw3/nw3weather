@@ -19,8 +19,12 @@ $labels = array('Web Server Live', 'Last live-data upload from local system (nw3
 	'Last upload of secondary data', 'Latest Webcam upload', 'Last upload of 24hr data log', 'Last full data process',
 	'Last data downtime (&gt;60 mins)');
 $outageFile = ROOT . 'Logs/outage.txt';
+$rainSummaryFile = DataSummarizer::summaryCachePath('rain', Site::BASE_YEAR);
+$rainDataFile = ROOT . 'serialised_dat_new_rain.txt';
+$fullDataStamp = is_file($rainSummaryFile) ? filemtime($rainSummaryFile)
+	: (is_file($rainDataFile) ? filemtime($rainDataFile) : null);
 $timestamps = array(time(), filemtime(Site::LIVE_DATA_PATH),
-	filemtime(Site::$rareTags), filemtime(ROOT . 'jpgwebcam.jpg'), filemtime(ROOT . 'customtextout.txt'), filemtime(ROOT . 'RainTags.php'),
+	filemtime(Site::$rareTags), filemtime(ROOT . 'jpgwebcam.jpg'), filemtime(ROOT . 'customtextout.txt'), $fullDataStamp,
 	file_exists($outageFile) ? filemtime($outageFile) : null);
 $freqs = array(1, 60, 3600, 60, 300, 300);
 $limit = array(2, 200, 10000, 200, 750, 750);

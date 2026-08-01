@@ -182,8 +182,12 @@ function nw3_render_cards() {
 	$rnlast = nw3_live_get($HR, 'misc', 'rnlast');
 	$monthrn = null;
 	$yearrn = null;
-	if (file_exists(ROOT . 'RainTags.php')) {
-		include ROOT . 'RainTags.php';
+	$rainSummary = DataSummarizer::summarizeCached('rain', Site::BASE_YEAR);
+	if (isset($rainSummary['period_summaries']['curr_month']['sum'])) {
+		$monthrn = $rainSummary['period_summaries']['curr_month']['sum'];
+	}
+	if (isset($rainSummary['period_summaries']['curr_year']['sum'])) {
+		$yearrn = $rainSummary['period_summaries']['curr_year']['sum'];
 	}
 	$rained1h = ($rnHr !== null && $rnHr > 0);
 	$nowHtml = '<span id="var5">' . Wx::conv(Live::$rain, Wx::Rain) . '</span> '
