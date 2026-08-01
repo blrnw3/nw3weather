@@ -437,9 +437,9 @@ if($todcond) {
 			';
 	} else {
 		echo '
-			<img src="/graphday.php?date=', date("Ymd", $sproc), $todfix, '" alt="daygraph" />
-			<img src="/graphday2.php?date=', date("Ymd", $sproc), $todfix, '" alt="daygraph 2" />
-			<img src="/graphdayA.php?y=200&amp;type=wdir&amp;date=', date("Ymd", $sproc), $todfix, '" alt="daygraph-wdir" /> <br />
+			<img src="/oldSites/sitev3/graphday.php?date=', date("Ymd", $sproc), $todfix, '" alt="daygraph" />
+			<img src="/oldSites/sitev3/graphday2.php?date=', date("Ymd", $sproc), $todfix, '" alt="daygraph 2" />
+			<img src="/oldSites/sitev3/graphdayA.php?y=200&amp;type=wdir&amp;date=', date("Ymd", $sproc), $todfix, '" alt="daygraph-wdir" /> <br />
 		';
 
 	}

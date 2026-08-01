@@ -367,7 +367,7 @@
 		<li><a href="/oldSites/sitev3/wx3.php">Graphs and Charts in new format</a></li>
 		<li><a href="/oldSites/sitev3/wx12.php">More in-depth detailed data page for rainfall</a></li>
 		<li><a href="/oldSites/sitev3/wx14.php">More in-depth detailed data page for temperature</a></li>
-		<li><a href="/chartviewer.php">Current 31-day and 12-month chart viewer</a> (new)</li>
+		<li><a href="/oldSites/sitev3/graphviewer.php">Current 31-day and 12-month chart viewer</a> (new)</li>
 		<li><a href="/oldSites/sitev3/wxhistday.php">In-depth daily reports</a></li>
 		<li><a href="/oldSites/sitev3/wxdataday.php">Expanded Set of historical data tables</a></li>
 		<li><a href="/oldSites/sitev3/graphviewer.php">Advanced customisable graph viewer</a> (new)</li>

@@ -400,10 +400,10 @@ if($sproc1 < mkdate($dmonth,$dday+1,$dyear) && $sproc > mkdate(2,0,2009) && !$to
 	echo '<br />
 	 <a href="wxhistday.php?day=1&amp;month=',$mproc,'&amp;year=',$yproc,'" title="Daily report for 1st', monthfull($mproc), ' ', $yproc,'">View daily breakdown</a>
 
-	<img src="/graphdayA.php?x=850&amp;y=450&amp;type2=rain&amp;type1=temp&amp;num=', $dimp, '&amp;date=', date("Ymd", $sproc), '" alt="daygraph" />
-	<img src="/graphdayA.php?x=850&amp;y=450&amp;type=hum&amp;type2=dew&amp;num=', $dimp, '&amp;date=', date("Ymd", $sproc), '" alt="daygraph" />
-	<img src="/graphday2.php?x=850&amp;y=450&amp;num=', $dimp, '&amp;date=', date("Ymd", $sproc), '" alt="daygraph 2" />
-	<img src="/graphdayA.php?x=850&amp;y=200&amp;type=wdir&amp;num=', $dimp, '&amp;date=', date("Ymd", $sproc), '" alt="daygraph-wdir" />'; */
+	<img src="/oldSites/sitev3/graphdayA.php?x=850&amp;y=450&amp;type2=rain&amp;type1=temp&amp;num=', $dimp, '&amp;date=', date("Ymd", $sproc), '" alt="daygraph" />
+	<img src="/oldSites/sitev3/graphdayA.php?x=850&amp;y=450&amp;type=hum&amp;type2=dew&amp;num=', $dimp, '&amp;date=', date("Ymd", $sproc), '" alt="daygraph" />
+	<img src="/oldSites/sitev3/graphday2.php?x=850&amp;y=450&amp;num=', $dimp, '&amp;date=', date("Ymd", $sproc), '" alt="daygraph 2" />
+	<img src="/oldSites/sitev3/graphdayA.php?x=850&amp;y=200&amp;type=wdir&amp;num=', $dimp, '&amp;date=', date("Ymd", $sproc), '" alt="daygraph-wdir" />'; */
 
 }
 else { echo 'Monthly report not available'; }

@@ -80,9 +80,9 @@ Next&gt;&gt; <?php if($cond2) { echo '</a>'; } ?></td>
 
 <?php
 if(file_exists($root.'logfiles/daily/'.$datetag. 'log.txt')) {
-	echo  '<img title="graph for ', $datedescrip, '" alt="Daily graph" src="/graphday.php?x=800&amp;y=450&amp;date=',  $datetag, '" />
-		 <img title="graph for ', $datedescrip, '" alt="Daily graph2" src="/graphday2.php?x=800&amp;y=400&amp;date=',  $datetag, '" />
-		 <img title="graph for ', $datedescrip, '" alt="Daily graph3" src="/graphdayA.php?x=800&amp;y=150&amp;type=wdir&amp;date=',  $datetag, '" />';
+	echo  '<img title="graph for ', $datedescrip, '" alt="Daily graph" src="/oldSites/sitev3/graphday.php?x=800&amp;y=450&amp;date=',  $datetag, '" />
+		 <img title="graph for ', $datedescrip, '" alt="Daily graph2" src="/oldSites/sitev3/graphday2.php?x=800&amp;y=400&amp;date=',  $datetag, '" />
+		 <img title="graph for ', $datedescrip, '" alt="Daily graph3" src="/oldSites/sitev3/graphdayA.php?x=800&amp;y=150&amp;type=wdir&amp;date=',  $datetag, '" />';
 }
 else {
 	echo 'Daily graph not available for this day';

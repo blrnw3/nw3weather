@@ -105,13 +105,16 @@ done
 # The archived pages need the shared includes that stay at docroot for cron, so
 # give the archive its own frozen copies. Data still comes from docroot because
 # basics.php keeps ROOT pointing there.
-for f in unit-select.php basics.php functions.php datfuncdef.php climavs.php mainData.php wxdatagen.php; do
+for f in unit-select.php basics.php functions.php datfuncdef.php climavs.php mainData.php wxdatagen.php \
+	windrose.php graphday.php graphday2.php graphdayA.php graphdaygen.php graphclim.php graphclim365.php \
+	valcolstyle.css; do
 	cp "$SRC/$f" "$ARCHIVE/$f"
 done
 
 # Resolve archived includes inside the archive instead of docroot, otherwise
-# both copies load and PHP fatals on redeclared classes.
-perl -0pi -e "s{\\\$fullpath = \\\$siteRoot = ROOT;}{// Archived copy: code resolves inside this directory, data still comes from docroot.\n\\\$fullpath = \\\$siteRoot = __DIR__ . '/';}" "$ARCHIVE/basics.php"
+# both copies load and PHP fatals on redeclared classes. Data keeps coming from
+# docroot via $fullpath, and ARCHIVE_WEB prefixes the archive's own links.
+perl -0pi -e "s{\\\$fullpath = \\\$siteRoot = ROOT;}{// Archived copy: code resolves inside this directory, data still comes from docroot.\nconst ARCHIVE_WEB = '/oldSites/sitev3';\n\\\$fullpath = ROOT;\n\\\$siteRoot = __DIR__ . '/';}" "$ARCHIVE/basics.php"
 perl -pi -e "s{^\\\$siteRoot = '/var/www/html/';}{\\\$siteRoot = dirname(__DIR__) . '/';}" "$ARCHIVE"/ajax/*.php
 
 # Promote the v5 tree, including dotfiles, then drop the empty directory.
