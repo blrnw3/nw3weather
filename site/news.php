@@ -10,7 +10,7 @@ Page::Start();
 
 	<h1>Site Blog and Weather Station news/updates</h1>
 
-	<table width="850">
+	<table class="news-posts">
 	<tr id="post-20260731"><td>
 		<h2>Site update - version 5 launched</h2>
 

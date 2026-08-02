@@ -408,6 +408,23 @@ p {
 	margin: 1rem 0;
 	padding: 0;
 }
+
+/* Blog archive: legacy markup uses one post per single-cell table row. */
+.news-posts {
+	width: 100%;
+	max-width: 100%;
+	table-layout: fixed;
+	border-collapse: collapse;
+}
+.news-posts td {
+	min-width: 0;
+	padding: 0;
+	overflow-wrap: anywhere;
+}
+.news-posts img,
+.news-posts video {
+	height: auto;
+}
 dt {
 	font-size: 110%;
 }

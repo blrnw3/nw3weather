@@ -180,6 +180,13 @@ END;
 		$phpload = round(microtime(true) - self::$start, 3);
 		$sessCount = isset($_SESSION['count'][self::$fileNum]) ? $_SESSION['count'][self::$fileNum] : 0;
 		$pageLoad = HTML::acronym('Session count: ' . $sessCount, 'page load: ' . $phpload . ' s');
+		if (!self::$me && !self::$isBot) {
+			$unit = self::$units === UNIT_US ? 'US' : (self::$units === UNIT_EU ? 'EU' : 'UK');
+			self::log_events(
+				'siteV5Access.txt',
+				$phpload . ' ' . $unit . ' ' . Util::makeBool(self::$auto)
+			);
+		}
 		if (self::$me) {
 			$memUsage = round(memory_get_usage() / 1024 / 1024, 1);
 			$memPeak = round(memory_get_peak_usage() / 1024 / 1024, 1);

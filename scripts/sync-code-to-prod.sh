@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 #
 # Push site *code* from the local working tree to production.
-# Never touches live/generated data, webcam stills, logs, or secrets.
+# Never touches live/generated data, webcam stills, logs, secrets, or wxapp/.
 #
-# Default is a dry-run. Pass --go to write.
+# Default is a dry-run. Pass --go to write. Prints the file list that would be /
+# was transferred.
 #
 # Usage:
 #   scripts/sync-code-to-prod.sh              # dry-run: show what would change
@@ -89,6 +90,8 @@ EXCLUDES=(
 	--exclude='camchive/'
 	--exclude='oldSites/'
 	--exclude='hampstead_data/'
+	# Separate legacy app; leave prod's copy alone (avoids permission noise too)
+	--exclude='wxapp/'
 
 	# Secrets stay on the server (template secrets.example.php is fine to push)
 	--exclude='secrets.php'
@@ -102,7 +105,7 @@ EXCLUDES=(
 	--exclude='status.md'
 )
 
-RSYNC_OPTS=(-avz --human-readable)
+RSYNC_OPTS=(-az --omit-dir-times --human-readable --out-format='%n')
 if [ "$DO_DELETE" -eq 1 ]; then
 	# Excluded paths are left alone on the remote (rsync default without
 	# --delete-excluded).
@@ -119,11 +122,47 @@ else
 	fi
 fi
 
+TMP_OUT="$(mktemp)"
+trap 'rm -f "$TMP_OUT"' EXIT
+
+set +e
 rsync "${RSYNC_OPTS[@]}" \
 	-e "ssh -p ${PROD_SSH_PORT}" \
 	"${EXCLUDES[@]}" \
 	"$LOCAL_DOCROOT/" \
-	"$PROD_SSH:$PROD_DOCROOT/"
+	"$PROD_SSH:$PROD_DOCROOT/" \
+	> "$TMP_OUT" 2>&1
+RC=$?
+set -e
+
+# Print transferred file paths only (skip dirs and rsync chatter).
+FILES=()
+while IFS= read -r line; do
+	[[ -z "$line" || "$line" == '.' || "$line" == './' || "$line" == */ ]] && continue
+	[[ "$line" == sending\ * || "$line" == sent\ * || "$line" == total\ size* ]] && continue
+	[[ "$line" == building\ * || "$line" == rsync:* || "$line" == Warning:* ]] && continue
+	FILES+=("$line")
+done < "$TMP_OUT"
+
+if grep -E '^(rsync:|rsync error:)' "$TMP_OUT" >/dev/null 2>&1; then
+	echo ">> rsync reported errors:" >&2
+	grep -E '^(rsync:|rsync error:)' "$TMP_OUT" >&2 || true
+fi
+
+if [ "${#FILES[@]}" -eq 0 ]; then
+	echo ">> No files transferred."
+else
+	if [ "$DO_PUSH" -eq 0 ]; then
+		echo ">> Would push ${#FILES[@]} file(s):"
+	else
+		echo ">> Pushed ${#FILES[@]} file(s):"
+	fi
+	printf '   %s\n' "${FILES[@]}"
+fi
+
+if [ "$RC" -ne 0 ]; then
+	exit "$RC"
+fi
 
 if [ "$DO_PUSH" -eq 0 ]; then
 	echo ">> Dry-run complete. Re-run with --go to apply."
