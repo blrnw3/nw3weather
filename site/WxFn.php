@@ -267,10 +267,10 @@ class DataSummarizer {
 		return max($requested, $varStart);
 	}
 
-	/** Path for a day's cached summarize() payload. */
+	/** Path for the cached summarize() payload (rebuilt by cron warm). */
 	public static function summaryCachePath($varName, $startYear = null) {
 		$sy = self::resolveStartYear($varName, $startYear);
-		return ROOT . 'serialised_summary_' . $varName . '_' . $sy . '_' . date('Ymd') . '.txt';
+		return ROOT . 'serialised_summary_' . $varName . '_' . $sy . '.txt';
 	}
 
 	/** How far a cache may lag its source before a request rebuilds it inline. */

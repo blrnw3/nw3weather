@@ -129,7 +129,7 @@ if($fiveMinutely) {
 	serialiseCSV('dat');
 
 	// Pre-warm v5 detail-page summarize() caches (wx10–wx16) so page loads
-	// reuse serialised_summary_{var}_{startYear}_{Ymd}.txt instead of
+	// reuse serialised_summary_{var}_{startYear}.txt instead of
 	// recomputing ranks/spells/rolling windows on every request.
 	exec('/usr/bin/php -q '. ROOT .'warm_detail_summaries.php', $warmOut, $warmRc);
 	if($warmRc !== 0) {
