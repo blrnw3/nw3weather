@@ -579,11 +579,10 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			var spellDir = opts.spellDir != null ? opts.spellDir : curSpellDir;
 			var threshold = opts.threshold != null ? parseFloat(opts.threshold) : curThreshold;
 
-			// Summary-only change when all summary tabs are already in the DOM.
-			// Threshold summaries (and switches into/out of them) always refetch.
+			// Summary-only change: if that tab is already in the DOM, switch client-side.
+			// Rank/month pages ship only the active summary (AJAX on chip change).
 			var period = opts.period != null ? parseInt(opts.period, 10) : curPeriod;
 			var noOverlap = opts.noOverlap != null ? !!opts.noOverlap : curNoOverlap;
-			// Period rankings only ship the active summary tab (expensive to compute).
 			if ((mode === 'monthly' || mode === 'rank-monthly' || mode === 'rank-annual')
 				&& type === curType && start === curStart && month === curMonth
 				&& rankLimit === curRankLimit && period === curPeriod && noOverlap === curNoOverlap

@@ -32,7 +32,8 @@ function nw3_rankmonth_render(Report $report) {
 	];
 
 	foreach ($report->availSummaryTypes as $st) {
-		if (Data::isThresholdSummary($st) && $st !== $report->summaryType) {
+		// Render the active summary only — AJAX reloads when the chip changes.
+		if ($st !== $report->summaryType) {
 			continue;
 		}
 		$th = Data::isThresholdSummary($st) ? $threshold : null;
@@ -79,8 +80,7 @@ function nw3_rankmonth_render(Report $report) {
 		$isCount = Data::isCountSummary($st);
 		$displayUnit = $report->summaryDisplayUnit($st);
 		$name = $report->summaryCaptionName($st);
-		$hide = ($st === $report->summaryType) ? '' : " style='display:none'";
-		echo "<div id='rank-$st' class='rank-tab'$hide>";
+		echo "<div id='rank-$st' class='rank-tab'>";
 		echo '<div class="rk-pair">';
 		$report->rankTable($highest, $highestDay, $limit, 'Top monthly ' . $name, true, true, $footCond, false, $isCount, $sumOff, $displayUnit);
 		$report->rankTable($lowest, $lowestDay, $limit, 'Bottom monthly ' . $name, false, true, $footCond, false, $isCount, $sumOff, $displayUnit);

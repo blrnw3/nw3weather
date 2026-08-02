@@ -307,8 +307,14 @@ class DataSummarizer {
 	}
 
 	/**
-	 * Variables used by wx10–wx16 detail pages. Cron pre-warms these at the
-	 * default start year so the first visitor of the day is not cold.
+	 * Start-year chips on wx10–wx16 detail pages (also the warm-cache set).
+	 * Kept here so cron can warm without loading ViewDetailedData / Charts.
+	 */
+	public static $detailStartYearOptions = [1950, 1980, 2009];
+
+	/**
+	 * Variables used by wx10–wx16 detail pages. Cron pre-warms these for each
+	 * detail start-year chip so the first visitor is not cold.
 	 */
 	public static function detailPageVars() {
 		return array(
@@ -319,15 +325,23 @@ class DataSummarizer {
 			'sunhr', 'sunhrp',
 			'hmin', 'hmax', 'hmean',
 			'dmin', 'dmax', 'dmean',
+			'nightmin', 'daymax',
 		);
 	}
 
-	/** Pre-compute and store summarize caches for detail-page variables. */
+	/**
+	 * Pre-compute and store summarize caches for detail-page variables.
+	 * @param int|null $startYear one year, or null to warm every detail chip year
+	 */
 	public static function warmDetailSummaries($startYear = null) {
-		$startYear = $startYear === null ? Site::BASE_YEAR : (int)$startYear;
-		foreach (self::detailPageVars() as $var) {
-			if (!isset(Wx::$daily[$var])) { continue; }
-			self::summarizeCached($var, $startYear);
+		$years = ($startYear === null)
+			? self::$detailStartYearOptions
+			: array((int)$startYear);
+		foreach ($years as $sy) {
+			foreach (self::detailPageVars() as $var) {
+				if (!isset(Wx::$daily[$var])) { continue; }
+				self::summarizeCached($var, $sy);
+			}
 		}
 	}
 
@@ -691,10 +705,12 @@ class Data {
 		// post-migration cron run; degrade gracefully rather than warn/fatal.
 		$file = ROOT . "serialised_dat_new_$name.txt";
 		if (!file_exists($file)) {
-			return array();
+			self::$CACHE_DAT[$name] = array();
+			return self::$CACHE_DAT[$name];
 		}
 		$data = unserialize(file_get_contents($file));
-		return ($data === false) ? array() : $data;
+		self::$CACHE_DAT[$name] = ($data === false) ? array() : $data;
+		return self::$CACHE_DAT[$name];
 	}
 	public static function getYearlyData($name, $year) {
 		return self::getAllData($name)[$year];
@@ -1057,7 +1073,9 @@ class Data {
 
 	/**
 	 * Sliding N-day period summaries for ranking.
-	 * Each window must have a present value on every day (no gaps).
+	 * Each window must have a present value on every calendar day (no gaps/blanks).
+	 * Uses O(n) rolling aggregates (and deques for min/max/range) instead of
+	 * re-summarising each window from scratch.
 	 *
 	 * @param string $var
 	 * @param int $length days in each period
@@ -1071,27 +1089,120 @@ class Data {
 		$length = max(1, (int)$length);
 		$monthStart = (int)$monthStart;
 		$series = Spells::loadDailySeries($var, $start_year);
-		$dates = array_keys($series);
-		$vals = array_values($series);
-		$n = count($dates);
+		$n = count($series);
 		$out = [];
 		if ($n < $length) { return $out; }
 
-		for ($i = 0; $i <= $n - $length; $i++) {
-			$startKey = $dates[$i];
-			// Enforce calendar continuity (no missing calendar days in the window).
-			$startTs = strtotime($startKey . ' 12:00:00');
-			if ($startTs === false) { continue; }
-			$endTs = $startTs + ($length - 1) * 86400;
-			$endKey = date('Y-m-d', $endTs);
-			if ($dates[$i + $length - 1] !== $endKey) { continue; }
+		$span = ($length - 1) * 86400;
+		$th = ($threshold !== null) ? (float)$threshold : 0.0;
+		$strict = ($summary_type === self::SUMMARY_COUNT_ABOVE && Wx::strictAbove($var, $th));
+		$needMin = ($summary_type === self::SUMMARY_MIN || $summary_type === self::SUMMARY_RANGE);
+		$needMax = ($summary_type === self::SUMMARY_MAX || $summary_type === self::SUMMARY_RANGE);
+		$isCountish = ($summary_type === self::SUMMARY_COUNT
+			|| $summary_type === self::SUMMARY_COUNT_ABOVE
+			|| $summary_type === self::SUMMARY_COUNT_BELOW);
+
+		// Flatten once: date key, noon ts, numeric value (null = blank), rolling metric.
+		$dates = $ts = $num = $metric = [];
+		$i = 0;
+		foreach ($series as $ymd => $raw) {
+			$dates[$i] = $ymd;
+			$t = strtotime($ymd . ' 12:00:00');
+			$ts[$i] = ($t === false) ? null : $t;
+			if (Util::isBlank($raw)) {
+				$num[$i] = null;
+				$metric[$i] = 0.0;
+			} else {
+				$v = (float)$raw;
+				$num[$i] = $v;
+				if ($summary_type === self::SUMMARY_COUNT) {
+					$metric[$i] = ($v != 0.0) ? 1.0 : 0.0;
+				} elseif ($summary_type === self::SUMMARY_COUNT_ABOVE) {
+					$metric[$i] = ($strict ? ($v > $th) : ($v >= $th)) ? 1.0 : 0.0;
+				} elseif ($summary_type === self::SUMMARY_COUNT_BELOW) {
+					$metric[$i] = ($v < $th) ? 1.0 : 0.0;
+				} else {
+					$metric[$i] = $v;
+				}
+			}
+			$i++;
+		}
+		unset($series);
+
+		$blankCnt = 0;
+		$roll = 0.0;
+		$minDq = []; // indices, ascending values
+		$maxDq = []; // indices, descending values
+		$minHead = $maxHead = 0; // logical fronts (avoid array_shift)
+
+		// Seed first window [0, length).
+		for ($i = 0; $i < $length; $i++) {
+			if ($num[$i] === null) { $blankCnt++; }
+			$roll += $metric[$i];
+			if ($needMin && $num[$i] !== null) {
+				while (count($minDq) > $minHead && $num[$minDq[count($minDq) - 1]] >= $num[$i]) {
+					array_pop($minDq);
+				}
+				$minDq[] = $i;
+			}
+			if ($needMax && $num[$i] !== null) {
+				while (count($maxDq) > $maxHead && $num[$maxDq[count($maxDq) - 1]] <= $num[$i]) {
+					array_pop($maxDq);
+				}
+				$maxDq[] = $i;
+			}
+		}
+
+		for ($left = 0; $left <= $n - $length; $left++) {
+			if ($left > 0) {
+				$right = $left + $length - 1;
+				$leftOut = $left - 1;
+				if ($num[$leftOut] === null) { $blankCnt--; }
+				$roll -= $metric[$leftOut];
+				if ($needMin) {
+					while (count($minDq) > $minHead && $minDq[$minHead] < $left) { $minHead++; }
+				}
+				if ($needMax) {
+					while (count($maxDq) > $maxHead && $maxDq[$maxHead] < $left) { $maxHead++; }
+				}
+				if ($num[$right] === null) { $blankCnt++; }
+				$roll += $metric[$right];
+				if ($needMin && $num[$right] !== null) {
+					while (count($minDq) > $minHead && $num[$minDq[count($minDq) - 1]] >= $num[$right]) {
+						array_pop($minDq);
+					}
+					$minDq[] = $right;
+				}
+				if ($needMax && $num[$right] !== null) {
+					while (count($maxDq) > $maxHead && $num[$maxDq[count($maxDq) - 1]] <= $num[$right]) {
+						array_pop($maxDq);
+					}
+					$maxDq[] = $right;
+				}
+			}
+
+			if ($blankCnt !== 0) { continue; }
+			$startTs = $ts[$left];
+			if ($startTs === null) { continue; }
+			// Calendar continuity via date keys (not unix deltas — DST breaks those).
+			$endTs = $startTs + $span;
+			if ($dates[$left + $length - 1] !== date('Y-m-d', $endTs)) { continue; }
 			if ($monthStart > 0 && (int)date('n', $startTs) !== $monthStart) { continue; }
 
-			$slice = array_slice($vals, $i, $length);
-			if (Util::mycount($slice) < $length) { continue; }
-			$sum = self::summarize($slice, $summary_type, $threshold, $var);
-			if ($sum === null || Util::isBlank($sum)) { continue; }
-			$out[] = [(float)$sum, $startTs, $endTs];
+			if ($summary_type === self::SUMMARY_MEAN) {
+				$val = $roll / $length;
+			} elseif ($summary_type === self::SUMMARY_SUM || $isCountish) {
+				$val = $roll;
+			} elseif ($summary_type === self::SUMMARY_MIN) {
+				$val = $num[$minDq[$minHead]];
+			} elseif ($summary_type === self::SUMMARY_MAX) {
+				$val = $num[$maxDq[$maxHead]];
+			} elseif ($summary_type === self::SUMMARY_RANGE) {
+				$val = $num[$maxDq[$maxHead]] - $num[$minDq[$minHead]];
+			} else {
+				continue;
+			}
+			$out[] = [(float)$val, $startTs, $endTs];
 		}
 		return $out;
 	}

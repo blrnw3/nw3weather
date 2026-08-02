@@ -338,10 +338,8 @@ class Report {
 		$plen = isset($_GET['period']) ? (int)$_GET['period'] : 5;
 		if (!in_array($plen, self::$periodLengthOptions, true)) { $plen = 5; }
 		$this->periodLength = $plen;
-		// Hide-overlapping defaults to off (allow overlaps).
-		$this->periodNoOverlap = isset($_GET['no_overlap'])
-			&& (string)$_GET['no_overlap'] !== '0'
-			&& (string)$_GET['no_overlap'] !== '';
+		// Hide-overlapping defaults to ON (disallow overlaps).
+		$this->periodNoOverlap = isset($_GET['no_overlap']) ? (int)$_GET['no_overlap'] !== 0 : true;
 
 		$this->badCats = $badCats;
 	}

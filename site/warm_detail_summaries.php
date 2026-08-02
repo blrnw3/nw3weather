@@ -4,7 +4,9 @@
  * Invoked by cron_main after serialiseCSV('dat') so the first visitor of the
  * day (or after a data refresh) is not stuck rebuilding ranks/spells/windows.
  *
- * Usage: php warm_detail_summaries.php [startYear]
+ * Usage:
+ *   php warm_detail_summaries.php           # all detail start-year chips
+ *   php warm_detail_summaries.php 2009      # one start year only
  */
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
@@ -18,9 +20,12 @@ require __DIR__ . '/Spells.php';
 
 $start = isset($argv[1]) && ctype_digit((string)$argv[1])
 	? (int)$argv[1]
-	: Site::BASE_YEAR;
+	: null;
 
 $t0 = microtime(true);
 DataSummarizer::warmDetailSummaries($start);
 $ms = round((microtime(true) - $t0) * 1000);
-fwrite(STDOUT, "warm_detail_summaries start=$start done in {$ms}ms\n");
+$label = ($start === null)
+	? 'all=' . implode(',', DataSummarizer::$detailStartYearOptions)
+	: "start=$start";
+fwrite(STDOUT, "warm_detail_summaries $label done in {$ms}ms\n");

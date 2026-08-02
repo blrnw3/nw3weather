@@ -14,9 +14,12 @@ Page::Start();
 <?php
 $mainTables = new ViewDetailedData("temp");
 
-$nm = new DataSummarizer("nightmin");
-$monthFrosts = Util::cond_count($nm->currentMonth, false, 0);
-$yearFrosts = Util::cond_count($nm->currentYear, false, 0);
+// Air-frost days: overnight min < 0 °C. Use current-year daily data only —
+// avoid a full DataSummarizer rebuild just for these two counts.
+$nmMonth = Data::getMonthlyData('nightmin', Date::$dyear, Date::$dmonth);
+$monthFrosts = Util::cond_count(is_array($nmMonth) ? $nmMonth : [], false, 0);
+$nmYear = Data::getYearlyData('nightmin', Date::$dyear);
+$yearFrosts = Util::cond_count(is_array($nmYear) ? Data::MDtoZ($nmYear) : [], false, 0);
 
 $tchangehour = Wx::conv(Live::$HR24['changeHr']['temp'], Wx::AbsTemp, 1, 1);
 $measures = ['Temperature', 'Temperature Trend / hr', 'Feels-like', 'Night Minimum (21-09)', 'Day Maximum (09-21)', '24hr Average',

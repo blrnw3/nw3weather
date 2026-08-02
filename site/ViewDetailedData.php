@@ -43,7 +43,6 @@ class ViewDetailedData {
 
 	public static $periods = array('latest_7d','curr_month','latest_31d','curr_year','latest_365d','alltime','all_this_month','all_this_date');
 	public static $measuresGeneric = array('Lowest Min','Highest Max','Highest Min','Lowest Max','Lowest Mean','Highest Mean','Averages','Mean','Avg Low','Avg High');
-	public static $startYearOptions = [1871, 1910, 1950, 1980, 2000, 2009];
 
 	public $periods_all;
 	public $startYrReport;
@@ -304,11 +303,32 @@ class ViewDetailedData {
 	public function validStartYearOptions() {
 		$floor = $this->groupDataStartYear();
 		$opts = [];
-		foreach (self::$startYearOptions as $y) {
+		foreach (DataSummarizer::$detailStartYearOptions as $y) {
 			if ($y >= $floor) { $opts[] = $y; }
 		}
 		if (!count($opts)) { $opts[] = max(2009, $floor); }
 		return $opts;
+	}
+
+	/**
+	 * Link to RankPeriods with this group's series start year, or null when
+	 * detail chips already cover the full available history.
+	 */
+	private function periodRankingsHref() {
+		$floor = $this->groupDataStartYear();
+		$chipFloor = min(DataSummarizer::$detailStartYearOptions);
+		if ($floor >= $chipFloor) { return null; }
+		return '/RankPeriods.php?vartype=' . rawurlencode($this->varMean)
+			. '&start_year_rep=' . (int)$floor;
+	}
+
+	/** Note under start-year chips pointing at longer RankPeriods history. */
+	private function longerHistoryNote() {
+		$href = $this->periodRankingsHref();
+		if ($href === null) { return; }
+		echo '<p class="vd-longer-hist">For rankings back to '
+			. (int)$this->groupDataStartYear()
+			. ', see <a href="' . htmlspecialchars($href) . '">ranked multi-day periods</a>.</p>';
 	}
 
 	/**
@@ -323,6 +343,11 @@ class ViewDetailedData {
 			. 'Best efforts have been made to adjust for site differences, but uncertainties are somewhat greater for this data. '
 			. 'I am grateful to the Met Office for making this data available for free through the '
 			. '<a href="https://data.ceda.ac.uk/badc/ukmo-midas-open/">MIDAS Open database</a>.</li>';
+		$href = $this->periodRankingsHref();
+		if ($href !== null) {
+			echo '<li>For multi-day extremes back to ' . (int)$this->groupDataStartYear()
+				. ', see the <a href="' . htmlspecialchars($href) . '">period rankings</a>.</li>';
+		}
 	}
 
 	/** Chart selector group(s) for this detail page's variable family. */
@@ -1595,6 +1620,7 @@ class ViewDetailedData {
 				. $y . '</a>';
 		}
 		echo '</div></div></div>';
+		$this->longerHistoryNote();
 
 		echo '<div id="vd-avg-ajax">';
 		if ($start !== $this->startYrReport) {
@@ -2187,6 +2213,7 @@ class ViewDetailedData {
 				. $y . '</a>';
 		}
 		echo '</div></div></div>';
+		$this->longerHistoryNote();
 
 		echo '<div id="vd-rank-ajax">';
 		if ($start !== $this->startYrReport) {
@@ -2230,6 +2257,11 @@ class ViewDetailedData {
 			'/RankMonth.php?vartype=' . rawurlencode($vt), $monthlyCols);
 		$this->rankTablePair($this->ranks, $rankNumY, 'annual', "Years", "Mean",
 			'/RankYear.php?vartype=' . rawurlencode($vt), $annualCols);
+		$periodHref = $this->periodRankingsHref();
+		if ($periodHref !== null) {
+			echo '<p><a href="' . htmlspecialchars($periodHref) . '">View more period rankings</a>'
+				. ' (multi-day extremes back to ' . (int)$this->groupDataStartYear() . ')</p>';
+		}
 		$this->rankTablePair($this->ranks, $rankNumCM, 'dailyCM', "Days in " . $monName, "Daily",
 			null, $dailyCols, $dailyHiOnly);
 		$this->rankTablePair($this->ranks, $rankNumCM, 'monthlyCM', $monPlural, "Mean",

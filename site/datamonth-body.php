@@ -203,13 +203,12 @@ function nw3_datamonth_render(Report $report) {
 	$fromYr = max((int)$report->startYrReport, (int)$report->startYear);
 
 	foreach ($report->availSummaryTypes as $st) {
-		// Threshold summaries depend on the selected threshold — only render the active one.
-		if (Data::isThresholdSummary($st) && $st !== $report->summaryType) {
+		// Render the active summary only — AJAX reloads when the chip changes.
+		if ($st !== $report->summaryType) {
 			continue;
 		}
-		$hide = ($st === $report->summaryType) ? '' : " style='display:none'";
 		$th = Data::isThresholdSummary($st) ? $threshold : null;
-		echo "<div id='rank-$st' class='rank-tab scroll'$hide>";
+		echo "<div id='rank-$st' class='rank-tab scroll'>";
 		tdmMakeTable(
 			$report, $DAT, $st,
 			'Monthly ' . ucfirst($report->summaryCaptionName($st)),
