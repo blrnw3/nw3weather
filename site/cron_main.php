@@ -187,6 +187,15 @@ if(time() - filemtime(ROOT.'datt'.$yr_yest.'.csv') < 65) {
 //serialise manual data when modifications occur
 if(time() - filemtime(ROOT.'datm'.$yr_yest.'.csv') < 65) {
 	serialiseCSVm();
+
+	// serialiseCSVm rewrites serialised_dat_new_{sunhr,wethr,...}.txt on whatever
+	// minute datm changed, so re-warm those detail caches here rather than leaving
+	// wx11/wx12 lagging until the next five-minutely warm.
+	exec('/usr/bin/php -q '. ROOT .'warm_detail_summaries.php datm', $warmMOut, $warmMRc);
+	if($warmMRc !== 0) {
+		quick_log('warm_detail_summaries_bad.txt', 'datm rc='. $warmMRc .' '. substr(implode(' ', $warmMOut), 0, 200));
+	}
+
 	//Now generate the sunTags file
 	exec(EXEC_PATH. 'cron_tags.php blr ftw > log/cronsuntaglog.txt &');
 }

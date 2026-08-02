@@ -17,8 +17,6 @@ class ViewDetailedData {
 	private $type;
 	private $superlativeLow;
 	private $superlativeHigh;
-	private $avgOnly;
-	private $rankOnly;
 	private $measureLabels;
 	private $measureConvs;
 
@@ -53,15 +51,11 @@ class ViewDetailedData {
 
 
 	/**
+	 * Detail pages always summarise from the station record (Site::BASE_YEAR).
+	 *
 	 * @param string $groupName temp|baro|wind|rain|hum|dew|sun
-	 * @param array|int|null $opts startYear int, or ['startYear'=>N, 'avgOnly'=>bool, 'rankOnly'=>bool]
 	 */
-	function __construct($groupName, $opts = null) {
-		if (is_int($opts) || (is_string($opts) && ctype_digit((string)$opts))) {
-			$opts = ['startYear' => (int)$opts];
-		}
-		if (!is_array($opts)) { $opts = []; }
-
+	function __construct($groupName) {
 		$groups = [
 			"temp" => [
 				"name" => "Temperature",
@@ -214,8 +208,6 @@ class ViewDetailedData {
 		$this->group = $groups[$groupName];
 		$this->conv = $this->group["unit"];
 		$this->getAnom = array_key_exists("anomaly", $this->group);
-		$this->avgOnly = !empty($opts['avgOnly']);
-		$this->rankOnly = !empty($opts['rankOnly']);
 		$this->measureLabels = isset($this->group['measures']) ? $this->group['measures'] : self::$measuresGeneric;
 		$this->measureConvs = isset($this->group['measureConvs']) ? $this->group['measureConvs'] : null;
 
@@ -231,11 +223,7 @@ class ViewDetailedData {
 		$this->type = $groupName;
 		$this->superlativeLow = $this->group["superlativeLo"];
 		$this->superlativeHigh = $this->group["superlativeHi"];
-
-		$validStarts = $this->validStartYearOptions();
-		$start = isset($opts['startYear']) ? (int)$opts['startYear'] : 2009;
-		if (!in_array($start, $validStarts, true)) { $start = in_array(2009, $validStarts, true) ? 2009 : $validStarts[0]; }
-		$this->startYrReport = $start;
+		$this->startYrReport = Site::BASE_YEAR;
 
 		// Load per-variable summarize() payloads from daily serialised cache
 		// (filled by first request or cron warm). Deduplicate by variable name.
@@ -287,67 +275,6 @@ class ViewDetailedData {
 	/** Effective start year after flooring to the variable's own start_year. */
 	public function effectiveStartYear() {
 		return $this->meanStartYear;
-	}
-
-	/** Earliest start_year among this group's min/max/mean variables. */
-	private function groupDataStartYear() {
-		$floor = Site::BASE_YEAR;
-		foreach ([$this->varMin, $this->varMax, $this->varMean] as $v) {
-			$sy = isset(Wx::$daily[$v]['start_year']) ? (int)Wx::$daily[$v]['start_year'] : Site::BASE_YEAR;
-			if ($sy < $floor) { $floor = $sy; }
-		}
-		return $floor;
-	}
-
-	/** Start-year chips valid for this group (at/after the group's data begins). */
-	public function validStartYearOptions() {
-		$floor = $this->groupDataStartYear();
-		$opts = [];
-		foreach (DataSummarizer::$detailStartYearOptions as $y) {
-			if ($y >= $floor) { $opts[] = $y; }
-		}
-		if (!count($opts)) { $opts[] = max(2009, $floor); }
-		return $opts;
-	}
-
-	/**
-	 * Link to RankPeriods with this group's series start year, or null when
-	 * detail chips already cover the full available history.
-	 */
-	private function periodRankingsHref() {
-		$floor = $this->groupDataStartYear();
-		$chipFloor = min(DataSummarizer::$detailStartYearOptions);
-		if ($floor >= $chipFloor) { return null; }
-		return '/RankPeriods.php?vartype=' . rawurlencode($this->varMean)
-			. '&start_year_rep=' . (int)$floor;
-	}
-
-	/** Note under start-year chips pointing at longer RankPeriods history. */
-	private function longerHistoryNote() {
-		$href = $this->periodRankingsHref();
-		if ($href === null) { return; }
-		echo '<p class="vd-longer-hist">For rankings back to '
-			. (int)$this->groupDataStartYear()
-			. ', see <a href="' . htmlspecialchars($href) . '">ranked multi-day periods</a>.</p>';
-	}
-
-	/**
-	 * Notes list item explaining pre-2009 (MIDAS / Whitestone) data, matching
-	 * Report::historicalInfo() on the historical data pages. No-op when this
-	 * group's series all begin at/after the station record.
-	 */
-	public function historicalNoteItem() {
-		if ($this->groupDataStartYear() >= Site::BASE_YEAR) { return; }
-		echo '<li>Data from before 2009 are mostly from the historical site at Whitestone Pond in Hampstead. '
-			. 'Where data from that record is missing, other nearby sites were used, including St James Park, Heathrow, and Kew Gardens (pre-1910). '
-			. 'Best efforts have been made to adjust for site differences, but uncertainties are somewhat greater for this data. '
-			. 'I am grateful to the Met Office for making this data available for free through the '
-			. '<a href="https://data.ceda.ac.uk/badc/ukmo-midas-open/">MIDAS Open database</a>.</li>';
-		$href = $this->periodRankingsHref();
-		if ($href !== null) {
-			echo '<li>For multi-day extremes back to ' . (int)$this->groupDataStartYear()
-				. ', see the <a href="' . htmlspecialchars($href) . '">period rankings</a>.</li>';
-		}
 	}
 
 	/** Chart selector group(s) for this detail page's variable family. */
@@ -655,11 +582,8 @@ class ViewDetailedData {
 		}
 
 		$this->buildTodayYest();
-		if ($this->avgOnly) { return; }
-		if (!$this->rankOnly) {
-			$this->buildMonthly($statSums);
-			$this->buildSeasonal($statSums);
-		}
+		$this->buildMonthly($statSums);
+		$this->buildSeasonal($statSums);
 		$this->buildRanks();
 	}
 
@@ -1499,13 +1423,12 @@ class ViewDetailedData {
 	}
 
 	/**
-	 * Rain-only wet/dry spell summary. Rendered inside the start-year AJAX
-	 * fragment so all-time / top-10 records respect Records-from.
+	 * Rain-only wet/dry spell summary.
 	 */
 	public function rainSpells($wid = 85) {
 		if ($this->groupName !== 'rain' || !isset($this->meanSum['spells'])) { return; }
 		$spells = $this->meanSum['spells'];
-		$lifetimeLabel = ($this->startYrReport < 2009) ? 'Historical data' : 'Station lifetime';
+		$lifetimeLabel = 'Station lifetime';
 
 		echo '<h2>Wet and Dry Spells</h2>';
 
@@ -1542,9 +1465,7 @@ class ViewDetailedData {
 		$topDry = isset($spells['top']['dry']) ? $spells['top']['dry'] : [];
 		if (!count($topWet) && !count($topDry)) { return; }
 
-		echo '<h3>Longest Wet and Dry Spells'
-			. (($this->startYrReport < 2009) ? ' (historical)' : '')
-			. '</h3>';
+		echo '<h3>Longest Wet and Dry Spells</h3>';
 		echo "<div class='detail-grid'>";
 
 		echo '<div>';
@@ -1602,50 +1523,13 @@ class ViewDetailedData {
 	}
 
 	function avgsExtrmsRecs($measures = null, $wid = 99) {
-		$measures = is_null($measures) ? $this->measureLabels : $measures;
-		$validStarts = $this->validStartYearOptions();
-		$start = isset($_GET['start_year_rep']) ? (int)$_GET['start_year_rep'] : $this->startYrReport;
-		if (!in_array($start, $validStarts, true)) {
-			$start = in_array(2009, $validStarts, true) ? 2009 : $validStarts[0];
-		}
-
 		echo "<h2>Averages, Extremes, and Records</h2>";
-		echo '<div class="report-sel vd-avg-sel" id="vd-avg-sel" role="navigation" aria-label="Record start year">';
-		echo '<div class="report-sel-row report-sel-labelled">';
-		echo '<div class="wxsel-label">Records from</div>';
-		echo '<div class="wxsel-scale wxsel-start-years" role="tablist">';
-		foreach ($validStarts as $y) {
-			$active = ($y === $start) ? ' active' : '';
-			echo '<a class="wxsel-chip' . $active . '" data-start-year="' . $y . '" href="?start_year_rep=' . $y . '">'
-				. $y . '</a>';
-		}
-		echo '</div></div></div>';
-		$this->longerHistoryNote();
-
-		echo '<div id="vd-avg-ajax">';
-		if ($start !== $this->startYrReport) {
-			$alt = new ViewDetailedData($this->groupName, ['startYear' => $start, 'avgOnly' => true]);
-			$alt->renderAvgsExtrmsRecsBody($measures, $wid);
-		} else {
-			$this->renderAvgsExtrmsRecsBody($measures, $wid);
-		}
-		echo '</div>';
-
-		$cfg = [
-			'group' => $this->groupName,
-			'startYearRep' => $start,
-			'fragment' => '/detailavgdata.php',
-			'selId' => 'vd-avg-sel',
-			'bodyId' => 'vd-avg-ajax',
-			'page' => basename(isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : 'wx14.php'),
-		];
-		Charts::run('NW3_detailStartYearSel(' . json_encode($cfg) . ');');
+		$this->renderAvgsExtrmsRecsBody($measures, $wid);
 	}
 
 	/**
 	 * Body of the avg/extremes/records section (Recent + Station Lifetime +
-	 * record periods + rain spells). Used by the full page and by
-	 * detailavgdata.php AJAX fragment so start-year chips refresh everything.
+	 * record periods + rain spells).
 	 */
 	function renderAvgsExtrmsRecsBody($measures = null, $wid = 99) {
 		$dat = $this->dat;
@@ -1663,8 +1547,6 @@ class ViewDetailedData {
 		$effStart = $this->effectiveStartYear();
 
 		$splitOne = self::$periodCnt - 3;
-		echo '<div id="vd-avg-fragment" data-start-year="' . (int)$this->startYrReport
-			. '" data-effective-start="' . (int)$effStart . '">';
 		echo "<div class='detail-grid'>";
 
 		echo "<div>";
@@ -1701,8 +1583,7 @@ class ViewDetailedData {
 		echo "</div>";
 
 		echo "<div>";
-		$histLabel = ($this->startYrReport < 2009) ? 'Historical data' : 'Station Lifetime';
-		echo "<h3>" . $histLabel . " (" . $effStart . "-" . Date::$dyear . ")</h3>";
+		echo "<h3>Station Lifetime (" . $effStart . "-" . Date::$dyear . ")</h3>";
 
 		echo '<div class="detail-table-scroll">';
 		Html::table(null, $wid . '%" align="center', 6);
@@ -1774,7 +1655,6 @@ class ViewDetailedData {
 
 		$this->recordPeriodAvgs();
 		$this->rainSpells();
-		echo '</div>'; // #vd-avg-fragment
 	}
 
 	function pastYearAvgsExtrms($measures = null, $wid = 99) {
@@ -2196,47 +2076,12 @@ class ViewDetailedData {
 	}
 
 	function rankTables($rankNum = 10, $rankNumM = 10, $rankNumCM = 5, $rankNumY = 5) {
-		$validStarts = $this->validStartYearOptions();
-		$start = isset($_GET['start_year_rep']) ? (int)$_GET['start_year_rep'] : $this->startYrReport;
-		if (!in_array($start, $validStarts, true)) {
-			$start = in_array(2009, $validStarts, true) ? 2009 : $validStarts[0];
-		}
-
 		echo '<h2>Ranked Historical ' . $this->label . ' Data</h2>';
-		echo '<div class="report-sel vd-rank-sel" id="vd-rank-sel" role="navigation" aria-label="Ranking start year">';
-		echo '<div class="report-sel-row report-sel-labelled">';
-		echo '<div class="wxsel-label">Rankings from</div>';
-		echo '<div class="wxsel-scale wxsel-start-years" role="tablist">';
-		foreach ($validStarts as $y) {
-			$active = ($y === $start) ? ' active' : '';
-			echo '<a class="wxsel-chip' . $active . '" data-start-year="' . $y . '" href="?start_year_rep=' . $y . '">'
-				. $y . '</a>';
-		}
-		echo '</div></div></div>';
-		$this->longerHistoryNote();
-
-		echo '<div id="vd-rank-ajax">';
-		if ($start !== $this->startYrReport) {
-			$alt = new ViewDetailedData($this->groupName, ['startYear' => $start, 'rankOnly' => true]);
-			$alt->renderRankTablesBody($rankNum, $rankNumM, $rankNumCM, $rankNumY);
-		} else {
-			$this->renderRankTablesBody($rankNum, $rankNumM, $rankNumCM, $rankNumY);
-		}
-		echo '</div>';
-
-		$cfg = [
-			'group' => $this->groupName,
-			'startYearRep' => $start,
-			'fragment' => '/detailrankdata.php',
-			'selId' => 'vd-rank-sel',
-			'bodyId' => 'vd-rank-ajax',
-			'page' => basename(isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : 'wx14.php'),
-		];
-		Charts::run('NW3_detailStartYearSel(' . json_encode($cfg) . ');');
+		$this->renderRankTablesBody($rankNum, $rankNumM, $rankNumCM, $rankNumY);
 	}
 
 	/**
-	 * Body of the rankings section. Used by the full page and by detailrankdata.php.
+	 * Body of the rankings section.
 	 */
 	function renderRankTablesBody($rankNum = 10, $rankNumM = 10, $rankNumCM = 5, $rankNumY = 5) {
 		$vt = $this->varMean;
@@ -2257,11 +2102,6 @@ class ViewDetailedData {
 			'/RankMonth.php?vartype=' . rawurlencode($vt), $monthlyCols);
 		$this->rankTablePair($this->ranks, $rankNumY, 'annual', "Years", "Mean",
 			'/RankYear.php?vartype=' . rawurlencode($vt), $annualCols);
-		$periodHref = $this->periodRankingsHref();
-		if ($periodHref !== null) {
-			echo '<p><a href="' . htmlspecialchars($periodHref) . '">View more period rankings</a>'
-				. ' (multi-day extremes back to ' . (int)$this->groupDataStartYear() . ')</p>';
-		}
 		$this->rankTablePair($this->ranks, $rankNumCM, 'dailyCM', "Days in " . $monName, "Daily",
 			null, $dailyCols, $dailyHiOnly);
 		$this->rankTablePair($this->ranks, $rankNumCM, 'monthlyCM', $monPlural, "Mean",

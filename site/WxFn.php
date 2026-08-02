@@ -273,12 +273,23 @@ class DataSummarizer {
 		return ROOT . 'serialised_summary_' . $varName . '_' . $sy . '_' . date('Ymd') . '.txt';
 	}
 
+	/** How far a cache may lag its source before a request rebuilds it inline. */
+	const STALE_GRACE_SECS = 1200;
+
 	/**
 	 * Load summarize() from a daily serialised cache, or compute and store it.
-	 * Invalidates when the underlying serialised_dat_new_* (or historical) file
-	 * is newer than the cache — e.g. after cron refreshes today's CSV.
+	 *
+	 * serialiseCSV('dat') bumps the source files before cron re-warms the detail
+	 * set, and that warm takes ~100s to work through every variable and start
+	 * year. Requests therefore keep serving the previous generation while it runs
+	 * instead of each one redoing the ranks/spells/rolling-window work; they only
+	 * rebuild inline when the cache is absent, unusable, or has fallen
+	 * STALE_GRACE_SECS behind its source (i.e. the warm has stopped keeping up).
+	 *
+	 * @param bool $rebuildIfStale cron passes true so the warm itself always
+	 *        refreshes against a newer source rather than serving its own stale copy
 	 */
-	public static function summarizeCached($varName, $startYear = null) {
+	public static function summarizeCached($varName, $startYear = null, $rebuildIfStale = false) {
 		$sy = self::resolveStartYear($varName, $startYear);
 		$path = self::summaryCachePath($varName, $sy);
 		$allSrc = ROOT . 'serialised_dat_new.txt';
@@ -289,32 +300,59 @@ class DataSummarizer {
 			$cacheM = filemtime($path);
 			// The aggregate file covers derived variables (sunhrp, ranges, etc.)
 			// which intentionally have no per-variable serialised source file.
-			$stale = (is_file($allSrc) && filemtime($allSrc) > $cacheM)
-				|| (is_file($src) && filemtime($src) > $cacheM)
-				|| ($sy < Site::BASE_YEAR && is_file($hist) && filemtime($hist) > $cacheM);
-			if (!$stale) {
+			$srcM = 0;
+			if (is_file($allSrc)) { $srcM = max($srcM, filemtime($allSrc)); }
+			if (is_file($src)) { $srcM = max($srcM, filemtime($src)); }
+			if ($sy < Site::BASE_YEAR && is_file($hist)) { $srcM = max($srcM, filemtime($hist)); }
+
+			$lag = $srcM - $cacheM;
+			$usable = $rebuildIfStale ? ($lag <= 0) : ($lag < self::STALE_GRACE_SECS);
+			if ($usable) {
 				$data = @unserialize(file_get_contents($path));
 				if (is_array($data) && isset($data['period_summaries'])) {
 					return $data;
 				}
 			}
 		}
-
 		$s = new self($varName, $sy);
 		$result = $s->summarize();
-		@file_put_contents($path, serialize($result), LOCK_EX);
+		self::writeSummaryCache($path, $result);
 		return $result;
 	}
 
 	/**
-	 * Start-year chips on wx10–wx16 detail pages (also the warm-cache set).
-	 * Kept here so cron can warm without loading ViewDetailedData / Charts.
+	 * Atomically publish a summarize() payload: write a sibling .tmp then rename.
+	 * rename() is atomic on the same filesystem, so readers never see a partial
+	 * serialise. Returns false on write/rename failure (caller still has $data).
 	 */
-	public static $detailStartYearOptions = [1950, 1980, 2009];
+	private static function writeSummaryCache($path, $data) {
+		$tmp = $path . '.' . getmypid() . '.' . mt_rand(1000, 9999) . '.tmp';
+		$bytes = @file_put_contents($tmp, serialize($data), LOCK_EX);
+		if ($bytes === false) {
+			if (class_exists('Page', false)) {
+				Page::quick_log('cache_write_bad.txt', 'write ' . basename($path));
+			}
+			return false;
+		}
+		if (!@rename($tmp, $path)) {
+			@unlink($tmp);
+			if (class_exists('Page', false)) {
+				Page::quick_log('cache_write_bad.txt', 'rename ' . basename($path));
+			}
+			return false;
+		}
+		return true;
+	}
 
 	/**
-	 * Variables used by wx10–wx16 detail pages. Cron pre-warms these for each
-	 * detail start-year chip so the first visitor is not cold.
+	 * Start year used by wx10–wx16 detail pages (also the warm-cache set).
+	 * Detail pages are locked to the station record.
+	 */
+	public static $detailStartYearOptions = [2009];
+
+	/**
+	 * Variables used by wx10–wx16 detail pages. Cron pre-warms these for the
+	 * station start year so the first visitor is not cold.
 	 */
 	public static function detailPageVars() {
 		return array(
@@ -330,17 +368,28 @@ class DataSummarizer {
 	}
 
 	/**
-	 * Pre-compute and store summarize caches for detail-page variables.
-	 * @param int|null $startYear one year, or null to warm every detail chip year
+	 * Detail-page variables whose serialised source is written by serialiseCSVm()
+	 * rather than the five-minutely serialiseCSV('dat'). datm can change on any
+	 * minute, so cron_main warms just these straight after re-serialising it.
 	 */
-	public static function warmDetailSummaries($startYear = null) {
+	public static function datmDetailVars() {
+		return array('sunhr', 'sunhrp', 'wethr');
+	}
+
+	/**
+	 * Pre-compute and store summarize caches for detail-page variables.
+	 * @param int|null $startYear one year, or null to warm the station start year
+	 * @param array|null $vars variables to warm, or null for the full detail set
+	 */
+	public static function warmDetailSummaries($startYear = null, $vars = null) {
 		$years = ($startYear === null)
 			? self::$detailStartYearOptions
 			: array((int)$startYear);
+		if ($vars === null) { $vars = self::detailPageVars(); }
 		foreach ($years as $sy) {
-			foreach (self::detailPageVars() as $var) {
+			foreach ($vars as $var) {
 				if (!isset(Wx::$daily[$var])) { continue; }
-				self::summarizeCached($var, $sy);
+				self::summarizeCached($var, $sy, true);
 			}
 		}
 	}

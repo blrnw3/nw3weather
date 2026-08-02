@@ -26,6 +26,7 @@ function dd_month_future($m, $isCurrentYear, $curMonth) {
  * @return array meta for AJAX clients: type, year, title, startYear, description, unit
  */
 function nw3_dataday_render(Report $report) {
+	$t0 = microtime(true);
 	$type = $report->type;
 	$year = $report->year;
 	$unit = $report->unit;
@@ -228,6 +229,7 @@ function nw3_dataday_render(Report $report) {
 	if ($isAgg) {
 		$title .= ' · ' . $aggShort[$dayAgg] . ' (all years)';
 	}
+	$report->logRankRuntime($t0, 'dataday');
 	return array(
 		'type' => $type,
 		'year' => $year,

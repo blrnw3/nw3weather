@@ -5,8 +5,9 @@
  * day (or after a data refresh) is not stuck rebuilding ranks/spells/windows.
  *
  * Usage:
- *   php warm_detail_summaries.php           # all detail start-year chips
+ *   php warm_detail_summaries.php           # station start year (2009)
  *   php warm_detail_summaries.php 2009      # one start year only
+ *   php warm_detail_summaries.php datm      # only the datm-sourced vars
  */
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
@@ -23,14 +24,16 @@ require __DIR__ . '/Spells.php';
 // with null percentages and no seasonal/annual anomalies.
 LTA::init();
 
-$start = isset($argv[1]) && ctype_digit((string)$argv[1])
-	? (int)$argv[1]
-	: null;
+$arg = isset($argv[1]) ? (string)$argv[1] : '';
+$onlyDatm = ($arg === 'datm');
+$start = ctype_digit($arg) ? (int)$arg : null;
+$vars = $onlyDatm ? DataSummarizer::datmDetailVars() : null;
 
 $t0 = microtime(true);
-DataSummarizer::warmDetailSummaries($start);
+DataSummarizer::warmDetailSummaries($start, $vars);
 $ms = round((microtime(true) - $t0) * 1000);
 $label = ($start === null)
 	? 'all=' . implode(',', DataSummarizer::$detailStartYearOptions)
 	: "start=$start";
+if ($onlyDatm) { $label .= ' vars=' . implode(',', DataSummarizer::datmDetailVars()); }
 fwrite(STDOUT, "warm_detail_summaries $label done in {$ms}ms\n");

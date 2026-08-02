@@ -169,9 +169,11 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
  * @return array meta for AJAX clients
  */
 function nw3_datamonth_render(Report $report) {
+	$t0 = microtime(true);
 	if ($report->isNotSummarisable) {
 		echo '<p>' . htmlspecialchars($report->description) . ' has no meaningful monthly summary.</p>';
 		$report->echoVarAbout();
+		$report->logRankRuntime($t0, 'datamonth');
 		return array(
 			'type' => $report->type,
 			'startYearRep' => (int)$report->startYrReport,
@@ -233,6 +235,7 @@ function nw3_datamonth_render(Report $report) {
 
 	$report->historicalInfo($fromYr);
 	$report->echoVarAbout();
+	$report->logRankRuntime($t0, 'datamonth');
 
 	return array(
 		'type' => $report->type,
