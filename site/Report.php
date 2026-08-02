@@ -482,6 +482,16 @@ class Report {
 		return Wx::conv($value - $sum, Wx::AbsTemp, 0, 1);
 	}
 
+	/**
+	 * Wrap an anomaly string for a table cell, collapsing to nothing when the
+	 * variable has no climate normal (the anom* methods return '' for those).
+	 * @param string $anom output of anomMonth / anomYear / anomMonthCum
+	 * @return string
+	 */
+	public function anomCell($anom) {
+		return ($anom === '' || $anom === null) ? '' : '<br />(' . $anom . ')';
+	}
+
 	// ---- Navigation / controls ----
 
 	/**

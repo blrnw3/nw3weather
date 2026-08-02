@@ -18,6 +18,11 @@ require __DIR__ . '/WxDefinition.php';
 require __DIR__ . '/WxFn.php';
 require __DIR__ . '/Spells.php';
 
+// Climate normals drive both the anomaly figures and the sunhrp values
+// (sun hours / max possible). Without this the warmed caches would be written
+// with null percentages and no seasonal/annual anomalies.
+LTA::init();
+
 $start = isset($argv[1]) && ctype_digit((string)$argv[1])
 	? (int)$argv[1]
 	: null;

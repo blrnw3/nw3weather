@@ -142,7 +142,7 @@ function nw3_dataday_render(Report $report) {
 				$putConv = Wx::conv($put, $unit, false);
 				$num = $report->valcolConvert ? Wx::convNum($put, $unit) : (float)$put;
 				$class = $report->valcolr($num / $sumfix);
-				$anom = (!$isAgg && $report->isAnom && $mm == 2) ? '<br />(' . $report->anomMonth($put, $m) . ')' : '';
+				$anom = (!$isAgg && $report->isAnom && $mm == 2) ? $report->anomCell($report->anomMonth($put, $m)) : '';
 				dd_cell($putConv . $anom, $class, 'dd-sum-cell');
 			}
 			echo '</div>';
@@ -192,7 +192,7 @@ function nw3_dataday_render(Report $report) {
 			$putConv = Wx::conv($put, $unit, false);
 			$num = $report->valcolConvert ? Wx::convNum($put, $unit) : (float)$put;
 			$class = $report->valcolr($num / $sumfix);
-			$anom = (!$isAgg && $report->isAnom) ? '<br />(' . $report->anomMonthCum($put, $m - 1) . ')' : '';
+			$anom = (!$isAgg && $report->isAnom) ? $report->anomCell($report->anomMonthCum($put, $m - 1)) : '';
 			dd_cell($putConv . $anom, $class, 'dd-sum-cell');
 		}
 		echo '</div>';

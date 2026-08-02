@@ -379,7 +379,10 @@ class Wx {
 	static function conv($val, $type, $show_unit = true, $show_sign = false, $dpa = 0, $abs = false) {
 		//Bad value checking and special cases
 		if($type === self::None) {
-			return $val;
+			// Unitless values are shown as-is (comments, flags, stored counts),
+			// but an aggregate such as a mean of event days arrives as a float
+			// and would otherwise print at full precision.
+			return is_float($val) ? (string)round($val, 2) : $val;
 		} elseif( is_null($val) || (is_string($val) && Util::isBlank($val)) ) {
 			return ($val === null) ? 'null' : '';
 		} elseif($type === 'wdir' || $type === self::Direction) {
@@ -754,11 +757,12 @@ class Wx {
 			'start_year' => 2009,
 		],
 		'afhrs' => [
+			// No 'anomaly': LTA has air-frost *days* (afdays), not hours, so
+			// there is no climate normal to compare against.
 			'description' => 'Air-frost Hrs',
 			'unit' => Wx::Hours,
 			'colour' => 'cadetblue4',
 			'summable' => true,
-			'anomaly' => true,
 			'start_year' => 2009,
 		],
 		'aqmin' => [
@@ -1147,7 +1151,14 @@ class Wx {
 
 class LTA {
 
+	/** Set once init() has populated the daily/seasonal normals. */
+	private static $ready = false;
+
 	static function init() {
+		if (self::$ready) {
+			return;
+		}
+		self::$ready = true;
 		//365-day clim avs
 		$dtfanomcc = file(ROOT . 'tminmaxav.csv');
 		$dsuncc = file(ROOT . 'maxsun.csv');

@@ -939,15 +939,16 @@ class Data {
 	}
 
 	/**
-	 * Flattens an array indexed [month][day] into a 1D array indexed by day-of-year.
+	 * Flattens an array indexed [month][day] into a 1D array (day order).
+	 * Iterates months 1–12 so sparse years (missing months) still include later months.
 	 * @param array $arr [month][day] => val
 	 * @return array
 	 */
 	public static function MDtoZ($arr) {
 		$z = [];
-		$cnt = count($arr);
-		for($mon = 1; $mon <= $cnt; $mon++) {
-			if(isset($arr[$mon]) && is_array($arr[$mon])) {
+		if (!is_array($arr)) { return $z; }
+		for ($mon = 1; $mon <= 12; $mon++) {
+			if (isset($arr[$mon]) && is_array($arr[$mon])) {
 				$z = array_merge($z, $arr[$mon]);
 			}
 		}

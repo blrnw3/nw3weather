@@ -85,7 +85,7 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 				$class = $isCount
 					? Report::dayCountClass($val)
 					: $report->valcolr(($num === null ? 0 : $num) / $sumOff);
-				$anom = $isAnom ? '<br />(' . $report->anomMonth($val, $m) . ')' : '';
+				$anom = $isAnom ? $report->anomCell($report->anomMonth($val, $m)) : '';
 			} elseif (Util::mycount($days) === 0) {
 				$value = '-';
 			} else {
@@ -114,7 +114,7 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 				$yrVal = Data::summarize($months, $st);
 			}
 			$yrAgg[$y] = $yrVal;
-			$anom = $isAnom ? '<br />(' . $report->anomYear($yrVal) . ')' : '';
+			$anom = $isAnom ? $report->anomCell($report->anomYear($yrVal)) : '';
 			$valyr = dm_fmt($report, $yrVal, $st);
 			$cntM = ($st === Data::SUMMARY_SUM) ? max(1, count($months)) : 1;
 			$class = $isCount
@@ -142,7 +142,7 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 			if (count($col) === 0) { dm_cell('-', 'reportday', 'dm-sum-cell'); continue; }
 			$v = Report::aggregate($col, $mm);
 			$value = dm_fmt($report, $v, $st);
-			$anom = $isAnom ? '<br />(' . $report->anomMonth($v, $m) . ')' : '';
+			$anom = $isAnom ? $report->anomCell($report->anomMonth($v, $m)) : '';
 			$class = $isCount
 				? Report::dayCountClass($v)
 				: $report->valcolr($v / $sumOff);
@@ -152,7 +152,7 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 		else {
 			$yv = Report::aggregate($yrAgg, $mm);
 			$valall = dm_fmt($report, $yv, $st);
-			$anom = $isAnom ? '<br />(' . $report->anomYear($yv) . ')' : '';
+			$anom = $isAnom ? $report->anomCell($report->anomYear($yv)) : '';
 			$class = $isCount
 				? Report::dayCountClass($yv)
 				: $report->valcolr($yv / $sumOff);
