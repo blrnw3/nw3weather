@@ -41,7 +41,6 @@ $mainTables->rankTables();
 <h2>Notes</h2>
 <ul>
 	<li>Temperature records began on 1st Jan 2009</li>
-	<?php $mainTables->historicalNoteItem(); ?>
 	<li>Figures in brackets refer to departure from
 		<a href="wxaverages.php" title="Long-term NW3 climate averages">average conditions</a>
 	</li>

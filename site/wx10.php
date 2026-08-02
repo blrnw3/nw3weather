@@ -56,7 +56,6 @@ $mainTables->rankTables();
 <h2>Notes:</h2>
 <ul>
 	<li>Valid humidity records began in February 2009</li>
-	<?php $mainTables->historicalNoteItem(); ?>
 	<li>All figures, unless specified, relate to the period midnight-midnight, this being when daily extremes are reset</li>
 	<li> 98% is the physical limit of the hygrometer (measuring RH); in reality this tends to means 100% saturation of the air.
 	This value is achieved fairly frequently, any record with this value is just the first instance it occurred in the relevant timeframe.</li>

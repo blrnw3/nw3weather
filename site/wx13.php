@@ -48,7 +48,6 @@ Charts::intradayPanel(['num' => 1], ['wind' => 'Speed &amp; gust', 'wdir' => 'Di
 <h2>Notes</h2>
 <ul>
 	<li>Valid wind records began in August 2009</li>
-	<?php $mainTables->historicalNoteItem(); ?>
 	<li>Figures in brackets refer to departure from
 		<a href="/wxaverages.php" title="Long-term NW3 climate averages">average conditions</a></li>
 	<li><b>"Speed"</b> is the windspeed sampled over a one minute period;
