@@ -56,7 +56,7 @@ $summable = isset($meta['summable']) && $meta['summable'];
 $summaryType = isset($_GET['summary_type']) ? (int)$_GET['summary_type'] : ($summable ? Data::SUMMARY_SUM : Data::SUMMARY_MEAN);
 if ($summaryType < 0 || $summaryType > 4) { $summaryType = Data::SUMMARY_MEAN; }
 $colour = Wx::colourHex(isset($meta['colour']) ? $meta['colour'] : null);
-$precision = isset(Wx::$UNITS[$convType]['precision']) ? Wx::$UNITS[$convType]['precision'] : 1;
+$precision = Wx::precision($convType);
 
 /** Convert a daily/monthly value to user units (raw counts stay unconverted). */
 function cv($v, $isCount = false) {
@@ -214,7 +214,7 @@ if ($mode === 'annual') {
 		$stMeta = Wx::$daily[$st];
 		$stConv = Data::typeToConvType($st);
 		// LTA day/hour counts are often fractional (e.g. 0.7 frost days) — keep 1dp.
-		$stPrec = isset(Wx::$UNITS[$stConv]['precision']) ? Wx::$UNITS[$stConv]['precision'] : 1;
+		$stPrec = Wx::precision($stConv);
 		if ($stConv === Wx::Days || $stConv === Wx::Hours || $stConv === Wx::None) {
 			$stPrec = 1;
 		}

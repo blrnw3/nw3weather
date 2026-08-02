@@ -649,9 +649,36 @@ class Data {
 	const SUMMARY_COUNT = 2;
 	const SUMMARY_MIN = 3;
 	const SUMMARY_MAX = 4;
+	const SUMMARY_RANGE = 5;
+	const SUMMARY_COUNT_ABOVE = 6;
+	const SUMMARY_COUNT_BELOW = 7;
 
-	public static $SUMMARY_NAMES = ["mean", "total", "count", "lowest", "highest"];
-	public static $SUMMARY_EXPLAIN = ["monthly average", "monthly total", "number of non-zero days",  "lowest <b>daily</b> value in each month",  "highest <b>daily</b> value in each month"];
+	public static $SUMMARY_NAMES = [
+		"mean", "total", "count", "lowest", "highest",
+		"range", "count ≥", "count <"
+	];
+	public static $SUMMARY_EXPLAIN = [
+		"monthly average",
+		"monthly total",
+		"number of non-zero days",
+		"lowest <b>daily</b> value in each month",
+		"highest <b>daily</b> value in each month",
+		"range of daily values in each month (max − min)",
+		"number of days at or above a threshold",
+		"number of days below a threshold",
+	];
+
+	/** True for thresholded day-count summaries. */
+	public static function isThresholdSummary($summary_type) {
+		return $summary_type === self::SUMMARY_COUNT_ABOVE
+			|| $summary_type === self::SUMMARY_COUNT_BELOW;
+	}
+
+	/** True for day-count summaries (including non-zero count). */
+	public static function isCountSummary($summary_type) {
+		return $summary_type === self::SUMMARY_COUNT
+			|| self::isThresholdSummary($summary_type);
+	}
 
 	public static function init() {
 	}
@@ -831,7 +858,15 @@ class Data {
 	}
 
 
-	public static function summarize($arr, $summary_type) {
+	/**
+	 * Reduce a 1D day array to a single summary.
+	 * @param array $arr
+	 * @param int $summary_type Data::SUMMARY_*
+	 * @param float|null $threshold required for COUNT_ABOVE / COUNT_BELOW
+	 * @param string|null $varName variable name (affects strict-above at 0)
+	 * @return float|int|null
+	 */
+	public static function summarize($arr, $summary_type, $threshold = null, $varName = null) {
 		// No readings in the period (e.g. wet hours before Apr 2009) means no value:
 		// summing or counting a gap to 0 would plot it as a genuine zero.
 		if(!is_array($arr) || Util::mycount($arr) === 0) {
@@ -853,11 +888,36 @@ class Data {
 		if($summary_type === Data::SUMMARY_MAX) {
 			return Util::mymax($arr);
 		}
+		if($summary_type === Data::SUMMARY_RANGE) {
+			$min = Util::mymin($arr);
+			$max = Util::mymax($arr);
+			if ($min === null || $max === null || Util::isBlank($min) || Util::isBlank($max)) {
+				return null;
+			}
+			return (float)$max - (float)$min;
+		}
+		if($summary_type === Data::SUMMARY_COUNT_ABOVE || $summary_type === Data::SUMMARY_COUNT_BELOW) {
+			$th = ($threshold !== null) ? (float)$threshold : 0.0;
+			$strict = ($summary_type === Data::SUMMARY_COUNT_ABOVE && $varName !== null
+				&& Wx::strictAbove($varName, $th));
+			$cnt = 0;
+			foreach ($arr as $val) {
+				if (Util::isBlank($val)) { continue; }
+				$v = (float)$val;
+				if ($summary_type === Data::SUMMARY_COUNT_ABOVE) {
+					if ($strict ? ($v > $th) : ($v >= $th)) { $cnt++; }
+				} elseif ($v < $th) {
+					$cnt++;
+				}
+			}
+			return $cnt;
+		}
+		return null;
 	}
-	public static function summarize2D($arr2D, $summary_type) {
+	public static function summarize2D($arr2D, $summary_type, $threshold = null, $varName = null) {
 		$summary = [];
 		foreach($arr2D as $k => $arr) {
-			$summary[$k] = self::summarize($arr, $summary_type);
+			$summary[$k] = self::summarize($arr, $summary_type, $threshold, $varName);
 		}
 		return $summary;
 	}
@@ -884,10 +944,10 @@ class Data {
 	 * @param int $summary_type one of the Data::SUMMARY_* constants
 	 * @return array [month] => summary
 	 */
-	public static function MDtoMsummary($arr, $summary_type = Data::SUMMARY_MEAN) {
+	public static function MDtoMsummary($arr, $summary_type = Data::SUMMARY_MEAN, $threshold = null, $varName = null) {
 		$summary = [];
 		foreach($arr as $mon => $days) {
-			$summary[$mon] = self::summarize($days, $summary_type);
+			$summary[$mon] = self::summarize($days, $summary_type, $threshold, $varName);
 		}
 		return $summary;
 	}
@@ -963,13 +1023,14 @@ class Data {
 	 * @param int $summary_type one of the Data::SUMMARY_* constants
 	 * @param int $start_year
 	 * @param int $end_year
+	 * @param float|null $threshold for COUNT_ABOVE / COUNT_BELOW
 	 * @return array
 	 */
-	public static function getMonthlySummary($var, $summary_type, $start_year, $end_year) {
+	public static function getMonthlySummary($var, $summary_type, $start_year, $end_year, $threshold = null) {
 		$data = [];
 		foreach (self::varToDatArray($var, $start_year) as $year => $months) {
 			if($year >= $start_year && $year <= $end_year) {
-				$data[$year] = self::summarize2D($months, $summary_type);
+				$data[$year] = self::summarize2D($months, $summary_type, $threshold, $var);
 			}
 		}
 		return $data;
@@ -981,16 +1042,58 @@ class Data {
 	 * @param int $summary_type one of the Data::SUMMARY_* constants
 	 * @param int $start_year
 	 * @param int $end_year
+	 * @param float|null $threshold for COUNT_ABOVE / COUNT_BELOW
 	 * @return array
 	 */
-	public static function getAnnualData($var, $summary_type, $start_year, $end_year) {
+	public static function getAnnualData($var, $summary_type, $start_year, $end_year, $threshold = null) {
 		$data = [];
 		foreach (self::varToDatArray($var, $start_year) as $year => $months) {
 			if($year >= $start_year && $year <= $end_year) {
-				$data[$year] = self::summarize(self::MDtoZ($months), $summary_type);
+				$data[$year] = self::summarize(self::MDtoZ($months), $summary_type, $threshold, $var);
 			}
 		}
 		return $data;
+	}
+
+	/**
+	 * Sliding N-day period summaries for ranking.
+	 * Each window must have a present value on every day (no gaps).
+	 *
+	 * @param string $var
+	 * @param int $length days in each period
+	 * @param int $summary_type Data::SUMMARY_*
+	 * @param int $start_year
+	 * @param int $monthStart 0 = any; 1–12 = window must start in that month
+	 * @param float|null $threshold for COUNT_ABOVE / COUNT_BELOW
+	 * @return array list of [value, startTs, endTs]
+	 */
+	public static function getPeriodWindows($var, $length, $summary_type, $start_year, $monthStart = 0, $threshold = null) {
+		$length = max(1, (int)$length);
+		$monthStart = (int)$monthStart;
+		$series = Spells::loadDailySeries($var, $start_year);
+		$dates = array_keys($series);
+		$vals = array_values($series);
+		$n = count($dates);
+		$out = [];
+		if ($n < $length) { return $out; }
+
+		for ($i = 0; $i <= $n - $length; $i++) {
+			$startKey = $dates[$i];
+			// Enforce calendar continuity (no missing calendar days in the window).
+			$startTs = strtotime($startKey . ' 12:00:00');
+			if ($startTs === false) { continue; }
+			$endTs = $startTs + ($length - 1) * 86400;
+			$endKey = date('Y-m-d', $endTs);
+			if ($dates[$i + $length - 1] !== $endKey) { continue; }
+			if ($monthStart > 0 && (int)date('n', $startTs) !== $monthStart) { continue; }
+
+			$slice = array_slice($vals, $i, $length);
+			if (Util::mycount($slice) < $length) { continue; }
+			$sum = self::summarize($slice, $summary_type, $threshold, $var);
+			if ($sum === null || Util::isBlank($sum)) { continue; }
+			$out[] = [(float)$sum, $startTs, $endTs];
+		}
+		return $out;
 	}
 
 	/**

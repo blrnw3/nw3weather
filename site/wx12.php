@@ -38,6 +38,7 @@ $mainTables->pastYearAvgsExtrms();
 $mainTables->rankTables();
 ?>
 
+<p class="report-var-about">Rainfall totals and extremes for each calendar day run midnight to midnight (local time), when the rain tip counter is reset.</p>
 <h2>Notes</h2>
 <ul>
 	<li>Rain records began in February 2009</li>

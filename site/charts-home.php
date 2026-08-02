@@ -138,10 +138,28 @@
 		chart = Highcharts.chart('home-chart', buildOptions(key));
 	}
 
+	// Adopt the units and decimal places the endpoint served, so the axis titles,
+	// tooltips and chart titles follow the visitor's unit preference.
+	function applyUnits(json) {
+		if (!json || !json.units) { return; }
+		var key;
+		for (key in TABS) {
+			if (!Object.prototype.hasOwnProperty.call(TABS, key)) { continue; }
+			if (json.units[key] != null) { TABS[key].unit = json.units[key]; }
+			if (json.dp && json.dp[key] != null) { TABS[key].dp = json.dp[key]; }
+		}
+		// PM2.5 becomes an index rather than a concentration under US units.
+		var aqi = (json.units.pm25 === 'AQI');
+		TABS.pm25.title = aqi ? 'air quality index' : 'air pollution';
+		TABS.pm25.yTitle = aqi ? 'Air quality index' : 'PM2.5';
+		TABS.pm25.series[0].name = aqi ? 'Air quality index' : 'Air pollution (PM2.5)';
+	}
+
 	function loadData(range) {
 		currentRange = range;
 		$.getJSON(EP + '?range=' + range, function (json) {
 			cache = json;
+			applyUnits(json);
 			renderVar(currentVar);
 		});
 	}
@@ -160,6 +178,10 @@
 		loadData(currentRange);
 		// Light refresh in step with the per-minute log.
 		setInterval(function () { loadData(currentRange); }, 300000);
+		// Match the live cards: refetch when the user returns to the tab.
+		document.addEventListener('visibilitychange', function () {
+			if (!document.hidden) { loadData(currentRange); }
+		});
 	});
 })();
 //]]>

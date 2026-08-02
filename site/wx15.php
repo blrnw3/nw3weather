@@ -40,7 +40,7 @@ Html::td("Health", null, "15%");
 Html::tr_end();
 
 for ($r = 0; $r < count($labels); $r++) {
-	Html::tr("row" . Html::colcol($r));
+	Html::tr(Html::colcol($r));
 	Html::td($labels[$r]);
 	Html::td($timestamps[$r] !== null ? date($format, $timestamps[$r]) : '&ndash;');
 	if ($timestamps[$r] !== null) {
@@ -81,7 +81,7 @@ Html::td("Value", null, "58%");
 Html::tr_end();
 
 for ($r = 0; $r < count($measures); $r++) {
-	Html::tr("row" . Html::colcol($r));
+	Html::tr(Html::colcol($r));
 	Html::td($measures[$r]);
 	Html::td($values[$r]);
 	Html::tr_end();
@@ -109,7 +109,7 @@ Html::tr_end();
 
 for ($r = 0; $r < count($measures2); $r++) {
 	$time = !Util::isBlank($times2[$r]) ? ' at ' . $times2[$r] : '';
-	Html::tr("row" . Html::colcol($r));
+	Html::tr(Html::colcol($r));
 	Html::td($measures2[$r]);
 	Html::td(Wx::conv($values2[$r], $convs2[$r]) . $time);
 	Html::tr_end();

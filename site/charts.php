@@ -15,7 +15,9 @@ Charts::chartViewer(array(
 	'default' => 'tmean',
 	'height' => 520,
 	'headingId' => 'chart-heading',
+	'aboutId' => 'chart-var-about',
 ));
 ?>
+<p class="report-var-about" id="chart-var-about"><?php echo htmlspecialchars(Wx::measureAbout('tmean')); ?></p>
 
 <?php Page::End(); ?>

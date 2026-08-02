@@ -106,12 +106,12 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 	//<![CDATA[
 	/**
 	 * Button selectors for data/ranking tables (group → measure, chips, AJAX body).
-	 * cfg.mode: daily | monthly | rank-daily | rank-monthly | rank-annual | rank-spells
+	 * cfg.mode: daily | monthly | rank-daily | rank-monthly | rank-annual | rank-spells | rank-periods
 	 */
 	function NW3_reportSel(cfg) {
 		var groups = cfg.groups || [];
 		var mode = cfg.mode || 'daily';
-		var isRank = (mode === 'rank-daily' || mode === 'rank-monthly' || mode === 'rank-annual' || mode === 'rank-spells');
+		var isRank = (mode === 'rank-daily' || mode === 'rank-monthly' || mode === 'rank-annual' || mode === 'rank-spells' || mode === 'rank-periods');
 		var curType = cfg.type;
 		var curYear = parseInt(cfg.year, 10) || 0;
 		var curAgg = cfg.agg || '';
@@ -124,6 +124,10 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		var curSpellDir = cfg.spellDir || 'above';
 		var curThreshold = cfg.threshold != null ? parseFloat(cfg.threshold) : 0;
 		var curThresholds = cfg.thresholds || [];
+		var curThresholdLabels = cfg.thresholdLabels || [];
+		var curPeriod = parseInt(cfg.periodLength, 10) || 5;
+		var periodOpts = (cfg.periodLengthOptions || [3,5,7,14,30,90,365]).map(function (x) { return parseInt(x, 10); });
+		var curNoOverlap = !!parseInt(cfg.periodNoOverlap == null ? 0 : cfg.periodNoOverlap, 10);
 		var spellDirLabels = cfg.spellDirLabels || {};
 		var startYearOpts = (cfg.startYearOptions || []).map(function (x) { return parseInt(x, 10); });
 		var summaryTypes = cfg.summaryTypes || [];
@@ -143,8 +147,21 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		var limitEl = root.querySelector('.wxsel-rank-limit');
 		var spellDirEl = root.querySelector('.wxsel-spell-dir');
 		var thresholdEl = root.querySelector('.wxsel-threshold');
+		var periodEl = root.querySelector('.wxsel-periods');
+		var overlapEl = root.querySelector('.wxsel-period-overlap');
 		var headingEl = document.getElementById('report-sel-heading');
 		var reqSeq = 0;
+		function isThresholdSummary(st) {
+			st = parseInt(st, 10);
+			return st === 6 || st === 7;
+		}
+		function syncThresholdVisibility() {
+			var row = document.getElementById('report-sel-threshold');
+			if (!row) { return; }
+			var show = (mode === 'rank-spells') || isThresholdSummary(curSummary);
+			if (show) { row.removeAttribute('hidden'); }
+			else { row.setAttribute('hidden', ''); }
+		}
 
 		function bodyEl() { return document.getElementById(bodyId); }
 		function pageUrl(overrides) {
@@ -168,11 +185,19 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			} else if (mode === 'monthly') {
 				p.start_year_rep = curStart;
 				p.summary_type = curSummary;
+				if (isThresholdSummary(curSummary)) { p.threshold = curThreshold; }
 			} else if (isRank) {
 				p.start_year_rep = curStart;
 				if (mode !== 'rank-annual') { p.rankLimit = curRankLimit; }
-				if (mode === 'rank-daily' || mode === 'rank-monthly' || mode === 'rank-spells') { p.month = curMonth; }
-				if (mode === 'rank-monthly' || mode === 'rank-annual') { p.summary_type = curSummary; }
+				if (mode === 'rank-daily' || mode === 'rank-monthly' || mode === 'rank-spells' || mode === 'rank-periods') { p.month = curMonth; }
+				if (mode === 'rank-monthly' || mode === 'rank-annual' || mode === 'rank-periods') {
+					p.summary_type = curSummary;
+					if (isThresholdSummary(curSummary)) { p.threshold = curThreshold; }
+				}
+				if (mode === 'rank-periods') {
+					p.period = curPeriod;
+					p.no_overlap = curNoOverlap ? 1 : 0;
+				}
 				if (mode === 'rank-spells') {
 					p.spell_dir = curSpellDir;
 					p.threshold = curThreshold;
@@ -319,6 +344,25 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				a.setAttribute('href', pageUrl({ rankLimit: n }));
 			});
 		}
+		function syncPeriodChips() {
+			if (!periodEl) { return; }
+			var html = '', i, plen;
+			for (i = 0; i < periodOpts.length; i++) {
+				plen = periodOpts[i];
+				html += '<a class="wxsel-chip' + (plen === curPeriod ? ' active' : '')
+					+ '" data-period="' + plen + '" href="' + pageUrl({ period: plen }) + '">'
+					+ plen + 'd</a>';
+			}
+			periodEl.innerHTML = html;
+		}
+		function syncOverlapChips() {
+			if (!overlapEl) { return; }
+			overlapEl.querySelectorAll('a.wxsel-chip[data-no-overlap]').forEach(function (a) {
+				var v = a.getAttribute('data-no-overlap') === '1';
+				a.classList.toggle('active', v === curNoOverlap);
+				a.setAttribute('href', pageUrl({ no_overlap: v ? 1 : 0 }));
+			});
+		}
 		function syncSpellDirChips() {
 			if (!spellDirEl) { return; }
 			spellDirEl.querySelectorAll('a.wxsel-chip[data-spell-dir]').forEach(function (a) {
@@ -331,15 +375,17 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		}
 		function syncThresholdChips() {
 			if (!thresholdEl) { return; }
-			var html = '', i, th, active;
+			var html = '', i, th, label, active;
 			for (i = 0; i < curThresholds.length; i++) {
 				th = curThresholds[i];
+				label = curThresholdLabels[i] != null ? curThresholdLabels[i] : th;
 				active = Math.abs(parseFloat(th) - curThreshold) < 1e-9;
 				html += '<a class="wxsel-chip' + (active ? ' active' : '')
 					+ '" data-threshold="' + th + '" href="' + pageUrl({ threshold: th }) + '">'
-					+ th + '</a>';
+					+ label + '</a>';
 			}
 			thresholdEl.innerHTML = html;
+			syncThresholdVisibility();
 		}
 		function syncGroupActive() {
 			var gid = null, i;
@@ -386,19 +432,34 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		}
 		function stateObj() {
 			if (mode === 'monthly') {
-				return { vartype: curType, start_year_rep: curStart, summary_type: curSummary };
+				var o = { vartype: curType, start_year_rep: curStart, summary_type: curSummary };
+				if (isThresholdSummary(curSummary)) { o.threshold = curThreshold; }
+				return o;
 			}
 			if (mode === 'rank-daily') {
 				return { vartype: curType, month: curMonth, start_year_rep: curStart, rankLimit: curRankLimit };
 			}
 			if (mode === 'rank-monthly') {
-				return {
+				var om = {
 					vartype: curType, month: curMonth, start_year_rep: curStart,
 					summary_type: curSummary, rankLimit: curRankLimit
 				};
+				if (isThresholdSummary(curSummary)) { om.threshold = curThreshold; }
+				return om;
 			}
 			if (mode === 'rank-annual') {
-				return { vartype: curType, start_year_rep: curStart, summary_type: curSummary };
+				var oa = { vartype: curType, start_year_rep: curStart, summary_type: curSummary };
+				if (isThresholdSummary(curSummary)) { oa.threshold = curThreshold; }
+				return oa;
+			}
+			if (mode === 'rank-periods') {
+				var op = {
+					vartype: curType, month: curMonth, start_year_rep: curStart,
+					summary_type: curSummary, rankLimit: curRankLimit, period: curPeriod
+				};
+				if (isThresholdSummary(curSummary)) { op.threshold = curThreshold; }
+				op.no_overlap = curNoOverlap ? 1 : 0;
+				return op;
 			}
 			if (mode === 'rank-spells') {
 				return {
@@ -417,10 +478,15 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			if (meta.startYearRep != null) { curStart = parseInt(meta.startYearRep, 10); }
 			if (meta.summaryType != null) { curSummary = parseInt(meta.summaryType, 10); }
 			if (meta.rankLimit != null) { curRankLimit = parseInt(meta.rankLimit, 10); }
+			if (meta.periodLength != null) { curPeriod = parseInt(meta.periodLength, 10); }
+			if (meta.periodNoOverlap != null) { curNoOverlap = !!parseInt(meta.periodNoOverlap, 10); }
 			if (meta.spellDir) { curSpellDir = meta.spellDir; }
 			if (meta.threshold != null) { curThreshold = parseFloat(meta.threshold); }
 			if (meta.thresholds) {
 				curThresholds = meta.thresholds.map(function (x) { return parseFloat(x); });
+			}
+			if (meta.thresholdLabels) {
+				curThresholdLabels = meta.thresholdLabels;
 			}
 			if (meta.summaryTypes) {
 				summaryTypes = meta.summaryTypes.map(function (x) { return parseInt(x, 10); });
@@ -438,6 +504,8 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			root.setAttribute('data-start-year-rep', String(curStart));
 			root.setAttribute('data-summary-type', String(curSummary));
 			root.setAttribute('data-rank-limit', String(curRankLimit));
+			root.setAttribute('data-period', String(curPeriod));
+			root.setAttribute('data-no-overlap', curNoOverlap ? '1' : '0');
 			root.setAttribute('data-spell-dir', curSpellDir);
 			root.setAttribute('data-threshold', String(curThreshold));
 			if (headingEl && meta.title) {
@@ -450,10 +518,12 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			syncStartYearChips();
 			syncSummaryChips();
 			syncRankLimitChips();
+			syncPeriodChips();
+			syncOverlapChips();
 			syncSpellDirChips();
 			syncThresholdChips();
 			syncStartYearVisibility();
-			if (mode === 'monthly' || mode === 'rank-monthly' || mode === 'rank-annual') { showSummaryTab(curSummary); }
+			if (mode === 'monthly' || mode === 'rank-monthly' || mode === 'rank-annual' || mode === 'rank-periods') { showSummaryTab(curSummary); }
 			syncNavVartype();
 		}
 		function sameState(o) {
@@ -463,16 +533,31 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				if (o.agg) { return o.start === curStart; }
 				return o.year === curYear;
 			}
-			if (mode === 'monthly') { return o.start === curStart && o.summary === curSummary; }
+			if (mode === 'monthly') {
+				if (o.start !== curStart || o.summary !== curSummary) { return false; }
+				if (isThresholdSummary(curSummary) && Math.abs(o.threshold - curThreshold) >= 1e-9) { return false; }
+				return true;
+			}
 			if (mode === 'rank-daily') {
 				return o.month === curMonth && o.start === curStart && o.rankLimit === curRankLimit;
 			}
 			if (mode === 'rank-monthly') {
-				return o.month === curMonth && o.start === curStart
-					&& o.summary === curSummary && o.rankLimit === curRankLimit;
+				if (o.month !== curMonth || o.start !== curStart
+					|| o.summary !== curSummary || o.rankLimit !== curRankLimit) { return false; }
+				if (isThresholdSummary(curSummary) && Math.abs(o.threshold - curThreshold) >= 1e-9) { return false; }
+				return true;
 			}
 			if (mode === 'rank-annual') {
-				return o.start === curStart && o.summary === curSummary;
+				if (o.start !== curStart || o.summary !== curSummary) { return false; }
+				if (isThresholdSummary(curSummary) && Math.abs(o.threshold - curThreshold) >= 1e-9) { return false; }
+				return true;
+			}
+			if (mode === 'rank-periods') {
+				if (o.month !== curMonth || o.start !== curStart || o.summary !== curSummary
+					|| o.rankLimit !== curRankLimit || o.period !== curPeriod
+					|| !!o.noOverlap !== curNoOverlap) { return false; }
+				if (isThresholdSummary(curSummary) && Math.abs(o.threshold - curThreshold) >= 1e-9) { return false; }
+				return true;
 			}
 			if (mode === 'rank-spells') {
 				return o.month === curMonth && o.start === curStart && o.rankLimit === curRankLimit
@@ -495,17 +580,26 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			var threshold = opts.threshold != null ? parseFloat(opts.threshold) : curThreshold;
 
 			// Summary-only change when all summary tabs are already in the DOM.
+			// Threshold summaries (and switches into/out of them) always refetch.
+			var period = opts.period != null ? parseInt(opts.period, 10) : curPeriod;
+			var noOverlap = opts.noOverlap != null ? !!opts.noOverlap : curNoOverlap;
+			// Period rankings only ship the active summary tab (expensive to compute).
 			if ((mode === 'monthly' || mode === 'rank-monthly' || mode === 'rank-annual')
 				&& type === curType && start === curStart && month === curMonth
-				&& rankLimit === curRankLimit && summary !== curSummary) {
+				&& rankLimit === curRankLimit && period === curPeriod && noOverlap === curNoOverlap
+				&& summary !== curSummary
+				&& !isThresholdSummary(summary) && !isThresholdSummary(curSummary)
+				&& document.getElementById('rank-' + summary)) {
 				showSummaryTab(summary);
+				syncThresholdVisibility();
 				if (push !== false) { history.pushState(stateObj(), '', pageUrl()); }
 				return;
 			}
 
 			var next = {
 				type: type, year: year, agg: agg || '', month: month, start: start, summary: summary,
-				rankLimit: rankLimit, spellDir: spellDir, threshold: threshold
+				rankLimit: rankLimit, spellDir: spellDir, threshold: threshold, period: period,
+				noOverlap: noOverlap
 			};
 			if (sameState(next) && push !== false) {
 				setYearWarn('');
@@ -523,13 +617,21 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			} else if (mode === 'monthly') {
 				urlOverrides.start_year_rep = start;
 				urlOverrides.summary_type = summary;
+				if (isThresholdSummary(summary)) { urlOverrides.threshold = threshold; }
 			} else if (isRank) {
 				urlOverrides.start_year_rep = start;
 				if (mode !== 'rank-annual') { urlOverrides.rankLimit = rankLimit; }
-				if (mode === 'rank-daily' || mode === 'rank-monthly' || mode === 'rank-spells') {
+				if (mode === 'rank-daily' || mode === 'rank-monthly' || mode === 'rank-spells' || mode === 'rank-periods') {
 					urlOverrides.month = month;
 				}
-				if (mode === 'rank-monthly' || mode === 'rank-annual') { urlOverrides.summary_type = summary; }
+				if (mode === 'rank-monthly' || mode === 'rank-annual' || mode === 'rank-periods') {
+					urlOverrides.summary_type = summary;
+					if (isThresholdSummary(summary)) { urlOverrides.threshold = threshold; }
+				}
+				if (mode === 'rank-periods') {
+					urlOverrides.period = period;
+					urlOverrides.no_overlap = noOverlap ? 1 : 0;
+				}
 				if (mode === 'rank-spells') {
 					urlOverrides.spell_dir = spellDir;
 					urlOverrides.threshold = threshold;
@@ -554,6 +656,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 					body.innerHTML = frag.innerHTML;
 					var stAttr = frag.getAttribute('data-summary-types') || '';
 					var thAttr = frag.getAttribute('data-thresholds') || '';
+					var thLabAttr = frag.getAttribute('data-threshold-labels') || '';
 					var syAttr = frag.getAttribute('data-start-years') || '';
 					var sdlAttr = frag.getAttribute('data-spell-dir-labels') || '';
 					applyMeta({
@@ -565,10 +668,13 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 						startYears: syAttr ? syAttr.split(',') : startYearOpts,
 						summaryType: frag.getAttribute('data-summary-type'),
 						rankLimit: frag.getAttribute('data-rank-limit'),
+						periodLength: frag.getAttribute('data-period'),
+						periodNoOverlap: frag.getAttribute('data-no-overlap'),
 						spellDir: frag.getAttribute('data-spell-dir'),
 						spellDirLabels: sdlAttr ? sdlAttr.split(',') : null,
 						threshold: frag.getAttribute('data-threshold'),
 						thresholds: thAttr ? thAttr.split(',') : curThresholds,
+						thresholdLabels: thLabAttr ? thLabAttr.split('|') : curThresholdLabels,
 						summaryTypes: stAttr ? stAttr.split(',') : summaryTypes,
 						title: frag.getAttribute('data-title'),
 						yearDefaulted: frag.getAttribute('data-year-defaulted') === '1',
@@ -608,8 +714,11 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			var rankLimit = a.getAttribute('data-rank-limit');
 			var spellDir = a.getAttribute('data-spell-dir');
 			var threshold = a.getAttribute('data-threshold');
+			var period = a.getAttribute('data-period');
+			var noOverlapAttr = a.getAttribute('data-no-overlap');
 			if (type == null && year == null && agg == null && month == null && start == null
-				&& summary == null && rankLimit == null && spellDir == null && threshold == null) {
+				&& summary == null && rankLimit == null && spellDir == null && threshold == null
+				&& period == null && noOverlapAttr == null) {
 				return;
 			}
 			e.preventDefault();
@@ -620,7 +729,9 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				summary: summary != null ? summary : curSummary,
 				rankLimit: rankLimit != null ? rankLimit : curRankLimit,
 				spellDir: spellDir != null ? spellDir : curSpellDir,
-				threshold: threshold != null ? threshold : curThreshold
+				threshold: threshold != null ? threshold : curThreshold,
+				period: period != null ? period : curPeriod,
+				noOverlap: noOverlapAttr != null ? (noOverlapAttr === '1') : curNoOverlap
 			};
 			if (agg != null) {
 				opts.agg = agg;
@@ -648,7 +759,9 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 					summary: st.summary_type != null ? st.summary_type : curSummary,
 					rankLimit: st.rankLimit != null ? st.rankLimit : curRankLimit,
 					spellDir: st.spell_dir != null ? st.spell_dir : curSpellDir,
-					threshold: st.threshold != null ? st.threshold : curThreshold
+					threshold: st.threshold != null ? st.threshold : curThreshold,
+					period: st.period != null ? st.period : curPeriod,
+					noOverlap: st.no_overlap != null ? !!parseInt(st.no_overlap, 10) : curNoOverlap
 				}, false);
 				return;
 			}
@@ -661,14 +774,20 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				summary: q.get('summary_type') || curSummary,
 				rankLimit: q.get('rankLimit') || curRankLimit,
 				spellDir: q.get('spell_dir') || curSpellDir,
-				threshold: q.get('threshold') != null ? q.get('threshold') : curThreshold
+				threshold: q.get('threshold') != null ? q.get('threshold') : curThreshold,
+				period: q.get('period') != null ? q.get('period') : curPeriod,
+				noOverlap: q.get('no_overlap') != null ? (q.get('no_overlap') === '1') : curNoOverlap
 			}, false);
 		});
 
 		syncNavVartype();
 		syncMonthChips();
 		syncRankLimitChips();
+		syncPeriodChips();
+		syncOverlapChips();
 		syncStartYearVisibility();
+		syncThresholdVisibility();
+		syncThresholdChips();
 		syncAggChips();
 		syncStartYearChips();
 	}
@@ -832,7 +951,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 <script type="text/javascript">
 	//<![CDATA[
 	(function () {
-		var MQ = '(max-width: 900px)';
+		var MQ = '(max-width: 1020px)';
 		function isNarrow() {
 			return window.matchMedia && window.matchMedia(MQ).matches;
 		}

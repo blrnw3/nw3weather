@@ -15,6 +15,9 @@ require __DIR__ . '/Page.php';
 ini_set('display_errors', '0');
 header('Content-Type: application/json; charset=utf-8');
 
+$unitPref = isset($_GET['unit']) ? $_GET['unit'] : (isset($_COOKIE['SetUnits']) ? $_COOKIE['SetUnits'] : 'UK');
+Page::$units = ($unitPref === 'US') ? UNIT_US : (($unitPref === 'EU') ? UNIT_EU : UNIT_UK);
+
 $range = isset($_GET['range']) ? (int)$_GET['range'] : 6;
 if (!in_array($range, array(6, 12, 24), true)) {
 	$range = 6;
@@ -25,6 +28,30 @@ $file = ROOT . 'goodlog.txt';
 $out = array(
 	'updated' => null,
 	'range'   => $range,
+	// Series are served in the visitor's chosen units; the front-end labels and
+	// rounds from these rather than assuming UK metric.
+	'units'   => array(
+		'temp' => Wx::getUnitsText(Wx::Temperature),
+		'dewp' => Wx::getUnitsText(Wx::Temperature),
+		'humi' => '%',
+		'pres' => Wx::getUnitsText(Wx::Pressure),
+		'wind' => Wx::getUnitsText(Wx::Wind),
+		'gust' => Wx::getUnitsText(Wx::Wind),
+		'rain' => Wx::getUnitsText(Wx::Rain),
+		'wdir' => '',
+		'pm25' => Wx::getUnitsText(Wx::Pm25),
+	),
+	'dp'      => array(
+		'temp' => Wx::precision(Wx::Temperature),
+		'dewp' => Wx::precision(Wx::Temperature),
+		'humi' => 0,
+		'pres' => Wx::precision(Wx::Pressure),
+		'wind' => Wx::precision(Wx::Wind),
+		'gust' => Wx::precision(Wx::Wind),
+		'rain' => Wx::precision(Wx::Rain),
+		'wdir' => 0,
+		'pm25' => Wx::precision(Wx::Pm25),
+	),
 	'time'    => array(),
 	'temp'    => array(),
 	'dewp'    => array(),
@@ -80,15 +107,15 @@ if (is_readable($file)) {
 		$dirOut = ($windOut > 0.5) ? $wdirs->mean() : -999;
 
 		$out['time'][] = $ts * 1000;
-		$out['temp'][] = ($c[6] === '') ? null : (float)$c[6];
+		$out['temp'][] = Wx::convNum($c[6], Wx::Temperature, 1);
 		$out['humi'][] = ($c[7] === '') ? null : (float)$c[7];
-		$out['pres'][] = ($c[8] === '') ? null : (float)$c[8];
-		$out['dewp'][] = ($c[9] === '') ? null : (float)$c[9];
-		$out['rain'][] = ($c[10] === '') ? null : (float)$c[10];
-		$out['wind'][] = round($windOut, 1);
-		$out['gust'][] = ($c[4] === '') ? null : (float)$c[4];
+		$out['pres'][] = Wx::convNum($c[8], Wx::Pressure, 2);
+		$out['dewp'][] = Wx::convNum($c[9], Wx::Temperature, 1);
+		$out['rain'][] = Wx::convNum($c[10], Wx::Rain, 2);
+		$out['wind'][] = Wx::convNum($windOut, Wx::Wind, 1);
+		$out['gust'][] = Wx::convNum($c[4], Wx::Wind, 1);
 		$out['wdir'][] = ($dirOut < 0) ? null : round($dirOut);
-		$out['pm25'][] = (isset($c[11]) && $c[11] !== '') ? (float)$c[11] : null;
+		$out['pm25'][] = (isset($c[11]) && $c[11] !== '') ? Wx::convNum($c[11], Wx::Pm25, Wx::precision(Wx::Pm25)) : null;
 	}
 
 	$n = count($out['time']);

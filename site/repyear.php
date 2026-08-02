@@ -10,6 +10,7 @@ Charts::assets();
 ?>
 
 	<h1>Annual Summaries</h1>
+	<p><a href="/wxhistyear.php" title="Charts for each weather variable by year">Browse annual charts by year &rarr;</a></p>
 
 		<h2 id="report-2025">Year 2025 - Warm and very sunny</h2>
 <p style="margin: 0.5em;">

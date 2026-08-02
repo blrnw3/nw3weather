@@ -124,7 +124,7 @@ class Page {
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
-		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20260731v" media="screen" title="screen" />
+		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20260801h" media="screen" title="screen" />
 		$colorCss
 		$scripts
 	</head>
@@ -147,16 +147,13 @@ class Page {
 						<div id="banner-right"></div>
 					</div>
 					<div id="sub-header">
+						<button type="button" id="nav-toggle" aria-expanded="false" aria-controls="nav" aria-label="Open menu">
+							<span class="nav-toggle-icon" aria-hidden="true"></span>
+							<span class="nav-toggle-label">Menu</span>
+						</button>
 						<div id="live-wx"></div>
 						<div id="last-updated">$updatedAt</div>
 					</div>
-				</div>
-				<div id="nav-toggle-bar">
-					<button type="button" id="nav-toggle" aria-expanded="false" aria-controls="nav" aria-label="Open menu">
-						<span class="nav-toggle-icon" aria-hidden="true"></span>
-						<span class="nav-toggle-label">Menu</span>
-					</button>
-					<a href="index.php" class="nav-toggle-brand"><span class="nw3">nw3</span> weather</a>
 				</div>
 				<div id="nav-backdrop" hidden></div>
 				<div id="nav-wrapper">
@@ -205,7 +202,7 @@ END;
 			<div>
 				<p><a href="contact.php" title="E-mail me">&#x1F4E7;&#xFE0E; Contact / Social</a></p>
 				<p>&copy; nw3weather 2010-$year</p>
-				<p>&#x1F527;&#xFE0E; Site version 5.0 <span style="font-size:85%">($pageLoad)</span></p>
+				<p>&#x1F527;&#xFE0E; Version 5.0 <span style="font-size:85%">-- $pageLoad</span></p>
 			</div>
 		</div>
 	</body>
@@ -237,17 +234,16 @@ END;
 		$summaryStamp = is_file($summaryFile) ? filemtime($summaryFile)
 			: (is_file($dataFile) ? filemtime($dataFile) : $dateTimeStamp);
 		$timeStampBest = min($summaryStamp, $dateTimeStamp); // oldest
-		if(self::$fileNum== 20) return 'Last Updated: Jan 2022'; //climate
-		if(self::$fileNum== 7) return 'Last Upload: Sep 2017';
-		if(self::$fileNum== 8) return 'Last Updated: Mar 2023';
-		if(self::$fileNum== 9) return 'Page Last Updated: Mar 2013';
 		if(self::$fileNum== 0) return ''; //blank for generic e.g. error pages
-		return 'Last Full Update: '. date('d M Y, H:i ', $timeStampBest) . Date::$dst;
+		return '<span class="updated-full">Last Full Update: '
+			. date('d M Y, H:i ', $timeStampBest) . Date::$dst . '</span>'
+			. '<span class="updated-short">Updated: '
+			. date('d M y H:i', $timeStampBest) . '</span>';
 	}
 
 	private static function sidebarGroup($items) {
 		// Pages that share a vartype selector — keep it when hopping Daily ↔ Monthly etc.
-		$vartypePages = array('wxdataday', 'TablesDataMonth', 'RankDay', 'RankMonth', 'RankYear', 'RankSpells');
+		$vartypePages = array('wxdataday', 'TablesDataMonth', 'RankDay', 'RankMonth', 'RankYear', 'RankPeriods', 'RankSpells');
 		$vartype = isset($_GET['vartype']) ? (string)$_GET['vartype'] : '';
 		if ($vartype !== '' && !preg_match('/^[a-z0-9]+$/i', $vartype)) {
 			$vartype = '';
@@ -421,6 +417,13 @@ END;
 					"subhead" => true,
 				],
 				[
+					"title" => "Periods",
+					"text" => "Ranked multi-day periods by weather variable",
+					"page" => "RankPeriods",
+					"num" => 42.2,
+					"subhead" => true,
+				],
+				[
 					"title" => "Spells",
 					"text" => "Longest wet, dry and threshold spells",
 					"page" => "RankSpells",
@@ -442,14 +445,7 @@ END;
 					"subhead" => true,
 				],
 				[
-					"title" => "Annual Charts",
-					"text" => "Annual charts by weather variable",
-					"page" => "wxhistyear",
-					"num" => 87,
-					"subhead" => true,
-				],
-				[
-					"title" => "Annual Summary",
+					"title" => "Annual",
 					"text" => "Narrative annual weather summaries",
 					"page" => "repyear",
 					"num" => 87,
@@ -506,6 +502,13 @@ END;
 
 	private static function getUnitsNav() {
 		$html = "";
+		// A GET form replaces the query string, so carry the current page's
+		// parameters through and stay on the same view after switching units.
+		foreach ($_GET as $k => $v) {
+			if ($k === 'unit' || is_array($v)) { continue; }
+			$html .= '<input type="hidden" name="' . htmlspecialchars($k, ENT_QUOTES)
+				. '" value="' . htmlspecialchars($v, ENT_QUOTES) . '" />';
+		}
 		$html .= '<label class="unit-option' . (self::$units === UNIT_US ? ' active' : '') . '"><input name="unit" type="radio" value="US" onclick="this.form.submit();"';
 		if (self::$units === UNIT_US) {
 			$html .= ' checked="checked"';
@@ -607,26 +610,27 @@ END;
 			self::$styleSheet = 'mainstyle_v5';
 		}
 
-		//Unit setting getter/saver
+		// Unit setting getter/saver. setcookie() does not populate $_COOKIE, so the
+		// new choice has to be read from the query string to apply on this request.
+		$unitPref = isset($_COOKIE['SetUnits']) ? $_COOKIE['SetUnits'] : '';
 		if (isset($_GET['unit'])) {
-			setcookie("SetUnits", filter_input(INPUT_GET, "unit", FILTER_SANITIZE_STRING), time() + self::$cookieLifeSecs);
+			$unitPref = filter_input(INPUT_GET, "unit", FILTER_SANITIZE_STRING);
+			setcookie("SetUnits", $unitPref, time() + self::$cookieLifeSecs);
 		}
-		if (isset($_COOKIE['SetUnits'])) {
-			if ($_COOKIE['SetUnits'] == 'US') {
-				self::$units = UNIT_US;
-			}
-			if ($_COOKIE['SetUnits'] == 'UK') {
-				self::$units = UNIT_UK;
-			}
-			if ($_COOKIE['SetUnits'] == 'EU') {
-				self::$units = UNIT_EU;
-			}
+		if ($unitPref == 'US') {
+			self::$units = UNIT_US;
+		} elseif ($unitPref == 'UK') {
+			self::$units = UNIT_UK;
+		} elseif ($unitPref == 'EU') {
+			self::$units = UNIT_EU;
 		}
 		//Auto-update setting getter/saver
+		$updatePref = isset($_COOKIE['SetUpdate']) ? $_COOKIE['SetUpdate'] : '';
 		if (isset($_GET['update'])) {
-			setcookie("SetUpdate", $_GET['update'] === 'on' ? "on" : "off", time() + self::$cookieLifeSecs);
+			$updatePref = ($_GET['update'] === 'on') ? "on" : "off";
+			setcookie("SetUpdate", $updatePref, time() + self::$cookieLifeSecs);
 		}
-		if (isset($_COOKIE['SetUpdate']) && $_COOKIE['SetUpdate'] === 'on') {
+		if ($updatePref === 'on') {
 			self::$auto = true;
 		}
 		// Me setting getter/saver (stops analytics and provides more debugging)
@@ -684,7 +688,7 @@ class DataPage extends Page {
 	 * @return string a query string beginning with '&'
 	 */
 	static function buildSlug($key, $val, $defaults = []) {
-		$keys = ["vartype", "year", "month", "summary_type", "start_year_rep", "rankLimit", "spell_dir", "threshold"];
+		$keys = ["vartype", "year", "month", "summary_type", "start_year_rep", "rankLimit", "spell_dir", "threshold", "period", "no_overlap"];
 		$slug = "";
 		foreach ($keys as $k) {
 			if($k === $key) {

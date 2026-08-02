@@ -34,6 +34,7 @@ $mainTables->pastYearAvgsExtrms($measures2);
 $mainTables->rankTables();
 ?>
 
+<p class="report-var-about">Air-temperature extremes for each calendar day run midnight to midnight (local time), when daily extremes are reset. Night minimum (21–09) and day maximum (09–21) use those fixed windows instead.</p>
 <h2>Notes</h2>
 <ul>
 	<li>Temperature records began on 1st Jan 2009</li>

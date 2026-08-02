@@ -35,89 +35,12 @@ class Spells {
 
 	/** Sensible default threshold for a variable. */
 	public static function defaultThreshold($varName, $unit) {
-		if ($unit === Wx::AbsTemp) {
-			return 0;
-		}
-		if ($unit === Wx::Temperature) {
-			return 20;
-		}
-		if($unit === Wx::Pm25) {
-			return 10;
-		}
-		if (in_array($varName, ['rain', 'hrmax', '10max', 'ratemax', 'ratemean'], true)) {
-			return 0.2;
-		}
-		if (in_array($varName, ['sunhr', 'wethr'], true)) {
-			return 0.1;
-		}
-		if (in_array($varName, ['gust', 'wmax', 'wmean', 'w10max'], true)) {
-			return 10;
-		}
-		if (in_array($varName, ['hail', 'thunder', 'fog'], true)) {
-			return 0;
-		}
-		if (in_array($varName, ['sunhrp', 'wethrp', 'hmin', 'hmax', 'hmean'], true)) {
-			return 50;
-		}
-		if (in_array($varName, ['pmin', 'pmax', 'pmean'], true)) {
-			return 1015;
-		}
-		if (in_array($varName, ['prange'], true)) {
-			return 1;
-		}
-
-
-		return 0;
+		return Wx::defaultThreshold($varName, $unit);
 	}
 
 	/** Preset threshold chips for the ranking selector. */
 	public static function thresholdPresets($varName) {
-		$unit = isset(Wx::$daily[$varName]['unit']) ? Wx::$daily[$varName]['unit'] : Wx::None;
-		if ($unit === Wx::Rain || $unit === Wx::RainRate) {
-			$presets = [0.2, 1, 3, 5, 10, 20];
-		} elseif ($unit === Wx::Temperature) {
-			$presets = [-5, 0, 5, 10, 15, 20, 25, 30];
-		} elseif ($unit === Wx::AbsTemp) {
-			if ($varName === 'tc10max' || $varName === 'tchrmax') {
-				$presets = [0.5, 1, 1.5, 2, 3, 5];
-			} elseif ($varName === 'tc10min' || $varName === 'tchrmin') {
-				$presets = [-0.5, -1, -1.5, -2, -3, -5];
-			} else {
-				$presets = [-5, -3, -1, 1, 3, 5];
-			}
-		} elseif ($varName === 'hchrmax') {
-			$presets = [5, 10, 15, 20];
-		} elseif ($varName === 'hchrmin') {
-			$presets = [-5, -10, -15, -20];
-		} elseif ($unit === Wx::Hours) {
-			$presets = [0.1, 1, 3, 5, 10, 15];
-		} elseif ($unit === Wx::Wind) {
-			$presets = [5, 10, 15, 20, 30,];
-		} elseif ($unit === Wx::Humidity) {
-			$presets = [30, 50, 70, 80, 90, 95];
-		} elseif ($unit === Wx::Percentage) {
-			$presets = [5, 10, 25, 50, 75, 90, 95];
-		} elseif ($unit === Wx::Pressure) {
-			if ($varName === 'prange') {
-				$presets = [1, 3, 5, 10, 15, 25];
-			} else {
-				$presets = [990, 1000, 1010, 1015,1020, 1030];
-			}
-		} elseif ($unit === Wx::Days) {
-			$presets = [0, 1, 2, 3];
-		} elseif ($varName == "snow" || $varName == "lysnw") {
-			$presets = [0, 0.5, 1, 3, 5, 10, 20];
-		}
-		elseif ($unit === Wx::Pm25) {
-			$presets = [5, 10, 15, 20, 25, 30, 40, 50, 75, 100];
-		} else {
-			$presets = [0];
-		}
-		$def = self::defaultThreshold($varName, $unit);
-		if (!in_array($def, $presets, true)) {
-			array_unshift($presets, $def);
-		}
-		return $presets;
+		return Wx::thresholdPresets($varName);
 	}
 
 	/**
@@ -127,9 +50,7 @@ class Spells {
 	 * @return bool
 	 */
 	public static function strictAbove($varName, $threshold) {
-		if ((float)$threshold > 0) { return false; }
-		$meta = isset(Wx::$daily[$varName]) ? Wx::$daily[$varName] : [];
-		return !empty($meta['summable']) || !empty($meta['count-only']);
+		return Wx::strictAbove($varName, $threshold);
 	}
 
 	/**

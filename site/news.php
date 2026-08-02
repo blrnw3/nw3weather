@@ -25,7 +25,7 @@ Page::Start();
 			But first a brief bit of history. This site launched in ~2009 and quickly went through a series of iterations in the years following.
 			V3 launched in 2013, then I began on Site <b>v4</b> in 2014, which was meant to be the successor: a complete rewrite
 			of the data model and backend. But after getting a long way into it, life happened. I moved country, married, 
-			built a whole <a href="rwcweather.com" title="RWC weather">new weather website</a>, etc.
+			built a whole <a href="https://rwcweather.com" title="RWC weather">new weather website</a>, etc.
 			Site <b>v5</b> takes a more pragmatic approach: keep the data that already works, rebuild the pages
 			and frontend around it (using some tricks from rwcweather but keeping the nw3weather flair), and focus on the things that improve day-to-day use of the site like 
 			responsiveness, charts, and making new features easier to add. Work started in earnest in early 2025, and thanks to advances in LLMs, has
@@ -34,7 +34,7 @@ Page::Start();
 
 		<p>Some of the biggest changes include:</p>
 		<ul>
-			<li><b>Responsive layout</b> — the site adapts to phones and tablets. Below ~900px the sidebar becomes a collapsible
+			<li><b>Responsive layout</b> — the site adapts to phones and tablets. Below ~1020px the sidebar becomes a collapsible
 				menu drawer; wide data tables scroll horizontally with a sticky first column; charts reflow on resize.
 				The old ultra-basic mobile page is retained as a <a href="mob.php">Lite view</a> if you want the bare essentials.</li>
 			<li><b>Charts and graphs</b> — rebuilt with interactive Highcharts in place of the old static JPGraph images.

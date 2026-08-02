@@ -8,6 +8,7 @@
  * @return array meta for AJAX clients
  */
 function nw3_rankspells_render(Report $report) {
+	$t0 = microtime(true);
 	$type = $report->type;
 	$month = $report->month;
 	$startY = max((int)$report->startYrReport, (int)$report->startYear);
@@ -47,6 +48,8 @@ function nw3_rankspells_render(Report $report) {
 		. ' begins in ' . (int)$report->startYear . '.</p>';
 
 	$report->historicalInfo($effStart);
+	$report->echoVarAbout();
+	$report->logRankRuntime($t0, 'spells');
 
 	return array(
 		'type' => $type,

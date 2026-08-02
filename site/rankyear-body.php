@@ -8,9 +8,11 @@
  * @return array meta for AJAX clients
  */
 function nw3_rankyear_render(Report $report) {
+	$t0 = microtime(true);
 	$type = $report->type;
 	$startY = max((int)$report->startYrReport, (int)$report->startYear);
 	$endY = (int)Date::$dyear;
+	$threshold = $report->spellThreshold;
 
 	$yearSecs = 86400 * 365;
 	$curYearTs = Date::mkdate(1, 1, (int)Date::$dyear);
@@ -22,11 +24,18 @@ function nw3_rankyear_render(Report $report) {
 		Data::SUMMARY_COUNT => 'most and fewest days with a non-zero value',
 		Data::SUMMARY_MIN => 'highest and lowest annual minima',
 		Data::SUMMARY_MAX => 'highest and lowest annual maxima',
+		Data::SUMMARY_RANGE => 'highest and lowest annual ranges (daily max − min)',
+		Data::SUMMARY_COUNT_ABOVE => 'most and fewest days at or above the chosen threshold',
+		Data::SUMMARY_COUNT_BELOW => 'most and fewest days below the chosen threshold',
 	];
 
 	foreach ($report->availSummaryTypes as $st) {
+		if (Data::isThresholdSummary($st) && $st !== $report->summaryType) {
+			continue;
+		}
+		$th = Data::isThresholdSummary($st) ? $threshold : null;
 		$ranked = [];
-		foreach (Data::getAnnualData($type, $st, $startY, $endY) as $y => $v) {
+		foreach (Data::getAnnualData($type, $st, $startY, $endY, $th) as $y => $v) {
 			if (!Util::isBlank($v)) {
 				$ranked[] = [(float)$v, Date::mkdate(1, 1, $y)];
 			}
@@ -65,15 +74,17 @@ function nw3_rankyear_render(Report $report) {
 
 		// Annual totals are ~12× monthly; scale colour divisor accordingly.
 		$sumOff = ($st === Data::SUMMARY_SUM) ? $report->valcolSumOffset() * 12 : 1;
-		$isCount = ($st === Data::SUMMARY_COUNT);
-		$name = Data::$SUMMARY_NAMES[$st];
+		$isCount = Data::isCountSummary($st);
+		$displayUnit = $report->summaryDisplayUnit($st);
+		$name = $report->summaryCaptionName($st);
 		$hide = ($st === $report->summaryType) ? '' : " style='display:none'";
 		echo "<div id='rank-$st' class='rank-tab'$hide>";
 		echo '<div class="rk-pair">';
-		$report->rankTable($highest, $highestDay, $limit, 'Top annual ' . $name, true, true, true, 'annual', $isCount, $sumOff);
-		$report->rankTable($lowest, $lowestDay, $limit, 'Bottom annual ' . $name, false, true, true, 'annual', $isCount, $sumOff);
+		$report->rankTable($highest, $highestDay, $limit, 'Top annual ' . $name, true, true, true, 'annual', $isCount, $sumOff, $displayUnit);
+		$report->rankTable($lowest, $lowestDay, $limit, 'Bottom annual ' . $name, false, true, true, 'annual', $isCount, $sumOff, $displayUnit);
 		echo '</div>';
-		echo '<p class="rk-blurb">' . $report->description . ' annual extremes: ' . $explain[$st] . '.<br />'
+		$extraTh = Data::isThresholdSummary($st) ? (' (' . $report->summaryThresholdPhrase($st) . ')') : '';
+		echo '<p class="rk-blurb">' . $report->description . ' annual extremes: ' . $explain[$st] . $extraTh . '.<br />'
 			. 'There are <b>' . $sortLen . '</b> valid years for the chosen period from ' . $startY
 			. ' to present in London, NW3. Data for ' . $report->description
 			. ' begins in ' . (int)$report->startYear . '.</p>';
@@ -81,8 +92,9 @@ function nw3_rankyear_render(Report $report) {
 	}
 
 	$report->historicalInfo($startY);
+	$report->echoVarAbout();
+	$report->logRankRuntime($t0, 'year');
 
-	$unitLabel = Wx::getUnitsText($report->unit);
 	return array(
 		'type' => $type,
 		'startYearRep' => (int)$report->startYrReport,
@@ -90,6 +102,9 @@ function nw3_rankyear_render(Report $report) {
 		'summaryType' => (int)$report->summaryType,
 		'summaryTypes' => $report->availSummaryTypes,
 		'rankLimit' => (int)$report->rankLimit,
-		'title' => $report->description . ' / ' . $unitLabel,
+		'threshold' => $report->spellThreshold,
+		'thresholds' => $report->spellThresholds,
+		'thresholdLabels' => $report->thresholdLabels(),
+		'title' => $report->summaryTitleSuffix(),
 	);
 }

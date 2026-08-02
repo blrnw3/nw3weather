@@ -27,6 +27,7 @@ $mainTables->pastYearAvgsExtrms();
 $mainTables->rankTables();
 ?>
 
+<p class="report-var-about">Pressure extremes for each calendar day run midnight to midnight (local time), when daily extremes are reset.</p>
 <h2>Notes:</h2>
 <ul>
 	<li>Valid Pressure records began in January 2009</li>

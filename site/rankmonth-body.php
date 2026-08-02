@@ -8,10 +8,12 @@
  * @return array meta for AJAX clients
  */
 function nw3_rankmonth_render(Report $report) {
+	$t0 = microtime(true);
 	$type = $report->type;
 	$month = $report->month;
 	$startY = max((int)$report->startYrReport, (int)$report->startYear);
 	$endY = (int)Date::$dyear;
+	$threshold = $report->spellThreshold;
 
 	$footCond = ($month === 0 || $month == (int)Date::$dmonth);
 	$yearSecs = 86400 * 365;
@@ -24,11 +26,18 @@ function nw3_rankmonth_render(Report $report) {
 		Data::SUMMARY_COUNT => 'most and fewest days with a non-zero value',
 		Data::SUMMARY_MIN => 'highest and lowest monthly minima',
 		Data::SUMMARY_MAX => 'highest and lowest monthly maxima',
+		Data::SUMMARY_RANGE => 'highest and lowest monthly ranges (daily max − min)',
+		Data::SUMMARY_COUNT_ABOVE => 'most and fewest days at or above the chosen threshold',
+		Data::SUMMARY_COUNT_BELOW => 'most and fewest days below the chosen threshold',
 	];
 
 	foreach ($report->availSummaryTypes as $st) {
+		if (Data::isThresholdSummary($st) && $st !== $report->summaryType) {
+			continue;
+		}
+		$th = Data::isThresholdSummary($st) ? $threshold : null;
 		$ranked = [];
-		foreach (Data::getMonthlySummary($type, $st, $startY, $endY) as $y => $months) {
+		foreach (Data::getMonthlySummary($type, $st, $startY, $endY, $th) as $y => $months) {
 			foreach ($months as $m => $v) {
 				if (($month === 0 || $m === $month) && !Util::isBlank($v)) {
 					$ranked[] = [(float)$v, Date::mkdate($m, 1, $y)];
@@ -66,17 +75,19 @@ function nw3_rankmonth_render(Report $report) {
 			}
 		}
 
-		$sumfix = ($st === Data::SUMMARY_SUM) ? $report->valcolSumOffset() : 1;
-		$isCount = ($st === Data::SUMMARY_COUNT);
-		$name = Data::$SUMMARY_NAMES[$st];
+		$sumOff = ($st === Data::SUMMARY_SUM) ? $report->valcolSumOffset() : 1;
+		$isCount = Data::isCountSummary($st);
+		$displayUnit = $report->summaryDisplayUnit($st);
+		$name = $report->summaryCaptionName($st);
 		$hide = ($st === $report->summaryType) ? '' : " style='display:none'";
 		echo "<div id='rank-$st' class='rank-tab'$hide>";
 		echo '<div class="rk-pair">';
-		$report->rankTable($highest, $highestDay, $limit, 'Top monthly ' . $name, true, true, $footCond, false, $isCount, $sumfix);
-		$report->rankTable($lowest, $lowestDay, $limit, 'Bottom monthly ' . $name, false, true, $footCond, false, $isCount, $sumfix);
+		$report->rankTable($highest, $highestDay, $limit, 'Top monthly ' . $name, true, true, $footCond, false, $isCount, $sumOff, $displayUnit);
+		$report->rankTable($lowest, $lowestDay, $limit, 'Bottom monthly ' . $name, false, true, $footCond, false, $isCount, $sumOff, $displayUnit);
 		echo '</div>';
 		$extraMon = ($month === 0) ? '' : ' for ' . Date::$months3[$month - 1];
-		echo '<p class="rk-blurb">' . $report->description . ' monthly extremes: ' . $explain[$st] . '.<br />'
+		$extraTh = Data::isThresholdSummary($st) ? (' (' . $report->summaryThresholdPhrase($st) . ')') : '';
+		echo '<p class="rk-blurb">' . $report->description . ' monthly extremes: ' . $explain[$st] . $extraTh . '.<br />'
 			. 'There are <b>' . $sortLen . '</b> valid months for the chosen period from ' . $startY
 			. ' to present' . $extraMon . ' in London, NW3. Data for ' . $report->description
 			. ' begins in ' . (int)$report->startYear . '.</p>';
@@ -84,8 +95,9 @@ function nw3_rankmonth_render(Report $report) {
 	}
 
 	$report->historicalInfo($startY);
+	$report->echoVarAbout();
+	$report->logRankRuntime($t0, 'month');
 
-	$unitLabel = Wx::getUnitsText($report->unit);
 	return array(
 		'type' => $type,
 		'month' => (int)$month,
@@ -94,6 +106,9 @@ function nw3_rankmonth_render(Report $report) {
 		'summaryType' => (int)$report->summaryType,
 		'summaryTypes' => $report->availSummaryTypes,
 		'rankLimit' => (int)$report->rankLimit,
-		'title' => $report->description . ' / ' . $unitLabel,
+		'threshold' => $report->spellThreshold,
+		'thresholds' => $report->spellThresholds,
+		'thresholdLabels' => $report->thresholdLabels(),
+		'title' => $report->summaryTitleSuffix(),
 	);
 }

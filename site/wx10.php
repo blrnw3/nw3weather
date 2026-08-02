@@ -51,6 +51,8 @@ $mainTables->rankTables();
 ?>
 
 
+<p class="report-var-about">Relative humidity and dew-point figures for each calendar day run midnight to midnight (local time), when daily extremes are reset.</p>
+
 <h2>Notes:</h2>
 <ul>
 	<li>Valid humidity records began in February 2009</li>

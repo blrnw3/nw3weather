@@ -20,11 +20,13 @@ class Wx {
 	static function _conv_temp($val) { return ($val * 1.8) + 32; }
 	static function _conv_abstemp($val) { return $val * 1.8; }
 	static function _conv_rain($val) { return $val / 25.4; }
+	static function _conv_rnrt($val) { return $val / 25.4; }
 	static function _conv_wind($val) { return $val * 1.6093; }
 	static function _conv_pres($val) { return $val / 33.864; }
 	static function _conv_snow($val) { return $val / 2.54; }
 	static function _conv_density($val) { return $val / 1.262; }
 	static function _conv_dist($val) { return $val / 0.3048; }
+	static function _conv_pm25($val) { return self::usAqi($val); }
 
 	// Units Enum
 	const None = 0;
@@ -82,6 +84,8 @@ class Wx {
 			UNIT_US => [
 				'unit' => 'in',
 				'conversion' => true,
+				// Inches are ~25x coarser than mm, so keep two decimals.
+				'precision' => 2,
 			]
 		],
 		self::Pressure => [
@@ -97,6 +101,7 @@ class Wx {
 			UNIT_US => [
 				'unit' => 'inHg',
 				'conversion' => true,
+				'precision' => 2,
 			]
 		],
 		self::Wind => [
@@ -188,6 +193,8 @@ class Wx {
 			UNIT_US => [
 				'unit' => 'in/h',
 				'conversion' => true,
+				// Inches per hour needs decimals or every rate rounds to zero.
+				'precision' => 2,
 			]
 		],
 		self::Direction => [
@@ -248,6 +255,11 @@ class Wx {
 			'thresholds_day' => [11,23,35, 41,47,53, 58,64,70],
 			'threshold_colours' => ['9cff9c','31ff00','31cf00', 'ffff00','ffcf00','ff9a00', 'ff6464','ff0000','990000', '7d0023'],
 			'threshold_txtcolours' => [false,false,false, false,false,false, 'fff','fff','fff', 'fff'],
+			UNIT_US => [
+				'unit' => 'AQI',
+				'precision' => 0,
+				'conversion' => true,
+			],
 		]
 	];
 
@@ -260,6 +272,22 @@ class Wx {
 			return $var["unit"];
 		}
 		return null;
+	}
+
+	/**
+	 * Decimal places for a type in the user's selected units, which can differ
+	 * from the UK default (e.g. rain is 1 dp in mm but 2 dp in inches).
+	 * @param string $type a Wx unit constant
+	 * @param int $default used when the type has no precision of its own
+	 * @return int
+	 */
+	public static function precision($type, $default = 1) {
+		if(!key_exists($type, self::$UNITS)) { return $default; }
+		$var = self::$UNITS[$type];
+		if(key_exists(Page::$units, $var)) {
+			$var = array_merge($var, $var[Page::$units]);
+		}
+		return isset($var['precision']) ? $var['precision'] : $default;
 	}
 
 	/**
@@ -934,6 +962,172 @@ class Wx {
 		// ]
 	];
 
+	/**
+	 * Short plain-text explanation of a daily weather variable for data/rank/chart
+	 * pages. Covers what the measure is and the day definition (usually midnight
+	 * to midnight). Returns '' for unknown types.
+	 * @param string $type key of Wx::$daily
+	 * @return string
+	 */
+	public static function measureAbout($type) {
+		if(!isset(self::$daily[$type])) { return ''; }
+		static $about = array(
+			'tmin' => 'Lowest air temperature recorded during the day (midnight to midnight, local time).',
+			'tmax' => 'Highest air temperature recorded during the day (midnight to midnight, local time).',
+			'tmean' => 'Mean air temperature for the day (midnight to midnight, local time), averaged from the logged readings.',
+			'hmin' => 'Lowest relative humidity recorded during the day (midnight to midnight, local time).',
+			'hmax' => 'Highest relative humidity recorded during the day (midnight to midnight, local time).',
+			'hmean' => 'Mean relative humidity for the day (midnight to midnight, local time).',
+			'pmin' => 'Lowest mean sea-level pressure recorded during the day (midnight to midnight, local time).',
+			'pmax' => 'Highest mean sea-level pressure recorded during the day (midnight to midnight, local time).',
+			'pmean' => 'Mean mean sea-level pressure for the day (midnight to midnight, local time).',
+			'wmean' => 'Mean wind speed for the day (midnight to midnight, local time).',
+			'wmax' => 'Highest sustained wind speed (1-min avg) recorded during the day (midnight to midnight, local time).',
+			'gust' => 'Highest wind gust recorded during the day (midnight to midnight, local time).',
+			'wdir' => 'Mean wind direction for the day (midnight to midnight, local time), as a vector mean of the logged readings.',
+			'rain' => 'Total rainfall accumulated during the day (midnight to midnight, local time). Tip counts are reset at midnight.',
+			'hrmax' => 'Largest amount of rain that fell in any single hour during the day (midnight to midnight, local time).',
+			'10max' => 'Largest amount of rain that fell in any 10-minute period during the day (midnight to midnight, local time).',
+			'ratemax' => 'Highest instantaneous rain rate (1-min avg) recorded during the day (midnight to midnight, local time).',
+			'dmin' => 'Lowest dew point during the day (midnight to midnight, local time). Dew point is derived from temperature and humidity.',
+			'dmax' => 'Highest dew point during the day (midnight to midnight, local time). Dew point is derived from temperature and humidity.',
+			'dmean' => 'Mean dew point for the day (midnight to midnight, local time). Dew point is derived from temperature and humidity.',
+			'nightmin' => 'Lowest air temperature overnight, from 21:00 to 09:00 local time.',
+			'daymax' => 'Highest air temperature during the daytime window 09:00 to 21:00 local time.',
+			'tc10max' => 'Largest temperature rise over any 10-minute period during the day (midnight to midnight, local time).',
+			'tchrmax' => 'Largest temperature rise over any one-hour period during the day (midnight to midnight, local time).',
+			'hchrmax' => 'Largest humidity rise over any one-hour period during the day (midnight to midnight, local time).',
+			'tc10min' => 'Largest temperature fall over any 10-minute period during the day (midnight to midnight, local time).',
+			'tchrmin' => 'Largest temperature fall over any one-hour period during the day (midnight to midnight, local time).',
+			'hchrmin' => 'Largest humidity fall over any one-hour period during the day (midnight to midnight, local time).',
+			'w10max' => 'Highest 10-minute mean wind speed during the day (midnight to midnight, local time).',
+			'fmin' => 'Lowest feels-like temperature (wind chill) during the day (midnight to midnight, local time). This accounts for the wind chill factor.',
+			'fmax' => 'Highest feels-like temperature (humidex) during the day (midnight to midnight, local time). This accounts for high humidity as well as temperature.',
+			'fmean' => 'Mean feels-like temperature (wind chill or humidex) for the day (midnight to midnight, local time).',
+			'afhrs' => 'Total hours the temperature was strictly below 0 °C during the day (midnight to midnight, local time).',
+			'aqmin' => 'Lowest PM2.5 air-pollution reading during the day (midnight to midnight, local time), from nearby sensors.',
+			'aqmax' => 'Highest PM2.5 air-pollution reading during the day (midnight to midnight, local time), from nearby sensors.',
+			'aqmean' => 'Mean PM2.5 air-pollution for the day (midnight to midnight, local time), from nearby sensors.',
+			'trange' => 'Daily temperature range: maximum minus minimum for the day (midnight to midnight, local time).',
+			'hrange' => 'Daily humidity range: maximum minus minimum for the day (midnight to midnight, local time).',
+			'prange' => 'Daily pressure range: maximum minus minimum for the day (midnight to midnight, local time).',
+			'ratemean' => 'Mean rain rate during periods of rain, i.e. rain over wet hours, for the day (midnight to midnight, local time).',
+			'sunhrp' => 'Sunshine as a percentage of the maximum possible for that day (midnight to midnight / daylight window).',
+			'wethrp' => 'Percentage of the day (midnight to midnight, local time) that recorded measurable rain.',
+			'sunhr' => 'Hours of bright sunshine during the day. Counted from daylight webcam imagery and updated once per day.',
+			'wethr' => 'Hours with measurable rainfall during the day (midnight to midnight, local time). Estimated heuristically from rain observations',
+			'rdays' => 'Count of days (midnight to midnight) with more than 0.2 mm of rain.',
+			'maxsun' => 'Maximum possible sunshine hours for the day (sunrise to sunset).',
+			'afdays' => 'Count of days with an air frost (overnight 21:00–09:00 minimum below 0 °C).',
+			'tsdays' => 'Count of days on which thunder was observed.',
+			'lsdays' => 'Count of days with lying snow at the morning observation.',
+			'fsdays' => 'Count of days with falling snow observed.',
+			'cloud' => 'Deprecated.',
+			'snow' => 'Approximate amount of precipitation in the form of snow, estimated for the day via manual observation or reports',
+			'lysnw' => 'Depth of lying snow at the morning observation, 9am, for that day.',
+			'hail' => 'Hail observed during the day (manual observation).',
+			'thunder' => 'Thunder observed during the day (manual observation). 1-4 scale of intensity.',
+			'fog' => 'Dense fog observed at 9am (manual/webcam observation).',
+			'pond' => 'Hampstead Heath pond water temperature, logged for the day at ~9am via local swimmers.',
+		);
+		if(isset($about[$type])) { return $about[$type]; }
+
+		$meta = self::$daily[$type];
+		$desc = isset($meta['description']) ? $meta['description'] : $type;
+		$unitTxt = self::getUnitsText(isset($meta['unit']) ? $meta['unit'] : self::None);
+		$unitBit = ($unitTxt !== '') ? (' (' . $unitTxt . ')') : '';
+		if(!empty($meta['summable']) || !empty($meta['count-only'])) {
+			return $desc . $unitBit . ' for each day (midnight to midnight, local time).';
+		}
+		return $desc . $unitBit . ' recorded during the day (midnight to midnight, local time).';
+	}
+
+	/**
+	 * Default threshold for "count above/below" and spell rankings (raw UK units).
+	 * @param string $varName key of Wx::$daily
+	 * @param string|null $unit optional unit override
+	 * @return float|int
+	 */
+	public static function defaultThreshold($varName, $unit = null) {
+		if ($unit === null) {
+			$unit = isset(self::$daily[$varName]['unit']) ? self::$daily[$varName]['unit'] : self::None;
+		}
+		if ($unit === self::AbsTemp) { return 0; }
+		if ($unit === self::Temperature) { return 20; }
+		if ($unit === self::Pm25) { return 10; }
+		if (in_array($varName, array('rain', 'hrmax', '10max', 'ratemax', 'ratemean'), true)) { return 0.2; }
+		if (in_array($varName, array('sunhr', 'wethr'), true)) { return 0.1; }
+		if (in_array($varName, array('gust', 'wmax', 'wmean', 'w10max'), true)) { return 10; }
+		if (in_array($varName, array('hail', 'thunder', 'fog'), true)) { return 0; }
+		if (in_array($varName, array('sunhrp', 'wethrp', 'hmin', 'hmax', 'hmean'), true)) { return 50; }
+		if (in_array($varName, array('pmin', 'pmax', 'pmean'), true)) { return 1015; }
+		if ($varName === 'prange') { return 1; }
+		return 0;
+	}
+
+	/**
+	 * Preset thresholds for count-above/below and spell rankings (raw UK units).
+	 * @param string $varName
+	 * @return array
+	 */
+	public static function thresholdPresets($varName) {
+		$unit = isset(self::$daily[$varName]['unit']) ? self::$daily[$varName]['unit'] : self::None;
+		if ($unit === self::Rain || $unit === self::RainRate) {
+			$presets = array(0.2, 1, 3, 5, 10, 20);
+		} elseif ($unit === self::Temperature) {
+			$presets = array(-5, 0, 5, 10, 15, 20, 25, 30);
+		} elseif ($unit === self::AbsTemp) {
+			if ($varName === 'tc10max' || $varName === 'tchrmax') {
+				$presets = array(0.5, 1, 1.5, 2, 3, 5);
+			} elseif ($varName === 'tc10min' || $varName === 'tchrmin') {
+				$presets = array(-0.5, -1, -1.5, -2, -3, -5);
+			} elseif ($varName === 'trange') {
+				$presets = array(1, 3, 5, 10, 15, 20);
+			} else {
+				$presets = array(-5, -3, -1, 1, 3, 5);
+			}
+		} elseif ($varName === 'hchrmax') {
+			$presets = array(5, 10, 15, 20);
+		} elseif ($varName === 'hchrmin') {
+			$presets = array(-5, -10, -15, -20);
+		} elseif ($unit === self::Hours) {
+			$presets = array(0.1, 1, 3, 5, 10, 15);
+		} elseif ($unit === self::Wind) {
+			$presets = array(5, 10, 15, 20, 30);
+		} elseif ($unit === self::Humidity) {
+			$presets = array(30, 50, 70, 80, 90, 95);
+		} elseif ($unit === self::Percentage) {
+			$presets = array(5, 10, 25, 50, 75, 90, 95);
+		} elseif ($unit === self::Pressure) {
+			$presets = ($varName === 'prange')
+				? array(1, 3, 5, 10, 15, 25)
+				: array(990, 1000, 1010, 1015, 1020, 1030);
+		} elseif ($unit === self::Days) {
+			$presets = array(0, 1, 2, 3);
+		} elseif ($varName === 'snow' || $varName === 'lysnw') {
+			$presets = array(0, 0.5, 1, 3, 5, 10, 20);
+		} elseif ($unit === self::Pm25) {
+			$presets = array(5, 10, 15, 20, 25, 30, 40, 50, 75, 100);
+		} else {
+			$presets = array(0);
+		}
+		$def = self::defaultThreshold($varName, $unit);
+		if (!in_array($def, $presets, true)) {
+			array_unshift($presets, $def);
+		}
+		return $presets;
+	}
+
+	/**
+	 * True when "above threshold" must be strict (> rather than >=) — typically
+	 * summable/count-only series at threshold 0, so a dry/blank day does not count.
+	 */
+	public static function strictAbove($varName, $threshold) {
+		if ((float)$threshold > 0) { return false; }
+		$meta = isset(self::$daily[$varName]) ? self::$daily[$varName] : array();
+		return !empty($meta['summable']) || !empty($meta['count-only']);
+	}
+
 	static $multiDay = [
 		'af_days' => [
 			'description' => 'Air Frost Days',
@@ -1059,7 +1253,7 @@ class LTA {
 	}
 
 	/**
-	 * Climate normal for the last $days calendar days ending today.
+	 * Climate normal for the last $days days ending today.
 	 * Mean variables: mean of daily normals. Summable variables (rain, etc.): sum of daily normals.
 	 */
 	public static function getRecentPeriodMeanAnom($type, $days) {

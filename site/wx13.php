@@ -44,6 +44,7 @@ Charts::intradayPanel(['num' => 1], ['wind' => 'Speed &amp; gust', 'wdir' => 'Di
 <h3>All-time wind rose for NW3 (2009-present)</h3>
 <?php Charts::rose(['en' => 'now', 'st' => '20090101'], ['height' => 480]); ?>
 
+<p class="report-var-about">Wind speed, gust and direction extremes for each calendar day run midnight to midnight (local time), when daily extremes are reset.</p>
 <h2>Notes</h2>
 <ul>
 	<li>Valid wind records began in August 2009</li>

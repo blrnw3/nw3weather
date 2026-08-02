@@ -264,18 +264,28 @@ function nw3_render_cards() {
 	$usAqi = Wx::usAqi(Live::$pm25);
 	// Per-band class graduates the dot colour within each band group (1-10).
 	$daqiBandClass = ($daqiBand > 0) ? ' daqi-b' . $daqiBand : '';
-	$pm25Now = (Live::$pm25 === null)
-		? '<span id="var6" class="daqi-status daqi-unknown"><span class="daqi-dot"></span>No data</span>'
-		: '<span id="var6" class="daqi-status ' . $daqiClass . $daqiBandClass . '"><span class="daqi-dot"></span>DAQI ' . $daqiBand . ' &middot; ' . $daqiName . '</span>';
-	$pm25Sub = (Live::$pm25 === null) ? ''
-		: 'AQI <b>' . $usAqi . '</b> &middot; PM2.5 <b>' . Wx::conv(Live::$pm25, Wx::Pm25, true, false, -1) . '</b>';
+	if (Page::$units === UNIT_US) {
+		$pmDpa = 0;
+		$pm25Now = (Live::$pm25 === null)
+			? '<span id="var6" class="daqi-status daqi-unknown"><span class="daqi-dot"></span>No data</span>'
+			: '<span id="var6" class="daqi-status ' . $daqiClass . $daqiBandClass . '"><span class="daqi-dot"></span>AQI ' . $usAqi . '</span>';
+		$pm25Sub = (Live::$pm25 === null) ? ''
+			: 'PM2.5 source <b>' . number_format((float)Live::$pm25, 1) . ' &micro;g/m&sup3;</b>';
+	} else {
+		$pmDpa = -1;
+		$pm25Now = (Live::$pm25 === null)
+			? '<span id="var6" class="daqi-status daqi-unknown"><span class="daqi-dot"></span>No data</span>'
+			: '<span id="var6" class="daqi-status ' . $daqiClass . $daqiBandClass . '"><span class="daqi-dot"></span>DAQI ' . $daqiBand . ' &middot; ' . $daqiName . '</span>';
+		$pm25Sub = (Live::$pm25 === null) ? ''
+			: 'AQI <b>' . $usAqi . '</b> &middot; PM2.5 <b>' . Wx::conv(Live::$pm25, Wx::Pm25, true, false, -1) . '</b>';
+	}
 	nw3_card('pm25', 'icon-airpollution.svg', 'Air pollution', '', 'Air pollution - UK DAQI band &amp; AQI (from PM2.5)',
 		$pm25Now,
 		$pm25Sub,
 		array(
-			array('High', nw3_at(nw3_live_get($NOW, 'max', 'pm25'), Wx::Pm25, nw3_live_get($NOW, 'timeMax', 'pm25'), -1)),
-			array('24hr avg', nw3_at(nw3_live_get($HR, 'mean', 'pm25'), Wx::Pm25, null, -1)),
-			array('Yesterday avg', nw3_yest_val('mean', 'pm25', Wx::Pm25, -1)),
+			array('High', nw3_at(nw3_live_get($NOW, 'max', 'pm25'), Wx::Pm25, nw3_live_get($NOW, 'timeMax', 'pm25'), $pmDpa)),
+			array('24hr avg', nw3_at(nw3_live_get($HR, 'mean', 'pm25'), Wx::Pm25, null, $pmDpa)),
+			array('Yesterday avg', nw3_yest_val('mean', 'pm25', Wx::Pm25, $pmDpa)),
 		));
 }
 ?>

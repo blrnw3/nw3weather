@@ -221,6 +221,7 @@ function nw3_dataday_render(Report $report) {
 		echo '</p>';
 		$report->historicalInfo($year);
 	}
+	$report->echoVarAbout();
 
 	$unitLabel = Wx::getUnitsText($unit);
 	$title = $report->description . ' / ' . $unitLabel;

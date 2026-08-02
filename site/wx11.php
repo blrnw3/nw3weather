@@ -22,6 +22,7 @@ $mainTables->pastYearAvgsExtrms();
 $mainTables->rankTables();
 ?>
 
+<p class="report-var-about">Sunshine hours are counted for each calendar day (midnight to midnight, local time) from daylight webcam imagery, as a fraction of the maximum possible.</p>
 <h2>Notes</h2>
 <ul>
 	<li>Sunshine totals are currently only available for prior days because they are computed daily from webcam footage using an image classification model</li>

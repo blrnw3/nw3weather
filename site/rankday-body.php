@@ -8,6 +8,7 @@
  * @return array meta for AJAX clients
  */
 function nw3_rankday_render(Report $report) {
+	$t0 = microtime(true);
 	$type = $report->type;
 	$month = $report->month;
 	$startY = max((int)$report->startYrReport, (int)$report->startYear);
@@ -77,6 +78,8 @@ function nw3_rankday_render(Report $report) {
 		. '. Data for ' . $report->description . ' begins in ' . (int)$report->startYear . '.</p>';
 
 	$report->historicalInfo($startY);
+	$report->echoVarAbout();
+	$report->logRankRuntime($t0, 'day');
 
 	$unitLabel = Wx::getUnitsText($report->unit);
 	return array(

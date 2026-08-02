@@ -527,19 +527,14 @@ class Charts {
 	/**
 	 * Monthly aggregation types valid for a daily variable, from Wx::$daily flags.
 	 * Summable vars get Total (not Mean); meanable get Mean (not Total).
-	 * Count (non-zero days) is offered for summable / count-only vars only.
-	 * Min/Max are always available except pure count-only still gets them (as Report).
+	 * Min/Max are always available. The old non-zero Count option is omitted —
+	 * use the table/rank Count ≥ / Count < summaries for day counts.
 	 */
 	public static function aggregationsForType($type) {
 		$meta = isset(Wx::$daily[$type]) ? Wx::$daily[$type] : array();
 		$countOnly = !empty($meta['count-only']);
 		$summable = !empty($meta['summable']) || $countOnly;
-		if ($countOnly) {
-			$aggs = array(Data::SUMMARY_COUNT);
-		} else {
-			$aggs = array($summable ? Data::SUMMARY_SUM : Data::SUMMARY_MEAN);
-			if ($summable) { $aggs[] = Data::SUMMARY_COUNT; }
-		}
+		$aggs = array($summable ? Data::SUMMARY_SUM : Data::SUMMARY_MEAN);
 		$aggs[] = Data::SUMMARY_MIN;
 		$aggs[] = Data::SUMMARY_MAX;
 		return $aggs;
@@ -573,6 +568,7 @@ class Charts {
 					'description' => isset($meta['description']) ? $meta['description'] : $type,
 					'startYear' => isset($meta['start_year']) ? (int)$meta['start_year'] : 2009,
 					'summable' => !empty($meta['summable']),
+					'about' => Wx::measureAbout($type),
 				);
 			}
 		}
@@ -890,6 +886,7 @@ class Charts {
 			'containerId' => $id,
 			'panelId' => $panelId,
 			'headingId' => $headingId,
+			'aboutId' => isset($opts['aboutId']) ? $opts['aboutId'] : null,
 			'url' => self::url('histdata.php'),
 			'opts' => array('height' => $height),
 			'groups' => $groups,

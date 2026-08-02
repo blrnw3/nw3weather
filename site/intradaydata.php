@@ -46,7 +46,7 @@ $out = [
 		'gust' => Wx::getUnitsText(Wx::Wind),
 		'rain' => Wx::getUnitsText(Wx::Rain),
 		'wdir' => '',
-		'pm25' => 'ug/m3',
+		'pm25' => Wx::getUnitsText(Wx::Pm25),
 	],
 	'time' => [], 'temp' => [], 'dewp' => [], 'humi' => [], 'pres' => [],
 	'wind' => [], 'gust' => [], 'wdir' => [], 'rain' => [], 'pm25' => [],
@@ -160,7 +160,7 @@ for ($i = 0; $i < $total; $i++) {
 	$out['wind'][] = Wx::convNum($windOut, Wx::Wind, 1);
 	$out['gust'][] = Wx::convNum($c[4], Wx::Wind, 1);
 	$out['wdir'][] = ($dirOut < 0) ? null : round($dirOut);
-	$out['pm25'][] = (isset($c[11]) && $c[11] !== '') ? (float)$c[11] : null;
+	$out['pm25'][] = (isset($c[11]) && $c[11] !== '') ? Wx::convNum($c[11], Wx::Pm25, Wx::precision(Wx::Pm25)) : null;
 }
 
 $n = count($out['time']);

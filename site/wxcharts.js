@@ -190,6 +190,12 @@
 			var cfg = INTRA_TABS[variable] || INTRA_TABS.temp;
 			var unit = (json.units && json.units[variable]) ? json.units[variable] : '';
 			var isDir = !!cfg.dir;
+			var displayName = (variable === 'pm25' && unit === 'AQI') ? 'Air quality index' : cfg.name;
+			var displayDp = (variable === 'pm25' && unit === 'AQI') ? 0 : cfg.dp;
+			var chartTitle = intraTitle(json, variable, opts);
+			if (variable === 'pm25' && unit === 'AQI' && !opts.title) {
+				chartTitle = chartTitle.replace('Air pollution (PM2.5)', 'air quality index');
+			}
 
 			var rainUnit = (unit === 'in' || unit === 'in/h');
 			var areaFloor = rainUnit ? -0.01 : -0.2;
@@ -215,7 +221,7 @@
 
 			Highcharts.chart(containerId, {
 				chart: { backgroundColor: '#ffffff', spacing: [12, 12, 10, 10], style: { color: TEXT } },
-				title: { text: intraTitle(json, variable, opts), style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
+				title: { text: chartTitle, style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
 				credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
 				legend: { enabled: keys.length > 1, itemStyle: { color: TEXT } },
 				xAxis: { type: 'datetime', crosshair: true, gridLineWidth: 1, gridLineColor: '#ddd',
@@ -223,13 +229,13 @@
 				yAxis: isDir
 					? { title: { text: 'Wind direction', style: { color: TEXT } }, min: 0, max: 360, tickInterval: 45,
 						labels: { formatter: function () { return compass(this.value); }, style: { color: TEXT } }, gridLineColor: '#ddd' }
-					: { title: { text: cfg.name + (unit ? ' / ' + unit : ''), style: { color: TEXT } },
+					: { title: { text: displayName + (unit ? ' / ' + unit : ''), style: { color: TEXT } },
 						min: (cfg.min != null ? cfg.min : (cfg.area ? areaFloor : null)),
 						max: (cfg.max != null ? cfg.max : undefined), gridLineColor: '#ddd',
 						labels: { style: { color: TEXT }, formatter: cfg.area ? function () { return this.value < 0 ? '' : this.value; } : undefined } },
 				tooltip: isDir
 					? { formatter: function () { return Highcharts.dateFormat('%a %H:%M', this.x) + '<br/><b>' + Math.round(this.y) + '\u00B0 (' + compass(this.y) + ')</b>'; } }
-					: { shared: true, xDateFormat: '%a %H:%M', valueSuffix: unit ? (' ' + unit) : '', valueDecimals: cfg.dp },
+					: { shared: true, xDateFormat: '%a %H:%M', valueSuffix: unit ? (' ' + unit) : '', valueDecimals: displayDp },
 				plotOptions: { series: { animation: false } },
 				series: series
 			});
@@ -789,6 +795,14 @@
 			var el = document.getElementById(cfg.headingId);
 			if (!el) { return; }
 			el.textContent = 'Data Charts \u2013 ' + metaFor(state.type).description;
+			if (cfg.aboutId) {
+				var about = document.getElementById(cfg.aboutId);
+				if (about) {
+					var txt = metaFor(state.type).about || '';
+					about.textContent = txt;
+					about.hidden = !txt;
+				}
+			}
 		}
 		function load() {
 			syncPeriodUi();

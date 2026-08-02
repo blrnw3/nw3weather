@@ -25,6 +25,8 @@ class Report {
 	public $spellThreshold;     // numeric threshold for spell rankings
 	public $spellThresholds;    // preset chips for the current variable
 	public $dayAgg;             // '' | 'min' | 'max' | 'mean' (calendar-day all-years)
+	public $periodLength;       // N-day period length for RankPeriods
+	public $periodNoOverlap;    // true = skip overlapping windows in period rankings
 
 	// ---- Derived metadata for $type ----
 	public $meta;               // Wx::$daily[$type]
@@ -48,6 +50,7 @@ class Report {
 
 	// ---- Option lists ----
 	public static $ranknumOptions = [10, 25, 50, 100, 250];
+	public static $periodLengthOptions = [3, 5, 7, 14, 30, 90, 365];
 	public $startYearOptions;
 	public $availSummaryTypes;
 
@@ -99,6 +102,127 @@ class Report {
 		'Misc.' => ['nightmin', 'daymax', 'w10max', 'afhrs'],
 		'Feels-like' => ['fmin', 'fmax', 'fmean'],
 	];
+
+	/**
+	 * Explain the current weather variable (what it is + day definition).
+	 * Emitted at the bottom of the page body so AJAX swaps refresh it with the table.
+	 */
+	public function echoVarAbout() {
+		$about = Wx::measureAbout($this->type);
+		if ($about === '') { return; }
+		echo '<p class="report-var-about" id="report-var-about">'
+			. htmlspecialchars($about) . '</p>';
+	}
+
+	/**
+	 * Append a one-line runtime sample for a ranking data fetch.
+	 * @param float $t0 microtime(true) taken before the fetch/render work
+	 * @param string $kind day|month|year|spells|periods
+	 */
+	public function logRankRuntime($t0, $kind) {
+		$ms = (int)round((microtime(true) - $t0) * 1000);
+		$bits = [
+			$kind,
+			$ms . 'ms',
+			'var=' . $this->type,
+			'start=' . (int)$this->startYrReport,
+		];
+		if ($kind === 'day' || $kind === 'month' || $kind === 'spells' || $kind === 'periods') {
+			$bits[] = 'month=' . (int)$this->month;
+		}
+		if ($kind === 'month' || $kind === 'year' || $kind === 'periods') {
+			$bits[] = 'summary=' . (int)$this->summaryType;
+			if ($this->needsThreshold()) {
+				$bits[] = 'threshold=' . $this->spellThreshold;
+			}
+		}
+		if ($kind === 'spells') {
+			$bits[] = 'dir=' . $this->spellDir;
+			$bits[] = 'threshold=' . $this->spellThreshold;
+		}
+		if ($kind === 'periods') {
+			$bits[] = 'period=' . (int)$this->periodLength;
+			$bits[] = 'no_overlap=' . ($this->periodNoOverlap ? 1 : 0);
+		}
+		if ($kind !== 'year') {
+			$bits[] = 'limit=' . (int)$this->rankLimit;
+		}
+		Page::quick_log('rank_runtime.txt', implode(' ', $bits));
+	}
+
+	/**
+	 * Unit used when formatting a summary value (temperature range uses AbsTemp
+	 * so °C→°F is a delta, not an absolute conversion).
+	 * @param int|null $summaryType defaults to current selection
+	 */
+	public function summaryDisplayUnit($summaryType = null) {
+		$st = ($summaryType === null) ? $this->summaryType : (int)$summaryType;
+		if ($st === Data::SUMMARY_RANGE && $this->unit === Wx::Temperature) {
+			return Wx::AbsTemp;
+		}
+		return $this->unit;
+	}
+
+	/** True when the current (or given) summary type needs a threshold chip row. */
+	public function needsThreshold($summaryType = null) {
+		$st = ($summaryType === null) ? $this->summaryType : (int)$summaryType;
+		return Data::isThresholdSummary($st);
+	}
+
+	/**
+	 * Heading suffix for monthly / rank-monthly / rank-annual / rank-periods views.
+	 * Count-above/below put the unit on the threshold, like spell rankings.
+	 */
+	public function summaryTitleSuffix($summaryType = null) {
+		$st = ($summaryType === null) ? $this->summaryType : (int)$summaryType;
+		if (Data::isThresholdSummary($st)) {
+			return $this->description . ' · days ' . $this->summaryThresholdPhrase($st);
+		}
+		return $this->description . ' / ' . Wx::getUnitsText($this->summaryDisplayUnit($st));
+	}
+
+	/** Title suffix including period length for RankPeriods. */
+	public function periodTitleSuffix($summaryType = null) {
+		$st = ($summaryType === null) ? $this->summaryType : (int)$summaryType;
+		$cap = $this->summaryCaptionName($st);
+		if (Data::isThresholdSummary($st)) {
+			return $this->description . ' · ' . $this->periodLength . '-day ' . $cap;
+		}
+		return $this->description . ' / ' . Wx::getUnitsText($this->summaryDisplayUnit($st))
+			. ' · ' . $this->periodLength . '-day ' . $cap;
+	}
+
+	/**
+	 * Threshold comparison phrase for count summaries, e.g. "≥ 10.0 °C".
+	 * Empty string when the summary type does not use a threshold.
+	 */
+	public function summaryThresholdPhrase($summaryType = null) {
+		$st = ($summaryType === null) ? $this->summaryType : (int)$summaryType;
+		if (!Data::isThresholdSummary($st)) { return ''; }
+		$dir = ($st === Data::SUMMARY_COUNT_ABOVE) ? 'above' : 'below';
+		$sym = Spells::ruleSymbol($this->type, $dir, $this->spellThreshold);
+		$threshTxt = Wx::plainText(Wx::conv($this->spellThreshold, $this->unit, true));
+		return $sym . ' ' . $threshTxt;
+	}
+
+	/** Short summary label for table captions, including threshold when relevant. */
+	public function summaryCaptionName($summaryType = null) {
+		$st = ($summaryType === null) ? $this->summaryType : (int)$summaryType;
+		$name = Data::$SUMMARY_NAMES[$st];
+		if (Data::isThresholdSummary($st)) {
+			return 'days ' . $this->summaryThresholdPhrase($st);
+		}
+		return $name;
+	}
+
+	/** Display labels for the current variable's threshold presets. */
+	public function thresholdLabels() {
+		$labels = [];
+		foreach ($this->spellThresholds as $th) {
+			$labels[] = Wx::plainText(Wx::conv($th, $this->unit, false));
+		}
+		return $labels;
+	}
 
 	/**
 	 * @param array $opts default-bearing options:
@@ -173,8 +297,9 @@ class Report {
 
 		// Spell ranking selectors
 		$this->spellDir = (isset($_GET['spell_dir']) && $_GET['spell_dir'] === 'below') ? 'below' : 'above';
-		$this->spellThresholds = Spells::thresholdPresets($this->type);
-		$defThresh = Spells::defaultThreshold($this->type, $this->unit);
+		// Spell / count-threshold selectors share the same preset list.
+		$this->spellThresholds = Wx::thresholdPresets($this->type);
+		$defThresh = Wx::defaultThreshold($this->type, $this->unit);
 		if (isset($_GET['threshold']) && is_numeric($_GET['threshold'])) {
 			$this->spellThreshold = (float)$_GET['threshold'];
 		} else {
@@ -192,16 +317,31 @@ class Report {
 			$this->spellThreshold = $defThresh;
 		}
 
-		// Available monthly-summary tab types (mirrors wxdatagen)
-		$this->availSummaryTypes = $this->isCountOnly ? [Data::SUMMARY_COUNT] : [(int)$this->isSum];
-		if ($this->isSum && !$this->isCountOnly) { $this->availSummaryTypes[] = Data::SUMMARY_COUNT; }
+		// Available monthly-summary tab types. Non-zero "Count" is omitted —
+		// use Count ≥ / Count < with threshold 0 (or the variable default) instead.
+		$this->availSummaryTypes = [(int)$this->isSum];
 		array_push($this->availSummaryTypes, Data::SUMMARY_MIN, Data::SUMMARY_MAX);
+		if (!$this->isNotSummarisable) {
+			if (!$this->isCountOnly) {
+				$this->availSummaryTypes[] = Data::SUMMARY_RANGE;
+			}
+			$this->availSummaryTypes[] = Data::SUMMARY_COUNT_ABOVE;
+			$this->availSummaryTypes[] = Data::SUMMARY_COUNT_BELOW;
+		}
 
 		$g = isset($_GET['summary_type']) ? (int)$_GET['summary_type'] : 0;
-		if ($g < 0 || $g > 4) { $g = 0; }
+		if ($g < 0 || $g > 7) { $g = 0; }
 		if ($g <= 1) { $g = (int)$this->isSum; }
 		if (!in_array($g, $this->availSummaryTypes, true)) { $g = $this->availSummaryTypes[0]; }
 		$this->summaryType = $g;
+
+		$plen = isset($_GET['period']) ? (int)$_GET['period'] : 5;
+		if (!in_array($plen, self::$periodLengthOptions, true)) { $plen = 5; }
+		$this->periodLength = $plen;
+		// Hide-overlapping defaults to off (allow overlaps).
+		$this->periodNoOverlap = isset($_GET['no_overlap'])
+			&& (string)$_GET['no_overlap'] !== '0'
+			&& (string)$_GET['no_overlap'] !== '';
 
 		$this->badCats = $badCats;
 	}
@@ -237,8 +377,8 @@ class Report {
 			11 => [0, 10, 20, 25, 35, 50, 65, 75, 85, 90, 95],
 			12 => [-10, -5, -2, 0, 2, 5, 10, 15, 20],
 			13 => [25, 50, 75, 90, 100, 110, 125, 150, 175, 200, 250],
-			// UK DAQI PM2.5 breakpoints (µg/m³ upper bound of bands 1–9; >70 → band 10)
-			14 => [11, 23, 35, 41, 47, 53, 58, 64, 70],
+			// US values have already been converted to AQI; others remain raw PM2.5.
+			14 => $us ? [25, 50, 75, 100, 125, 150, 200, 300, 500] : [11, 23, 35, 41, 47, 53, 58, 64, 70],
 		];
 		self::$thresholdsReady = true;
 	}
@@ -250,6 +390,11 @@ class Report {
 	 */
 	public function valcolr($value, $countable = false) {
 		return self::valcolForType($this->type, $value, $countable);
+	}
+
+	/** Universal green day-count class shared with spell-length cells. */
+	public static function dayCountClass($days) {
+		return 'spell-length spell-length-' . Spells::lengthColourLevel($days);
 	}
 
 	/**
@@ -487,12 +632,18 @@ class Report {
 		} else {
 			$mode = 'daily';
 		}
-		$isRank = ($mode === 'rank-daily' || $mode === 'rank-monthly' || $mode === 'rank-annual' || $mode === 'rank-spells');
+		$isRank = ($mode === 'rank-daily' || $mode === 'rank-monthly' || $mode === 'rank-annual' || $mode === 'rank-spells' || $mode === 'rank-periods');
 
 		$titleSuffix = $this->description . ' / ' . Wx::getUnitsText($this->unit);
 		if ($mode === 'daily' && $this->dayAgg !== '') {
 			$aggTitle = array('min' => 'Min', 'max' => 'Max', 'mean' => 'Mean');
 			$titleSuffix .= ' · ' . $aggTitle[$this->dayAgg] . ' (all years)';
+		}
+		if ($mode === 'monthly' || $mode === 'rank-monthly' || $mode === 'rank-annual') {
+			$titleSuffix = $this->summaryTitleSuffix();
+		}
+		if ($mode === 'rank-periods') {
+			$titleSuffix = $this->periodTitleSuffix();
 		}
 		if ($mode === 'rank-spells') {
 			// Unit belongs on the threshold ("Above 0.0 °C"), not after the measure name.
@@ -532,16 +683,26 @@ class Report {
 			} elseif ($mode === 'monthly') {
 				$params['start_year_rep'] = $this->startYrReport;
 				$params['summary_type'] = $this->summaryType;
+				if ($this->needsThreshold()) {
+					$params['threshold'] = $this->spellThreshold;
+				}
 			} elseif ($isRank) {
 				$params['start_year_rep'] = $this->startYrReport;
 				if ($mode !== 'rank-annual') {
 					$params['rankLimit'] = $this->rankLimit;
 				}
-				if ($mode === 'rank-daily' || $mode === 'rank-monthly' || $mode === 'rank-spells') {
+				if ($mode === 'rank-daily' || $mode === 'rank-monthly' || $mode === 'rank-spells' || $mode === 'rank-periods') {
 					$params['month'] = $this->month;
 				}
-				if ($mode === 'rank-monthly' || $mode === 'rank-annual') {
+				if ($mode === 'rank-monthly' || $mode === 'rank-annual' || $mode === 'rank-periods') {
 					$params['summary_type'] = $this->summaryType;
+					if ($this->needsThreshold()) {
+						$params['threshold'] = $this->spellThreshold;
+					}
+				}
+				if ($mode === 'rank-periods') {
+					$params['period'] = $this->periodLength;
+					$params['no_overlap'] = $this->periodNoOverlap ? 1 : 0;
 				}
 				if ($mode === 'rank-spells' || $showSpell) {
 					$params['spell_dir'] = $this->spellDir;
@@ -568,6 +729,8 @@ class Report {
 			. ' data-rank-limit="' . (int)$this->rankLimit . '"'
 			. ' data-spell-dir="' . htmlspecialchars($this->spellDir) . '"'
 			. ' data-threshold="' . htmlspecialchars((string)$this->spellThreshold) . '"'
+			. ' data-period="' . (int)$this->periodLength . '"'
+			. ' data-no-overlap="' . ($this->periodNoOverlap ? '1' : '0') . '"'
 			. ' data-body="' . htmlspecialchars($ajaxBodyId) . '"'
 			. ($ajaxFragment !== '' ? ' data-fragment="' . htmlspecialchars($ajaxFragment) . '"' : '')
 			. ' data-heading="' . htmlspecialchars($heading) . '">';
@@ -611,23 +774,12 @@ class Report {
 					. htmlspecialchars($lab) . '</a>';
 			}
 			echo '</div></div>';
-
-			echo '<div class="report-sel-row report-sel-labelled">';
-			echo '<div class="wxsel-label">Threshold</div>';
-			echo '<div class="wxsel-scale wxsel-threshold" role="tablist">';
-			foreach ($this->spellThresholds as $th) {
-				$active = (abs($th - $this->spellThreshold) < 1e-9) ? ' active' : '';
-				$label = Wx::plainText(Wx::conv($th, $this->unit, false));
-				echo '<a class="wxsel-chip' . $active . '" data-threshold="' . htmlspecialchars((string)$th)
-					. '" href="' . $selUrl(array('threshold' => $th)) . '">'
-					. htmlspecialchars($label) . '</a>';
-			}
-			echo '</div></div>';
 		}
 
 		if ($showSummary) {
 			if ($mode === 'rank-annual') { $sumLabel = 'Annual'; }
 			elseif ($mode === 'rank-monthly' || $mode === 'monthly') { $sumLabel = 'Monthly'; }
+			elseif ($mode === 'rank-periods') { $sumLabel = 'Aggregate'; }
 			else { $sumLabel = 'Summary'; }
 			echo '<div class="report-sel-row report-sel-labelled">';
 			echo '<div class="wxsel-label">' . htmlspecialchars($sumLabel) . '</div>';
@@ -635,15 +787,61 @@ class Report {
 			foreach ($this->availSummaryTypes as $st) {
 				$active = ($st === $this->summaryType) ? ' active' : '';
 				$label = ucfirst(Data::$SUMMARY_NAMES[$st]);
+				$hrefParams = array('summary_type' => $st);
+				if (Data::isThresholdSummary($st)) {
+					$hrefParams['threshold'] = $this->spellThreshold;
+				}
 				echo '<a class="wxsel-chip' . $active . '" data-summary="' . (int)$st
-					. '" href="' . $selUrl(array('summary_type' => $st)) . '">'
+					. '" href="' . $selUrl($hrefParams) . '">'
 					. htmlspecialchars($label) . '</a>';
 			}
 			echo '</div></div>';
 		}
 
+		// Threshold chips for spell rankings and for count ≥ / count < summaries.
+		$showThreshold = $showSpell || ($showSummary && $this->needsThreshold());
+		echo '<div class="report-sel-row report-sel-labelled" id="report-sel-threshold"'
+			. ($showThreshold ? '' : ' hidden') . '>';
+		echo '<div class="wxsel-label">Threshold</div>';
+		echo '<div class="wxsel-scale wxsel-threshold" role="tablist">';
+		foreach ($this->spellThresholds as $th) {
+			$active = (abs($th - $this->spellThreshold) < 1e-9) ? ' active' : '';
+			$label = Wx::plainText(Wx::conv($th, $this->unit, false));
+			echo '<a class="wxsel-chip' . $active . '" data-threshold="' . htmlspecialchars((string)$th)
+				. '" href="' . $selUrl(array('threshold' => $th)) . '">'
+				. htmlspecialchars($label) . '</a>';
+		}
+		echo '</div></div>';
+
+		$showPeriod = !empty($o['showPeriod']) || ($mode === 'rank-periods');
+		if ($showPeriod) {
+			echo '<div class="report-sel-row report-sel-labelled">';
+			echo '<div class="wxsel-label">Period</div>';
+			echo '<div class="wxsel-scale wxsel-periods" role="tablist">';
+			foreach (self::$periodLengthOptions as $plen) {
+				$active = ($plen === $this->periodLength) ? ' active' : '';
+				echo '<a class="wxsel-chip' . $active . '" data-period="' . (int)$plen
+					. '" href="' . $selUrl(array('period' => $plen)) . '">'
+					. (int)$plen . 'd</a>';
+			}
+			echo '</div></div>';
+
+			echo '<div class="report-sel-row report-sel-labelled">';
+			echo '<div class="wxsel-label">Overlaps</div>';
+			echo '<div class="wxsel-scale wxsel-period-overlap" role="tablist">';
+			$allowActive = !$this->periodNoOverlap ? ' active' : '';
+			$hideActive = $this->periodNoOverlap ? ' active' : '';
+			echo '<a class="wxsel-chip' . $allowActive . '" data-no-overlap="0" href="'
+				. $selUrl(array('no_overlap' => 0)) . '">Allow</a>';
+			echo '<a class="wxsel-chip' . $hideActive . '" data-no-overlap="1" href="'
+				. $selUrl(array('no_overlap' => 1)) . '">Hide</a>';
+			echo '</div></div>';
+		}
+
 		if ($showMonth) {
-			$monthLabel = ($mode === 'rank-spells') ? 'Midpoint month' : 'Month';
+			if ($mode === 'rank-spells') { $monthLabel = 'Midpoint month'; }
+			elseif ($mode === 'rank-periods') { $monthLabel = 'Month start'; }
+			else { $monthLabel = 'Month'; }
 			echo '<div class="report-sel-row report-sel-labelled">';
 			echo '<div class="wxsel-label">' . htmlspecialchars($monthLabel) . '</div>';
 			echo '<div class="wxsel-scale wxsel-months" role="tablist">';
@@ -769,6 +967,7 @@ class Report {
 			'rank-monthly' => 'rm-fragment',
 			'rank-annual' => 'ry-fragment',
 			'rank-spells' => 'rs-fragment',
+			'rank-periods' => 'rp-fragment',
 		);
 		$cfg = array(
 			'groups' => $groups,
@@ -787,6 +986,10 @@ class Report {
 			'spellDirLabels' => Spells::directionChipLabels($this->type),
 			'threshold' => $this->spellThreshold,
 			'thresholds' => $this->spellThresholds,
+			'thresholdLabels' => $this->thresholdLabels(),
+			'periodLength' => (int)$this->periodLength,
+			'periodLengthOptions' => self::$periodLengthOptions,
+			'periodNoOverlap' => $this->periodNoOverlap ? 1 : 0,
 			'unit' => (int)$this->unit,
 			'page' => Page::$pageName,
 			'fragment' => $ajaxFragment !== '' ? $ajaxFragment : null,
@@ -886,8 +1089,9 @@ class Report {
 	 * @param bool $isCount   values are plain counts (no unit conversion)
 	 * @param float $sumfix   divisor applied before colour lookup
 	 */
-	public function rankTable($values, $dates, $rankNum, $title, $alignLeft, $showToday, $showFoot, $isDaily = true, $isCount = false, $sumfix = 1) {
+	public function rankTable($values, $dates, $rankNum, $title, $alignLeft, $showToday, $showFoot, $isDaily = true, $isCount = false, $sumOff = 1, $unitOverride = null) {
 		$side = $alignLeft ? 'rk-left' : 'rk-right';
+		$unit = ($unitOverride !== null) ? $unitOverride : $this->unit;
 		echo '<div class="rk-grid ' . $side . '">';
 		echo '<div class="rk-caption">' . htmlspecialchars($title) . '</div>';
 		echo '<div class="rk-row rk-head">';
@@ -898,8 +1102,8 @@ class Report {
 			if (!isset($values[$i])) { continue; }
 			echo '<div class="rk-row">';
 			echo '<div class="rk-rank">' . $i . '</div>';
-			echo '<div class="rk-val ' . $this->rankClass($values[$i], $isCount, $sumfix) . '">'
-				. $this->rankVal($values[$i], $isCount) . '</div>';
+			echo '<div class="rk-val ' . $this->rankClass($values[$i], $isCount, $sumOff, $unit) . '">'
+				. $this->rankVal($values[$i], $isCount, $unit) . '</div>';
 			echo '<div class="rk-date">' . (isset($dates[$i]) ? $dates[$i] : '') . '</div>';
 			echo '</div>';
 		}
@@ -912,6 +1116,9 @@ class Report {
 			} elseif ($period === 'monthly') {
 				$todayLbl = 'Current month';
 				$yestLbl = 'Last month';
+			} elseif ($period === 'period') {
+				$todayLbl = 'Latest';
+				$yestLbl = 'Previous';
 			} else {
 				$todayLbl = 'Today';
 				$yestLbl = 'Yesterday';
@@ -919,16 +1126,16 @@ class Report {
 			if ($showToday && isset($values['today'])) {
 				echo '<div class="rk-row rk-foot rk-foot-today">';
 				echo '<div class="rk-rank">' . (isset($dates['today']) ? $dates['today'] : '') . '</div>';
-				echo '<div class="rk-val ' . $this->rankClass($values['today'], $isCount, $sumfix) . '">'
-					. $this->rankVal($values['today'], $isCount) . '</div>';
+				echo '<div class="rk-val ' . $this->rankClass($values['today'], $isCount, $sumOff, $unit) . '">'
+					. $this->rankVal($values['today'], $isCount, $unit) . '</div>';
 				echo '<div class="rk-date">' . $todayLbl . '</div>';
 				echo '</div>';
 			}
 			if (isset($values['yest']) && $values['yest'] !== null) {
 				echo '<div class="rk-row rk-foot">';
 				echo '<div class="rk-rank">' . (isset($dates['yest']) ? $dates['yest'] : '') . '</div>';
-				echo '<div class="rk-val ' . $this->rankClass($values['yest'], $isCount, $sumfix) . '">'
-					. $this->rankVal($values['yest'], $isCount) . '</div>';
+				echo '<div class="rk-val ' . $this->rankClass($values['yest'], $isCount, $sumOff, $unit) . '">'
+					. $this->rankVal($values['yest'], $isCount, $unit) . '</div>';
 				echo '<div class="rk-date">' . $yestLbl . '</div>';
 				echo '</div>';
 			}
@@ -937,13 +1144,19 @@ class Report {
 		echo '</div>';
 	}
 
-	private function rankVal($v, $isCount) {
-		return $isCount ? $v : Wx::conv($v, $this->unit, false);
+	private function rankVal($v, $isCount, $unit = null) {
+		if ($isCount) { return $v; }
+		$u = ($unit !== null) ? $unit : $this->unit;
+		return Wx::conv($v, $u, false);
 	}
 
-	private function rankClass($v, $isCount, $sumfix) {
-		$num = $this->valcolConvert ? Wx::convNum($v, $this->unit) : (float)$v;
-		return $this->valcolr(($num === null ? 0 : $num) / $sumfix, $isCount);
+	private function rankClass($v, $isCount, $sumOff, $unit = null) {
+		if ($isCount) {
+			return self::dayCountClass($v);
+		}
+		$u = ($unit !== null) ? $unit : $this->unit;
+		$num = $this->valcolConvert ? Wx::convNum($v, $u) : (float)$v;
+		return $this->valcolr(($num === null ? 0 : $num) / $sumOff, $isCount);
 	}
 
 	public function rankLimitForm() {
@@ -974,7 +1187,8 @@ class Report {
 			$endTs = strtotime($spell['endDate']);
 			$startLbl = $startTs ? date('j M Y', $startTs) : $spell['startDate'];
 			$endLbl = !empty($spell['ongoing']) ? 'Current' : ($endTs ? date('j M Y', $endTs) : $spell['endDate']);
-			$period = $startLbl . ' – ' . $endLbl;
+			$pre2009 = $startTs && (int)date('Y', $startTs) < Site::BASE_YEAR;
+			$period = $startLbl . ' – ' . $endLbl . ($pre2009 ? '*' : '');
 			if ($startTs && (Date::$dtstamp - $startTs) < $yearSecs) {
 				$period = '<b>' . $period . '</b>';
 			}

@@ -136,13 +136,13 @@ class Traffic {
 			'max_date' => '23 Sep'
 		],
 		2025 => [
-			'sum' => 360000,
-			'mean' => 985,
-			'median' => 837,
-			'min' => 470,
-			'max' => 3822,
-			'min_date' => '01 Jan',
-			'max_date' => '01 Jan'
+			'sum' => 319000,
+			'mean' => 875,
+			'median' => 727,
+			'min' => 406,
+			'max' => 3519,
+			'min_date' => '18 Oct',
+			'max_date' => '19 Jul'
 		],
 	];
 

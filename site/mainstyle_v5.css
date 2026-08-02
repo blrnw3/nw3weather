@@ -159,32 +159,27 @@ body {
 	overflow-x: hidden;
 }
 
-/* Toggle bar: phones/tablets only */
-#nav-toggle-bar {
+/* Compact menu toggle: shown inside the sub-header on phones/tablets only. */
+#nav-toggle {
 	display: none;
 	align-items: center;
-	gap: 0.45rem;
-	background: #0B6121;
-	color: #d3f4d0;
-	position: sticky;
-	top: 0;
-	z-index: 40;
-	box-shadow: 0 1px 0 rgba(0,0,0,0.15);
-}
-#nav-toggle {
-	display: inline-flex;
-	align-items: center;
+	justify-content: center;
 	gap: 0.35rem;
-	min-height: 2.3rem;
-	padding: 0.2rem 0.5rem;
+	flex: 0 0 auto;
+	width: auto;
+	min-width: 2.1rem;
+	height: 2rem;
+	padding: 0.35rem 0.45rem;
 	border: 1px solid rgba(211, 244, 208, 0.45);
 	border-radius: 4px;
 	background: rgba(0, 0, 0, 0.18);
-	color: inherit;
+	color: #d3f4d0;
 	font: inherit;
-	font-weight: 600;
 	cursor: pointer;
-	margin: 0.2em;
+	margin: 2px 6px 2px 0;
+}
+.updated-short {
+	display: none;
 }
 #nav-toggle:hover,
 #nav-toggle:focus-visible {
@@ -201,14 +196,20 @@ body {
 		linear-gradient(#d3f4d0, #d3f4d0) 0 50% / 100% 2px no-repeat,
 		linear-gradient(#d3f4d0, #d3f4d0) 0 100% / 100% 2px no-repeat;
 }
-.nav-toggle-brand {
-	color: #d3f4d0;
-	text-decoration: none;
-	font-size: 1.15rem;
+.nav-open .nav-toggle-icon {
+	height: 1rem;
+	background:
+		linear-gradient(#d3f4d0, #d3f4d0) 50% 50% / 100% 2px no-repeat,
+		linear-gradient(#d3f4d0, #d3f4d0) 50% 50% / 100% 2px no-repeat;
+	transform: rotate(45deg);
 }
-.nav-toggle-brand .nw3 {
-	font-weight: 600;
-	color: #a9ffa3;
+.nav-open .nav-toggle-icon::after {
+	content: "";
+	display: block;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(#d3f4d0, #d3f4d0) 50% 50% / 100% 2px no-repeat;
+	transform: rotate(90deg);
 }
 #nav-backdrop {
 	display: none;
@@ -2393,6 +2394,9 @@ body.cam-modal-open {
 #report-sel-start-year[hidden] {
 	display: none !important;
 }
+#report-sel-threshold[hidden] {
+	display: none !important;
+}
 
 #dd-ajax.dd-ajax-loading,
 #dm-ajax.dd-ajax-loading,
@@ -2778,7 +2782,7 @@ body.cam-modal-open {
 /****************** Ranking tables (RankDay / RankMonth) ***************************/
 .rk-pair {
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	gap: 1rem 1.5rem;
 	align-items: flex-start;
 	margin: 0.4rem 0 0.8rem;
@@ -2840,21 +2844,21 @@ body.cam-modal-open {
 	position: relative;
 	z-index: 1;
 }
-/* Universal spell-length scale: longer runs use progressively deeper green. */
-.rk-grid .spell-length {
+/* Universal day-count scale: more days use progressively deeper green. */
+.spell-length {
 	font-weight: 600;
 	color: #173b24;
 }
-.rk-grid .spell-length-0 { background-color: #f0f8f2; }
-.rk-grid .spell-length-1 { background-color: #ddf0e2; }
-.rk-grid .spell-length-2 { background-color: #c7e6cf; }
-.rk-grid .spell-length-3 { background-color: #a9d8b7; }
-.rk-grid .spell-length-4 { background-color: #87c79d; }
-.rk-grid .spell-length-5 { background-color: #63b382; }
-.rk-grid .spell-length-6 { background-color: #469a68; }
-.rk-grid .spell-length-7 { background-color: #327e52; color: #fff; }
-.rk-grid .spell-length-8 { background-color: #20643e; color: #fff; }
-.rk-grid .spell-length-9 { background-color: #104b2d; color: #fff; }
+.spell-length-0 { background-color: #f0f8f2; }
+.spell-length-1 { background-color: #ddf0e2; }
+.spell-length-2 { background-color: #c7e6cf; }
+.spell-length-3 { background-color: #a9d8b7; }
+.spell-length-4 { background-color: #87c79d; }
+.spell-length-5 { background-color: #63b382; }
+.spell-length-6 { background-color: #469a68; }
+.spell-length-7 { background-color: #327e52; color: #fff; }
+.spell-length-8 { background-color: #20643e; color: #fff; }
+.spell-length-9 { background-color: #104b2d; color: #fff; }
 .rk-foot {
 	margin-top: 0.35rem;
 	font-weight: 600;
@@ -2867,6 +2871,13 @@ body.cam-modal-open {
 	clear: both;
 	margin: 0.6rem 0 1rem;
 }
+.report-var-about {
+	margin: 0.85rem 0 1rem;
+	max-width: 52rem;
+	color: #444;
+	font-size: 0.95rem;
+	line-height: 1.45;
+}
 .hist-note {
 	clear: both;
 	margin: 0.75rem 0 1rem;
@@ -2875,9 +2886,10 @@ body.cam-modal-open {
 }
 
 /****************** Responsive layout ***************************/
-@media only screen and (max-width: 900px) {
-	#nav-toggle-bar {
-		display: flex;
+@media only screen and (max-width: 1020px) {
+	#nav-toggle {
+		display: inline-flex;
+		margin: 2px 0 2px 6px;
 	}
 	#nav-backdrop {
 		display: block;
@@ -2956,13 +2968,6 @@ body.cam-modal-open {
 		flex-direction: column;
 		align-items: flex-start;
 	}
-	.rk-pair {
-		flex-direction: column;
-	}
-	.rk-grid {
-		max-width: none;
-	}
-
 	/* Phase 2: slimmer banner chrome */
 	#banner {
 		/* Source panorama is 1000×150; preserve that ratio down to phone size. */
@@ -2992,9 +2997,29 @@ body.cam-modal-open {
 	}
 	#sub-header {
 		font-size: 0.95rem;
+		flex-wrap: nowrap;
+		align-items: center;
 	}
 	#sub-header > div {
 		padding: 4px 8px;
+	}
+	#live-wx {
+		flex: 1 1 auto;
+		min-width: 0;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	#last-updated {
+		flex: 0 0 auto;
+		margin-left: auto;
+		white-space: nowrap;
+	}
+	.updated-full {
+		display: none;
+	}
+	.updated-short {
+		display: inline;
 	}
 }
 
@@ -3005,6 +3030,13 @@ body.cam-modal-open {
 }
 
 @media only screen and (max-width: 486px) {
+	.rk-pair {
+		flex-direction: column;
+	}
+	.rk-grid {
+		width: 100%;
+		max-width: none;
+	}
 	#banner-nw3 {
 		font-size: 1.9rem;
 		margin-left: 0.5rem;
@@ -3014,7 +3046,7 @@ body.cam-modal-open {
 		line-height: 1.2rem;
 		margin-right: 0.5rem;
 	}
-	.nav-toggle-brand {
-		font-size: 1rem;
+	.nav-toggle-label {
+		display: none;
 	}
 }
