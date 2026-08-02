@@ -115,22 +115,30 @@ class Report {
 	}
 
 	/**
-	 * Append a one-line runtime sample for a ranking data fetch.
+	 * Append a one-line runtime sample for a ranking or data-table fetch.
 	 * @param float $t0 microtime(true) taken before the fetch/render work
-	 * @param string $kind day|month|year|spells|periods
+	 * @param string $kind day|month|year|spells|periods|dataday|datamonth
 	 */
 	public function logRankRuntime($t0, $kind) {
 		$ms = (int)round((microtime(true) - $t0) * 1000);
+		$ip = filter_var(Page::$ip, FILTER_VALIDATE_IP);
+		$userAgent = preg_replace('/\s+/', '_', trim((string)Page::$browser));
 		$bits = [
 			$kind,
 			$ms . 'ms',
+			'ip=' . ($ip !== false ? $ip : 'unknown'),
+			'ua=' . ($userAgent !== '' ? substr($userAgent, 0, 80) : 'unknown'),
 			'var=' . $this->type,
 			'start=' . (int)$this->startYrReport,
 		];
+		if ($kind === 'dataday') {
+			$bits[] = 'year=' . (int)$this->year;
+			$bits[] = 'agg=' . ($this->dayAgg !== '' ? $this->dayAgg : 'none');
+		}
 		if ($kind === 'day' || $kind === 'month' || $kind === 'spells' || $kind === 'periods') {
 			$bits[] = 'month=' . (int)$this->month;
 		}
-		if ($kind === 'month' || $kind === 'year' || $kind === 'periods') {
+		if ($kind === 'month' || $kind === 'year' || $kind === 'periods' || $kind === 'datamonth') {
 			$bits[] = 'summary=' . (int)$this->summaryType;
 			if ($this->needsThreshold()) {
 				$bits[] = 'threshold=' . $this->spellThreshold;
@@ -144,7 +152,7 @@ class Report {
 			$bits[] = 'period=' . (int)$this->periodLength;
 			$bits[] = 'no_overlap=' . ($this->periodNoOverlap ? 1 : 0);
 		}
-		if ($kind !== 'year') {
+		if ($kind === 'day' || $kind === 'month' || $kind === 'spells' || $kind === 'periods') {
 			$bits[] = 'limit=' . (int)$this->rankLimit;
 		}
 		Page::quick_log('rank_runtime.txt', implode(' ', $bits));
