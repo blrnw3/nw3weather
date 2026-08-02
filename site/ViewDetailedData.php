@@ -962,10 +962,28 @@ class ViewDetailedData {
 		return (string) $raw;
 	}
 
+	/** Normalise complete dates while leaving period-relative labels unchanged. */
+	private function dateText($label) {
+		if (is_numeric($label) && (int)$label > 100000) {
+			return date('d M Y', (int)$label);
+		}
+		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $label)
+			|| preg_match('/^\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]{3,9}\s+\d{4}$/', $label)
+			|| preg_match('/^[A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4}$/', $label)) {
+			$ts = strtotime($label);
+			if ($ts) return date('d M Y', $ts);
+		}
+		return (string)$label;
+	}
+
+	private function dateToken($label, $class = 'wx-date-inline') {
+		return '<span class="' . $class . '">' . $this->dateText($label) . '</span>';
+	}
+
 	/** Wrap a date label for display under a value (italic, easier to scan). */
 	private function dateHtml($label) {
 		if ($label === null || $label === '') return '';
-		return '<br /><span class="wx-date">' . $label . '</span>';
+		return '<br />' . $this->dateToken($label, 'wx-date');
 	}
 
 	private function isSummableVar($varName) {
@@ -1136,8 +1154,10 @@ class ViewDetailedData {
 
 	/** Display a value, or '-' when null. */
 	private function disp($val, $conv = null, $dpa = 0) {
-		if ($val === null) return '-';
-		return Wx::conv($val, $conv === null ? $this->conv : $conv, true, false, $dpa);
+		$display = ($val === null)
+			? '-'
+			: Wx::conv($val, $conv === null ? $this->conv : $conv, true, false, $dpa);
+		return '<span class="wx-value">' . $display . '</span>';
 	}
 
 	private function measureConv($r) {
@@ -1432,6 +1452,7 @@ class ViewDetailedData {
 
 		echo '<h2>Wet and Dry Spells</h2>';
 
+		echo '<div class="detail-table-scroll">';
 		Html::table(null, $wid . '%" align="center', 6);
 		Html::tr();
 		Html::td('Period', $this->cssClass, '24%');
@@ -1454,6 +1475,7 @@ class ViewDetailedData {
 			Html::tr_end();
 		}
 		Html::table_end();
+		echo '</div>';
 
 		$this->rainSpellTop10();
 	}
@@ -1481,7 +1503,7 @@ class ViewDetailedData {
 			Html::td($i + 1, $this->cssClass);
 			Html::td((int)$spell['length'] . ' day' . ((int)$spell['length'] === 1 ? '' : 's'), $this->cssClass);
 			$end = !empty($spell['ongoing']) ? 'Current' : $this->spellDate($spell['endDate']);
-			Html::td($this->spellDate($spell['startDate']) . ' - ' . $end, $this->cssClass);
+			Html::td($this->dateToken($this->spellDate($spell['startDate']) . ' - ' . $end), $this->cssClass);
 			Html::tr_end();
 		}
 		Html::table_end();
@@ -1519,7 +1541,7 @@ class ViewDetailedData {
 
 	private function spellDate($raw) {
 		$ts = strtotime($raw);
-		return $ts ? date('jS M Y', $ts) : $raw;
+		return $ts ? date('d M Y', $ts) : $raw;
 	}
 
 	function avgsExtrmsRecs($measures = null, $wid = 99) {
@@ -1761,7 +1783,7 @@ class ViewDetailedData {
 			$ts = Date::mkdate(Date::$dmonth - $m - 1, 15, Date::$dyear);
 			$mt = (int)date('n', $ts) - 1;
 			Html::tr(Html::colcol($m));
-			Html::td(Date::$months3[$mt] . ' ' . date('Y', $ts), $this->cssClass);
+			Html::td($this->dateToken(Date::$months3[$mt] . ' ' . date('Y', $ts)), $this->cssClass);
 
 			for ($r = 0; $r < count($measures); $r++) {
 				if ($this->isSeparatorRow($measures[$r])) { continue; }
@@ -1790,7 +1812,7 @@ class ViewDetailedData {
 		$curr = $this->datMMCurr;
 		list($currVals, $currDays, $currAnoms) = $this->periodMeasureCurrMonth($curr);
 		Html::tr('rowcurrent');
-		Html::td(Date::$months3[Date::$dmonth - 1] . ' ' . Date::$dyear, $this->cssClass);
+		Html::td($this->dateToken(Date::$months3[Date::$dmonth - 1] . ' ' . Date::$dyear), $this->cssClass);
 		for ($r = 0; $r < count($measures); $r++) {
 			if ($this->isSeparatorRow($measures[$r])) { continue; }
 			$cell = isset($currVals[$r]) ? $currVals[$r] : null;
@@ -1895,6 +1917,7 @@ class ViewDetailedData {
 			];
 
 		echo "<h2>Past Year Seasonal Averages</h2>";
+		echo '<div class="detail-table-scroll">';
 		Html::table(null, $wid . '%" align="center', 6, true);
 
 		Html::tr();
@@ -1915,7 +1938,7 @@ class ViewDetailedData {
 			$hlite = ($i + 1 == Date::$season - 1) ? 'border-bottom:3px solid #8181F7' : '';
 
 			Html::tr(Html::colcol($i));
-			Html::td(Date::$snames[$i] . ' ' . $yr3[$i], $this->cssClass . '" style="' . $hlite);
+			Html::td($this->dateToken(Date::$snames[$i] . ' ' . $yr3[$i]), $this->cssClass . '" style="' . $hlite);
 
 			foreach ($cols as $col) {
 				$sk = $col['stat'];
@@ -1936,6 +1959,7 @@ class ViewDetailedData {
 		}
 
 		Html::table_end();
+		echo '</div>';
 	}
 
 	private function recordPeriodAvgs($wid = 98) {
