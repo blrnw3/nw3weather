@@ -16,14 +16,25 @@ require_once('/var/www/html/basics.php');
 require_once(ROOT . 'functions.php');
 nw3_ensure_runtime_dirs();
 
-$lock = fopen(ROOT . 'Logs/cron_legacy.lock', 'c');
-if(!$lock || !flock($lock, LOCK_EX | LOCK_NB)) {
+$lockPath = ROOT . 'Logs/cron_legacy.lock';
+if(!is_dir(dirname($lockPath))) {
+	mkdir(dirname($lockPath), 0775, true);
+}
+$lock = fopen($lockPath, 'c');
+if(!$lock) {
+	fwrite(STDERR, "Unable to open lock file: $lockPath\n");
+	exit(1);
+}
+@chmod($lockPath, 0664);
+if(!flock($lock, LOCK_EX | LOCK_NB)) {
 	echo "cron_legacy already running\n";
 	exit(0);
 }
 
 $fiveMinutely = date('i') % 5 == 0;
 $tstamp = date('Hi');
+$legacyScriptRoot = ROOT . 'oldSites/sitev3/';
+$legacyExecPath = escapeshellarg(PHP_BIN) . ' -q ';
 
 // Maintain a distinct v3 serialization snapshot.
 $cacheFiles = glob(V5_CACHE_ROOT . 'serialised_*.txt');
@@ -53,7 +64,8 @@ if($fiveMinutely) {
 		array('graphdayA.php', '3s.png', ' wdir s ' . smallGraphWidth3),
 	);
 	foreach($graphs as $graph) {
-		exec(EXEC_PATH . $graph[0] . ' ' . escapeshellarg(LEGACY_GENERATED_ROOT . $graph[1]) . $graph[2]);
+		exec($legacyExecPath . escapeshellarg($legacyScriptRoot . $graph[0]) . ' '
+			. escapeshellarg(LEGACY_GENERATED_ROOT . $graph[1]) . $graph[2]);
 	}
 	legacy_graph_stitch();
 
@@ -65,16 +77,18 @@ if($fiveMinutely) {
 			$arg2 = $vars[$i * 2 - 1];
 			$arg3 = (int)($i % 2 === 1);
 			$arg4 = $margs[$i - 1];
-			exec(EXEC_PATH . 'graphdayA.php ' . escapeshellarg(LEGACY_GENERATED_ROOT . "mainGraph$i.png")
+			exec($legacyExecPath . escapeshellarg($legacyScriptRoot . 'graphdayA.php') . ' '
+				. escapeshellarg(LEGACY_GENERATED_ROOT . "mainGraph$i.png")
 				. " $arg1 $arg2 $arg3 $arg4 miniMain");
 		}
 	}
 	foreach(array('24hrs', 'month', 'year') as $roseType) {
-		exec(EXEC_PATH . 'windrose.php ' . $roseType . ' '
+		exec($legacyExecPath . escapeshellarg($legacyScriptRoot . 'windrose.php') . ' ' . $roseType . ' '
 			. escapeshellarg(LEGACY_GENERATED_ROOT . "rose_$roseType.png"));
 	}
 
-	exec(EXEC_PATH . 'cron_tags.php blr ftw > ' . escapeshellarg(ROOT . 'Logs/cronsuntaglog.txt'), $tagOut, $tagRc);
+	exec(EXEC_PATH . 'cron_tags.php blr ftw', $tagOut, $tagRc);
+	nw3_atomic_write(ROOT . 'Logs/cronsuntaglog.txt', implode("\n", $tagOut) . "\n");
 	if($tagRc !== 0) {
 		quick_log('cron_legacy_tags_bad.txt', 'rc=' . $tagRc);
 		flock($lock, LOCK_UN);
@@ -84,7 +98,8 @@ if($fiveMinutely) {
 }
 
 if($tstamp == '1656') {
-	exec(EXEC_PATH . 'windrose.php now ' . escapeshellarg(LEGACY_GENERATED_ROOT . 'rose_all.png'));
+	exec($legacyExecPath . escapeshellarg($legacyScriptRoot . 'windrose.php') . ' now '
+		. escapeshellarg(LEGACY_GENERATED_ROOT . 'rose_all.png'));
 }
 if($tstamp == '0000') {
 	$targetStart = ROOT . date('Y', time() - 60) . '/stitchedmaingraph_';

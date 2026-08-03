@@ -2,8 +2,8 @@
 include(__DIR__ . '/basics.php');
 require_once (ROOT.'jpgraph/src/jpgraph.php');
 require_once (ROOT.'jpgraph/src/jpgraph_windrose.php');
-include($root.'unit-select.php');
-include($root.'functions.php');
+include($siteRoot.'unit-select.php');
+include($siteRoot.'functions.php');
 
 // https://jpgraph.net/download/manuals/chunkhtml/ch21s07.html
 // (and ch21s02, ...03 etc.

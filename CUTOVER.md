@@ -15,15 +15,16 @@ verify) are done. What follows is phase 3, on the server.
 | `/var/www/html/` | Current code, cron scripts, FTP uploads and canonical weather data |
 | `/var/www/html/cache/{v5,legacy}/` | Rebuildable, version-specific serializations and tag caches |
 | `/var/www/html/generated/{v5,legacy}/` | Rebuildable camera/graph outputs (old root URLs are internally rewritten) |
-| `/var/www/html/oldSites/sitev3/` | The retired UI: legacy page templates, `header.php`/`footer.php`/`leftsidebar.php` chrome, `mainstyle.css` |
+| `/var/www/html/oldSites/sitev3/` | The retired UI and its v3-only graph/report generators |
 | `/var/www/html/oldSites/sitev2/` etc. | Untouched |
 
 `scripts/promote-v5.sh` holds the authoritative archive list. Files absent from
 that list stayed at docroot deliberately: `basics.php`, `functions.php`,
 `data.php`, `datfuncdef.php`, `climavs.php`, `mainData.php`, `unit-select.php`,
-`wxdatagen.php`, `graphclim.php`, `graphclim365.php`, the `graphday*` and
-`windrose` CLI generators, `HourlyLogs.php`, `monthrepgen.php` and the `cron_*`
-entry points. Cron and several pages still read them.
+`graphclim365.php`, `HourlyLogs.php`, `monthrepgen.php` and the `cron_*` entry
+points. The v3-only `wxdatagen.php`, `graphclim.php`, `graphday*`, and
+`windrose.php` live under `oldSites/sitev3/`; `cron_legacy.php` executes them
+there.
 
 ## Server steps
 
@@ -79,11 +80,12 @@ results keep working:
 | `/wxdatadaySimple.php` | `/wxdataday.php` |
 | `/wxhistmonthB.php` | `/wxhistmonth.php` |
 | `/grapharchive.php`, `/graph12.php`, `/graph31.php`, `/graph_annual.php`, `/graph_daily_trend.php` | `/graphviewer.php` |
+| `/graphday.php`, `/graphday2.php`, `/graphdayA.php`, `/graphclim.php` | `/oldSites/sitev3/<same file>` |
 | `/windrose.php` | `/windrose_viewer.php` |
 | `/wcarchive.php` | `/wx2.php` |
 
-`/windrose.php` only redirects over HTTP; cron still calls the file directly
-through the PHP CLI, so the generator is unaffected.
+`/windrose.php` only redirects over HTTP; `cron_legacy.php` calls the archived
+generator directly through the PHP CLI.
 
 The same file also canonicalises `www.` and `http://` to `https://nw3weather.co.uk`.
 

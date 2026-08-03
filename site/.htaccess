@@ -833,6 +833,10 @@ redirect 301 /graph12.php /graphviewer.php
 redirect 301 /graph31.php /graphviewer.php
 redirect 301 /graph_annual.php /graphviewer.php
 redirect 301 /graph_daily_trend.php /graphviewer.php
+redirect 301 /graphday.php /oldSites/sitev3/graphday.php
+redirect 301 /graphday2.php /oldSites/sitev3/graphday2.php
+redirect 301 /graphdayA.php /oldSites/sitev3/graphdayA.php
+redirect 301 /graphclim.php /oldSites/sitev3/graphclim.php
 redirect 301 /windrose.php /windrose_viewer.php
 redirect 301 /wcarchive.php /wx2.php
 

@@ -1,5 +1,5 @@
 <?php
-require_once('basics.php');
+require_once(__DIR__ . '/basics.php');
 
 // Block excessive curler
 $curlers = array("35.176.125.39", "92.237.11.251", "71.187.230.231");

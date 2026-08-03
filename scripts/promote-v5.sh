@@ -105,9 +105,8 @@ done
 # The archived pages need the shared includes that stay at docroot for cron, so
 # give the archive its own frozen copies. Data still comes from docroot because
 # basics.php keeps ROOT pointing there.
-for f in unit-select.php basics.php functions.php datfuncdef.php climavs.php mainData.php wxdatagen.php \
-	windrose.php graphday.php graphday2.php graphdayA.php graphdaygen.php graphclim.php graphclim365.php \
-	valcolstyle.css; do
+for f in unit-select.php basics.php functions.php datfuncdef.php climavs.php mainData.php \
+	graphclim365.php valcolstyle.css; do
 	cp "$SRC/$f" "$ARCHIVE/$f"
 done
 

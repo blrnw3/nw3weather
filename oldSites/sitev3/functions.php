@@ -1,6 +1,6 @@
 <?php
-include('datfuncdef.php');
-include_once('climavs.php');
+include(__DIR__ . '/datfuncdef.php');
+include_once(__DIR__ . '/climavs.php');
 
 /**
  * Convert from UK units to US or EU, and neaten-up <br />
@@ -932,5 +932,5 @@ function datestamp_to_ts($stamp) {
 	return mkdate(substr($stamp,4,2),substr($stamp,6,2),  substr($stamp,0,4));
 }
 
-require_once 'mainData.php';
+require_once __DIR__ . '/mainData.php';
 ?>
