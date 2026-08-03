@@ -5,7 +5,6 @@ if(PHP_SAPI !== 'cli') {
 }
 # NB: see also: cron_hikcam
 
-error_reporting(E_ERROR | E_PARSE);
 $t_start = microtime(true);
 require_once('/var/www/html/cron/bootstrap.php');
 Cron::bindDateGlobals();
@@ -25,7 +24,8 @@ $tstamp = date('Hi', mktime(date('H'), date('i')-1));
 $dstamp = date('Y/m/d');
 $stamp = date('Y/m/d/Hi');
 $src = V5_GENERATED_ROOT . "skycam.jpg";
-mkdir(CAM_ROOT . 'camchive/hik/'. $dstamp, 0775, true);
+$camchive_day = CAM_ROOT . 'camchive/hik/'. $dstamp;
+if(!is_dir($camchive_day)) { mkdir($camchive_day, 0775, true); }
 copy($src, CAM_ROOT .'camchive/hik/'. $stamp .'hik.jpg');
 
 $daily_proctime = ( $tstamp == '2357' && !file_exists($root . date('Y/Ymd') . 'dailywebcam.jpg') ) ? '2357' : '2354';

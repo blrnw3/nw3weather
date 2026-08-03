@@ -3,7 +3,6 @@ if(PHP_SAPI !== 'cli') {
 	http_response_code(403);
 	die("CLI only.\n");
 }
-error_reporting(E_ERROR | E_PARSE);
 require_once('/var/www/html/cron/bootstrap.php');
 Live::init();
 Cron::bindDateGlobals();
