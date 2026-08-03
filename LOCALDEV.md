@@ -2,7 +2,7 @@
 
 Run the production weather site locally against **real prod data**, with no
 source changes. The container's docroot is `/var/www/html` — exactly what
-`basics.php` / `UtilsAndConsts.php` hardcode — so `ROOT` just works.
+`UtilsAndConsts.php` hardcode — so `ROOT` just works.
 
 ```
   your editor ──▶ ./site ──bind mount──▶ container:/var/www/html ──▶ Apache :8080

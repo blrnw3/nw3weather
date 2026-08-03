@@ -9,19 +9,34 @@ if(PHP_SAPI !== 'cli') {
 	die("CLI only.\n");
 }
 
-$t_start = microtime(get_as_float);
-include_once('/var/www/html/basics.php');
+$t_start = microtime(true);
+require_once('/var/www/html/cron/bootstrap.php');
+require_once(ROOT . 'cron/DatmWriter.php');
+require_once(ROOT . 'cron/CacheSerialiser.php');
+require_once(ROOT . 'cron/MidnightData.php');
+require_once(ROOT . 'cron/MonthlyReport.php');
 
 // API keys (git-excluded; this cron is the only includer - keys never reach page code).
 if(file_exists(ROOT.'secrets.php')) include(ROOT.'secrets.php');
 
 echo "START: ". date('r'). "\n";
 
-//Now call this, which generates the mainData
-include_once(ROOT.'functions.php');
+Live::init();
+Cron::bindDateGlobals();
+Cron::bindLiveGlobals();
 
 $fiveMinutely = date('i') % 5 == 0;
 $tstamp = date('Hi');
+$datmCheckTime = Cron::DATM_CHECK_TIME;
+$yr_yest = Date::$yr_yest;
+$mon_yest = Date::$mon_yest;
+$day_yest = Date::$day_yest;
+$dtstamp_yest = Date::$dtstamp_yest;
+$firstday = Date::$firstday;
+$dyear = Date::$dyear;
+$dmonth = Date::$dmonth;
+$dday = Date::$dday;
+$siteRoot = ROOT;
 
 //Create clientraw backup for use in mainData when trying to access it mid-upload
 if(!$badCRdata) {
@@ -46,7 +61,7 @@ if(false && $tstamp != '0000' && (date('i') % 10 == 1 || $recentWDdowntime)) {
 			copy($goodlog, $goodlog_backup);
 			logneatenandrepair();
 		} else {
-			quick_log("badCustomlogUpload.txt", $fsize.'B '. $fage.'s');
+			Page::quick_log("badCustomlogUpload.txt", $fsize.'B '. $fage.'s');
 		}
 	} else {
 		mail("alerts@nw3weather.co.uk","Datalog corrupt","Alert! customtextout.txt is corrupt. Size: ". $fsize);
@@ -74,9 +89,9 @@ $newLine = substr($newLine, 0, strlen($newLine)-1) . "\r\n";
 
 //Midnight procedures
 if($tstamp == '0000') {
-	require(ROOT.'data.php');
+	MidnightData::run();
 
-	exec(EXEC_PATH. 'HourlyLogs.php > html/Log/hrlogOutput.html');
+	exec(escapeshellarg(PHP_BIN) . ' -q ' . ROOT . 'HourlyLogs.php > ' . escapeshellarg(ROOT . 'html/Log/hrlogOutput.html'));
 
 	$rain = 0; //clientraw hasn't had time to upload and reset this
 	file_put_contents($todaylog, $newLine); //reset
@@ -108,52 +123,52 @@ file_put_contents(ROOT.'api_latest.txt', $newLine);
 
 //datm append
 if($tstamp == $datmCheckTime) {
-	checkDatmWritten();
+	DatmWriter::checkWritten();
 }
 
 // v5 live and rolling caches.
 nw3_ensure_runtime_dirs();
-$newNOW = dailyData();
+$newNOW = Data::dailyData();
+$GLOBALS['newNOW'] = $newNOW;
 nw3_atomic_write(V5_CACHE_ROOT . 'serialised_datNow.txt', serialize($newNOW));
-nw3_atomic_write(V5_CACHE_ROOT . 'serialised_datHr24.txt', serialize(dailyData(date('Ymd'))));
+nw3_atomic_write(V5_CACHE_ROOT . 'serialised_datHr24.txt', serialize(Data::dailyData(date('Ymd'))));
 
 $yestFile = V5_CACHE_ROOT . 'serialised_datYest.txt';
 if(!file_exists($yestFile) || date('Ymd', filemtime($yestFile)) !== date('Ymd')) {
 	$yestYmd = date('Ymd', $dtstamp_yest);
 	if(file_exists(ROOT . "logfiles/daily/{$yestYmd}log.txt")) {
-		nw3_atomic_write($yestFile, serialize(dailyData($yestYmd)));
+		nw3_atomic_write($yestFile, serialize(Data::dailyData($yestYmd)));
 	}
 }
 
 if($fiveMinutely) {
-	serialiseCSV('dat');
+	CacheSerialiser::serialiseCSV('dat');
 	exec(escapeshellarg(PHP_BIN) . ' -q ' . ROOT . 'warm_detail_summaries.php', $warmOut, $warmRc);
 	if($warmRc !== 0) {
-		quick_log('warm_detail_summaries_bad.txt', 'rc=' . $warmRc . ' ' . substr(implode(' ', $warmOut), 0, 200));
+		Page::quick_log('warm_detail_summaries_bad.txt', 'rc=' . $warmRc . ' ' . substr(implode(' ', $warmOut), 0, 200));
 	}
 }
 
 if(!file_exists(V5_CACHE_ROOT . 'serialised_datt.txt')
 		|| (file_exists(ROOT . 'datt' . $yr_yest . '.csv') && time() - filemtime(ROOT . 'datt' . $yr_yest . '.csv') < 65)) {
-	serialiseCSV('datt');
+	CacheSerialiser::serialiseCSV('datt');
 }
 if(!file_exists(V5_CACHE_ROOT . 'serialised_datm.txt')
 		|| (file_exists(ROOT . 'datm' . $yr_yest . '.csv') && time() - filemtime(ROOT . 'datm' . $yr_yest . '.csv') < 65)) {
-	serialiseCSVm();
+	CacheSerialiser::serialiseCSVm();
 	exec(escapeshellarg(PHP_BIN) . ' -q ' . ROOT . 'warm_detail_summaries.php datm', $warmMOut, $warmMRc);
 	if($warmMRc !== 0) {
-		quick_log('warm_detail_summaries_bad.txt', 'datm rc=' . $warmMRc . ' ' . substr(implode(' ', $warmMOut), 0, 200));
+		Page::quick_log('warm_detail_summaries_bad.txt', 'datm rc=' . $warmMRc . ' ' . substr(implode(' ', $warmMOut), 0, 200));
 	}
 }
 if(!file_exists(V5_CACHE_ROOT . 'serialised_historical_tmax.txt')
 		|| (file_exists(ROOT . 'historical.csv') && time() - filemtime(ROOT . 'historical.csv') < 60)) {
-	serializeHistoricalData();
+	CacheSerialiser::serializeHistoricalData();
 }
 
 // Monthly report
 if($firstday && $fiveMinutely && time() - filemtime(ROOT.'datm'.$yr_yest.'.csv') < 303) {
-	require ('monthrepgen.php');
-	$rep = monthlyReport((int)$mon_yest, (int)$yr_yest);
+	$rep = MonthlyReport::generate((int)$mon_yest, (int)$yr_yest);
 	mail("blr@nw3weather.co.uk","Monthly report $mon_yest $yr_yest", $rep);
 }
 
@@ -161,15 +176,15 @@ if($firstday && $fiveMinutely && time() - filemtime(ROOT.'datm'.$yr_yest.'.csv')
 if($tstamp == '0700') {
 	$age = time() - filemtime(ROOT."dat" . $yr_yest . ".csv");
 	if($age > 30000) { // 8.3 hrs
-		require(ROOT.'data.php');
+		MidnightData::run();
 		mail("alerts@nw3weather.co.uk","Cron fail","Alert! Cron data.php failed on first attempt. Problems may exist");
 	}
 }
 
  //check for file issues
 if(date('i') % 15 == 1) {
-	if($OUTAGE || $ALT_OUTAGE) {
-		quick_log("outage.txt", "Outage: $OUTAGE ($diff s), alt-outage: $ALT_OUTAGE ($alt_true_age s)");
+	if($OUTAGE) {
+		Page::quick_log("outage.txt", "Outage: $OUTAGE ($diff s)");
 		if($diff < 5000) {
 			mail("alerts@nw3weather.co.uk","Old live data","Alert! live data not updating. Act NOW!");
 		}
@@ -180,7 +195,7 @@ $HR24 = unserialize(file_get_contents(CACHE_ROOT . 'serialised_datHr24.txt'));
 //24hr Rain exceeds 20 mm
 $rn24hrs = $HR24['trendRn'][0];
 if( $rn24hrs > 20 && $rn24hrs > $rain && ($HR24['trendRn'][0] - $HR24['trendRn']['10m'] > 0) ) {
-	quick_log('rain_excess.txt', $rn24hrs);
+	Page::quick_log('rain_excess.txt', $rn24hrs);
 //	if(date('i') % 10 == 0) {
 //		mail("blr@nw3weather.co.uk","Rain excess","Notice! More than 20 mm of rain (" . $rn24hrs . ") has fallen in the past 24 hrs");
 //	}
@@ -192,7 +207,7 @@ if($rn24hrs > 54) {
 
 // METAR retrieve and parse (updated at 20 and 50 mins past the hour, with delay)
 if(date('i') % 30 == 28) {
-	$noaaMetar = urlToArray('http://tgftp.nws.noaa.gov/data/observations/metar/stations/EGLL.TXT');
+	$noaaMetar = Util::urlToArray('http://tgftp.nws.noaa.gov/data/observations/metar/stations/EGLL.TXT');
 	if($noaaMetar !== false) file_put_contents(ROOT."METAR.txt", $noaaMetar[1]);
 }
 
@@ -301,7 +316,7 @@ if(date('i') % 30 == 12) {
 			)));
 		}
 	} else {
-		quick_log('forecast_bad.txt', substr((string)$fcRaw, 0, 200));
+		Page::quick_log('forecast_bad.txt', substr((string)$fcRaw, 0, 200));
 	}
 }
 
@@ -325,7 +340,7 @@ if(PURPLEAIR_SENSOR && (date('i') % 5 == 2) && defined('PURPLEAIR_KEY') && PURPL
 	if($pm25Now !== null && is_numeric($pm25Now)) {
 		nw3_atomic_write(V5_CACHE_ROOT.'pm25_latest.txt', (string)round((float)$pm25Now, 1));
 	} else {
-		quick_log('purpleair_bad.txt', substr((string)$paRaw, 0, 200));
+		Page::quick_log('purpleair_bad.txt', substr((string)$paRaw, 0, 200));
 	}
 }
 
@@ -341,44 +356,44 @@ if(date('i') % 30 == 13) {
 	if($wmFile !== null && preg_match('/^windy_map\.[a-z0-9]+\.js$/i', $wmFile)) {
 		nw3_atomic_write(V5_CACHE_ROOT.'windy_widget.txt', $wmFile);
 	} else {
-		quick_log('windy_widget_bad.txt', substr((string)$wmRaw, 0, 200));
+		Page::quick_log('windy_widget_bad.txt', substr((string)$wmRaw, 0, 200));
 	}
 }
 
 // External clientraw grab and save
 if(false) {
 	$path = 'http://www.harpendenweather.co.uk/live/clientraw.txt';
-	$harpendenData = urlToArray($path);
+	$harpendenData = Util::urlToArray($path);
 	if($harpendenData[0] && count($harpendenData) === 1) {
 		file_put_contents(ROOT.'EXT_harpenden.txt', $harpendenData[0]);
 	} else {
-		quick_log("HarpendenBadData.txt", $harpendenData[0]);
+		Page::quick_log("HarpendenBadData.txt", $harpendenData[0]);
 	}
 }
 if(true && (date('i') % 5 == 4)) {
 	// St James
 //	$pathJames = "https://api.synopticdata.com/v2/stations/latest?token=790b537f5b0248bc94ec8bbeae0bcba7&stid=SYN03770";
-//	$dataJames = urlToArray($pathJames);
+//	$dataJames = Util::urlToArray($pathJames);
 //	if($dataJames[0]) {
 //		file_put_contents(ROOT.'EXT_james.json', $dataJames[0]);
 //	} else {
-//		quick_log("james_bad_data.txt", $dataJames[0]);
+//		Page::quick_log("james_bad_data.txt", $dataJames[0]);
 //	}
 	// Nearby CWOP (Islington)
 	 $aprsKey = defined('APRSFI_KEY') ? APRSFI_KEY : '';
 	 $pathIslington = "https://api.aprs.fi/api/get?name=2E0RGX-13&what=wx&apikey=$aprsKey&format=json";
-	 $dataIslington = urlToArray($pathIslington);
+	 $dataIslington = Util::urlToArray($pathIslington);
 	 if($dataIslington[0]) {
 	 	file_put_contents(ROOT.'EXT_islington.json', $dataIslington[0]);
 	 } else {
-	 	quick_log("islington_bad_data.txt", $dataIslington[0]);
+	 	Page::quick_log("islington_bad_data.txt", $dataIslington[0]);
 	 }
 	$pathPotters = "https://api.aprs.fi/api/get?name=G6LTT&what=wx&apikey=$aprsKey&format=json";
-	$dataPotters = urlToArray($pathPotters);
+	$dataPotters = Util::urlToArray($pathPotters);
 	if($dataPotters[0]) {
 		file_put_contents(ROOT.'EXT_potters.json', $dataPotters[0]);
 	} else {
-		quick_log("potters_bad_data.txt", $dataPotters[0]);
+		Page::quick_log("potters_bad_data.txt", $dataPotters[0]);
 	}
 }
 
@@ -463,8 +478,8 @@ if($tstamp == '2336') {
 }
 
 ///////END OF SCRIPT////////END OF SCRIPT///////////////////////////////////////////////////////////################
-$p_time = microtime(get_as_float) - $t_start;
-file_put_contents( ROOT."Logs/cronExecuted.txt", myround($p_time) );
+$p_time = microtime(true) - $t_start;
+file_put_contents( ROOT."Logs/cronExecuted.txt", Cron::myround($p_time) );
 /////////END OF SCRIPT//////END OF SCRIPT///////////////////////////////////////////////////////////################
 echo "END: ". date('r'). "\n";
 
@@ -628,143 +643,8 @@ function logneatenandrepair() {
 	fclose($filelog2);
 }
 
-/**
- * serialises csv files for all years on record
- * @param string $csv can be dat, datt or datm
- * @param boolean [$today = true]
- */
-function serialiseCSV($csv, $today = true) {
-	global $dyear, $dmonth, $dday, $siteRoot, $newNOW;
 
-	$data = array();
-	$dataNew = [];
 
-	for($year = 2009; $year <= $dyear; $year++) {
-		$yrfil = $siteRoot.$csv.$year.'.csv';
-		if(file_exists($yrfil)) {
-			$raw = file($yrfil);
-			$header = explode(',', trim($raw[0]));
-			$cntRaw = count($raw);
-			for($i = 1; $i < $cntRaw; $i++) {
-				$day = date('j', strtotime('Jan 1st '. (string)$year . ' + ' . (string)($i-1) . ' days'));
-				$month = date('n', strtotime('Jan 1st '. (string)$year . ' + ' . (string)($i-1) . ' days'));
-				$rawa = explode(',', $raw[$i]);
-				$cntRawa = count($rawa);
-				for($j = 0; $j < $cntRawa; $j++) {
-					$data[$j][$year][$month][$day] = $rawa[$j];
-					$dataNew[$header[$j]][$year][$month][$day] = $rawa[$j];
-				}
-			}
-			if( $year == $dyear && $today && $csv != 'datm' ) {
-				$list = array(
-					$newNOW['min']['temp'], $newNOW['max']['temp'], $newNOW['mean']['temp'],
-					$newNOW['min']['humi'], $newNOW['max']['humi'], $newNOW['mean']['humi'],
-					$newNOW['min']['pres'], $newNOW['max']['pres'], $newNOW['mean']['pres'],
-					$newNOW['mean']['wind'], $newNOW['max']['wind'], $newNOW['max']['gust'], $newNOW['mean']['wdir'],
-					$newNOW['mean']['rain'], $newNOW['max']['rnhr'], $newNOW['max']['rn10'], $newNOW['max']['rate'],
-					$newNOW['min']['dewp'], $newNOW['max']['dewp'], $newNOW['mean']['dewp'],
-					$newNOW['min']['night'], $newNOW['max']['day'],
-					$newNOW['max']['tchange10'], $newNOW['max']['tchangehr'], $newNOW['max']['hchangehr'],
-					$newNOW['min']['tchange10'], $newNOW['min']['tchangehr'], $newNOW['min']['hchangehr'],
-					$newNOW['max']['w10m'],
-					$newNOW['min']['feel'], $newNOW['max']['feel'], $newNOW['mean']['feel'],
-					$newNOW['misc']['frosthrs'],
-					isset($newNOW['min']['pm25']) ? $newNOW['min']['pm25'] : '',
-					isset($newNOW['max']['pm25']) ? $newNOW['max']['pm25'] : '',
-					isset($newNOW['mean']['pm25']) ? $newNOW['mean']['pm25'] : '',
-					' \n'
-				);
-
-				$listt = array(
-					$newNOW['timeMin']['temp'], $newNOW['timeMax']['temp'], '',
-					$newNOW['timeMin']['humi'], $newNOW['timeMax']['humi'], '',
-					$newNOW['timeMin']['pres'], $newNOW['timeMax']['pres'], '',
-					'', $newNOW['timeMax']['wind'], $newNOW['timeMax']['gust'], '',
-					'', $newNOW['timeMax']['rnhr'], $newNOW['timeMax']['rn10'], $newNOW['timeMax']['rate'],
-					$newNOW['timeMin']['dewp'], $newNOW['timeMax']['dewp'], '',
-					$newNOW['timeMin']['night'], $newNOW['timeMax']['day'],
-					$newNOW['timeMax']['tchange10'], $newNOW['timeMax']['tchangehr'], $newNOW['timeMax']['hchangehr'],
-					$newNOW['timeMin']['tchange10'], $newNOW['timeMin']['tchangehr'], $newNOW['timeMin']['hchangehr'],
-					$newNOW['timeMax']['w10m'],
-					$newNOW['timeMin']['feel'], $newNOW['timeMax']['feel'], '',
-					'',
-					isset($newNOW['timeMin']['pm25']) ? $newNOW['timeMin']['pm25'] : '',
-					isset($newNOW['timeMax']['pm25']) ? $newNOW['timeMax']['pm25'] : '',
-					'',
-					' \n'
-				);
-
-				for($j = 0; $j < $cntRawa; $j++) {
-					$data[$j][$year][$dmonth][$dday] = ($csv == 'dat') ? $list[$j] : $listt[$j];
-					$dataNew[$header[$j]][$year][$dmonth][$dday] = ($csv == 'dat') ? $list[$j] : $listt[$j];
-				}
-			}
-		}
-	}
-	nw3_atomic_write( CACHE_ROOT.'serialised_'.$csv.'.txt', serialize($data) );
-	nw3_atomic_write( CACHE_ROOT.'serialised_'.$csv.'_new.txt', serialize($dataNew) );
-	// For perf, serialize each var too
-	if($csv === "dat") {
-		foreach ($data as $j => $dat) {
-			nw3_atomic_write( CACHE_ROOT."serialised_dat_$j.txt", serialize($dat) );
-		}
-		foreach ($dataNew as $j => $dat) {
-			nw3_atomic_write( CACHE_ROOT."serialised_dat_new_$j.txt", serialize($dat) );
-		}
-	}
-}
-
-function serialiseCSVm() {
-	$data = array();
-	$dataNew = [];
-
-	$DATA = unserialize(file_get_contents(CACHE_ROOT . 'serialised_dat.txt'));
-
-	for($year = 2009; $year <= date('Y'); $year++) {
-		$yrfil = ROOT.'datm'.$year.'.csv';
-		if(file_exists($yrfil)) {
-			$raw = file($yrfil);
-			$header = explode(',', trim($raw[0]));
-			$cnt1 = count($raw);
-			for($i = 1; $i < $cnt1; $i++) {
-				$rawa = explode(',', $raw[$i]);
-				for($j = 0; $j <= 12; $j++) { //up-to and including fog, plus pond
-					if($j >= 8 && $j < 12) {
-						continue;
-					}
-					$day = date('j', strtotime('Jan 1st '. (string)$year . ' + ' . (string)($i-1) . ' days'));
-					$month = date('n', strtotime('Jan 1st '. (string)$year . ' + ' . (string)($i-1) . ' days'));
-					if($j >= 3 && $j !== 12 && $rawa[$j] == '') {
-						$rawa[$j] = '0';
-					}
-					if($j === 3) { //falling snow
-						$rawa[$j] = ($rawa[$j] == 'y') ? $DATA[13][$year][$month][$day] + 0.01 : $rawa[$j];
-					}
-					if($j === 12 && $year < 2019) { // pond temp from 2019
-						$rawa[$j] = '';
-					}
-					$data[$j][$year][$month][$day] = $rawa[$j];
-					$dataNew[$header[$j]][$year][$month][$day] = $rawa[$j];
-				}
-			}
-		}
-	}
-	nw3_atomic_write( CACHE_ROOT.'serialised_datm.txt', serialize($data) );
-	nw3_atomic_write( CACHE_ROOT.'serialised_datm_new.txt', serialize($dataNew) );
-	// For perf, serialize each var too
-	foreach ($data as $j => $dat) {
-		nw3_atomic_write( CACHE_ROOT."serialised_datm_$j.txt", serialize($dat) );
-	}
-	foreach ($dataNew as $j => $dat) {
-		nw3_atomic_write( CACHE_ROOT."serialised_dat_new_$j.txt", serialize($dat) );
-	}
-}
-
-function checkDatmWritten() {
-	if(write_datm("0")) {
-		mail("alerts@nw3weather.co.uk", "Failed to receive sunhrs!", "Data not written for this day so defaulted to zero sun");
-	}
-}
 
 /**
 Get an XML document over http with a 3s timeout
@@ -788,33 +668,6 @@ function getXml($url){
 	}
 }
 
-function serializeHistoricalData() {
-	$raw = file(ROOT."historical.csv");
-	$header = explode(',', trim($raw[0]));
-	$col_count = count($header);
-	$cnt = count($raw);
-	$data = array();
-	for($i = 1; $i < $cnt; $i++) {
-		$rawa = explode(',', trim($raw[$i]));
-		$dp = explode("-", $rawa[0]);
-		$year = (int)($dp[0]);
-		$month = (int)($dp[1]);
-		$day = (int)($dp[2]);
-		for($j = 1; $j < $col_count; $j++) {
-			if($rawa[$j] !== "") {
-				$data[$header[$j]][$year][$month][$day] = (float)$rawa[$j];
-			}
-		}
-		if($rawa[10] !== "" && $rawa[11] !== "") {
-			$data["tmean"][$year][$month][$day] = ($rawa[10] + $rawa[11]) / 2;
-			$data["trange"][$year][$month][$day] = $rawa[11] - $rawa[10];
-		}
-	}
-	// Split by var for perf
-	foreach ($data as $var => $dat) {
-		nw3_atomic_write( CACHE_ROOT."serialised_historical_$var.txt", serialize($dat) );
-	}
-}
 
 function pullAndSavePondData($url = 'https://ponds.nsupdate.info/pond-temps.html', $outputFile = 'pond_temp.txt') {
     try {

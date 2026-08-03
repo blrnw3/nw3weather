@@ -137,8 +137,8 @@ class Live {
 		}
 
 		// Derived current weather variables
-		self::$feel = Wx::feelsLike(self::$temp, self::$gust, self::$dewp);
 		self::$dewp = Wx::dewPoint(self::$temp, self::$humi);
+		self::$feel = Wx::feelsLike(self::$temp, self::$gust, self::$dewp);
 
 		// Max gust in the last hour can never be below the current gust.
 		self::$maxgsthr = max((float)self::$maxgsthr, (float)self::$gust, (float)self::$gustRaw);

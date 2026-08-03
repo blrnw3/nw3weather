@@ -24,9 +24,11 @@ The raw CET data can be viewed here: <a href="/CETanalysis.xls" title="Excel 200
 
 <p class="clim365-graphs" style="margin: 10px 0px;">
 <a id="graph"></a>
-<img src="/graphclim365.php?type0&amp;type1" alt="graph year 1" />
-<img src="/graphclim365.php?type2&amp;type3" alt="graph year 1" />
-<img src="/graphclim365.php?type4" alt="graph year 1" />
+<?php
+Charts::daily(array('mode' => 'climate', 'types' => 'tmin,tmax', 'type' => 'tmin'), array('height' => 320));
+Charts::daily(array('mode' => 'climate', 'types' => 'tmean,trange', 'type' => 'tmean'), array('height' => 320));
+Charts::daily(array('mode' => 'climate', 'types' => 'maxsun', 'type' => 'maxsun'), array('height' => 300));
+?>
 </p>
 
 <div class="table-scroll">

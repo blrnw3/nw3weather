@@ -8,12 +8,12 @@ ini_set("memory_limit","128M");
 
 $allDataNeeded = true;
 $root = '/var/www/html/';
-require_once($root . 'basics.php');
+require_once(__DIR__ . '/basics.php');
 $GLOBALS['NW3_CACHE_ROOT'] = LEGACY_CACHE_ROOT;
-$t_start = microtime(get_as_float);
-include_once(ROOT . 'unit-select.php');
-include_once(ROOT . 'functions.php');
-include_once(ROOT . 'climavs.php');
+$t_start = microtime(true);
+include_once($siteRoot . 'unit-select.php');
+include_once($siteRoot . 'functions.php');
+include_once($siteRoot . 'climavs.php');
 
 echo "START: ". date('r'). "\n";
 
@@ -694,7 +694,7 @@ foreach ($DATA[20][$dyear] as $tminM) {
 
 function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 	global $fullpath, $NOW, $HR24, $types_original, $mappingsToDailyDataKey;
-	include $fullpath . 'basics.php';
+	include $siteRoot . 'basics.php';
 
 	$mapToDailyDataKey = $mappingsToDailyDataKey[substr($types_original[$varNum], 0, 1)];
 //	echo "key for $varNum is $mapToDailyDataKey <br />";

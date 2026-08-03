@@ -10,11 +10,11 @@ ini_set('log_errors', '1');
 date_default_timezone_set('Europe/London');
 
 // NB: see end of file for other inclusions and init
-require("UtilsAndConsts.php");
-require("WxDefinition.php");
-require("WxFn.php");
-require("Spells.php");
-require("ChartHelper.php");
+require_once("UtilsAndConsts.php");
+require_once("WxDefinition.php");
+require_once("WxFn.php");
+require_once("Spells.php");
+require_once("ChartHelper.php");
 
 class Page {
 	const JQUERY = '<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>';

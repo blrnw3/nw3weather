@@ -104,7 +104,8 @@ if (!$reserialise) {
 }
 
 if (!defined('ROOT')) {
-	require $root . 'basics.php';
+	define('ROOT', '/var/www/html/');
+	require $root . 'config/paths.php';
 }
 global $dyear, $siteRoot;
 if (!isset($siteRoot)) { $siteRoot = ROOT; }
@@ -135,14 +136,14 @@ function nw3_serialise_csv_fixed($csv) {
 			}
 		}
 	}
-	file_put_contents(ROOT . 'serialised_' . $csv . '.txt', serialize($data));
-	file_put_contents(ROOT . 'serialised_' . $csv . '_new.txt', serialize($dataNew));
+	file_put_contents(CACHE_ROOT . 'serialised_' . $csv . '.txt', serialize($data));
+	file_put_contents(CACHE_ROOT . 'serialised_' . $csv . '_new.txt', serialize($dataNew));
 	if ($csv === 'dat') {
 		foreach ($data as $j => $dat) {
-			file_put_contents(ROOT . "serialised_dat_$j.txt", serialize($dat));
+			file_put_contents(CACHE_ROOT . "serialised_dat_$j.txt", serialize($dat));
 		}
 		foreach ($dataNew as $j => $dat) {
-			file_put_contents(ROOT . "serialised_dat_new_$j.txt", serialize($dat));
+			file_put_contents(CACHE_ROOT . "serialised_dat_new_$j.txt", serialize($dat));
 		}
 	}
 	$years = isset($dataNew['afhrs']) ? implode(',', array_keys($dataNew['afhrs'])) : '(none)';

@@ -1,9 +1,9 @@
 <?php
 $root = '/var/www/html/';
-$t_start = microtime(get_as_float);
+$t_start = microtime(true);
 
-include_once($root.'basics.php');
-include_once($fullpath.'functions.php');
+include_once(__DIR__ . '/basics.php');
+include_once($siteRoot.'functions.php');
 
 echo "<pre>START: ". date('r'). "\n";
 

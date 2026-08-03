@@ -4,7 +4,7 @@ require_once($siteRoot.'unit-select.php');
 require_once($siteRoot.'functions.php');
 include_once(LEGACY_CACHE_ROOT . 'RainTags.php');
 $mainDataCritical = true; //see mainData.php
-require_once ROOT.'mainData.php';
+require_once $siteRoot.'mainData.php';
 
 $file = 1;
 $ajax = true;

@@ -61,7 +61,6 @@ EXCLUDES=(
 	--exclude='todaylog.txt'
 	--exclude='*.csv'
 	--exclude='serialised_*.txt'
-	--include='cron_tags.php'
 	--exclude='*Tags.php'
 	--exclude='METAR.txt'
 	--exclude='WUforecast.txt'

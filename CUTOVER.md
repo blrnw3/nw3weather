@@ -18,13 +18,16 @@ verify) are done. What follows is phase 3, on the server.
 | `/var/www/html/oldSites/sitev3/` | The retired UI and its v3-only graph/report generators |
 | `/var/www/html/oldSites/sitev2/` etc. | Untouched |
 
-`scripts/promote-v5.sh` holds the authoritative archive list. Files absent from
-that list stayed at docroot deliberately: `basics.php`, `functions.php`,
-`data.php`, `datfuncdef.php`, `climavs.php`, `mainData.php`, `unit-select.php`,
-`graphclim365.php`, `HourlyLogs.php`, `monthrepgen.php` and the `cron_*` entry
-points. The v3-only `wxdatagen.php`, `graphclim.php`, `graphday*`, and
-`windrose.php` live under `oldSites/sitev3/`; `cron_legacy.php` executes them
-there.
+`scripts/promote-v5.sh` holds the authoritative archive list. The procedural
+legacy include chain (`basics.php`, `functions.php`, `datfuncdef.php`,
+`climavs.php`, `mainData.php`, `unit-select.php`) lives only under
+`oldSites/sitev3/` now. Current-site cron bootstraps via `cron/bootstrap.php`
+onto `UtilsAndConsts` / `WxFn` / `Live` / `LTA`. Archive tag generation is
+`oldSites/sitev3/cron_tags.php`, invoked from `cron_legacy.php`. Shared cron
+entry points (`cron_main.php`, `cron_cam.php`, `cron_hikcam.php`,
+`HourlyLogs.php`) stay at docroot. The v3-only `wxdatagen.php`, `graphclim.php`,
+`graphday*`, `windrose.php`, `timelapse.php`, and `graphclim365.php` live under
+`oldSites/sitev3/`; `cron_legacy.php` executes them there.
 
 ## Server steps
 
@@ -57,8 +60,10 @@ there.
 4. Remove the now-empty `/var/www/html/v5/` if a previous deploy created one.
 
 5. Check cron. Existing `cron_main.php`, `cron_cam.php`, and `cron_hikcam.php`
-   continue to handle shared/current-site work. Add a once-per-minute crontab
-   entry for `cron_legacy.php`, then run both main derivation crons by hand:
+   continue to handle shared/current-site work (via `cron/bootstrap.php`). Add a
+   once-per-minute crontab entry for `cron_legacy.php` (covers archive tags —
+   remove any standalone `cron_tags.php` crontab entry), then run both main
+   derivation crons by hand:
 
    ```bash
    php -q /var/www/html/warm_detail_summaries.php

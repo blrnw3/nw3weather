@@ -837,6 +837,7 @@ redirect 301 /graphday.php /oldSites/sitev3/graphday.php
 redirect 301 /graphday2.php /oldSites/sitev3/graphday2.php
 redirect 301 /graphdayA.php /oldSites/sitev3/graphdayA.php
 redirect 301 /graphclim.php /oldSites/sitev3/graphclim.php
+redirect 301 /graphclim365.php /wxtempltas.php#graph
 redirect 301 /windrose.php /windrose_viewer.php
 redirect 301 /wcarchive.php /wx2.php
 

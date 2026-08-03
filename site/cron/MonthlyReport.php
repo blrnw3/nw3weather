@@ -1,5 +1,9 @@
 <?php
-function comparator($anom, $isShort, $extremeLow, $extremeHigh, $thresh1, $thresh2, $thresh3) {
+/**
+ * Monthly email report generator — ported from monthrepgen.php onto LTA/Util.
+ */
+class MonthlyReport {
+private static function comparator($anom, $isShort, $extremeLow, $extremeHigh, $thresh1, $thresh2, $thresh3) {
 	$absAnom = abs($anom);
 	if($absAnom < $thresh1)
 		return $isShort ? 'normal' : 'close to';
@@ -16,11 +20,11 @@ function comparator($anom, $isShort, $extremeLow, $extremeHigh, $thresh1, $thres
 	return $comp .' '. $hl . $than;
 }
 
-function signify($val) {
+private static function signify($val) {
 	return ( ($val < 0) ? '' : '+' ) . $val;
 }
 
-function pluralFix($val, $wereWas = false, $unit = 'day') {
+private static function pluralFix($val, $wereWas = false, $unit = 'day') {
 	if($val == 1) {
 		$str = $unit;
 		$str2 = 'was';
@@ -33,7 +37,7 @@ function pluralFix($val, $wereWas = false, $unit = 'day') {
 		"<b>$val</b> $str";
 }
 
-function minMaxMeanSumCount($arr, $type, $morx) {
+private static function minMaxMeanSumCount($arr, $type, $morx) {
 	$min = PHP_INT_MAX;
 	$max = PHP_INT_MIN;
 	$sum = 0;
@@ -41,7 +45,7 @@ function minMaxMeanSumCount($arr, $type, $morx) {
 
 	$validCnt = 0;
 	foreach($arr as $val) {
-		if(!isBlank($val)) {
+		if(!Util::isBlank($val)) {
 			$val = floatval($val);
 			$validCnt++;
 
@@ -68,25 +72,23 @@ function minMaxMeanSumCount($arr, $type, $morx) {
  * @return mixed monthly array indexed in same way but without day, and with:
  * 0:min, 1:max, 2:mean/sum, [3:count (if countable)]
  */
-function DATtoMDAT($arr) {
+private static function DATtoMDAT($arr) {
 	$mdat = array();
 	$morx = count($arr) > 5 && count($arr) < 20; //datm
 	foreach ($arr as $type => $arr0) {
 		foreach ($arr0 as $year => $arr1) {
 			foreach ($arr1 as $month => $arr2) {
-				$mdat[$type][$year][$month] = minMaxMeanSumCount($arr2, $type, $morx);
+				$mdat[$type][$year][$month] = self::minMaxMeanSumCount($arr2, $type, $morx);
 			}
 		}
 	}
 	return $mdat;
 }
-function monthlyReport($repMonth, $repYear) {
-	global $tdatav, $rainav, $sunav, $maxsun, $FSav, $LSav, $AFav;
-
+public static function generate($repMonth, $repYear) {
 	$DATM = unserialize(file_get_contents(CACHE_ROOT .'serialised_datm.txt'));
 	$DATA = unserialize(file_get_contents(CACHE_ROOT .'serialised_dat.txt'));
-	$MDAT = DATtoMDAT($DATA);
-	$MDATM = DATtoMDAT($DATM);
+	$MDAT = self::DATtoMDAT($DATA);
+	$MDATM = self::DATtoMDAT($DATM);
 
 	$mmsm = array('min', 'max', 'sum', 'cnt');
 	$req = array(0,1,2,13);
@@ -108,49 +110,49 @@ function monthlyReport($repMonth, $repYear) {
 	}
 
 	$tempAv = $manualRaw[2]['sum'];
-	$tempAnomImd = $manualRaw[2]['sum'] - $tdatav['mean'][$repMonth-1];
-	$tempComparator = comparator($tempAnomImd, false, 'colder', 'warmer', 0.5, 1, 2.5);
+	$tempAnomImd = $manualRaw[2]['sum'] - ((LTA::$vars['tmin']['monthly'][$repMonth-1] + LTA::$vars['tmax']['monthly'][$repMonth-1]) / 2);
+	$tempComparator = self::comparator($tempAnomImd, false, 'colder', 'warmer', 0.5, 1, 2.5);
 	$tempAnom = $tempAnomImd;//, 1.1, true, true);
 	$tempLo = $manualRaw[0]['min'];
 	$tempHi = $manualRaw[1]['max'];
 
 	$rainAv = $manualRaw[13]['sum'];
-	$rainAnomImd = percent($manualRaw[13]['sum'] - $rainav[$repMonth-1], $rainav[$repMonth-1], 0, false, false);
-	$rainComparator = comparator($rainAnomImd, false, 'drier', 'wetter', 10, 20, 50);
-	$rainAnom = signify($rainAnomImd);
+	$rainAnomImd = Util::percent($manualRaw[13]['sum'] - LTA::$vars['rain']['monthly'][$repMonth-1], LTA::$vars['rain']['monthly'][$repMonth-1], 0, false, false);
+	$rainComparator = self::comparator($rainAnomImd, false, 'drier', 'wetter', 10, 20, 50);
+	$rainAnom = self::signify($rainAnomImd);
 	$rainCnt = $manualRaw[13]['cnt'];
 	$rainHi = $manualRaw[13]['max'];
 	$rainYrImd = $rainYrCnt = $annualsumCum = 0;
 	for($m = 1; $m <= $repMonth; $m++) {
 		$rainYrImd += $MDAT[13][$repYear][$m][2];
 		$rainYrCnt += $MDAT[13][$repYear][$m][3];
-		$annualsumCum += $rainav[$m-1];
+		$annualsumCum += LTA::$vars['rain']['monthly'][$m-1];
 	}
 	$rainYr = $rainYrImd;
-	$rainYrAnom =  signify(percent($rainYrImd - $annualsumCum, $annualsumCum, 0, false, false));//, 0, false, true);
+	$rainYrAnom =  self::signify(Util::percent($rainYrImd - $annualsumCum, $annualsumCum, 0, false, false));//, 0, false, true);
 
 	$sunAv = $manualRawM[0]['sum'];
-	$sunAnomImd = percent($manualRawM[0]['sum'] - $sunav[$repMonth-1], $sunav[$repMonth-1], 0, false, false);
-	$sunComparator = comparator($sunAnomImd, true, 'dull', 'sunny', 6, 13, 32);
-	$sunAnom = signify($sunAnomImd);
-	$sunMax = $maxsun[$repMonth-1];
+	$sunAnomImd = Util::percent($manualRawM[0]['sum'] - LTA::$vars['sunhr']['monthly'][$repMonth-1], LTA::$vars['sunhr']['monthly'][$repMonth-1], 0, false, false);
+	$sunComparator = self::comparator($sunAnomImd, true, 'dull', 'sunny', 6, 13, 32);
+	$sunAnom = self::signify($sunAnomImd);
+	$sunMax = LTA::$vars['maxsun']['monthly'][$repMonth-1];
 	$sunCnt = $manualRawM[0]['cnt'];
 	$sunHi = $manualRawM[0]['max'];
 
-	$AFs = sum_cond($DATA[0][$repYear][$repMonth], false, 0);
-	$AFsFull = pluralFix($AFs, false, 'air frost');
-	$bigRns = sum_cond($DATA[13][$repYear][$repMonth], true, 10);
-	$bigRnsFull = pluralFix($bigRns);
-	$bigGusts = sum_cond($DATA[11][$repYear][$repMonth], true, 30);
+	$AFs = Util::cond_count($DATA[0][$repYear][$repMonth], false, 0);
+	$AFsFull = self::pluralFix($AFs, false, 'air frost');
+	$bigRns = Util::cond_count($DATA[13][$repYear][$repMonth], true, 10);
+	$bigRnsFull = self::pluralFix($bigRns);
+	$bigGusts = Util::cond_count($DATA[11][$repYear][$repMonth], true, 30);
 	$maxDepth = $manualRawM[4]['max'];
-	$fallSnow = pluralFix($manualRawM[3]['cnt'], true);
-	$fallSnowAnomI = round($manualRawM[3]['cnt'] - $FSav[$repMonth-1]);
+	$fallSnow = self::pluralFix($manualRawM[3]['cnt'], true);
+	$fallSnowAnomI = round($manualRawM[3]['cnt'] - LTA::$vars['fsdays']['monthly'][$repMonth-1]);
 	$fallSnowAnom = abs($fallSnowAnomI);
 	$fallSnowAnom2 = ($fallSnowAnomI < 0) ? 'below' : 'above';
-	$lySnow = pluralFix($manualRawM[4]['cnt']);
-	$AFavr = signify($AFs - $AFav[$repMonth-1]);
-	$LSavr = signify(round($manualRawM[4]['cnt'] - $LSav[$repMonth-1]));
-	$hail  = pluralFix($manualRawM[5]['cnt'], true);
+	$lySnow = self::pluralFix($manualRawM[4]['cnt']);
+	$AFavr = self::signify($AFs - LTA::$vars['afdays']['monthly'][$repMonth-1]);
+	$LSavr = self::signify(round($manualRawM[4]['cnt'] - LTA::$vars['lsdays']['monthly'][$repMonth-1]));
+	$hail  = self::pluralFix($manualRawM[5]['cnt'], true);
 	$mm10 = 10; //, 2, true, false, -1);
 	$mph30 = 30; //, 4, true, false, -1);
 
@@ -165,11 +167,9 @@ function monthlyReport($repMonth, $repYear) {
 //	var_dump($export);
 
 	$exported = var_export($export, true);
-	$output = '<?php
-		$export = ' . $exported . ';
-		?>';
+	$output = "<?php\n\t\t\$export = " . $exported . ";\n\t\t?>";
 
-	file_put_contents(ROOT.$repYear."/report$repMonth.php", $output);
+	file_put_contents(ROOT . $repYear . "/report$repMonth.php", $output);
 	return "
 date array(repMonth, repYear),
 temp array(tempComparator, tempAv, tempAnom, tempLo, tempHi),
@@ -180,4 +180,4 @@ other array(hail, manualRawM[6]['cnt'], manualRawM[7]['cnt'], bigRnsFull, 10, bi
 
 $exported";
 }
-?>
+}

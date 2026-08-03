@@ -102,20 +102,24 @@ for f in "${ARCHIVE_FILES[@]}"; do
 	fi
 done
 
-# The archived pages need the shared includes that stay at docroot for cron, so
-# give the archive its own frozen copies. Data still comes from docroot because
+# The archived pages keep their own frozen copies of the procedural include
+# chain (basics/functions/…). Those no longer exist at docroot; do not try to
+# re-copy them from SRC. Data still comes from docroot because archived
 # basics.php keeps ROOT pointing there.
-for f in unit-select.php basics.php functions.php datfuncdef.php climavs.php mainData.php \
-	graphclim365.php valcolstyle.css; do
-	cp "$SRC/$f" "$ARCHIVE/$f"
-done
+# (Historical one-time step during first promote — already applied.)
+# for f in unit-select.php basics.php functions.php datfuncdef.php climavs.php mainData.php \
+# 	graphclim365.php valcolstyle.css; do
+# 	cp "$SRC/$f" "$ARCHIVE/$f"
+# done
 
 # Resolve archived includes inside the archive instead of docroot, otherwise
 # both copies load and PHP fatals on redeclared classes. Data keeps coming from
 # docroot via $fullpath, and ARCHIVE_WEB prefixes the archive's own links.
-perl -0pi -e "s{\\\$fullpath = \\\$siteRoot = ROOT;}{// Archived copy: code resolves inside this directory, data still comes from docroot.\nconst ARCHIVE_WEB = '/oldSites/sitev3';\n\\\$fullpath = ROOT;\n\\\$siteRoot = __DIR__ . '/';}" "$ARCHIVE/basics.php"
-perl -pi -e "s{^\\\$siteRoot = '/var/www/html/';}{\\\$siteRoot = dirname(__DIR__) . '/';}" "$ARCHIVE"/ajax/*.php
-
+if [ -f "$ARCHIVE/basics.php" ]; then
+	perl -0pi -e "s{\\\$fullpath = \\\$siteRoot = ROOT;}{// Archived copy: code resolves inside this directory, data still comes from docroot.\nconst ARCHIVE_WEB = '/oldSites/sitev3';\n\\\$fullpath = ROOT;\n\\\$siteRoot = __DIR__ . '/';}" "$ARCHIVE/basics.php"
+fi
+perl -pi -e "s{^\\\$siteRoot = '/var/www/html/';}{\\\$siteRoot = dirname(__DIR__) . '/';}" "$ARCHIVE"/ajax/*.php 2>/dev/null || true
+perl -pi -e "s{require_once ROOT\\.'mainData\\.php';}{require_once \\\$siteRoot.'mainData.php';}" "$ARCHIVE"/ajax/*.php 2>/dev/null || true
 # Promote the v5 tree, including dotfiles, then drop the empty directory.
 shopt -s dotglob
 mv "$SRC"/v5/* "$SRC"/

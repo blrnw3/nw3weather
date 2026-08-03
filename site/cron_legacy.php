@@ -12,9 +12,8 @@ const smallGraphWidth2 = 500;
 const smallGraphWidth3 = 505;
 
 $started = microtime(true);
-require_once('/var/www/html/basics.php');
-require_once(ROOT . 'functions.php');
-nw3_ensure_runtime_dirs();
+require_once('/var/www/html/cron/bootstrap.php');
+Cron::bindDateGlobals();
 
 $lockPath = ROOT . 'Logs/cron_legacy.lock';
 if(!is_dir(dirname($lockPath))) {
@@ -87,10 +86,10 @@ if($fiveMinutely) {
 			. escapeshellarg(LEGACY_GENERATED_ROOT . "rose_$roseType.png"));
 	}
 
-	exec(EXEC_PATH . 'cron_tags.php blr ftw', $tagOut, $tagRc);
+	exec($legacyExecPath . escapeshellarg($legacyScriptRoot . 'cron_tags.php') . ' blr ftw', $tagOut, $tagRc);
 	nw3_atomic_write(ROOT . 'Logs/cronsuntaglog.txt', implode("\n", $tagOut) . "\n");
 	if($tagRc !== 0) {
-		quick_log('cron_legacy_tags_bad.txt', 'rc=' . $tagRc);
+		Page::quick_log('cron_legacy_tags_bad.txt', 'rc=' . $tagRc);
 		flock($lock, LOCK_UN);
 		fclose($lock);
 		exit($tagRc);
@@ -149,7 +148,6 @@ function legacy_graph_stitch() {
 }
 
 function legacy_camera_outputs() {
-	global $sunset;
 	$source = V5_GENERATED_ROOT . 'skycam.jpg';
 	if(!file_exists($source)) return;
 	$image = @imagecreatefromjpeg($source);
@@ -166,7 +164,7 @@ function legacy_camera_outputs() {
 		rename($tmp, LEGACY_GENERATED_ROOT . $name);
 		imagedestroy($output);
 	}
-	if(date('H:i') == $sunset) {
+	if(date('H:i') == Date::$sunset) {
 		copy(LEGACY_GENERATED_ROOT . 'skycam_small.jpg', LEGACY_GENERATED_ROOT . 'skycam_sunset.jpg');
 	}
 	imagedestroy($image);
