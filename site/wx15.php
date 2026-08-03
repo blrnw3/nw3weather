@@ -15,52 +15,85 @@ include Site::$rareTags;
 
 <?php
 $format = 'H:i:s, jS F Y';
-$labels = array('Web Server Live', 'Last live-data upload from local system (nw3)',
-	'Last upload of secondary data', 'Latest Webcam upload', 'Last upload of 24hr data log', 'Last full data process',
-	'Last data downtime (&gt;60 mins)');
+$now = time();
+$yr = date('Y');
 $outageFile = ROOT . 'Logs/outage.txt';
 $rainSummaryFile = DataSummarizer::summaryCachePath('rain', Site::BASE_YEAR);
-$rainDataFile = CACHE_ROOT . 'serialised_dat_new_rain.txt';
+$rainDataFile = V5_CACHE_ROOT . 'serialised_dat_new_rain.txt';
 $fullDataStamp = is_file($rainSummaryFile) ? filemtime($rainSummaryFile)
 	: (is_file($rainDataFile) ? filemtime($rainDataFile) : null);
-$timestamps = array(time(), filemtime(Site::LIVE_DATA_PATH),
-	filemtime(Site::$rareTags), filemtime(ROOT . 'jpgwebcam.jpg'), filemtime(ROOT . 'customtextout.txt'), $fullDataStamp,
-	file_exists($outageFile) ? filemtime($outageFile) : null);
-$freqs = array(1, 60, 3600, 60, 300, 300);
-$limit = array(2, 200, 10000, 200, 750, 750);
+
+// Critical live signals (LED health).
+$healthRows = array(
+	array('Web Server Live', $now, 1, 2),
+	array('Live data upload (clientraw.txt)', wx15_mtime(Site::LIVE_DATA_PATH), 60, 200),
+	array('Secondary WD tags (rareTags.php)', wx15_mtime(Site::$rareTags), 3600, 10000),
+	array('Skycam (generated/v5/skycam.jpg)', wx15_mtime(V5_GENERATED_ROOT . 'skycam.jpg'), 60, 200),
+	array('24hr data log (customtextout.txt)', wx15_mtime(ROOT . 'customtextout.txt'), 300, 750),
+	array('Full data process (rain summary)', $fullDataStamp, 300, 750),
+	array('Last data downtime (&gt;60 mins)', wx15_mtime($outageFile), null, null),
+);
 
 Html::table(null, '92%" style="margin-bottom:15px; margin-left:25px;', 6);
 Html::tableHead("System Data Health", 4);
-
 Html::tr();
 Html::td("Measure", null, "40%");
 Html::td("Timestamp", null, "28%");
 Html::td("Ago", null, "17%");
 Html::td("Health", null, "15%");
 Html::tr_end();
+wx15_render_health_rows($healthRows, $now, $format);
+Html::table_end();
 
-for ($r = 0; $r < count($labels); $r++) {
-	Html::tr(Html::colcol($r));
-	Html::td($labels[$r]);
-	Html::td($timestamps[$r] !== null ? date($format, $timestamps[$r]) : '&ndash;');
-	if ($timestamps[$r] !== null) {
-		$ago = $timestamps[0] - $timestamps[$r];
-		Html::td(Date::secsToReadable($ago));
-		if (isset($freqs[$r])) {
-			$ledColour = ($ago <= $freqs[$r]) ? 'Green' : (($ago < $limit[$r]) ? 'Amber' : 'Red');
-			$led = '<img src="' . Site::IMG_ROOT . 'LED_' . $ledColour
-				. '.png" alt="health" title="Expected Frequency: ' . Date::secsToReadable($freqs[$r]) . '" />';
-		} else {
-			$led = '';
-		}
-		Html::td($led);
-	} else {
-		Html::td('&ndash;');
-		Html::td('');
-	}
-	Html::tr_end();
-}
+// Uploaded / FTP drop files that feed the site.
+$uploadedFiles = array(
+	array('Live WD clientraw', 'clientraw.txt', Site::LIVE_DATA_PATH, 60, 200),
+	array('WD rareTags (console/system)', 'rareTags.php', Site::$rareTags, 3600, 10000),
+	array('WD 24hr custom log', 'customtextout.txt', ROOT . 'customtextout.txt', 300, 750),
+	array('Rolling goodlog', 'goodlog.txt', ROOT . 'goodlog.txt', 60, 200),
+	array('Daily CSV (current year)', "dat{$yr}.csv", ROOT . "dat{$yr}.csv", 90000, 200000),
+	array('Trend CSV (current year)', "datt{$yr}.csv", ROOT . "datt{$yr}.csv", 90000, 200000),
+	array('Monthly CSV (current year)', "datm{$yr}.csv", ROOT . "datm{$yr}.csv", 90000, 200000),
+	array('Legacy WD webcam still', 'jpgwebcam.jpg', ROOT . 'jpgwebcam.jpg', 3600, 10000),
+);
 
+Html::table(null, '92%" style="margin-bottom:15px; margin-left:25px;', 6);
+Html::tableHead("Uploaded Files (FTP / Weather Display)", 5);
+Html::tr();
+Html::td("File", null, "28%");
+Html::td("Path", null, "27%");
+Html::td("Timestamp", null, "22%");
+Html::td("Ago", null, "13%");
+Html::td("Health", null, "10%");
+Html::tr_end();
+wx15_render_file_rows($uploadedFiles, $now, $format);
+Html::table_end();
+
+// Rebuildable v5 caches and presentation assets.
+$generatedFiles = array(
+	array('Live summary cache', 'serialised_datNow.txt', V5_CACHE_ROOT . 'serialised_datNow.txt', 60, 200),
+	array('24hr summary cache', 'serialised_datHr24.txt', V5_CACHE_ROOT . 'serialised_datHr24.txt', 60, 200),
+	array('Daily serialisations', 'serialised_dat.txt', V5_CACHE_ROOT . 'serialised_dat.txt', 300, 900),
+	array('Detail summary (rain)', basename($rainSummaryFile), $rainSummaryFile, 300, 900),
+	array('Yr.no forecast cache', 'forecast_v5.json', V5_CACHE_ROOT . 'forecast_v5.json', 1800, 7200),
+	array('PurpleAir PM2.5', 'pm25_latest.txt', V5_CACHE_ROOT . 'pm25_latest.txt', 300, 900),
+	array('Windy widget id', 'windy_widget.txt', V5_CACHE_ROOT . 'windy_widget.txt', 86400, 259200),
+	array('METAR (EGLL)', 'METAR.txt', ROOT . 'METAR.txt', 1800, 7200),
+	array('Skycam HD', 'skycam.jpg', V5_GENERATED_ROOT . 'skycam.jpg', 60, 200),
+	array('Skycam home', 'skycam_home.jpg', V5_GENERATED_ROOT . 'skycam_home.jpg', 60, 200),
+	array('Skycam wx2', 'skycam_wx2.jpg', V5_GENERATED_ROOT . 'skycam_wx2.jpg', 60, 200),
+);
+
+Html::table(null, '92%" style="margin-bottom:15px; margin-left:25px;', 6);
+Html::tableHead("Generated Files (v5 cache / assets)", 5);
+Html::tr();
+Html::td("File", null, "28%");
+Html::td("Path", null, "27%");
+Html::td("Timestamp", null, "22%");
+Html::td("Ago", null, "13%");
+Html::td("Health", null, "10%");
+Html::tr_end();
+wx15_render_file_rows($generatedFiles, $now, $format);
 Html::table_end();
 
 
@@ -142,4 +175,73 @@ Site owner and administrator: Ben Lee-Rodgers (2010 - 2015), Ben Masschelein-Rod
 	Storm Rain: <?php echo $vpstormrain; ?> (<?php echo $vpstormrainstart; ?>)
 </p>
 
-<?php Page::End(); ?>
+<?php Page::End();
+
+function wx15_mtime($path) {
+	return (is_string($path) && is_file($path)) ? filemtime($path) : null;
+}
+
+function wx15_rel_path($path) {
+	if(!is_string($path) || $path === '') {
+		return '&ndash;';
+	}
+	if(strpos($path, ROOT) === 0) {
+		return substr($path, strlen(ROOT));
+	}
+	return $path;
+}
+
+function wx15_led($ago, $freq, $limit) {
+	if($freq === null) {
+		return '';
+	}
+	$ledColour = ($ago <= $freq) ? 'Green' : (($ago < $limit) ? 'Amber' : 'Red');
+	return '<img src="' . Site::IMG_ROOT . 'LED_' . $ledColour
+		. '.png" alt="health" title="Expected Frequency: ' . Date::secsToReadable($freq) . '" />';
+}
+
+function wx15_render_health_rows($rows, $now, $format) {
+	for($r = 0; $r < count($rows); $r++) {
+		$label = $rows[$r][0];
+		$stamp = $rows[$r][1];
+		$freq = $rows[$r][2];
+		$limit = $rows[$r][3];
+		Html::tr(Html::colcol($r));
+		Html::td($label);
+		Html::td($stamp !== null ? date($format, $stamp) : '&ndash;');
+		if($stamp !== null) {
+			$ago = $now - $stamp;
+			Html::td(Date::secsToReadable($ago));
+			Html::td(wx15_led($ago, $freq, $limit));
+		} else {
+			Html::td('&ndash;');
+			Html::td('');
+		}
+		Html::tr_end();
+	}
+}
+
+function wx15_render_file_rows($rows, $now, $format) {
+	for($r = 0; $r < count($rows); $r++) {
+		$label = $rows[$r][0];
+		$name = $rows[$r][1];
+		$path = $rows[$r][2];
+		$freq = $rows[$r][3];
+		$limit = $rows[$r][4];
+		$stamp = wx15_mtime($path);
+		Html::tr(Html::colcol($r));
+		Html::td($label . '<br /><span style="color:#666">' . htmlspecialchars($name) . '</span>');
+		Html::td('<code>' . htmlspecialchars(wx15_rel_path($path)) . '</code>');
+		Html::td($stamp !== null ? date($format, $stamp) : 'missing');
+		if($stamp !== null) {
+			$ago = $now - $stamp;
+			Html::td(Date::secsToReadable($ago));
+			Html::td(wx15_led($ago, $freq, $limit));
+		} else {
+			Html::td('&ndash;');
+			Html::td('<img src="' . Site::IMG_ROOT . 'LED_Red.png" alt="missing" title="File missing" />');
+		}
+		Html::tr_end();
+	}
+}
+?>
