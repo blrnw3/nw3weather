@@ -9,7 +9,7 @@
  *   php warm_detail_summaries.php 2009      # one start year only
  *   php warm_detail_summaries.php datm      # only the datm-sourced vars
  */
-error_reporting(E_ALL);
+error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 date_default_timezone_set('Europe/London');

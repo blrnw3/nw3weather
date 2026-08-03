@@ -9,6 +9,9 @@ if(PHP_SAPI !== 'cli' && empty($GLOBALS['NW3_ALLOW_WEB_BOOTSTRAP'])) {
 }
 
 date_default_timezone_set('Europe/London');
+error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT);
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
 
 if(!defined('ROOT')) {
 	define('ROOT', '/var/www/html/');

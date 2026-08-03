@@ -1,8 +1,10 @@
 <?php
-error_reporting(E_ALL);
+// Match /etc/php.ini: keep real problems, skip noisy notices from legacy data paths.
+error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT);
 $host = isset($_SERVER['HTTP_HOST']) ? strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'])) : '';
-$isLocal = PHP_SAPI === 'cli'
-	|| in_array($host, array('', 'localhost', '127.0.0.1', '::1'), true)
+// Web-only locality check. CLI (cron) must not enable display_errors or notices
+// flood crontab / php_errors.log stdout captures.
+$isLocal = in_array($host, array('localhost', '127.0.0.1', '::1'), true)
 	|| substr($host, -6) === '.local'
 	|| substr($host, -5) === '.test';
 ini_set('display_errors', $isLocal ? '1' : '0');
