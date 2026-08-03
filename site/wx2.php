@@ -38,7 +38,13 @@ for ($i = 47; $i >= 0; $i--) {
 	$ts = $base - $i * 1800;
 	$stamp = date('Hi', $ts);
 	$thumb_rel = "camchive/thumbs/hik/${stamp}hik.jpg";
-	$has_thumb = file_exists(Site::CAM_ROOT . $thumb_rel);
+	$thumb_path = Site::CAM_ROOT . $thumb_rel;
+	$has_thumb = file_exists($thumb_path);
+	$thumb_url = '/' . $thumb_rel;
+	if ($has_thumb) {
+		// These filenames are reused daily; version them so browsers cannot retain yesterday's image.
+		$thumb_url .= '?v=' . filemtime($thumb_path);
+	}
 	$day = date('Y-m-d', $ts);
 	$days_seen[$day] = true;
 	$grid_frames[] = array(
@@ -46,7 +52,7 @@ for ($i = 47; $i >= 0; $i--) {
 		'stamp' => $stamp,
 		'label' => date('H:i', $ts),
 		'day' => $day,
-		'thumb' => '/' . $thumb_rel,
+		'thumb' => $thumb_url,
 		'src' => hik_frame_url($ts),
 		'has' => $has_thumb,
 	);
