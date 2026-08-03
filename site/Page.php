@@ -187,6 +187,14 @@ END;
 				$phpload . ' ' . $unit . ' ' . Util::makeBool(self::$auto)
 			);
 		}
+		$ref = filter_input(INPUT_SERVER, "HTTP_REFERER", FILTER_SANITIZE_URL);
+		$isDigitalOceanProbe = stripos((string)self::$browser, 'DigitalOcean Uptime Probe') !== false;
+		if($ref && !$isDigitalOceanProbe && !Util::strContains(strtolower($ref), array(
+			'nw3weather.co.uk', 'www.google', 'bing.com', 'duckduckgo', 'baidu',
+			'raindrop.io', 'search.yahoo', 'com.google', 'digitalocean.com'
+		))) {
+			self::log_events('external_refer_v5.txt', $ref);
+		}
 		if (self::$me) {
 			$memUsage = round(memory_get_usage() / 1024 / 1024, 1);
 			$memPeak = round(memory_get_peak_usage() / 1024 / 1024, 1);

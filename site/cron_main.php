@@ -434,11 +434,15 @@ if($tstamp == '0621' && $dday == 1) {
 }
 
 if($tstamp == '2359') {
-	$path = ROOT.'Logs/siteV3Access.txt';
-	if(file_exists($path)) {
-		$path_new = ROOT.'Logs/old/siteV3Access_day_of_month_'. date('d') .'.txt';
-		copy($path, $path_new);
-		unlink($path);
+	$dayTag = date('d');
+	foreach(array('siteV5Access.txt', 'rank_runtime.txt') as $logName) {
+		$path = ROOT.'Logs/'.$logName;
+		if(file_exists($path)) {
+			$base = pathinfo($logName, PATHINFO_FILENAME);
+			$path_new = ROOT.'Logs/old/'.$base.'_day_of_month_'.$dayTag.'.txt';
+			copy($path, $path_new);
+			unlink($path);
+		}
 	}
 }
 
@@ -760,25 +764,6 @@ function checkDatmWritten() {
 	if(write_datm("0")) {
 		mail("alerts@nw3weather.co.uk", "Failed to receive sunhrs!", "Data not written for this day so defaulted to zero sun");
 	}
-}
-
-function get_wuvu_cnt() {
-	$filwu = urlToArray('http://www.wunderground.com/weatherstation/WXDailyHistory.asp?ID=ILONDONL9');
-	if($filwu !== false) {
-		$limit = count($filwu);
-		for ($i = 8000; $i < $limit; $i++) {
-			if(strpos($filwu[$i], "view_count") > 0) {
-				$wuvul = $filwu[$i];
-				break;
-			}
-		}
-		if($wuvul) {
-			return (int)preg_replace('/\D/', '', $wuvul);
-		} else {
-			return 'not found';
-		}
-	}
-	return 'timeout';
 }
 
 /**
