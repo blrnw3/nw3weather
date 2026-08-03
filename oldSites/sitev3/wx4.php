@@ -33,14 +33,14 @@ require('unit-select.php');
 
 <h2>Extremes and Records</h2>
 <?php
-require ROOT.'TemperatureTags.php';
-require ROOT.'RainTags.php';
-require ROOT.'Rain2Tags.php';
-require ROOT.'HumidityTags.php';
-require ROOT.'WindTags.php';
-require ROOT.'PressureTags.php';
-require ROOT.'FeelTags.php';
-require ROOT.'SunTags.php';
+require LEGACY_CACHE_ROOT . 'TemperatureTags.php';
+require LEGACY_CACHE_ROOT . 'RainTags.php';
+require LEGACY_CACHE_ROOT . 'Rain2Tags.php';
+require LEGACY_CACHE_ROOT . 'HumidityTags.php';
+require LEGACY_CACHE_ROOT . 'WindTags.php';
+require LEGACY_CACHE_ROOT . 'PressureTags.php';
+require LEGACY_CACHE_ROOT . 'FeelTags.php';
+require LEGACY_CACHE_ROOT . 'SunTags.php';
 
 $periods = array("Measure", "Today", "Yesterday", "Last 7 days", "Month", "Year", "All Time");
 $widths = array(0,15,15,14,14,14,14,14);

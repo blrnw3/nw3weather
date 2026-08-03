@@ -101,7 +101,7 @@ function nw3_at($val, $unit, $time, $dpa = 0) {
 function nw3_yest_data() {
 	static $YEST = null;
 	if ($YEST === null) {
-		$f = ROOT . 'serialised_datYest.txt';
+		$f = CACHE_ROOT . 'serialised_datYest.txt';
 		$YEST = file_exists($f) ? unserialize(file_get_contents($f)) : array();
 		if (!is_array($YEST)) {
 			$YEST = array();

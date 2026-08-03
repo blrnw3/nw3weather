@@ -34,7 +34,7 @@ require './detailDataModules.php';
 
 $pwType = isset($_GET['pwtype']) ? $_GET['pwtype'] : 'baro';
 if($pwType == 'baro') {
-	require $root.'PressureTags.php';
+	require LEGACY_CACHE_ROOT . 'PressureTags.php';
 	$checkRel = checkHTML;
 	$checkDew = '';
 	$pwLabel = 'Barometric Pressure (MSL adjusted)';
@@ -43,7 +43,7 @@ if($pwType == 'baro') {
 	$values = array($pres,conv($HR24['changeHr']['pres'],3,1,1) . ' /hr',$last24houravbaro);
 	$conv = array(3,false,3);
 } else {
-	require $root.'WindTags.php';
+	require LEGACY_CACHE_ROOT . 'WindTags.php';
 	$checkRel = '';
 	$checkDew = checkHTML;
 	$pwLabel = 'Wind Speed (alternative)';

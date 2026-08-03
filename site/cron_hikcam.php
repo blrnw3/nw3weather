@@ -1,8 +1,13 @@
 <?php
+if(PHP_SAPI !== 'cli') {
+	http_response_code(403);
+	die("CLI only.\n");
+}
 error_reporting(E_ERROR | E_PARSE);
 $root = '/var/www/html/';
 include($root.'basics.php');
 include($fullpath.'functions.php');
+nw3_ensure_runtime_dirs();
 
 echo "START: ". date('r'). "\n";
 
@@ -13,10 +18,6 @@ $w = 3072;
 $h = 2048;
 $wt = 1980;
 $ht = 1320;
-$wtm = 864;
-$htm = 576;
-$wts = 315;
-$hts = 210;
 $wh = 700;   // v5 home column
 $hh = 467;
 $ww = 1400;  // v5 wx2 near-full-width
@@ -36,23 +37,13 @@ if($image_raw) {
 	$str = "$datestr         ${temp}C ${humi}% ${gst} mph ${rain} mm";
 	$copystr = "@nw3weather";
 
-	$image_small = imagecreatetruecolor($wtm, $htm);
-	$col = imagecolorallocate($image_small, 250, 250, 250);
-	imagecopyresampled($image_small, $image_raw, 0, 0, 0, 0, $wtm, $htm, $w, $h);
-	imagestring($image_small, 4, 10, $htm - 20, $str, $col);
-	imagestring($image_small, 4, $wtm - 90, $htm - 20, $copystr, $col);
-	safe_cam_save($image_small, $root.'skycam_small.jpg', 65);
-	if(date('H:i') == $sunset) {
-		copy($root.'skycam_small.jpg', $root.'skycam_sunset.jpg');
-	}
-
 	// HD for saving
 	$image_hd = imagecreatetruecolor($wt, $ht);
 	$col3 = imagecolorallocate($image_hd, 250, 250, 250);
 	imagecopyresampled($image_hd, $image_raw, 0, 0, 0, 0, $wt, $ht, $w, $h);
 	imagettftext($image_hd, 20, 0, 15, $ht - 30, $col3, $FONT, $str);
 	imagettftext($image_hd, 20, 0, $wt - 210, $ht - 30, $col3, $FONT, $copystr);
-	safe_cam_save($image_hd, $root.'skycam.jpg', 65);
+	safe_cam_save($image_hd, V5_GENERATED_ROOT.'skycam.jpg', 65);
 
 	// v5 home column
 	$image_home = imagecreatetruecolor($wh, $hh);
@@ -60,7 +51,7 @@ if($image_raw) {
 	imagecopyresampled($image_home, $image_raw, 0, 0, 0, 0, $wh, $hh, $w, $h);
 	imagestring($image_home, 4, 10, $hh - 20, $str, $col_home);
 	imagestring($image_home, 4, $wh - 90, $hh - 20, $copystr, $col_home);
-	safe_cam_save($image_home, $root.'skycam_home.jpg', 70);
+	safe_cam_save($image_home, V5_GENERATED_ROOT.'skycam_home.jpg', 70);
 
 	// v5 wx2 near-full-width
 	$image_wx2 = imagecreatetruecolor($ww, $hw);
@@ -68,25 +59,15 @@ if($image_raw) {
 	imagecopyresampled($image_wx2, $image_raw, 0, 0, 0, 0, $ww, $hw, $w, $h);
 	imagettftext($image_wx2, 16, 0, 15, $hw - 22, $col_wx2, $FONT, $str);
 	imagettftext($image_wx2, 16, 0, $ww - 170, $hw - 22, $col_wx2, $FONT, $copystr);
-	safe_cam_save($image_wx2, $root.'skycam_wx2.jpg', 70);
+	safe_cam_save($image_wx2, V5_GENERATED_ROOT.'skycam_wx2.jpg', 70);
 	if(date('H:i') == $sunset) {
-		copy($root.'skycam_wx2.jpg', $root.'skycam_wx2_sunset.jpg');
+		copy(V5_GENERATED_ROOT.'skycam_wx2.jpg', V5_GENERATED_ROOT.'skycam_wx2_sunset.jpg');
 	}
-
-	// Really small
-	$image_vsmall = imagecreatetruecolor($wts, $hts);
-	$col2 = imagecolorallocate($image_vsmall, 250, 250, 250);
-	imagecopyresampled($image_vsmall, $image_raw, 0, 0, 0, 0, $wts, $hts, $w, $h);
-	imagestring($image_vsmall, 1, 4, $hts - 10, $datestr, $col2);   // Full $str doesn't fit
-	imagestring($image_vsmall, 1, $wts - 60, $hts - 10, $copystr, $col2);
-	safe_cam_save($image_vsmall, $root.'skycam_small_small.jpg', 60);
 
 	imagedestroy($image_raw);
 	imagedestroy($image_hd);
 	imagedestroy($image_home);
 	imagedestroy($image_wx2);
-	imagedestroy($image_small);
-	imagedestroy($image_vsmall);
 } else {
 	quick_log('hik_fail.txt', $tstamp .' No live cam');
 }

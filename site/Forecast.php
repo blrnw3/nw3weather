@@ -1,7 +1,7 @@
 <?php
 /**
  * Local forecast helpers for the homepage strip and wx5 page.
- * Data is cached by cron_main.php into ROOT/forecast_v5.json (Yr.no location 2-2647553).
+ * Data is cached by cron_main.php under V5_CACHE_ROOT (Yr.no location 2-2647553).
  */
 class Forecast {
 
@@ -10,7 +10,7 @@ class Forecast {
 	/** Load (and memoize) the cached forecast JSON. */
 	public static function load() {
 		if (self::$data !== null) { return self::$data; }
-		$path = ROOT . 'forecast_v5.json';
+		$path = V5_CACHE_ROOT . 'forecast_v5.json';
 		if (!is_file($path)) {
 			self::$data = array();
 			return self::$data;

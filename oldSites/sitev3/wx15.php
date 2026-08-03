@@ -34,7 +34,7 @@
 		'Last upload of secondary data', 'Latest Webcam upload', 'Last upload of 24hr data log', 'Last full data process',
 		'Last data downtime (&gt;60 mins)');
 	$timestamps = array(time(), filemtime(LIVE_DATA_PATH),
-		 filemtime($rareTags), filemtime(ROOT. 'jpgwebcam.jpg'), filemtime(ROOT. 'customtextout.txt'), filemtime(ROOT. 'RainTags.php'),
+		 filemtime($rareTags), filemtime(ROOT. 'jpgwebcam.jpg'), filemtime(ROOT. 'customtextout.txt'), filemtime(LEGACY_CACHE_ROOT . 'RainTags.php'),
 		 filemtime(ROOT. "Logs/outage.txt"));
 	$freqs = array(1, 60, 3600, 60, 300, 300);
 	$limit = array(2, 200, 10000, 200, 750, 750);

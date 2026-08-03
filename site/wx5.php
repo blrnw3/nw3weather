@@ -44,7 +44,7 @@ require Site::$rareTags;
 // that their server answers without a CORS header, so it dies before injecting anything.
 // cron_main.php resolves the hashed bundle for us; fall back to their loader when the
 // cache is missing or stale so the widget self-heals if they fix the header.
-$windyFile = ROOT . 'windy_widget.txt';
+$windyFile = V5_CACHE_ROOT . 'windy_widget.txt';
 $windyBundle = file_exists($windyFile) ? trim(file_get_contents($windyFile)) : '';
 if (!preg_match('/^windy_map\.[a-z0-9]+\.js$/i', $windyBundle)) { $windyBundle = ''; }
 $windySrc = ($windyBundle !== '')

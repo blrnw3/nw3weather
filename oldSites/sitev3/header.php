@@ -11,7 +11,7 @@ if(strlen($timeRare) > 2 && $file > 1) {
 } else {
 	$dateTimeStamp = $timestampWD;
 }
-$timestampCrontags = filemtime(ROOT.'RainTags.php');
+$timestampCrontags = filemtime(LEGACY_CACHE_ROOT . 'RainTags.php');
 $timeStampBest = min($timestampCrontags, $dateTimeStamp); //oldest
 echo "<!-- WDtimestamp: $dateTimeStamp, CrontagsTimestamp: $timestampCrontags -->";
 

@@ -71,6 +71,8 @@ EXCLUDES=(
 	--exclude='api_latest.txt'
 	--exclude='EXT_*.txt'
 	--exclude='EXT_*.json'
+	--exclude='cache/'
+	--exclude='generated/'
 
 	# Generated / uploaded imagery and video
 	--exclude='*.png'

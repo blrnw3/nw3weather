@@ -13,7 +13,10 @@ rareTags.php
 METAR.txt
 WUforecast.txt
 windy_widget.txt
+api_latest.txt
 *.json
+/cache/
+/generated/
 
 # Generated images/video
 *.png

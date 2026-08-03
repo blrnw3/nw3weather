@@ -5,6 +5,16 @@ RewriteEngine on
 RewriteCond %{REMOTE_ADDR} ^66\.249\.
 RewriteRule ^(?:Rank(?:Day|Month|Year|Periods|Spells)|rank(?:day|month|year|periods|spells)data)\.php$ - [F,L,NC]
 
+# Runtime caches contain PHP serializations and generated PHP tag files. They
+# are server-side inputs only and must never be served directly.
+RewriteRule ^cache(?:/|$) - [F,L]
+
+# Preserve established public URLs while generated assets live outside root.
+RewriteRule ^(skycam(?:_home|_wx2|_wx2_sunset)?\.jpg)$ generated/v5/$1 [L]
+RewriteRule ^(skycam_(?:small|sunset|small_small)\.jpg)$ generated/legacy/$1 [L]
+RewriteRule ^((?:stitchedmaingraph(?:_small)?|mainGraph[1-4]|rose_(?:24hrs|month|year|all))\.png)$ generated/legacy/$1 [L]
+RewriteRule ^((?:dailywebcam|todaywebcam)\.jpg)$ generated/legacy/$1 [L]
+
 <Files 403.html>
 order allow,deny
 allow from all

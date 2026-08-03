@@ -1,4 +1,8 @@
 <?php
+if(PHP_SAPI !== 'cli') {
+	http_response_code(403);
+	die("CLI only.\n");
+}
 error_reporting(E_ERROR | E_PARSE);
 $root = '/var/www/html/';
 include($root.'basics.php');

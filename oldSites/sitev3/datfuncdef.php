@@ -269,12 +269,12 @@ function varNumToDatArray($varNum, $include_historic = false) {
 	}
 	if($varNum < count($types)) {
 		if (!array_key_exists($varName, $CACHE_DAT)) {
-			$CACHE_DAT[$varName] = unserialize(file_get_contents(ROOT . "serialised_dat_$varNum.txt"));
+			$CACHE_DAT[$varName] = unserialize(file_get_contents(LEGACY_CACHE_ROOT . "serialised_dat_$varNum.txt"));
 		}
 	} else {
 		if (!array_key_exists($varName, $CACHE_DAT)) {
 			$idx = $varNum - $types_all['sunhr'];
-			$CACHE_DAT[$varName] = unserialize(file_get_contents(ROOT . "serialised_datm_$idx.txt"));
+			$CACHE_DAT[$varName] = unserialize(file_get_contents(LEGACY_CACHE_ROOT . "serialised_datm_$idx.txt"));
 		}
 	}
 	$arr = $CACHE_DAT[$varName];
@@ -282,7 +282,7 @@ function varNumToDatArray($varNum, $include_historic = false) {
 		if($include_historic < 2009) {
 			// Populate cache
 			if (!array_key_exists($varName, $CACHE_DAT_HIST)) {
-				$CACHE_DAT_HIST[$varName] = unserialize(file_get_contents(ROOT."serialised_historical_$varName.txt"));
+				$CACHE_DAT_HIST[$varName] = unserialize(file_get_contents(LEGACY_CACHE_ROOT . "serialised_historical_$varName.txt"));
 			}
 			$arr = $CACHE_DAT_HIST[$varName] + $arr;
 		}
@@ -750,7 +750,7 @@ function dailyData($procfil = 'today') {
 
 	if($procfil == date('Ymd')) {
 		//last rain
-		$prevRnOld = file_get_contents("lastrn");
+		$prevRnOld = file_exists(ROOT . "lastrn") ? file_get_contents(ROOT . "lastrn") : 0;
 		if($rncum > 0) {
 			//Only look at recent values, since this script is meant to be run every minute anyway,
 			// so in ideal conditions only really need to check most recent two rnCumArr values.
@@ -761,7 +761,7 @@ function dailyData($procfil = 'today') {
 				if($rncumArr[$end-$i-1] != $rncum) {
 					$prevRn = mktime($custhr[$end-1], $custmin[$end-1] - $i, 0);
 					if($prevRn != $prevRnOld) {
-						file_put_contents("lastrn", $prevRn);
+						file_put_contents(ROOT . "lastrn", $prevRn);
 					}
 					break;
 				}
@@ -858,7 +858,7 @@ function write_datm($sunhrs) {
 		}
 	}
 	if($pond_temp === null) {
-		$NOW = unserialize(file_get_contents(ROOT . 'serialised_datNow.txt'));
+		$NOW = unserialize(file_get_contents(LEGACY_CACHE_ROOT . 'serialised_datNow.txt'));
 		$pond_temp = $NOW["misc"]["pondTemp"];
 	}
 	$wethrs = file_get_contents(ROOT."wethrs.txt");

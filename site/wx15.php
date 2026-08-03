@@ -20,7 +20,7 @@ $labels = array('Web Server Live', 'Last live-data upload from local system (nw3
 	'Last data downtime (&gt;60 mins)');
 $outageFile = ROOT . 'Logs/outage.txt';
 $rainSummaryFile = DataSummarizer::summaryCachePath('rain', Site::BASE_YEAR);
-$rainDataFile = ROOT . 'serialised_dat_new_rain.txt';
+$rainDataFile = CACHE_ROOT . 'serialised_dat_new_rain.txt';
 $fullDataStamp = is_file($rainSummaryFile) ? filemtime($rainSummaryFile)
 	: (is_file($rainDataFile) ? filemtime($rainDataFile) : null);
 $timestamps = array(time(), filemtime(Site::LIVE_DATA_PATH),

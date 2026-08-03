@@ -80,7 +80,7 @@ class Page {
 		$metaRefreshable = in_array(self::$fileNum, array(3,4,10,11,12,13,14,15)) && !self::$isSubFile;
 		if(self::$auto && $metaRefreshable && !self::$isBot) {
 			if($_SESSION['count'][self::$fileNum] < 50) {
-				$reftime = 302 - ( time() - filemtime(ROOT.'serialised_datNow.txt') );
+				$reftime = 302 - ( time() - filemtime(CACHE_ROOT.'serialised_datNow.txt') );
 				if($reftime < 10) { $reftime = 30; }
 				$metaRefresh = '<meta http-equiv="refresh" content="'. $reftime .'" />';
 			}
@@ -237,7 +237,7 @@ END;
 	private static function getLastUpdateText() {
 		$dateTimeStamp = Live::$unix;
 		$summaryFile = DataSummarizer::summaryCachePath('rain', Site::BASE_YEAR);
-		$dataFile = ROOT . 'serialised_dat_new_rain.txt';
+		$dataFile = CACHE_ROOT . 'serialised_dat_new_rain.txt';
 		$summaryStamp = is_file($summaryFile) ? filemtime($summaryFile)
 			: (is_file($dataFile) ? filemtime($dataFile) : $dateTimeStamp);
 		$timeStampBest = min($summaryStamp, $dateTimeStamp); // oldest

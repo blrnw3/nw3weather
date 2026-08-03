@@ -28,8 +28,8 @@
 	<div id="main">
 
 <?php require('site_status.php'); ?>
-<?php require $root.'RainTags.php'; ?>
-<?php require $root.'Rain2Tags.php'; ?>
+<?php require LEGACY_CACHE_ROOT . 'RainTags.php'; ?>
+<?php require LEGACY_CACHE_ROOT . 'Rain2Tags.php'; ?>
 
 <h1>Detailed Rainfall Data</h1>
 

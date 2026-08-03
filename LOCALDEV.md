@@ -7,7 +7,7 @@ source changes. The container's docroot is `/var/www/html` — exactly what
 ```
   your editor ──▶ ./site ──bind mount──▶ container:/var/www/html ──▶ Apache :8080
                        ▲
-  prod (SSH) ──rsync pull (one-way)──┘   clientraw.txt, dat*.csv, serialised_*, *Tags.php, graphs
+  prod (SSH) ──rsync pull (one-way)──┘   root data + cache/{v5,legacy} + generated/{v5,legacy}
 
   ./oldSites ──bind mount──▶ container:/var/www/html/oldSites
 ```
@@ -136,7 +136,10 @@ locally removed (excluded data paths are still preserved).
 - Synced data files are gitignored (`site/.gitignore`) so they won't be committed.
 - **Crons are not run locally** — for page work the synced generated files are
   enough. If you later need to test cron logic, run a script by hand inside the
-  container, e.g. `docker compose exec -w /var/www/html web php cron_main.php`,
+  container, e.g. `docker compose exec -w /var/www/html web php cron_main.php`.
+  Run `cron_legacy.php` separately when testing v3-only outputs; it is intended
+  for its own once-per-minute crontab entry. `cron_main.php`, `cron_cam.php`, and
+  `cron_hikcam.php` do not invoke it. Run an individual cron when testing a narrow change,
   ideally guarded by the `NW3_LOCAL_DEV=1` env var to skip email/external side
   effects.
 - Webcam/video archives (`/mnt/...`) are empty stubs locally; cam/timelapse

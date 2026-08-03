@@ -1,17 +1,23 @@
 <?php
+if(PHP_SAPI !== 'cli') {
+	http_response_code(403);
+	die("CLI only.\n");
+}
 
 ini_set("memory_limit","128M");
 
 $allDataNeeded = true;
 $root = '/var/www/html/';
+require_once($root . 'basics.php');
+$GLOBALS['NW3_CACHE_ROOT'] = LEGACY_CACHE_ROOT;
 $t_start = microtime(get_as_float);
-include_once($fullpath . 'unit-select.php');
-include_once($fullpath . 'functions.php');
-include_once($fullpath . 'climavs.php');
+include_once(ROOT . 'unit-select.php');
+include_once(ROOT . 'functions.php');
+include_once(ROOT . 'climavs.php');
 
 echo "START: ". date('r'). "\n";
 
-$DATT = unserialize(file_get_contents($root . 'serialised_datt.txt'));
+$DATT = unserialize(file_get_contents(LEGACY_CACHE_ROOT . 'serialised_datt.txt'));
 
 $viewable = '
 if( isset($_GET["BLRdebugTags"]) ) {
@@ -659,7 +665,7 @@ $driestM = ' . var_export($driestM, true) . ';
 $driest_dayM = ' . var_export($driest_dayM, true) . ';
 ';
 
-file_put_contents($root . "RainTags.php", "<?php $viewable $outputRn ?>");
+nw3_atomic_write(LEGACY_CACHE_ROOT . "RainTags.php", "<?php $viewable $outputRn ?>");
 
 if (isset($_GET['debugRn']))
 	echo $outputRn;
@@ -1031,7 +1037,7 @@ $tranks = ' . var_export($detailData[7], true) . ';
 $tcountall = ' . var_export($detailData[11], true) . ';
 ';
 unset($detailData);
-file_put_contents($root . "TemperatureTags.php", "<?php $viewable $outputTp ?>");
+nw3_atomic_write(LEGACY_CACHE_ROOT . "TemperatureTags.php", "<?php $viewable $outputTp ?>");
 
 
 #######################  HUMIDITY  ###########################################################
@@ -1061,7 +1067,7 @@ $dranks = ' . var_export($detailDataD[7], true) . ';
 $dcountall = ' . var_export($detailDataD[11], true) . ';
 ';
 unset($detailDataD);
-file_put_contents($root . "HumidityTags.php", "<?php $viewable $outputRh $outputDp ?>");
+nw3_atomic_write(LEGACY_CACHE_ROOT . "HumidityTags.php", "<?php $viewable $outputRh $outputDp ?>");
 
 
 #######################  PRESSURE  ######################################################
@@ -1079,7 +1085,7 @@ if(date('i') == '05' || isset($_GET['BLRdebugTags'])) {
 	$pcountall = ' . var_export($detailDataP[11], true) . ';
 	';
 	unset($detailDataP);
-	file_put_contents($root . "PressureTags.php", "<?php $viewable $outputPr ?>");
+	nw3_atomic_write(LEGACY_CACHE_ROOT . "PressureTags.php", "<?php $viewable $outputPr ?>");
 
 #######################  FEELS-LIKE  ######################################################
 	$detailDataF = getDetailedData(29);
@@ -1095,7 +1101,7 @@ if(date('i') == '05' || isset($_GET['BLRdebugTags'])) {
 	$fcountall = ' . var_export($detailDataF[11], true) . ';
 	';
 	unset($detailDataF);
-	file_put_contents($root . "FeelTags.php", "<?php $viewable $outputFe ?>");
+	nw3_atomic_write(LEGACY_CACHE_ROOT . "FeelTags.php", "<?php $viewable $outputFe ?>");
 }
 
 #######################  Wind  ######################################################
@@ -1113,7 +1119,7 @@ $wranks = ' . var_export($detailDataW[7], true) . ';
 $wcountall = ' . var_export($detailDataW[11], true) . ';
 ';
 unset($detailDataW);
-file_put_contents($root . "WindTags.php", "<?php $viewable $outputWd ?>");
+nw3_atomic_write(LEGACY_CACHE_ROOT . "WindTags.php", "<?php $viewable $outputWd ?>");
 
 
 #######################  Rain2  ######################################################
@@ -1132,7 +1138,7 @@ $rtotAnoms = ' . var_export($detailDataR[10], true) . ';
 $rcountall = ' . var_export($detailDataR[11], true) . ';
 ';
 unset($detailDataR);
-file_put_contents($root . "Rain2Tags.php", "<?php $viewable $outputRn2 ?>");
+nw3_atomic_write(LEGACY_CACHE_ROOT . "Rain2Tags.php", "<?php $viewable $outputRn2 ?>");
 
 #######################  Sunshine  ######################################################
 if($argc > 1 || isset($_GET['BLRdebugTags'])) {
@@ -1149,7 +1155,7 @@ if($argc > 1 || isset($_GET['BLRdebugTags'])) {
 	$scountall = ' . var_export($detailDataS[11], true) . ';
 	';
 	unset($detailDataS);
-	file_put_contents($root . "SunTags.php", "<?php $viewable $outputSn ?>");
+	nw3_atomic_write(LEGACY_CACHE_ROOT . "SunTags.php", "<?php $viewable $outputSn ?>");
 
 }
 

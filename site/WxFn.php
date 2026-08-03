@@ -29,12 +29,12 @@ class Live {
 	public static $outage = false;
 
 	public static function init() {
-		self::$NOW = unserialize(file_get_contents(ROOT . 'serialised_datNow.txt'));
-		self::$HR24 = unserialize(file_get_contents(ROOT . 'serialised_datHr24.txt'));
+		self::$NOW = unserialize(file_get_contents(CACHE_ROOT . 'serialised_datNow.txt'));
+		self::$HR24 = unserialize(file_get_contents(CACHE_ROOT . 'serialised_datHr24.txt'));
 
 		// TODO get from $NOW
 		// Air pollution: latest PM2.5 reading (polled every 5 min by cron), null if absent
-		$pm25File = ROOT . 'pm25_latest.txt';
+		$pm25File = V5_CACHE_ROOT . 'pm25_latest.txt';
 		if(file_exists($pm25File)) {
 			$pm25Raw = trim(file_get_contents($pm25File));
 			self::$pm25 = ($pm25Raw !== '' && is_numeric($pm25Raw)) ? (float)$pm25Raw : null;
@@ -270,7 +270,7 @@ class DataSummarizer {
 	/** Path for the cached summarize() payload (rebuilt by cron warm). */
 	public static function summaryCachePath($varName, $startYear = null) {
 		$sy = self::resolveStartYear($varName, $startYear);
-		return ROOT . 'serialised_summary_' . $varName . '_' . $sy . '.txt';
+		return CACHE_ROOT . 'serialised_summary_' . $varName . '_' . $sy . '.txt';
 	}
 
 	/** How far a cache may lag its source before a request rebuilds it inline. */
@@ -292,9 +292,9 @@ class DataSummarizer {
 	public static function summarizeCached($varName, $startYear = null, $rebuildIfStale = false) {
 		$sy = self::resolveStartYear($varName, $startYear);
 		$path = self::summaryCachePath($varName, $sy);
-		$allSrc = ROOT . 'serialised_dat_new.txt';
-		$src = ROOT . "serialised_dat_new_{$varName}.txt";
-		$hist = ROOT . "serialised_historical_{$varName}.txt";
+		$allSrc = CACHE_ROOT . 'serialised_dat_new.txt';
+		$src = CACHE_ROOT . "serialised_dat_new_{$varName}.txt";
+		$hist = CACHE_ROOT . "serialised_historical_{$varName}.txt";
 
 		if (is_file($path)) {
 			$cacheM = filemtime($path);
@@ -752,7 +752,7 @@ class Data {
 		}
 		// Newer variables (e.g. PM2.5 aq*) have no serialised file until the first
 		// post-migration cron run; degrade gracefully rather than warn/fatal.
-		$file = ROOT . "serialised_dat_new_$name.txt";
+		$file = CACHE_ROOT . "serialised_dat_new_$name.txt";
 		if (!file_exists($file)) {
 			self::$CACHE_DAT[$name] = array();
 			return self::$CACHE_DAT[$name];
@@ -807,7 +807,7 @@ class Data {
 
 	public static function getTime($name, $year, $month, $day) {
 		if (self::$CACHE_DAT_TIMES === null) {
-			self::$CACHE_DAT_TIMES = unserialize(file_get_contents(ROOT . "serialised_datt_new.txt"));
+			self::$CACHE_DAT_TIMES = unserialize(file_get_contents(CACHE_ROOT . "serialised_datt_new.txt"));
 		}
 		// BUG TODO: if for current day, it returns the value as cached at midnight, which is the only time the time file is updated
 		if (!isset(self::$CACHE_DAT_TIMES[$name][$year][$month][$day])) {
@@ -910,7 +910,7 @@ class Data {
 		$startYear = isset(Wx::$daily[$name]['start_year']) ? Wx::$daily[$name]['start_year'] : Site::BASE_YEAR;
 		$wantsHistoric = ($include_historic !== false) && ($include_historic === true || $include_historic < Site::BASE_YEAR);
 		if($wantsHistoric && $startYear < Site::BASE_YEAR) {
-			$histFile = ROOT . "serialised_historical_$name.txt";
+			$histFile = CACHE_ROOT . "serialised_historical_$name.txt";
 			if(file_exists($histFile)) {
 				if(!array_key_exists($name, self::$CACHE_DAT_HIST)) {
 					self::$CACHE_DAT_HIST[$name] = unserialize(file_get_contents($histFile));
@@ -1610,7 +1610,7 @@ class Data {
 
 		if($procfil == date('Ymd')) {
 			//last rain
-			$prevRnOld = file_get_contents("lastrn");
+			$prevRnOld = file_exists(ROOT . "lastrn") ? file_get_contents(ROOT . "lastrn") : 0;
 			if($rncum > 0) {
 				//Only look at recent values, since this script is meant to be run every minute anyway,
 				// so in ideal conditions only really need to check most recent two rnCumArr values.
@@ -1621,7 +1621,7 @@ class Data {
 					if($rncumArr[$end-$i-1] != $rncum) {
 						$prevRn = mktime($custhr[$end-1], $custmin[$end-1] - $i, 0);
 						if($prevRn != $prevRnOld) {
-							file_put_contents("lastrn", $prevRn);
+							file_put_contents(ROOT . "lastrn", $prevRn);
 						}
 						break;
 					}

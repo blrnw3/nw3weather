@@ -46,7 +46,7 @@ goodlog.txt
 
 
 # Generated files
-## Root
+## generated/legacy
 hrlogOutput.html
 
 1.png
@@ -71,17 +71,34 @@ mainGraph1.png
 mainGraph2.png
 mainGraph3.png
 mainGraph4.png
+skycam_small.jpg
+skycam_sunset.jpg
+skycam_small_small.jpg
+rose_24hrs.png
+rose_month.png
+rose_year.png
+rose_all.png
 
+## generated/v5
+skycam.jpg
+skycam_home.jpg
+skycam_wx2.jpg
+skycam_wx2_sunset.jpg
+
+## cache/v5
 serialised_dat.txt
 serialised_datt.txt
 serialised_datm.txt
 serialised_datHr24.txt
 serialised_datNow.txt
-WUforecast.txt
-METAR.txt
+serialised_datYest.txt
+serialised_summary_*.txt
+serialised_historical_*.txt
+forecast_v5.json
+pm25_latest.txt
+windy_widget.txt
 
-sunhrs_raw.htm
-
+## cache/legacy
 WindTags.php
 RainTags.php
 Rain2Tags.php
@@ -90,6 +107,12 @@ HumidityTags.php
 FeelTags.php
 PressureTags.php
 SunTags.php
+serialised_*.txt
+
+## Root (generated data intentionally remains with canonical data)
+WUforecast.txt
+METAR.txt
+sunhrs_raw.htm
 
 ## YYYY
 * [All files]

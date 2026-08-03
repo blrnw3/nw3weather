@@ -1,8 +1,8 @@
 <?php
-require $root.'TemperatureTags.php';
-require $root.'RainTags.php';
-require $root.'Rain2Tags.php';
-require $root.'HumidityTags.php';
-require $root.'WindTags.php';
-require $root.'PressureTags.php';
+require LEGACY_CACHE_ROOT . 'TemperatureTags.php';
+require LEGACY_CACHE_ROOT . 'RainTags.php';
+require LEGACY_CACHE_ROOT . 'Rain2Tags.php';
+require LEGACY_CACHE_ROOT . 'HumidityTags.php';
+require LEGACY_CACHE_ROOT . 'WindTags.php';
+require LEGACY_CACHE_ROOT . 'PressureTags.php';
 ?>

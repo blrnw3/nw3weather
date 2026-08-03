@@ -29,7 +29,7 @@
 
 	<?php require('site_status.php'); ?>
 
-<?php require $root.'TemperatureTags.php'; ?>
+<?php require LEGACY_CACHE_ROOT . 'TemperatureTags.php'; ?>
 
 <h1>Detailed Temperature Data</h1>
 

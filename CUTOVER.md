@@ -12,7 +12,9 @@ verify) are done. What follows is phase 3, on the server.
 
 | Location | Contents |
 | --- | --- |
-| `/var/www/html/` | The current site (`site/` in the repo), plus the cron scripts and shared includes it depends on |
+| `/var/www/html/` | Current code, cron scripts, FTP uploads and canonical weather data |
+| `/var/www/html/cache/{v5,legacy}/` | Rebuildable, version-specific serializations and tag caches |
+| `/var/www/html/generated/{v5,legacy}/` | Rebuildable camera/graph outputs (old root URLs are internally rewritten) |
 | `/var/www/html/oldSites/sitev3/` | The retired UI: legacy page templates, `header.php`/`footer.php`/`leftsidebar.php` chrome, `mainstyle.css` |
 | `/var/www/html/oldSites/sitev2/` etc. | Untouched |
 
@@ -44,15 +46,23 @@ entry points. Cron and several pages still read them.
    serialised caches, `*Tags.php`, graphs, webcam stills) and the other
    `oldSites/` archives that the repo does not track.
 
+   For the runtime-output split, dry-run and then apply:
+
+   ```bash
+   php /var/www/html/migrate_runtime_layout.php
+   php /var/www/html/migrate_runtime_layout.php --go
+   ```
+
 4. Remove the now-empty `/var/www/html/v5/` if a previous deploy created one.
 
-5. Check cron. Paths are unchanged apart from the detail-summary warmer, which
-   `cron_main.php` now invokes as `ROOT . 'warm_detail_summaries.php'`. Run one
-   pass by hand and read the log:
+5. Check cron. Existing `cron_main.php`, `cron_cam.php`, and `cron_hikcam.php`
+   continue to handle shared/current-site work. Add a once-per-minute crontab
+   entry for `cron_legacy.php`, then run both main derivation crons by hand:
 
    ```bash
    php -q /var/www/html/warm_detail_summaries.php
    php -q /var/www/html/cron_main.php
+   php -q /var/www/html/cron_legacy.php
    ```
 
 6. Smoke test the public URLs and the redirect map (see below), then watch the

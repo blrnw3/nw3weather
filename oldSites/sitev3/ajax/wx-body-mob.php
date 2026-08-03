@@ -2,7 +2,7 @@
 $siteRoot = dirname(__DIR__) . '/';
 require_once($siteRoot.'unit-select.php');
 require_once($siteRoot.'functions.php');
-include_once(ROOT.'RainTags.php');
+include_once(LEGACY_CACHE_ROOT . 'RainTags.php');
 $mainDataCritical = true; //see mainData.php
 require_once ROOT.'mainData.php';
 

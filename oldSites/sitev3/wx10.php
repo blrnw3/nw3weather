@@ -27,7 +27,7 @@
 	<!-- ##### Main Copy ##### -->
 <div id="main">
 <?php require('site_status.php'); ?>
-<?php require $root.'HumidityTags.php'; ?>
+<?php require LEGACY_CACHE_ROOT . 'HumidityTags.php'; ?>
 
 <?php
 //http://www.gorhamschaffler.com/humidity_formulas.htm

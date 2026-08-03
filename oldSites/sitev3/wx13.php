@@ -27,7 +27,7 @@
 	<div id="main">
 
 	<?php require('site_status.php'); ?>
-	<?php require $root.'WindTags.php'; ?>
+	<?php require LEGACY_CACHE_ROOT . 'WindTags.php'; ?>
 
 <?php
 ///////////////////////////////////////////////////////WIND TAGS////////////////////////////////////////////////////////////

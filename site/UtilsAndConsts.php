@@ -1,5 +1,6 @@
 <?php
 const ROOT = '/var/www/html/';
+require_once(ROOT . 'config/paths.php');
 const PHP_INT_MIN = -9223564353720;
 
 const UNIT_UK = 0;

@@ -1,15 +1,16 @@
 <?php
-const smallGraphWidth1 = 533;
-const smallGraphWidth2 = 500;
-const smallGraphWidth3 = 505;
-
 // PurpleAir sensor index to pull air-quality (PM2.5) from. Set after picking the
 // nearest outdoor sensor to the station; 0 = unconfigured (fetch skipped).
 // The API key lives in secrets.php (PURPLEAIR_KEY), included below.
 const PURPLEAIR_SENSOR = 197637;
 
+if(PHP_SAPI !== 'cli') {
+	http_response_code(403);
+	die("CLI only.\n");
+}
+
 $t_start = microtime(get_as_float);
-include('/var/www/html/basics.php');
+include_once('/var/www/html/basics.php');
 
 // API keys (git-excluded; this cron is the only includer - keys never reach page code).
 if(file_exists(ROOT.'secrets.php')) include(ROOT.'secrets.php');
@@ -17,15 +18,16 @@ if(file_exists(ROOT.'secrets.php')) include(ROOT.'secrets.php');
 echo "START: ". date('r'). "\n";
 
 //Now call this, which generates the mainData
-include(ROOT.'functions.php');
+include_once(ROOT.'functions.php');
+
+$fiveMinutely = date('i') % 5 == 0;
+$tstamp = date('Hi');
 
 //Create clientraw backup for use in mainData when trying to access it mid-upload
 if(!$badCRdata) {
 	copy(LIVE_DATA_PATH, ROOT.'clientrawBackup.txt');
 }
 
-$fiveMinutely = date('i') % 5 == 0;
-$tstamp = date('Hi');
 $stamplog = ROOT.'logfiles/daily/'.date('Ymd').'log.txt';
 $goodlog = ROOT.'goodlog.txt';
 $todaylog = ROOT.'logfiles/daily/todaylog.txt';
@@ -33,7 +35,8 @@ $goodlog_backup = ROOT.'logfiles/backup/goodlog_'. $tstamp .'.txt';
 
 //Rebuild 24hr and today data logs, plus neaten.
 //Do 10-minutely (on top of after downtime) just for extra security, and in case the cron missed an append
-$recentWDdowntime = time() - filemtime(ROOT. "Logs/WDuploadReallyBad.txt") < 1200;
+$wdDowntimeLog = ROOT . "Logs/WDuploadReallyBad.txt";
+$recentWDdowntime = file_exists($wdDowntimeLog) && time() - filemtime($wdDowntimeLog) < 1200;
 if(false && $tstamp != '0000' && (date('i') % 10 == 1 || $recentWDdowntime)) {
 	$fsize = filesize(ROOT.'customtextout.txt');
 	$fage = time() - filemtime(ROOT.'customtextout.txt');
@@ -56,7 +59,7 @@ if($tstamp == '0107') {
 	$gust = $wind;
 }
 // Air quality: carry forward the latest PM2.5 reading (polled every 5 min below).
-$pm25 = file_exists(ROOT.'pm25_latest.txt') ? trim(file_get_contents(ROOT.'pm25_latest.txt')) : '';
+$pm25 = file_exists(V5_CACHE_ROOT.'pm25_latest.txt') ? trim(file_get_contents(V5_CACHE_ROOT.'pm25_latest.txt')) : '';
 $lineVars = array($wind, $gust, $wdir, $temp, $humi, $pres, $dewp, $rain, $pm25);
 $isBadLineData = ($pres == 0);
 $newLine = date('H,i,d,');
@@ -100,108 +103,50 @@ fclose($filelog);
 // make date-alias of goodlog (this is needed, even though goodlog never called elsewhere, to keep the 24hr rolling aspect going
 copy($goodlog, $stamplog);
 
-//serialise current data
-$newNOW = dailyData(); //used by serialiseCSV and datNOW
-file_put_contents( ROOT.'serialised_datNow.txt', serialize($newNOW) );
-file_put_contents( ROOT.'serialised_datHr24.txt', serialize( dailyData( date('Ymd') ) ) );
-
 // 'API'
 file_put_contents(ROOT.'api_latest.txt', $newLine);
-
-// Cache yesterday's full daily summary once per day (self-healing via mtime check).
-// The v5 home page loads this single small file instead of unserialising the large
-// per-variable daily files just to read a few of yesterday's values.
-$yestFile = ROOT.'serialised_datYest.txt';
-if(!file_exists($yestFile) || date('Ymd', filemtime($yestFile)) !== date('Ymd')) {
-	$yestYmd = date('Ymd', $dtstamp_yest);
-	if(file_exists(ROOT."logfiles/daily/{$yestYmd}log.txt")) {
-		file_put_contents($yestFile, serialize(dailyData($yestYmd)));
-	}
-}
 
 //datm append
 if($tstamp == $datmCheckTime) {
 	checkDatmWritten();
 }
 
+// v5 live and rolling caches.
+nw3_ensure_runtime_dirs();
+$newNOW = dailyData();
+nw3_atomic_write(V5_CACHE_ROOT . 'serialised_datNow.txt', serialize($newNOW));
+nw3_atomic_write(V5_CACHE_ROOT . 'serialised_datHr24.txt', serialize(dailyData(date('Ymd'))));
+
+$yestFile = V5_CACHE_ROOT . 'serialised_datYest.txt';
+if(!file_exists($yestFile) || date('Ymd', filemtime($yestFile)) !== date('Ymd')) {
+	$yestYmd = date('Ymd', $dtstamp_yest);
+	if(file_exists(ROOT . "logfiles/daily/{$yestYmd}log.txt")) {
+		nw3_atomic_write($yestFile, serialize(dailyData($yestYmd)));
+	}
+}
+
 if($fiveMinutely) {
-	//Serialise data
 	serialiseCSV('dat');
-
-	// Pre-warm v5 detail-page summarize() caches (wx10–wx16) so page loads
-	// reuse serialised_summary_{var}_{startYear}.txt instead of
-	// recomputing ranks/spells/rolling windows on every request.
-	exec('/usr/bin/php -q '. ROOT .'warm_detail_summaries.php', $warmOut, $warmRc);
+	exec(escapeshellarg(PHP_BIN) . ' -q ' . ROOT . 'warm_detail_summaries.php', $warmOut, $warmRc);
 	if($warmRc !== 0) {
-		quick_log('warm_detail_summaries_bad.txt', 'rc='. $warmRc .' '. substr(implode(' ', $warmOut), 0, 200));
-	}
-
-	//pre-run 24hr graphs
-	exec(EXEC_PATH. 'graphday.php 1.png');
-	exec(EXEC_PATH. 'graphday2.php 2.png');
-	exec(EXEC_PATH. 'graphdayA.php 3.png wdir');
-	exec(EXEC_PATH. 'graphday.php 1s.png s 260 '. smallGraphWidth1);
-	exec(EXEC_PATH. 'graphday2.php 2s.png s 260 '. smallGraphWidth2);
-	exec(EXEC_PATH. 'graphdayA.php 3s.png wdir s '. smallGraphWidth3);
-	graph_stitch();
-	//pre-run main-page graphs
-	if(date('i') != 0) { //weird glitch for graphs using 2hr scale, only on the hour mark
-		$vars = array('temp', 'rain', 'hum', 'dew', 'wind', 'baro', 'wdir', 'gust');
-		$margs = array(7, 12, 23, 21);
-		for($i = 1; $i <= 4; $i++) {
-			$arg1 = $vars[$i*2 -2];
-			$arg2 = $vars[$i*2 -1];
-			$arg3 = (int)($i % 2 === 1);
-			$arg4 = $margs[$i-1];
-			exec(EXEC_PATH. "graphdayA.php main$i.png $arg1 $arg2 $arg3 $arg4 miniMain");
-			copy('main'.$i.'.png', 'html/mainGraph'.$i.'.png');
-		}
-	}
-	// windroses - 24hr, month and year
-	$rose_types = ["24hrs", "month", "year"];
-	foreach($rose_types as $roset) {
-		exec(EXEC_PATH. "windrose.php $roset html/rose_$roset.png");
+		quick_log('warm_detail_summaries_bad.txt', 'rc=' . $warmRc . ' ' . substr(implode(' ', $warmOut), 0, 200));
 	}
 }
 
-//More midnight procedures
-if($tstamp == '0000') {
-	//graph save
-	$target_st = ROOT. $yr_yest . '/stitchedmaingraph_';
-	$target_en = date('Ymd', time() - 60) .'.png';
-	copy(ROOT."stitchedmaingraph.png", $target_st .''. $target_en);
-	copy(ROOT."stitchedmaingraph_small.png", $target_st .'small_'. $target_en);
-
-}
-
-// All-time windrose
-if($tstamp == '1656') {
-	exec(EXEC_PATH. "windrose.php now html/rose_all.png");
-}
-
-//serialise time data when modifications occur
-if(time() - filemtime(ROOT.'datt'.$yr_yest.'.csv') < 65) {
+if(!file_exists(V5_CACHE_ROOT . 'serialised_datt.txt')
+		|| (file_exists(ROOT . 'datt' . $yr_yest . '.csv') && time() - filemtime(ROOT . 'datt' . $yr_yest . '.csv') < 65)) {
 	serialiseCSV('datt');
 }
-
-//serialise manual data when modifications occur
-if(time() - filemtime(ROOT.'datm'.$yr_yest.'.csv') < 65) {
+if(!file_exists(V5_CACHE_ROOT . 'serialised_datm.txt')
+		|| (file_exists(ROOT . 'datm' . $yr_yest . '.csv') && time() - filemtime(ROOT . 'datm' . $yr_yest . '.csv') < 65)) {
 	serialiseCSVm();
-
-	// serialiseCSVm rewrites serialised_dat_new_{sunhr,wethr,...}.txt on whatever
-	// minute datm changed, so re-warm those detail caches here rather than leaving
-	// wx11/wx12 lagging until the next five-minutely warm.
-	exec('/usr/bin/php -q '. ROOT .'warm_detail_summaries.php datm', $warmMOut, $warmMRc);
+	exec(escapeshellarg(PHP_BIN) . ' -q ' . ROOT . 'warm_detail_summaries.php datm', $warmMOut, $warmMRc);
 	if($warmMRc !== 0) {
-		quick_log('warm_detail_summaries_bad.txt', 'datm rc='. $warmMRc .' '. substr(implode(' ', $warmMOut), 0, 200));
+		quick_log('warm_detail_summaries_bad.txt', 'datm rc=' . $warmMRc . ' ' . substr(implode(' ', $warmMOut), 0, 200));
 	}
-
-	//Now generate the sunTags file
-	exec(EXEC_PATH. 'cron_tags.php blr ftw > log/cronsuntaglog.txt &');
 }
-
-//serialise historical data when modifications occur
-if(time() - filemtime(ROOT.'historical.csv') < 60) {
+if(!file_exists(V5_CACHE_ROOT . 'serialised_historical_tmax.txt')
+		|| (file_exists(ROOT . 'historical.csv') && time() - filemtime(ROOT . 'historical.csv') < 60)) {
 	serializeHistoricalData();
 }
 
@@ -231,7 +176,7 @@ if(date('i') % 15 == 1) {
 	}
 }
 
-$HR24 = unserialize(file_get_contents(ROOT. 'serialised_datHr24.txt'));
+$HR24 = unserialize(file_get_contents(CACHE_ROOT . 'serialised_datHr24.txt'));
 //24hr Rain exceeds 20 mm
 $rn24hrs = $HR24['trendRn'][0];
 if( $rn24hrs > 20 && $rn24hrs > $rain && ($HR24['trendRn'][0] - $HR24['trendRn']['10m'] > 0) ) {
@@ -346,7 +291,7 @@ if(date('i') % 30 == 12) {
 		}
 
 		if(count($fcDays)) {
-			file_put_contents(ROOT.'forecast_v5.json', json_encode(array(
+			nw3_atomic_write(V5_CACHE_ROOT.'forecast_v5.json', json_encode(array(
 				'updated' => time(),
 				'source' => 'yr',
 				'location' => '2-2647553',
@@ -378,7 +323,7 @@ if(PURPLEAIR_SENSOR && (date('i') % 5 == 2) && defined('PURPLEAIR_KEY') && PURPL
 		$pm25Now = $paJson['sensor']['stats']['pm2.5_10minute'];
 	}
 	if($pm25Now !== null && is_numeric($pm25Now)) {
-		file_put_contents(ROOT.'pm25_latest.txt', round((float)$pm25Now, 1));
+		nw3_atomic_write(V5_CACHE_ROOT.'pm25_latest.txt', (string)round((float)$pm25Now, 1));
 	} else {
 		quick_log('purpleair_bad.txt', substr((string)$paRaw, 0, 200));
 	}
@@ -394,7 +339,7 @@ if(date('i') % 30 == 13) {
 	$wmJson = $wmRaw ? json_decode($wmRaw, true) : null;
 	$wmFile = isset($wmJson['js'][0]) ? $wmJson['js'][0] : null;
 	if($wmFile !== null && preg_match('/^windy_map\.[a-z0-9]+\.js$/i', $wmFile)) {
-		file_put_contents(ROOT.'windy_widget.txt', $wmFile);
+		nw3_atomic_write(V5_CACHE_ROOT.'windy_widget.txt', $wmFile);
 	} else {
 		quick_log('windy_widget_bad.txt', substr((string)$wmRaw, 0, 200));
 	}
@@ -605,60 +550,6 @@ function forecastIcon($code) {
 	return isset($map[$code]) ? $map[$code] : array('cloudy', 'Cloudy');
 }
 
-function graph_stitch() {
-	$im1 = imagecreatefrompng('1.png');
-	$im2 = imagecreatefrompng('2.png');
-	$im3 = imagecreatefrompng('3.png');
-	if($im1) {
-		$h1 = 407;	$h2 = 390;	$h3 = 220;
-		$dimx = 850;
-		$dimy = $h1+$h2+$h3;
-
-		//full-size version
-		$im_stitch = imagecreatetruecolor($dimx, $dimy);
-		imagecopyresampled($im_stitch, $im1, 0, 0,   0, 0,  $dimx, $h1, $dimx, $h1);
-		imagecopyresampled($im_stitch, $im2, 0, $h1, 0, 17, $dimx, $h2, $dimx, $h2);
-		imagecopyresampled($im_stitch, $im3, 0, $h1+$h2, 0, 0,  $dimx, $h3, $dimx, $h3);
-		imagepng($im_stitch, ROOT.'stitchedmaingraph.png', 9);
-
-		imagedestroy($im1);
-		imagedestroy($im2);
-		imagedestroy($im3);
-		imagedestroy($im_stitch);
-	}
-	else {
-		error_log('bad image when trying to stitch');
-	}
-
-//	if(date('i') == '00') {
-		$im1 = imagecreatefrompng('1s.png');
-		$im2 = imagecreatefrompng('2s.png');
-		$im3 = imagecreatefrompng('3s.png');
-		if($im1) {
-			//mini-version
-			$h1 = 245;	$h2 = 225;	$h3 = 149;
-			$dimy = $h1 + $h2 + $h3;
-			$fix1 = 9;
-
-			$im_stitch = imagecreatetruecolor(smallGraphWidth1 + $fix1, $dimy);
-			imagefill( $im_stitch, 0, 0, imagecolorallocate($im_stitch, 255, 255, 255) );
-			imagecopyresampled($im_stitch, $im1, $fix1, 0,   0, 0,  smallGraphWidth1, $h1, smallGraphWidth1, $h1);
-			imagecopyresampled($im_stitch, $im2, 0, $h1, 0, 17, smallGraphWidth2, $h2, smallGraphWidth2, $h2);
-			imagecopyresampled($im_stitch, $im3, 0, $h1+$h2, 0, 0,  smallGraphWidth3, $h3, smallGraphWidth3, $h3);
-			imagepng($im_stitch, ROOT.'stitchedmaingraph_small.png', 9);
-
-			imagedestroy($im1);
-			imagedestroy($im2);
-			imagedestroy($im3);
-			imagedestroy($im_stitch);
-		}
-		else {
-			error_log('bad image when trying to stitch smalls');
-		}
-//	}
-}
-
-
 /**
  * Neaten up the WD-uploaded custom log by padding missing lines and cleaning values
  * Copies output to goodlog.txt, and todaylog.txt using lines for today only
@@ -806,15 +697,15 @@ function serialiseCSV($csv, $today = true) {
 			}
 		}
 	}
-	file_put_contents( ROOT.'serialised_'.$csv.'.txt', serialize($data) );
-	file_put_contents( ROOT.'serialised_'.$csv.'_new.txt', serialize($dataNew) );
+	nw3_atomic_write( CACHE_ROOT.'serialised_'.$csv.'.txt', serialize($data) );
+	nw3_atomic_write( CACHE_ROOT.'serialised_'.$csv.'_new.txt', serialize($dataNew) );
 	// For perf, serialize each var too
 	if($csv === "dat") {
 		foreach ($data as $j => $dat) {
-			file_put_contents( ROOT."serialised_dat_$j.txt", serialize($dat) );
+			nw3_atomic_write( CACHE_ROOT."serialised_dat_$j.txt", serialize($dat) );
 		}
 		foreach ($dataNew as $j => $dat) {
-			file_put_contents( ROOT."serialised_dat_new_$j.txt", serialize($dat) );
+			nw3_atomic_write( CACHE_ROOT."serialised_dat_new_$j.txt", serialize($dat) );
 		}
 	}
 }
@@ -823,7 +714,7 @@ function serialiseCSVm() {
 	$data = array();
 	$dataNew = [];
 
-	$DATA = unserialize(file_get_contents(ROOT . 'serialised_dat.txt'));
+	$DATA = unserialize(file_get_contents(CACHE_ROOT . 'serialised_dat.txt'));
 
 	for($year = 2009; $year <= date('Y'); $year++) {
 		$yrfil = ROOT.'datm'.$year.'.csv';
@@ -854,14 +745,14 @@ function serialiseCSVm() {
 			}
 		}
 	}
-	file_put_contents( ROOT.'serialised_datm.txt', serialize($data) );
-	file_put_contents( ROOT.'serialised_datm_new.txt', serialize($dataNew) );
+	nw3_atomic_write( CACHE_ROOT.'serialised_datm.txt', serialize($data) );
+	nw3_atomic_write( CACHE_ROOT.'serialised_datm_new.txt', serialize($dataNew) );
 	// For perf, serialize each var too
 	foreach ($data as $j => $dat) {
-		file_put_contents( ROOT."serialised_datm_$j.txt", serialize($dat) );
+		nw3_atomic_write( CACHE_ROOT."serialised_datm_$j.txt", serialize($dat) );
 	}
 	foreach ($dataNew as $j => $dat) {
-		file_put_contents( ROOT."serialised_dat_new_$j.txt", serialize($dat) );
+		nw3_atomic_write( CACHE_ROOT."serialised_dat_new_$j.txt", serialize($dat) );
 	}
 }
 
@@ -936,7 +827,7 @@ function serializeHistoricalData() {
 	}
 	// Split by var for perf
 	foreach ($data as $var => $dat) {
-		file_put_contents( ROOT."serialised_historical_$var.txt", serialize($dat) );
+		nw3_atomic_write( CACHE_ROOT."serialised_historical_$var.txt", serialize($dat) );
 	}
 }
 

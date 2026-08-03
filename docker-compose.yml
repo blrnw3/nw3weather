@@ -14,7 +14,8 @@ services:
       - "8080:80"
     volumes:
       # Working tree is served directly. Prod data synced into ./site by
-      # scripts/sync-prod-data.sh appears here too (and is gitignored).
+      # scripts/sync-prod-data.sh appears here too (and is gitignored),
+      # including cache/{v5,legacy} and generated/{v5,legacy}.
       - ./site:/var/www/html
       # Historical site versions live at the repo root; overlay them so
       # /oldSites/sitev3/ etc. resolve without copying into ./site.

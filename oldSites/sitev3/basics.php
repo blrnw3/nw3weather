@@ -2,6 +2,7 @@
 date_default_timezone_set('Europe/London');
 
 const ROOT = '/var/www/html/';
+require_once(ROOT . 'config/paths.php');
 const VID_ROOT = '/mnt/nw3-vol1/html/';
 const CAM_ROOT = '/mnt/webcam/html/';
 const IMG_ROOT = '/static-images/';
@@ -22,7 +23,7 @@ $archiveWeb = ARCHIVE_WEB;
 
 $scriptbeg = microtime(get_as_float);
 
-$rareTags = ROOT.'rareTags.php';
+$rareTags = ROOT . 'rareTags.php';
 
 $months = array('Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
 $months3 = array('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');

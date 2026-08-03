@@ -83,8 +83,8 @@ function DATtoMDAT($arr) {
 function monthlyReport($repMonth, $repYear) {
 	global $tdatav, $rainav, $sunav, $maxsun, $FSav, $LSav, $AFav;
 
-	$DATM = unserialize(file_get_contents(ROOT .'serialised_datm.txt'));
-	$DATA = unserialize(file_get_contents(ROOT .'serialised_dat.txt'));
+	$DATM = unserialize(file_get_contents(CACHE_ROOT .'serialised_datm.txt'));
+	$DATA = unserialize(file_get_contents(CACHE_ROOT .'serialised_dat.txt'));
 	$MDAT = DATtoMDAT($DATA);
 	$MDATM = DATtoMDAT($DATM);
 

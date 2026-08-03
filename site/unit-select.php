@@ -25,11 +25,12 @@ if (!isset($_SESSION)) {
 }
 
 //Make data available
-$NOW = unserialize(file_get_contents($root . 'serialised_datNow.txt'));
-$HR24 = unserialize(file_get_contents($root . 'serialised_datHr24.txt'));
+$dataCacheRoot = isset($GLOBALS['NW3_CACHE_ROOT']) ? $GLOBALS['NW3_CACHE_ROOT'] : CACHE_ROOT;
+$NOW = unserialize(file_get_contents($dataCacheRoot . 'serialised_datNow.txt'));
+$HR24 = unserialize(file_get_contents($dataCacheRoot . 'serialised_datHr24.txt'));
 if ($allDataNeeded) {
-	$DATA = unserialize(file_get_contents($root . 'serialised_dat.txt'));
-	$DATM = unserialize(file_get_contents($root . 'serialised_datm.txt'));
+	$DATA = unserialize(file_get_contents($dataCacheRoot . 'serialised_dat.txt'));
+	$DATM = unserialize(file_get_contents($dataCacheRoot . 'serialised_datm.txt'));
 }
 
 $expTime = 3600 * 24 * 100; // cookie lifespan - 100 days

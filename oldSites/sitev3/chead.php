@@ -20,7 +20,7 @@ $metaRefreshable = in_array($file, array(3,4,10,12,13,14,15)) && !$subfile;
 
 if($auto && $metaRefreshable && !$is_bot) {
 	if($_SESSION['count'][$file] < 50) {
-		$reftime = 302 - ( time() - filemtime($root.'serialised_datNow.txt') );
+		$reftime = 302 - ( time() - filemtime(LEGACY_CACHE_ROOT . 'serialised_datNow.txt') );
 		if($reftime < 10) { $reftime = 30; }
 		echo '<meta http-equiv="refresh" content="', $reftime, '" />';
 	} else {

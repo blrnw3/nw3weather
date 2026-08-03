@@ -2,12 +2,16 @@
 date_default_timezone_set('Europe/London');
 
 const ROOT = '/var/www/html/';
+require_once(ROOT . 'config/paths.php');
 const VID_ROOT = '/mnt/nw3-vol1/html/';
 const CAM_ROOT = '/mnt/webcam/html/';
 const IMG_ROOT = '/static-images/';
 $root = ROOT;
 
-const EXEC_PATH = '/usr/bin/php -q /var/www/html/';
+if(!defined('PHP_BIN')) {
+	define('PHP_BIN', getenv('NW3_PHP_BIN') ? getenv('NW3_PHP_BIN') : PHP_BINARY);
+}
+define('EXEC_PATH', escapeshellarg(PHP_BIN) . ' -q ' . ROOT);
 
 /** Path to the live data text file */
 const LIVE_DATA_PATH = '/var/www/html/clientraw.txt';
