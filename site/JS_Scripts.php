@@ -638,8 +638,14 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			}
 			var nextPage = pageUrl(urlOverrides);
 			var body = bodyEl();
-			if (!fragment || !body || !window.fetch) {
+			if (!fragment || !window.fetch) {
 				location.href = nextPage;
+				return;
+			}
+			if (!body) {
+				// RankPeriods echoes NW3_reportSel before #rp-ajax; retry once DOM catches up
+				// instead of location.href (that re-hits stripped PHP and loops on deep links).
+				setTimeout(function () { load(opts, push); }, 0);
 				return;
 			}
 			var seq = ++reqSeq;
@@ -789,6 +795,36 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		syncThresholdChips();
 		syncAggChips();
 		syncStartYearChips();
+
+		// Hydrate RankPeriods deep links via AJAX. Full-page PHP ignores query
+		// params (bot mitigation); real browsers re-apply location.search here.
+		// Defer until #rp-ajax exists — controls() script runs before that div.
+		function bootRankPeriodsHydrate() {
+			if (mode !== 'rank-periods' || !fragment || !window.URL) { return; }
+			if (!bodyEl()) { return; }
+			var q = new URL(location.href).searchParams;
+			var hasCustom = q.has('month') || q.has('period') || q.has('rankLimit')
+				|| q.has('summary_type') || q.has('start_year_rep') || q.has('vartype')
+				|| q.has('no_overlap') || q.has('threshold');
+			if (!hasCustom) { return; }
+			load({
+				type: q.get('vartype') || curType,
+				month: q.get('month') != null ? q.get('month') : curMonth,
+				start: q.get('start_year_rep') || curStart,
+				summary: q.get('summary_type') != null ? q.get('summary_type') : curSummary,
+				rankLimit: q.get('rankLimit') || curRankLimit,
+				threshold: q.get('threshold') != null ? q.get('threshold') : curThreshold,
+				period: q.get('period') != null ? q.get('period') : curPeriod,
+				noOverlap: q.get('no_overlap') != null ? (q.get('no_overlap') === '1') : curNoOverlap
+			}, false);
+		}
+		if (bodyEl()) {
+			bootRankPeriodsHydrate();
+		} else if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', bootRankPeriodsHydrate);
+		} else {
+			setTimeout(bootRankPeriodsHydrate, 0);
+		}
 	}
 
 	/**

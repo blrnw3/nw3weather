@@ -2468,10 +2468,12 @@ body.cam-modal-open {
 #rm-ajax.dd-ajax-loading,
 #ry-ajax.dd-ajax-loading,
 #rs-ajax.dd-ajax-loading,
+#rp-ajax.dd-ajax-loading,
 .wxsel-loading {
 	opacity: 0.55;
+	filter: grayscale(0.35);
 	pointer-events: none;
-	transition: opacity 0.15s ease;
+	transition: opacity 0.15s ease, filter 0.15s ease;
 }
 
 /****************** Daily data grid (wxdataday) ***************************/

@@ -5,6 +5,7 @@
 require __DIR__ . '/Page.php';
 require __DIR__ . '/Report.php';
 require __DIR__ . '/rankperiods-body.php';
+require __DIR__ . '/rankperiods-cache.php';
 
 Page::init([
 	'fileNum' => 42.2,
@@ -15,10 +16,10 @@ Page::init([
 $report = new Report(['default' => 'tmax', 'badCats' => ['cloud']]);
 
 header('Content-Type: text/html; charset=utf-8');
-header('Cache-Control: no-store');
+header('Cache-Control: public, max-age=300');
 
 ob_start();
-$meta = nw3_rankperiods_render($report);
+$meta = nw3_rankperiods_cached_render($report);
 $html = ob_get_clean();
 
 $thLabels = isset($meta['thresholdLabels']) ? $meta['thresholdLabels'] : [];
