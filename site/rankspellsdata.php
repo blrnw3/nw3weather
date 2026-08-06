@@ -25,6 +25,7 @@ $meta = nw3_rankspells_render($report);
 $html = ob_get_clean();
 
 $threshList = array_map(function ($t) { return (string)$t; }, $meta['thresholds']);
+$thLabels = isset($meta['thresholdLabels']) ? $meta['thresholdLabels'] : [];
 
 echo '<div id="rs-fragment"'
 	. ' data-type="' . htmlspecialchars($meta['type']) . '"'
@@ -36,6 +37,7 @@ echo '<div id="rs-fragment"'
 	. ' data-spell-dir-labels="' . htmlspecialchars(implode(',', $meta['spellDirLabels'])) . '"'
 	. ' data-threshold="' . htmlspecialchars((string)$meta['threshold']) . '"'
 	. ' data-thresholds="' . htmlspecialchars(implode(',', $threshList)) . '"'
+	. ' data-threshold-labels="' . htmlspecialchars(implode('|', $thLabels)) . '"'
 	. ' data-title="' . htmlspecialchars($meta['title']) . '"'
 	. '>';
 echo $html;

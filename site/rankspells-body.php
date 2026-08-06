@@ -61,6 +61,7 @@ function nw3_rankspells_render(Report $report) {
 		'spellDirLabels' => Spells::directionChipLabels($type),
 		'threshold' => $threshold,
 		'thresholds' => $report->spellThresholds,
+		'thresholdLabels' => $report->thresholdLabels(),
 		'title' => $report->description . ' · ' . $dirLabel,
 	);
 }
