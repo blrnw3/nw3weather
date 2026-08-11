@@ -11,6 +11,8 @@ Page::init([
 	'title' => 'Ranked Annual Data',
 	'description' => 'Ranked annual data fragment',
 ]);
+Page::requireNw3Ajax();
+
 
 $report = new Report(['default' => 'rain', 'badCats' => ['cloud']]);
 

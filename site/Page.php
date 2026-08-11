@@ -576,6 +576,30 @@ END;
    }
 
 
+
+	/**
+	 * Gate HTML fragment endpoints used by NW3_reportSel XHR.
+	 * Requires X-Requested-With: NW3 and a same-host Origin or Referer.
+	 */
+	public static function requireNw3Ajax() {
+		$xrw = isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? $_SERVER['HTTP_X_REQUESTED_WITH'] : '';
+		$host = isset($_SERVER['HTTP_HOST']) ? strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'])) : '';
+		$from = '';
+		if (!empty($_SERVER['HTTP_ORIGIN'])) {
+			$from = $_SERVER['HTTP_ORIGIN'];
+		} elseif (!empty($_SERVER['HTTP_REFERER'])) {
+			$from = $_SERVER['HTTP_REFERER'];
+		}
+		$fromHost = ($from !== '') ? strtolower((string)parse_url($from, PHP_URL_HOST)) : '';
+		if (strcasecmp($xrw, 'NW3') !== 0 || $host === '' || $fromHost === '' || $fromHost !== $host) {
+			http_response_code(403);
+			header('Content-Type: text/plain; charset=utf-8');
+			header('Cache-Control: no-store');
+			echo 'Forbidden';
+			exit;
+		}
+	}
+
    public static function quick_log($txtname, $content, $threshold = false) {
 	   file_put_contents( ROOT.'Logs/'.$txtname, date("H:i:s d/m/Y") .
 		   "\t" . $content . "\r\n", FILE_APPEND );

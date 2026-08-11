@@ -650,7 +650,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			}
 			var seq = ++reqSeq;
 			body.classList.add('dd-ajax-loading');
-			fetch(fragmentUrl(urlOverrides), { credentials: 'same-origin', cache: 'no-store' })
+			fetch(fragmentUrl(urlOverrides), { credentials: 'same-origin', cache: 'no-store', headers: { 'X-Requested-With': 'NW3' } })
 				.then(function (r) { if (!r.ok) { throw new Error('bad status'); } return r.text(); })
 				.then(function (html) {
 					if (seq !== reqSeq) { return; }

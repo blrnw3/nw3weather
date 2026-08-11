@@ -12,6 +12,8 @@ Page::init([
 	'title' => 'Daily Data Tables',
 	'description' => 'Daily data table fragment',
 ]);
+Page::requireNw3Ajax();
+
 
 $report = new Report(['default' => 'rain', 'badCats' => ['cloud']]);
 

@@ -12,6 +12,7 @@ Page::init([
 	'title' => 'Ranked Periods',
 	'description' => 'Ranked period data fragment',
 ]);
+Page::requireNw3Ajax();
 
 $report = new Report(['default' => 'tmax', 'badCats' => ['cloud']]);
 

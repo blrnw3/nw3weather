@@ -18,6 +18,14 @@ RewriteRule ^(?:Rank(?:Day|Month|Year|Periods|Spells)|rank(?:day|month|year|peri
 RewriteCond %{REMOTE_ADDR} ^172\.1(?:6[0-9]|7[0-9]|8[0-9]|9[01])\.
 RewriteRule ^(?:Rank(?:Day|Month|Year|Periods|Spells)|rank(?:day|month|year|periods|spells)data)\.php$ - [F,L,NC]
 
+# Meta / Facebook cloud on expensive ranking reports only (2026-08-08).
+# Same scope as Azure/Googlebot. Scrapers on 57.141.20/24 (AS32934) have been
+# combinatorially harvesting RankPeriods; also cover common FB crawl prefixes.
+RewriteCond %{REMOTE_ADDR} ^57\.141\.
+RewriteRule ^(?:Rank(?:Day|Month|Year|Periods|Spells)|rank(?:day|month|year|periods|spells)data)\.php$ - [F,L,NC]
+RewriteCond %{REMOTE_ADDR} ^(?:31\.13|66\.220|69\.63|69\.171|157\.240|173\.252|179\.60|185\.60)\.
+RewriteRule ^(?:Rank(?:Day|Month|Year|Periods|Spells)|rank(?:day|month|year|periods|spells)data)\.php$ - [F,L,NC]
+
 # Runtime caches contain PHP serializations and generated PHP tag files. They
 # are server-side inputs only and must never be served directly.
 RewriteRule ^cache(?:/|$) - [F,L]

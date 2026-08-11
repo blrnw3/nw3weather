@@ -11,6 +11,8 @@ Page::init([
 	'title' => 'Ranked Daily Data',
 	'description' => 'Ranked daily data fragment',
 ]);
+Page::requireNw3Ajax();
+
 
 $report = new Report(['default' => 'rain', 'badCats' => ['cloud']]);
 

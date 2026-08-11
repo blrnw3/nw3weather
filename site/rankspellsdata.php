@@ -11,6 +11,8 @@ Page::init([
 	'title' => 'Ranked Spells',
 	'description' => 'Ranked spells fragment',
 ]);
+Page::requireNw3Ajax();
+
 
 $report = new Report([
 	'default' => 'rain',

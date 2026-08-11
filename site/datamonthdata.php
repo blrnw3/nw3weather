@@ -12,6 +12,8 @@ Page::init([
 	'title' => 'Monthly Data Tables',
 	'description' => 'Monthly data table fragment',
 ]);
+Page::requireNw3Ajax();
+
 
 $report = new Report(['default' => 'rain', 'badCats' => ['cloud']]);
 
