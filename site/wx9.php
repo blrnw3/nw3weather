@@ -30,8 +30,23 @@ Page::Start();
 
 	<h2>Journal citations and references</h2>
 	<ul>
+		<li>Ecological Solutions and Evidence, 2025: <a href="https://besjournals.onlinelibrary.wiley.com/doi/10.1002/2688-8319.70151">
+			Behavioural shifts of bats during urban music festivals</a>
+		</li>
+		<li>Journal of the Royal Society Interface, 2025: <a href="https://royalsocietypublishing.org/doi/10.1098/rsif.2025.0048">
+			Towards NetZero for hospital operating theatres</a>
+		</li>
+		<li>IEEE, 2025: <a href="https://ieeexplore.ieee.org/abstract/document/11321370">
+			Inferring Wind Velocity from Informal Environmental Objects using Optical Flow Informed Recurrent Neural Networks</a>
+		</li>
+		<li>CIB Conferences, 2025: <a href="https://doi.org/10.7771/3067-4883.1729">
+			Decomposing Traffic Flow Patterns Under Extreme Weather: A Novel Field-Theoretic Framework Using Discrete Differential Operators</a>
+		</li>
 		<li>Scientific Reports, 2025: <a href="https://www.nature.com/articles/s41598-025-86532-8">
 			Transforming CCTV cameras into NO2 sensors at city scale for adaptive policymaking</a>
+		</li>
+		<li>Building and Environment, 2024: <a href="https://www.sciencedirect.com/science/article/pii/S0360132323009435">
+			Can windcatcher's natural ventilation beat the chill? A view from heat loss and thermal discomfort</a>
 		</li>
 		<li>Smart Cities, 2024: <a href="https://www.mdpi.com/2624-6511/7/1/7">
 			Using Explainable Artificial Intelligence (XAI) to Predict the Influence of Weather on the Thermal Soaring Capabilities of Sailplanes for Smart City Applications</a>
@@ -57,6 +72,9 @@ Page::Start();
 		<li>PLoS One, 2021: <a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0260969">
 			Effect of the COVID-19 pandemic on bike-sharing demand and hire time: Evidence from Santander Cycles in London</a>
 		</li>
+		<li>International Journal on Advanced Science, Engineering and Information Technology, 2018: <a href="https://ijaseit.insightsociety.org/index.php/ijaseit/article/view/6510">
+			Spatiotemporal Mining of BSS Data for Characterising Seasonal Urban Mobility Dynamics</a>
+		</li>
 		<li>Energy Equipment and Systems, 2018: <a href="https://www.energyequipsys.com/article_31536.html">
 			Development of a mathematical model to design an offshore wind and wave hybrid energy system</a>
 		</li>
@@ -78,10 +96,17 @@ Page::Start();
 		<li>IEEE, 2015: <a href="https://www.researchgate.net/profile/Raja-Jurdak/publication/280560521_Characterising_and_Predicting_Urban_Mobility_Dynamics_By_Mining_Bike_Sharing_System_Data/links/55b95f9d08aec0e5f43c3375/Characterising-and-Predicting-Urban-Mobility-Dynamics-By-Mining-Bike-Sharing-System-Data.pdf">
 			Characterising and Predicting Urban Mobility Dynamics By Mining Bike Sharing System Data</a> (pdf)
 		</li>
+		<li>University of East London, 2015: <a href="https://repository.uel.ac.uk/item/857v1">
+			Water attenuation performance of the Museum of London green roof</a>
+		</li>
 	</ul>
 	
 	<h2>Articles</h2>
 	<ul>
+		<li>Geobear: <a href="https://www.geobear.com/en-gb/blog/rainfall-soil-moisture-deficit-and-subsidence">
+			Rainfall, soil moisture deficit &amp; subsidence</a></li>
+		<li>My London: <a href="https://www.mylondon.news/weather/london-weather-met-office-issues-24739775">
+			Met Office issues UK thunderstorm warning as city set for first drops of desperately needed rain in weeks</a></li>
 		<li>Washington Post: <a href="https://www.washingtonpost.com/weather/2018/09/25/washington-has-seen-more-than-twice-much-rain-seattle-london-this-year/">
 			Washington has seen more than twice as much rain as Seattle and London this year</a></li>
 		<li>Unherd: <a href="https://unherd.com/newsroom/no-the-rain-probably-wont-affect-voter-turnout/">
