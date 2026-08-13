@@ -570,7 +570,7 @@ END;
 		   Util::str_subpad( filter_input(INPUT_SERVER, "REQUEST_URI", FILTER_SANITIZE_URL), 100 ) .
 		   Util::str_subpad(filter_input(INPUT_SERVER, "HTTP_REFERER", FILTER_SANITIZE_URL), 120) .
 		   str_pad(self::$ip, 16) .
-		   substr(str_replace("Mozilla/5.0 (","",self::$browser), 0, 80) .
+		   str_replace(array("\r", "\n"), ' ', (string)self::$browser) .
 		   "\r\n" );
 	   fclose($fil);
    }
