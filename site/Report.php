@@ -121,6 +121,7 @@ class Report {
 	 */
 	public function logRankRuntime($t0, $kind) {
 		$ms = (int)round((microtime(true) - $t0) * 1000);
+		Page::timeMetric('render', $ms, $kind);
 		$ip = filter_var(Page::$ip, FILTER_VALIDATE_IP);
 		$userAgent = preg_replace('/\s+/', '_', trim((string)Page::$browser));
 		$bits = [
@@ -985,6 +986,12 @@ class Report {
 			'rank-spells' => 'rs-fragment',
 			'rank-periods' => 'rp-fragment',
 		);
+		if ($mode === 'daily') {
+			$hydrateJs = __DIR__ . '/reporthydrate.js';
+			$ver = is_file($hydrateJs) ? filemtime($hydrateJs) : time();
+			echo '<script src="/reporthydrate.js?' . (int)$ver . '"></script>' . "\n";
+		}
+
 		$cfg = array(
 			'groups' => $groups,
 			'mode' => $mode,
