@@ -649,42 +649,62 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				return;
 			}
 			var seq = ++reqSeq;
+			var useJson = (mode === 'daily');
 			body.classList.add('dd-ajax-loading');
-			fetch(fragmentUrl(urlOverrides), { credentials: 'same-origin', cache: 'no-store', headers: { 'X-Requested-With': 'NW3' } })
-				.then(function (r) { if (!r.ok) { throw new Error('bad status'); } return r.text(); })
-				.then(function (html) {
+			var headers = { 'X-Requested-With': 'NW3' };
+			if (useJson) { headers['Accept'] = 'application/json'; }
+			fetch(fragmentUrl(urlOverrides), { credentials: 'same-origin', cache: 'no-store', headers: headers })
+				.then(function (r) { if (!r.ok) { throw new Error('bad status'); } return useJson ? r.json() : r.text(); })
+				.then(function (data) {
 					if (seq !== reqSeq) { return; }
-					var wrap = document.createElement('div');
-					wrap.innerHTML = html;
-					var frag = wrap.querySelector('#' + fragId);
-					if (!frag) { throw new Error('missing fragment'); }
-					body.innerHTML = frag.innerHTML;
-					var stAttr = frag.getAttribute('data-summary-types') || '';
-					var thAttr = frag.getAttribute('data-thresholds') || '';
-					var thLabAttr = frag.getAttribute('data-threshold-labels') || '';
-					var syAttr = frag.getAttribute('data-start-years') || '';
-					var sdlAttr = frag.getAttribute('data-spell-dir-labels') || '';
-					applyMeta({
-						type: frag.getAttribute('data-type'),
-						year: frag.getAttribute('data-year'),
-						agg: frag.getAttribute('data-agg') || '',
-						month: frag.getAttribute('data-month'),
-						startYearRep: frag.getAttribute('data-start-year-rep'),
-						startYears: syAttr ? syAttr.split(',') : startYearOpts,
-						summaryType: frag.getAttribute('data-summary-type'),
-						rankLimit: frag.getAttribute('data-rank-limit'),
-						periodLength: frag.getAttribute('data-period'),
-						periodNoOverlap: frag.getAttribute('data-no-overlap'),
-						spellDir: frag.getAttribute('data-spell-dir'),
-						spellDirLabels: sdlAttr ? sdlAttr.split(',') : null,
-						threshold: frag.getAttribute('data-threshold'),
-						thresholds: thAttr ? thAttr.split(',') : curThresholds,
-						thresholdLabels: thLabAttr ? thLabAttr.split('|') : curThresholdLabels,
-						summaryTypes: stAttr ? stAttr.split(',') : summaryTypes,
-						title: frag.getAttribute('data-title'),
-						yearDefaulted: frag.getAttribute('data-year-defaulted') === '1',
-						yearWarn: frag.getAttribute('data-year-warn') || ''
-					});
+					if (useJson) {
+						if (!data || !data.meta || !window.NW3 || typeof NW3.hydrateDaily !== 'function') {
+							throw new Error('bad json');
+						}
+						NW3.hydrateDaily(data, body);
+						applyMeta({
+							type: data.meta.type,
+							year: data.meta.year,
+							agg: data.meta.agg || '',
+							startYearRep: data.meta.startYearRep,
+							startYears: data.meta.startYearOptions,
+							title: data.meta.title,
+							yearDefaulted: !!data.meta.yearDefaulted,
+							yearWarn: data.meta.yearWarn || ''
+						});
+					} else {
+						var wrap = document.createElement('div');
+						wrap.innerHTML = data;
+						var frag = wrap.querySelector('#' + fragId);
+						if (!frag) { throw new Error('missing fragment'); }
+						body.innerHTML = frag.innerHTML;
+						var stAttr = frag.getAttribute('data-summary-types') || '';
+						var thAttr = frag.getAttribute('data-thresholds') || '';
+						var thLabAttr = frag.getAttribute('data-threshold-labels') || '';
+						var syAttr = frag.getAttribute('data-start-years') || '';
+						var sdlAttr = frag.getAttribute('data-spell-dir-labels') || '';
+						applyMeta({
+							type: frag.getAttribute('data-type'),
+							year: frag.getAttribute('data-year'),
+							agg: frag.getAttribute('data-agg') || '',
+							month: frag.getAttribute('data-month'),
+							startYearRep: frag.getAttribute('data-start-year-rep'),
+							startYears: syAttr ? syAttr.split(',') : startYearOpts,
+							summaryType: frag.getAttribute('data-summary-type'),
+							rankLimit: frag.getAttribute('data-rank-limit'),
+							periodLength: frag.getAttribute('data-period'),
+							periodNoOverlap: frag.getAttribute('data-no-overlap'),
+							spellDir: frag.getAttribute('data-spell-dir'),
+							spellDirLabels: sdlAttr ? sdlAttr.split(',') : null,
+							threshold: frag.getAttribute('data-threshold'),
+							thresholds: thAttr ? thAttr.split(',') : curThresholds,
+							thresholdLabels: thLabAttr ? thLabAttr.split('|') : curThresholdLabels,
+							summaryTypes: stAttr ? stAttr.split(',') : summaryTypes,
+							title: frag.getAttribute('data-title'),
+							yearDefaulted: frag.getAttribute('data-year-defaulted') === '1',
+							yearWarn: frag.getAttribute('data-year-warn') || ''
+						});
+					}
 					if (push !== false) {
 						history.pushState(stateObj(), '', pageUrl());
 					}

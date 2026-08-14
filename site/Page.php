@@ -1,4 +1,9 @@
 <?php
+// Hold the response so Server-Timing can be set after the work is done.
+if (PHP_SAPI !== 'cli' && empty($GLOBALS['_nw3_ob_timing'])) {
+	$GLOBALS['_nw3_ob_timing'] = true;
+	ob_start();
+}
 // Match /etc/php.ini: keep real problems, skip noisy notices from legacy data paths.
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT);
 $host = isset($_SERVER['HTTP_HOST']) ? strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'])) : '';
@@ -44,12 +49,15 @@ class Page {
 	public static $units = UNIT_UK;
 
 	private static $start;
+	private static $timings = [];
 	private static $mailBuffer;
 	private static $mailBufferCount;
 	private static $styleSheet;
 
 	static function init($opts) {
-		self::$start = microtime(true);
+		if (self::$start === null) {
+			self::$start = self::requestStart();
+		}
 		self::$mailBuffer = [];
 		self::$mailBufferCount = 0;
 
@@ -225,7 +233,70 @@ END;
 	</body>
 </html>
 END;
+		self::sendServerTiming();
 		ob_end_flush();
+	}
+
+	/**
+	 * Record a named Server-Timing metric (milliseconds) to emit with the response.
+	 * @param string $name token (letters, digits, underscore, hyphen)
+	 * @param float $durMs duration in milliseconds
+	 * @param string|null $desc optional description
+	 */
+	public static function timeMetric($name, $durMs, $desc = null) {
+		self::$timings[$name] = array(
+			'dur' => (float)$durMs,
+			'desc' => $desc,
+		);
+	}
+
+	/** PHP request start as a unix timestamp with microseconds. */
+	private static function requestStart() {
+		if (isset($_SERVER['REQUEST_TIME_FLOAT'])) {
+			return (float)$_SERVER['REQUEST_TIME_FLOAT'];
+		}
+		return microtime(true);
+	}
+
+	/**
+	 * Emit Server-Timing. Safe to call more than once: later values replace earlier
+	 * ones for the same header. No-op in CLI or after headers have been sent.
+	 */
+	public static function sendServerTiming() {
+		if (PHP_SAPI === 'cli' || headers_sent()) {
+			return;
+		}
+		if (self::$start === null) {
+			self::$start = self::requestStart();
+		}
+		$parts = array('app;dur=' . sprintf('%.1f', (microtime(true) - self::$start) * 1000) . ';desc="PHP"');
+		foreach (self::$timings as $name => $t) {
+			$token = preg_replace('/[^A-Za-z0-9_-]/', '', (string)$name);
+			if ($token === '' || $token === 'app') {
+				continue;
+			}
+			$part = $token . ';dur=' . sprintf('%.1f', $t['dur']);
+			if (!empty($t['desc'])) {
+				$part .= ';desc="' . str_replace(array('\\', '"'), array('\\\\', '\\"'), $t['desc']) . '"';
+			}
+			$parts[] = $part;
+		}
+		header('Server-Timing: ' . implode(', ', $parts));
+	}
+
+	/** Arm Server-Timing for this request (HTML pages, JSON endpoints, fragments). */
+	public static function registerServerTiming() {
+		if (self::$start === null) {
+			self::$start = self::requestStart();
+		}
+		if (PHP_SAPI !== 'cli') {
+			register_shutdown_function(array('Page', 'flushServerTiming'));
+		}
+	}
+
+	/** Last chance to attach Server-Timing before PHP flushes the response. */
+	public static function flushServerTiming() {
+		self::sendServerTiming();
 	}
 
 	private static function getStatus() {
@@ -747,5 +818,7 @@ class DataPage extends Page {
 	}
 
 }
+
+Page::registerServerTiming();
 
 ?>

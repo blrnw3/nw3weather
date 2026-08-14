@@ -40,7 +40,7 @@ RUN printf 'account default\nhost mailpit\nport 1025\nfrom localdev@nw3weather.l
 
 COPY docker/apache-localdev.conf /etc/apache2/conf-enabled/localdev.conf
 
-RUN a2enmod rewrite
+RUN a2enmod rewrite deflate filter
 
 # NOTE: ffmpeg is not packaged for jessie, so timelapse/video generation
 # (cron_cam.php) won't run locally. Page iteration does not need it.
