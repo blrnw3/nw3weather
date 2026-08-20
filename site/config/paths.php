@@ -58,5 +58,8 @@ function nw3_atomic_write($path, $contents) {
 		@unlink($tmp);
 		return false;
 	}
+	// Cron runs as apache; deploys/manual runs as ben. Keep the file group-writable
+	// so either can replace it without a permission-denied on the next write.
+	@chmod($path, 0664);
 	return strlen($contents);
 }

@@ -42,6 +42,7 @@ DATA_FILTERS=(
   --include='WUforecast.txt'
   --include='pm25_latest.txt'
   --include='windy_widget.txt'
+  --include='lastrn'
   --include='*.json'
   --include='cache/'
   --include='cache/v5/'

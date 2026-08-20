@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/wxcharts.js?20260731o"></script>' . "\n";
+		echo '<script src="/wxcharts.js?20260819a"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */
@@ -758,6 +758,7 @@ class Charts {
 			'defaultLta' => $defaultLta,
 			'varMeta' => $varMeta,
 			'aggLabels' => $aggLabels,
+			'refreshOnFocus' => !empty($opts['refreshOnFocus']),
 		);
 		self::run('NW3.histSelectGrouped(' . json_encode($cfg) . ');');
 	}

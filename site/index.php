@@ -303,6 +303,7 @@ Charts::dailySelectable(
 		'height' => 320,
 		'groups' => Charts::simpleGroups(),
 		'headingPrefix' => '',
+		'refreshOnFocus' => true,
 	),
 	null,
 	'rain'

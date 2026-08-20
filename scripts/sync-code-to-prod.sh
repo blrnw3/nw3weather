@@ -68,6 +68,7 @@ EXCLUDES=(
 	--exclude='windy_widget.txt'
 	--exclude='*.json'
 	--exclude='api_latest.txt'
+	--exclude='lastrn'
 	--exclude='EXT_*.txt'
 	--exclude='EXT_*.json'
 	--exclude='cache/'

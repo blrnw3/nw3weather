@@ -1621,7 +1621,7 @@ class Data {
 					if($rncumArr[$end-$i-1] != $rncum) {
 						$prevRn = mktime($custhr[$end-1], $custmin[$end-1] - $i, 0);
 						if($prevRn != $prevRnOld) {
-							file_put_contents(ROOT . "lastrn", $prevRn);
+							nw3_atomic_write(ROOT . "lastrn", $prevRn);
 						}
 						break;
 					}

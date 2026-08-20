@@ -39,11 +39,11 @@
 	// ---- Categorical (daily / monthly / annual / climate) ----
 	function histChart(containerId, url, opts) {
 		opts = opts || {};
-		setLoading(containerId, true);
+		if (!opts.silent) { setLoading(containerId, true); }
 		return $.getJSON(url, function (json) {
-			setLoading(containerId, false);
+			if (!opts.silent) { setLoading(containerId, false); }
 			if (!json || json.error) {
-				$('#' + containerId).html('<p>No data available.</p>');
+				if (!opts.silent) { $('#' + containerId).html('<p>No data available.</p>'); }
 				return null;
 			}
 			// yMinZero=false (e.g. pressure): let the axis auto-fit. Do not pass
@@ -122,6 +122,7 @@
 				series: series
 			});
 		}).fail(function () {
+			if (opts.silent) { return; }
 			setLoading(containerId, false);
 			$('#' + containerId).html('<p>Could not load chart.</p>');
 		});
@@ -565,7 +566,7 @@
 			if (cfg.showYears && state.year) { title = state.year + ' ' + title; }
 			el.textContent = (cfg.headingPrefix != null ? cfg.headingPrefix : 'Custom: ') + title;
 		}
-		function load() {
+		function load(fresh) {
 			updateHeading();
 			var url = cfg.url + (cfg.url.indexOf('?') >= 0 ? '&' : '?')
 				+ 'type=' + encodeURIComponent(state.type);
@@ -581,7 +582,12 @@
 			if (cfg.showCume && state.cume && metaFor(state.type).summable) {
 				url += '&cume=1';
 			}
-			histChart(cfg.containerId, url, cfg.opts || {});
+			var chartOpts = cfg.opts || {};
+			if (fresh) {
+				url += '&_=' + Date.now();
+				chartOpts = $.extend({}, chartOpts, { silent: true });
+			}
+			histChart(cfg.containerId, url, chartOpts);
 		}
 		function renderAggregation() {
 			if (!cfg.showAggregation || !aggEl) { return; }
@@ -667,6 +673,11 @@
 		}
 		renderSubtypes();
 		load();
+		if (cfg.refreshOnFocus) {
+			document.addEventListener('visibilitychange', function () {
+				if (!document.hidden) { load(true); }
+			});
+		}
 	}
 
 	// Full Chart Viewer (charts.php): group/measure + timescale + aggregation +
