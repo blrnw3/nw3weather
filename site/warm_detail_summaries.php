@@ -8,6 +8,7 @@
  *   php warm_detail_summaries.php           # station start year (2009)
  *   php warm_detail_summaries.php 2009      # one start year only
  *   php warm_detail_summaries.php datm      # only the datm-sourced vars
+ *   php warm_detail_summaries.php hist      # pre-2009 windows (daily / hist.csv)
  */
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT);
 ini_set('display_errors', '0');
@@ -26,14 +27,24 @@ LTA::init();
 
 $arg = isset($argv[1]) ? (string)$argv[1] : '';
 $onlyDatm = ($arg === 'datm');
+$onlyHist = ($arg === 'hist' || $arg === 'historical');
 $start = ctype_digit($arg) ? (int)$arg : null;
 $vars = $onlyDatm ? DataSummarizer::datmDetailVars() : null;
 
 $t0 = microtime(true);
-DataSummarizer::warmDetailSummaries($start, $vars);
+if ($onlyHist) {
+	DataSummarizer::warmHistoricalDetailSummaries($vars);
+} else {
+	DataSummarizer::warmDetailSummaries($start, $vars);
+}
 $ms = round((microtime(true) - $t0) * 1000);
-$label = ($start === null)
-	? 'all=' . implode(',', DataSummarizer::$detailStartYearOptions)
-	: "start=$start";
+if ($onlyHist) {
+	$jobs = DataSummarizer::historicalWarmJobs($vars);
+	$label = 'hist=' . count($jobs) . ' jobs';
+} else {
+	$label = ($start === null)
+		? 'all=' . implode(',', DataSummarizer::$detailStartYearOptions)
+		: "start=$start";
+}
 if ($onlyDatm) { $label .= ' vars=' . implode(',', DataSummarizer::datmDetailVars()); }
 fwrite(STDOUT, "warm_detail_summaries $label done in {$ms}ms\n");

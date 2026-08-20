@@ -26,7 +26,7 @@ $mainTables->rankTables();
 <h2>Notes</h2>
 <ul>
 	<li>Sunshine totals are currently only available for prior days because they are computed daily from webcam footage using an image classification model</li>
-	<li>Sunshine records at NW3 began in 2009</li>
+	<li>Sunshine records at NW3 began in 2009. A long-term series from nearby sites is available from 1910 (use Start year above).</li>
 	<li>Figures in brackets refer to departure from
 		<a href="/wxaverages.php" title="Long-term NW3 climate averages">average conditions</a>
 		(as a percentage for sunshine)

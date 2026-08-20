@@ -41,7 +41,7 @@ $mainTables->rankTables();
 <p class="report-var-about">Rainfall totals and extremes for each calendar day run midnight to midnight (local time), when the rain tip counter is reset.</p>
 <h2>Notes</h2>
 <ul>
-	<li>Rain records began in February 2009</li>
+	<li>Station rain records began in February 2009. A long-term series from nearby sites is available from 1871 (use Start year above).</li>
 	<li>The minimum recordable rain (the rain gauge resolution) is 0.2 mm</li>
 	<li>Figures in brackets refer to departure from
 		<a href="/wxaverages.php" title="Long-term NW3 climate averages">average conditions</a>

@@ -21,11 +21,7 @@ function dd_month_future($m, $isCurrentYear, $curMonth) {
 
 /** Static MIDAS / Whitestone footnote (also templated in reporthydrate.js). */
 function nw3_dataday_hist_note_html() {
-	return '<p class="hist-note">*Data from before 2009 are mostly from the historical site at Whitestone Pond in Hampstead. '
-		. 'Where data from that record is missing, other nearby sites were used, including St James Park, Heathrow, and Kew Gardens (pre-1910). '
-		. 'Best efforts have been made to adjust for site differences, but uncertainties are somewhat greater for this data. '
-		. 'I am grateful to the Met Office for making this data available for free through the '
-		. '<a href="https://data.ceda.ac.uk/badc/ukmo-midas-open/">MIDAS Open database</a>.</p>';
+	return DataSummarizer::historicalNoteHtml(1871);
 }
 
 /**

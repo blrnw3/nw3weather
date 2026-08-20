@@ -47,7 +47,7 @@ Charts::intradayPanel(['num' => 1], ['wind' => 'Speed &amp; gust', 'wdir' => 'Di
 <p class="report-var-about">Wind speed, gust and direction extremes for each calendar day run midnight to midnight (local time), when daily extremes are reset.</p>
 <h2>Notes</h2>
 <ul>
-	<li>Valid wind records began in August 2009</li>
+	<li>Valid station wind records began in August 2009. Mean speed from nearby sites is available from 1949 (use Start year above).</li>
 	<li>Figures in brackets refer to departure from
 		<a href="/wxaverages.php" title="Long-term NW3 climate averages">average conditions</a></li>
 	<li><b>"Speed"</b> is the windspeed sampled over a one minute period;

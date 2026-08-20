@@ -279,45 +279,75 @@ class DataSummarizer {
 	/**
 	 * Load summarize() from a daily serialised cache, or compute and store it.
 	 *
-	 * serialiseCSV('dat') bumps the source files before cron re-warms the detail
-	 * set, and that warm takes ~100s to work through every variable and start
-	 * year. Requests therefore keep serving the previous generation while it runs
-	 * instead of each one redoing the ranks/spells/rolling-window work; they only
-	 * rebuild inline when the cache is absent, unusable, or has fallen
-	 * STALE_GRACE_SECS behind its source (i.e. the warm has stopped keeping up).
+	 * Station windows (2009–present) are warmed every 5 minutes. Historical
+	 * windows (e.g. 1881–present) are warmed daily — or when historical.csv
+	 * changes — and then merged with the fresh station cache so all-time ranks
+	 * and records pick up today's data without a 140-year recompute.
 	 *
 	 * @param bool $rebuildIfStale cron passes true so the warm itself always
 	 *        refreshes against a newer source rather than serving its own stale copy
 	 */
 	public static function summarizeCached($varName, $startYear = null, $rebuildIfStale = false) {
 		$sy = self::resolveStartYear($varName, $startYear);
+		if ($sy < Site::BASE_YEAR && !$rebuildIfStale) {
+			return self::summarizeCachedHistorical($varName, $sy);
+		}
 		$path = self::summaryCachePath($varName, $sy);
-		$allSrc = CACHE_ROOT . 'serialised_dat_new.txt';
-		$src = CACHE_ROOT . "serialised_dat_new_{$varName}.txt";
-		$hist = CACHE_ROOT . "serialised_historical_{$varName}.txt";
-
-		if (is_file($path)) {
-			$cacheM = filemtime($path);
-			// The aggregate file covers derived variables (sunhrp, ranges, etc.)
-			// which intentionally have no per-variable serialised source file.
-			$srcM = 0;
-			if (is_file($allSrc)) { $srcM = max($srcM, filemtime($allSrc)); }
-			if (is_file($src)) { $srcM = max($srcM, filemtime($src)); }
-			if ($sy < Site::BASE_YEAR && is_file($hist)) { $srcM = max($srcM, filemtime($hist)); }
-
-			$lag = $srcM - $cacheM;
-			$usable = $rebuildIfStale ? ($lag <= 0) : ($lag < self::STALE_GRACE_SECS);
-			if ($usable) {
-				$data = @unserialize(file_get_contents($path));
-				if (is_array($data) && isset($data['period_summaries'])) {
-					return $data;
-				}
-			}
+		$cached = self::readSummaryCacheIfFresh($varName, $sy, $path, $rebuildIfStale);
+		if ($cached !== null) {
+			return $cached;
 		}
 		$s = new self($varName, $sy);
 		$result = $s->summarize();
 		self::writeSummaryCache($path, $result);
 		return $result;
+	}
+
+	/**
+	 * Serve a historical start-year summary by merging a slowly-warmed full
+	 * window with the 5-minutely station cache. The historical file is only
+	 * rebuilt here if it is missing or historical.csv has been updated.
+	 */
+	private static function summarizeCachedHistorical($varName, $sy) {
+		$path = self::summaryCachePath($varName, $sy);
+		$hist = self::readSummaryCache($path);
+		$histSrc = CACHE_ROOT . "serialised_historical_{$varName}.txt";
+		$histSrcNewer = ($hist !== null && is_file($path) && is_file($histSrc)
+			&& filemtime($histSrc) > filemtime($path) + 60);
+		if ($hist === null || $histSrcNewer) {
+			$s = new self($varName, $sy);
+			$hist = $s->summarize();
+			self::writeSummaryCache($path, $hist);
+		}
+		$station = self::summarizeCached($varName, Site::BASE_YEAR, false);
+		return self::mergeHistoricalWithStation($varName, $hist, $station);
+	}
+
+	/** Unserialize a summary cache file, or null if missing/corrupt. */
+	private static function readSummaryCache($path) {
+		if (!is_file($path)) { return null; }
+		$data = @unserialize(file_get_contents($path));
+		return (is_array($data) && isset($data['period_summaries'])) ? $data : null;
+	}
+
+	/**
+	 * Return a cached payload when it is new enough vs its source files.
+	 * Historical windows ignore the 5-minutely dat_new bump on request; cron
+	 * still passes rebuildIfStale so a daily warm refreshes them fully.
+	 */
+	private static function readSummaryCacheIfFresh($varName, $sy, $path, $rebuildIfStale) {
+		if (!is_file($path)) { return null; }
+		$cacheM = filemtime($path);
+		$allSrc = CACHE_ROOT . 'serialised_dat_new.txt';
+		$src = CACHE_ROOT . "serialised_dat_new_{$varName}.txt";
+		$hist = CACHE_ROOT . "serialised_historical_{$varName}.txt";
+		$srcM = 0;
+		if (is_file($allSrc)) { $srcM = max($srcM, filemtime($allSrc)); }
+		if (is_file($src)) { $srcM = max($srcM, filemtime($src)); }
+		if ($sy < Site::BASE_YEAR && is_file($hist)) { $srcM = max($srcM, filemtime($hist)); }
+		$lag = $srcM - $cacheM;
+		$usable = $rebuildIfStale ? ($lag <= 0) : ($lag < self::STALE_GRACE_SECS);
+		return $usable ? self::readSummaryCache($path) : null;
 	}
 
 	/**
@@ -345,10 +375,77 @@ class DataSummarizer {
 	}
 
 	/**
-	 * Start year used by wx10–wx16 detail pages (also the warm-cache set).
-	 * Detail pages are locked to the station record.
+	 * Station start year used by wx10–wx16 detail pages (5-minutely warm set).
 	 */
 	public static $detailStartYearOptions = [2009];
+
+	/** Extra long-term chip offered when a group's own start is well before 1950. */
+	const DETAIL_CLIMATE_START_YEAR = 1950;
+
+	/**
+	 * Variables used by each wx10–wx16 detail page group.
+	 * @return array groupName => variable names
+	 */
+	public static function detailGroupVars() {
+		return array(
+			'temp' => array('tmin', 'tmax', 'tmean', 'nightmin', 'daymax'),
+			'baro' => array('pmin', 'pmax', 'pmean'),
+			'wind' => array('gust', 'wmax', 'wmean', 'w10max'),
+			'rain' => array('10max', 'hrmax', 'rain', 'wethr'),
+			'sun' => array('sunhr', 'sunhrp'),
+			'hum' => array('hmin', 'hmax', 'hmean'),
+			'dew' => array('dmin', 'dmax', 'dmean'),
+		);
+	}
+
+	/**
+	 * Start-year chips for a detail page: the group's earliest year, 1950 when
+	 * that is a distinct window, and the station record (2009). Wind starts in
+	 * 1949 so 1950 is omitted.
+	 * @param string $groupName temp|baro|wind|rain|hum|dew|sun
+	 * @return int[] ascending
+	 */
+	public static function startYearOptionsForGroup($groupName) {
+		$groups = self::detailGroupVars();
+		$vars = isset($groups[$groupName]) ? $groups[$groupName] : array();
+		$earliest = Site::BASE_YEAR;
+		foreach ($vars as $var) {
+			if (!isset(Wx::$daily[$var]['start_year'])) { continue; }
+			$sy = (int)Wx::$daily[$var]['start_year'];
+			if ($sy < $earliest) { $earliest = $sy; }
+		}
+		$opts = array();
+		if ($earliest < Site::BASE_YEAR) {
+			$opts[] = $earliest;
+			// 1950 is only useful when it sits clearly after the group's start.
+			if ($earliest < self::DETAIL_CLIMATE_START_YEAR - 1) {
+				$opts[] = self::DETAIL_CLIMATE_START_YEAR;
+			}
+		}
+		$opts[] = Site::BASE_YEAR;
+		$opts = array_values(array_unique($opts));
+		sort($opts, SORT_NUMERIC);
+		return $opts;
+	}
+
+	/**
+	 * Pick a start-year chip that exists for the current variable.
+	 * Prefer the same year, else the nearest earlier option; if none, the earliest.
+	 * @param int $want
+	 * @param int[] $opts ascending start-year options
+	 * @return int
+	 */
+	public static function nearestStartYear($want, $opts) {
+		if (!count($opts)) { return (int)$want; }
+		$want = (int)$want;
+		$best = null;
+		foreach ($opts as $y) {
+			$y = (int)$y;
+			if ($y === $want) { return $y; }
+			if ($y <= $want) { $best = $y; }
+		}
+		return $best !== null ? $best : (int)$opts[0];
+	}
 
 	/**
 	 * Variables used by wx10–wx16 detail pages. Cron pre-warms these for the
@@ -377,6 +474,30 @@ class DataSummarizer {
 	}
 
 	/**
+	 * Unique (variable, start-year) jobs for historical detail windows.
+	 * Station-only variables (resolved start >= 2009) are skipped.
+	 * @param array|null $vars limit to these variables, or null for the full set
+	 * @return array list of [varName, startYear]
+	 */
+	public static function historicalWarmJobs($vars = null) {
+		$allow = ($vars === null) ? null : array_flip($vars);
+		$jobs = array();
+		foreach (self::detailGroupVars() as $groupName => $gvars) {
+			foreach (self::startYearOptionsForGroup($groupName) as $sy) {
+				if ((int)$sy >= Site::BASE_YEAR) { continue; }
+				foreach ($gvars as $var) {
+					if ($allow !== null && !isset($allow[$var])) { continue; }
+					if (!isset(Wx::$daily[$var])) { continue; }
+					$resolved = self::resolveStartYear($var, $sy);
+					if ($resolved >= Site::BASE_YEAR) { continue; }
+					$jobs[$var . '_' . $resolved] = array($var, $resolved);
+				}
+			}
+		}
+		return array_values($jobs);
+	}
+
+	/**
 	 * Pre-compute and store summarize caches for detail-page variables.
 	 * @param int|null $startYear one year, or null to warm the station start year
 	 * @param array|null $vars variables to warm, or null for the full detail set
@@ -392,6 +513,403 @@ class DataSummarizer {
 				self::summarizeCached($var, $sy, true);
 			}
 		}
+	}
+
+	/**
+	 * Pre-compute historical (pre-2009) detail windows. Run daily / when
+	 * historical.csv changes — not on the five-minute station warm.
+	 * @param array|null $vars variables to warm, or null for the full detail set
+	 */
+	public static function warmHistoricalDetailSummaries($vars = null) {
+		foreach (self::historicalWarmJobs($vars) as $job) {
+			self::summarizeCached($job[0], $job[1], true);
+		}
+	}
+
+	/** Shared MIDAS / Whitestone footnote used by reports and detail pages. */
+	public static function historicalNoteHtml($windowStart) {
+		if ((int)$windowStart >= Site::BASE_YEAR) { return ''; }
+		return '<p class="hist-note">*Data from before 2009 are mostly from the historical site at Whitestone Pond in Hampstead. '
+			. 'Where data from that record is missing, other nearby sites were used, including St James Park, Heathrow, and Kew Gardens (pre-1910). '
+			. 'Best efforts have been made to adjust for site differences, but uncertainties are somewhat greater for this data. '
+			. 'I am grateful to the Met Office for making this data available for free through the '
+			. '<a href="https://data.ceda.ac.uk/badc/ukmo-midas-open/">MIDAS Open database</a>.</p>';
+	}
+
+	/**
+	 * Overlay a slowly-warmed historical summarize() payload with a fresh
+	 * 2009–present cache. Recent periods come from the station file; all-time
+	 * ranks, means, and extrema are rebuilt from pre-2009 historical months
+	 * plus current station months.
+	 * @param string $varName
+	 * @param array $hist
+	 * @param array $station
+	 * @return array
+	 */
+	public static function mergeHistoricalWithStation($varName, $hist, $station) {
+		if (!is_array($hist) || !isset($hist['period_summaries'])) {
+			return $station;
+		}
+		if (!is_array($station) || !isset($station['period_summaries'])) {
+			return $hist;
+		}
+		$out = $hist;
+		$hps = isset($hist['period_summaries']) ? $hist['period_summaries'] : array();
+		$sps = $station['period_summaries'];
+
+		$recentKeys = array(
+			'today', 'yest', 'curr_month', 'curr_year',
+			'latest_7d', 'latest_31d', 'latest_365d',
+		);
+		foreach ($recentKeys as $k) {
+			if (isset($sps[$k])) { $out['period_summaries'][$k] = $sps[$k]; }
+		}
+
+		$histMonths = isset($hist['month_summaries']) ? $hist['month_summaries'] : array();
+		$statMonths = isset($station['month_summaries']) ? $station['month_summaries'] : array();
+		$months = self::overlayStationYears($histMonths, $statMonths);
+		$out['month_summaries'] = $months;
+
+		$histYears = isset($hist['year_summaries']) ? $hist['year_summaries'] : array();
+		$statYears = isset($station['year_summaries']) ? $station['year_summaries'] : array();
+		$out['year_summaries'] = self::overlayStationYears($histYears, $statYears);
+
+		$histSeasons = isset($hist['season_summaries']) ? $hist['season_summaries'] : array();
+		$statSeasons = isset($station['season_summaries']) ? $station['season_summaries'] : array();
+		foreach ($statSeasons as $k => $s) {
+			if (preg_match('/_(\d{4})$/', (string)$k, $m) && (int)$m[1] >= Site::BASE_YEAR) {
+				$histSeasons[$k] = $s;
+			}
+		}
+		$out['season_summaries'] = $histSeasons;
+
+		$summable = !empty(Wx::$daily[$varName]['summable']);
+		$summaryKey = $summable ? 'sum' : 'mean';
+		$flatMonths = self::flattenYearMonthSummaries($months);
+		$out['period_summaries']['alltime'] = self::mergeSummaryList($flatMonths);
+		self::attachAnom($varName, $out['period_summaries']['alltime'], LTA::getYearlyAnom($varName));
+
+		$cm = Util::zerolead(Date::$dmonth);
+		$thisMonth = array();
+		foreach ($months as $y => $ms) {
+			if (isset($ms[$cm])) { $thisMonth[] = $ms[$cm]; }
+		}
+		$out['period_summaries']['all_this_month'] = self::mergeSummaryList($thisMonth);
+		self::attachAnom($varName, $out['period_summaries']['all_this_month'], LTA::getMonthlyAnom($varName, (int)Date::$dmonth));
+
+		$out['period_summaries']['all_this_date'] = self::mergePeriodMinMax(
+			isset($hps['all_this_date']) ? $hps['all_this_date'] : null,
+			isset($sps['all_this_date']) ? $sps['all_this_date'] : null
+		);
+
+		foreach (self::$periods as $period) {
+			foreach (array('lo', 'hi') as $dir) {
+				$k = $period . 'd_' . $dir . '_mean_alltime';
+				$out['period_summaries'][$k] = self::pickNdayExtreme(
+					isset($hps[$k]) ? $hps[$k] : null,
+					isset($sps[$k]) ? $sps[$k] : null,
+					$dir === 'lo'
+				);
+			}
+		}
+
+		$monthMeans = array();
+		$monthCounts = array();
+		$thisMonthMeans = array();
+		$thisMonthCounts = array();
+		foreach ($months as $y => $ms) {
+			foreach ($ms as $m => $s) {
+				$dt = $y . '-' . $m . '-01';
+				if (isset($s[$summaryKey]) && is_numeric($s[$summaryKey])) {
+					$monthMeans[$dt] = $s[$summaryKey];
+				}
+				if (isset($s['count_nonzero']) && is_numeric($s['count_nonzero'])) {
+					$monthCounts[$dt] = $s['count_nonzero'];
+				}
+				if ((string)$m === (string)$cm) {
+					if (isset($s[$summaryKey]) && is_numeric($s[$summaryKey])) {
+						$thisMonthMeans[$dt] = $s[$summaryKey];
+					}
+					if (isset($s['count_nonzero']) && is_numeric($s['count_nonzero'])) {
+						$thisMonthCounts[$dt] = $s['count_nonzero'];
+					}
+				}
+			}
+		}
+		$out['period_summaries']['month_mean_alltime'] = self::baseSummaryFromAssoc($monthMeans);
+		$out['period_summaries']['month_mean_all_this_month'] = self::baseSummaryFromAssoc($thisMonthMeans);
+		$yearMeans = array();
+		$yearCounts = array();
+		foreach ($out['year_summaries'] as $y => $s) {
+			$dt = (string)$y;
+			if (isset($s[$summaryKey]) && is_numeric($s[$summaryKey])) {
+				$yearMeans[$dt] = $s[$summaryKey];
+			}
+			if (isset($s['count_nonzero']) && is_numeric($s['count_nonzero'])) {
+				$yearCounts[$dt] = $s['count_nonzero'];
+			}
+		}
+		$out['period_summaries']['year_mean_alltime'] = self::baseSummaryFromAssoc($yearMeans);
+
+		$rankTypes = array(
+			'daily_alltime' => 10,
+			'daily_all_this_month' => 10,
+			'daily_all_this_date' => 5,
+			'month_mean_alltime' => 10,
+			'month_mean_all_this_month' => 10,
+			'month_count_alltime' => 10,
+			'month_count_all_this_month' => 10,
+			'year_mean_alltime' => 10,
+			'year_count_alltime' => 10,
+		);
+		$hr = isset($hist['ranks']) ? $hist['ranks'] : array();
+		$sr = isset($station['ranks']) ? $station['ranks'] : array();
+		$out['ranks'] = array();
+		foreach ($rankTypes as $type => $n) {
+			$h = isset($hr[$type]) ? $hr[$type] : array('lo' => array(), 'hi' => array());
+			$s = isset($sr[$type]) ? $sr[$type] : array('lo' => array(), 'hi' => array());
+			$out['ranks'][$type] = array(
+				'lo' => self::mergeRankLists(
+					isset($h['lo']) ? $h['lo'] : array(),
+					isset($s['lo']) ? $s['lo'] : array(),
+					'lo', $n
+				),
+				'hi' => self::mergeRankLists(
+					isset($h['hi']) ? $h['hi'] : array(),
+					isset($s['hi']) ? $s['hi'] : array(),
+					'hi', $n
+				),
+			);
+		}
+		// Rebuild month/year ranks from the merged month/year series so a fresh
+		// station month can enter the top 10 even if it was absent from hist.
+		$out['ranks']['month_mean_alltime'] = self::extractHighLowAssoc($monthMeans, 10);
+		$out['ranks']['month_mean_all_this_month'] = self::extractHighLowAssoc($thisMonthMeans, 10);
+		$out['ranks']['month_count_alltime'] = self::extractHighLowAssoc($monthCounts, 10);
+		$out['ranks']['month_count_all_this_month'] = self::extractHighLowAssoc($thisMonthCounts, 10);
+		$out['ranks']['year_mean_alltime'] = self::extractHighLowAssoc($yearMeans, 10);
+		$out['ranks']['year_count_alltime'] = self::extractHighLowAssoc($yearCounts, 10);
+
+		if (isset($hist['spells']) || isset($station['spells'])) {
+			$out['spells'] = self::mergeRainSpells(
+				isset($hist['spells']) ? $hist['spells'] : array(),
+				isset($station['spells']) ? $station['spells'] : array()
+			);
+		}
+		return $out;
+	}
+
+	/** Copy station year-keys over a historical [year] => payload map. */
+	private static function overlayStationYears($hist, $station) {
+		$out = is_array($hist) ? $hist : array();
+		if (!is_array($station)) { return $out; }
+		foreach ($station as $y => $payload) {
+			if ((int)$y >= Site::BASE_YEAR) {
+				$out[$y] = $payload;
+			}
+		}
+		return $out;
+	}
+
+	private static function flattenYearMonthSummaries($months) {
+		$flat = array();
+		if (!is_array($months)) { return $flat; }
+		foreach ($months as $ms) {
+			if (!is_array($ms)) { continue; }
+			foreach ($ms as $s) {
+				if (is_array($s)) { $flat[] = $s; }
+			}
+		}
+		return $flat;
+	}
+
+	private static function emptyBaseSummary() {
+		return array(
+			'count' => 0,
+			'count_nonzero' => 0,
+			'count_internal' => 0,
+			'sum' => null,
+			'min' => PHP_INT_MAX,
+			'minDate' => null,
+			'max' => -1 * PHP_INT_MAX,
+			'maxDate' => null,
+			'mean' => null,
+		);
+	}
+
+	private static function mergeSummaryList($summaries) {
+		$summary = self::emptyBaseSummary();
+		if (!is_array($summaries)) { return $summary; }
+		foreach ($summaries as $ms) {
+			if (!is_array($ms)) { continue; }
+			$summary['count'] += isset($ms['count']) ? (int)$ms['count'] : 0;
+			$summary['count_nonzero'] += isset($ms['count_nonzero']) ? (int)$ms['count_nonzero'] : 0;
+			$summary['count_internal'] += isset($ms['count_internal']) ? (int)$ms['count_internal'] : 0;
+			if (isset($ms['count']) && $ms['count'] > 0 && isset($ms['sum']) && is_numeric($ms['sum'])) {
+				$summary['sum'] = ($summary['sum'] === null) ? $ms['sum'] : ($summary['sum'] + $ms['sum']);
+			}
+			if (isset($ms['min']) && is_numeric($ms['min']) && $ms['min'] < $summary['min']
+				&& $ms['min'] !== PHP_INT_MAX && $ms['min'] !== -1 * PHP_INT_MAX) {
+				$summary['min'] = $ms['min'];
+				$summary['minDate'] = isset($ms['minDate']) ? $ms['minDate'] : null;
+			}
+			if (isset($ms['max']) && is_numeric($ms['max']) && $ms['max'] > $summary['max']
+				&& $ms['max'] !== PHP_INT_MAX && $ms['max'] !== -1 * PHP_INT_MAX) {
+				$summary['max'] = $ms['max'];
+				$summary['maxDate'] = isset($ms['maxDate']) ? $ms['maxDate'] : null;
+			}
+		}
+		$summary['mean'] = ($summary['count'] > 0 && is_numeric($summary['sum']))
+			? $summary['sum'] / $summary['count'] : null;
+		return $summary;
+	}
+
+	private static function baseSummaryFromAssoc($arr) {
+		list($min, $minDate) = Util::extremeValAndKey($arr, 0);
+		list($max, $maxDate) = Util::extremeValAndKey($arr, 1);
+		$count = Util::mycount($arr);
+		$summary = array(
+			'count' => $count,
+			'count_nonzero' => Util::cond_count($arr, true, 0),
+			'count_internal' => is_array($arr) ? count($arr) : 0,
+			'sum' => $count > 0 ? array_sum($arr) : null,
+			'min' => $min,
+			'minDate' => $minDate,
+			'max' => $max,
+			'maxDate' => $maxDate,
+		);
+		$summary['mean'] = $count > 0 ? $summary['sum'] / $count : null;
+		return $summary;
+	}
+
+	private static function extractHighLowAssoc($arr, $n) {
+		$arr = Util::numericOnly($arr);
+		asort($arr);
+		$bottom = array_slice($arr, 0, $n, true);
+		$top = array_reverse(array_slice($arr, -$n, $n, true), true);
+		$fmt = function ($assoc) {
+			$out = array();
+			foreach ($assoc as $k => $v) {
+				$out[] = array('dt' => $k, 'val' => $v);
+			}
+			return $out;
+		};
+		return array('lo' => $fmt($bottom), 'hi' => $fmt($top));
+	}
+
+	private static function attachAnom($varName, &$summary, $norm) {
+		if (empty(Wx::$daily[$varName]['anomaly']) || !is_array($summary)) { return; }
+		$key = !empty(Wx::$daily[$varName]['summable']) ? 'sum' : 'mean';
+		if (is_numeric($norm) && isset($summary[$key]) && is_numeric($summary[$key])) {
+			$summary['anom'] = $summary[$key] - $norm;
+			$summary['anom_pct'] = ($norm != 0) ? $summary['anom'] / $norm * 100 : null;
+		}
+	}
+
+	/**
+	 * Combine two all-this-date (or similar) summaries: extrema from both,
+	 * counts/mean from the historical payload (daily warm keeps this close).
+	 */
+	private static function mergePeriodMinMax($hist, $station) {
+		if (!is_array($hist)) { return $station; }
+		if (!is_array($station)) { return $hist; }
+		$out = $hist;
+		if (isset($station['min']) && is_numeric($station['min'])
+			&& (!isset($hist['min']) || !is_numeric($hist['min'])
+				|| $hist['min'] === PHP_INT_MAX || $station['min'] < $hist['min'])) {
+			$out['min'] = $station['min'];
+			$out['minDate'] = isset($station['minDate']) ? $station['minDate'] : null;
+		}
+		if (isset($station['max']) && is_numeric($station['max'])
+			&& (!isset($hist['max']) || !is_numeric($hist['max'])
+				|| $hist['max'] === -1 * PHP_INT_MAX || $station['max'] > $hist['max'])) {
+			$out['max'] = $station['max'];
+			$out['maxDate'] = isset($station['maxDate']) ? $station['maxDate'] : null;
+		}
+		return $out;
+	}
+
+	private static function pickNdayExtreme($hist, $station, $lo) {
+		$hOk = self::ndaySumOk($hist);
+		$sOk = self::ndaySumOk($station);
+		if (!$hOk) { return $station; }
+		if (!$sOk) { return $hist; }
+		$hv = $hist['sum'];
+		$sv = $station['sum'];
+		if ($lo) {
+			return ($hv < $sv) ? $hist : $station;
+		}
+		return ($hv > $sv) ? $hist : $station;
+	}
+
+	private static function ndaySumOk($s) {
+		return is_array($s) && isset($s['sum']) && is_numeric($s['sum'])
+			&& $s['sum'] !== PHP_INT_MAX && $s['sum'] !== -1 * PHP_INT_MAX;
+	}
+
+	private static function mergeRankLists($histList, $stationList, $dir, $n) {
+		$byDt = array();
+		foreach (array($histList, $stationList) as $i => $list) {
+			if (!is_array($list)) { continue; }
+			foreach ($list as $e) {
+				if (!is_array($e) || !isset($e['dt'])) { continue; }
+				$dt = $e['dt'];
+				if ($i === 0 && isset($byDt[$dt])) { continue; }
+				$byDt[$dt] = $e;
+			}
+		}
+		$vals = array();
+		foreach ($byDt as $dt => $e) {
+			if (isset($e['val']) && is_numeric($e['val'])) {
+				$vals[$dt] = $e['val'];
+			}
+		}
+		asort($vals);
+		$slice = ($dir === 'hi')
+			? array_reverse(array_slice($vals, -$n, $n, true), true)
+			: array_slice($vals, 0, $n, true);
+		$out = array();
+		foreach ($slice as $dt => $val) {
+			$out[] = array('dt' => $dt, 'val' => $val);
+		}
+		return $out;
+	}
+
+	private static function mergeRainSpells($hist, $station) {
+		$out = is_array($hist) ? $hist : array();
+		if (!is_array($station)) { return $out; }
+		foreach (array('current', 'current_month', 'current_year') as $k) {
+			if (isset($station[$k])) { $out[$k] = $station[$k]; }
+		}
+		if (isset($station['threshold'])) { $out['threshold'] = $station['threshold']; }
+		foreach (array('alltime', 'alltime_current_month') as $scope) {
+			$out[$scope] = array('wet' => null, 'dry' => null);
+			foreach (array('wet', 'dry') as $type) {
+				$a = (isset($hist[$scope][$type]) && is_array($hist[$scope][$type])) ? $hist[$scope][$type] : null;
+				$b = (isset($station[$scope][$type]) && is_array($station[$scope][$type])) ? $station[$scope][$type] : null;
+				$out[$scope][$type] = $a;
+				if ($b !== null) { Spells::keepLonger($out[$scope][$type], $b); }
+			}
+		}
+		$out['top'] = array('wet' => array(), 'dry' => array());
+		foreach (array('wet', 'dry') as $type) {
+			$list = array();
+			$seen = array();
+			foreach (array($hist, $station) as $src) {
+				$items = (isset($src['top'][$type]) && is_array($src['top'][$type])) ? $src['top'][$type] : array();
+				foreach ($items as $spell) {
+					if (!is_array($spell)) { continue; }
+					$k = (isset($spell['type']) ? $spell['type'] : $type)
+						. '|' . (isset($spell['startDate']) ? $spell['startDate'] : '')
+						. '|' . (isset($spell['endDate']) ? $spell['endDate'] : '');
+					if (isset($seen[$k])) { continue; }
+					$seen[$k] = true;
+					Spells::keepTop($list, $spell, 10);
+				}
+			}
+			$out['top'][$type] = $list;
+		}
+		return $out;
 	}
 
 	/**

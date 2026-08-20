@@ -40,7 +40,7 @@ $mainTables->rankTables();
 <p class="report-var-about">Air-temperature extremes for each calendar day run midnight to midnight (local time), when daily extremes are reset. Night minimum (21–09) and day maximum (09–21) use those fixed windows instead.</p>
 <h2>Notes</h2>
 <ul>
-	<li>Temperature records began on 1st Jan 2009</li>
+	<li>Station temperature records began on 1st Jan 2009. A long-term series from nearby sites is available from 1881 (use Start year above).</li>
 	<li>Figures in brackets refer to departure from
 		<a href="wxaverages.php" title="Long-term NW3 climate averages">average conditions</a>
 	</li>

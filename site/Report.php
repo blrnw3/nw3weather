@@ -436,15 +436,7 @@ class Report {
 	 * @return int
 	 */
 	public static function nearestStartYear($want, $opts) {
-		if (!count($opts)) { return (int)$want; }
-		$want = (int)$want;
-		$best = null;
-		foreach ($opts as $y) {
-			$y = (int)$y;
-			if ($y === $want) { return $y; }
-			if ($y <= $want) { $best = $y; }
-		}
-		return $best !== null ? $best : (int)$opts[0];
+		return DataSummarizer::nearestStartYear($want, $opts);
 	}
 
 	// ---- Aggregation helper (legacy mom): 0=min 1=max 2=mean 3=count>0 ----
@@ -1089,13 +1081,7 @@ class Report {
 				: (int)$this->year;
 		}
 		$windowStart = max((int)$windowStart, (int)$this->startYear);
-		if ((int)$this->startYear < Site::BASE_YEAR && $windowStart < Site::BASE_YEAR) {
-			echo '<p class="hist-note">*Data from before 2009 are mostly from the historical site at Whitestone Pond in Hampstead. '
-				. 'Where data from that record is missing, other nearby sites were used, including St James Park, Heathrow, and Kew Gardens (pre-1910). '
-				. 'Best efforts have been made to adjust for site differences, but uncertainties are somewhat greater for this data. '
-				. 'I am grateful to the Met Office for making this data available for free through the '
-				. '<a href="https://data.ceda.ac.uk/badc/ukmo-midas-open/">MIDAS Open database</a>.</p>';
-		}
+		echo DataSummarizer::historicalNoteHtml($windowStart);
 	}
 
 	/**

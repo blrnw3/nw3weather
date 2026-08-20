@@ -149,6 +149,15 @@ if($fiveMinutely) {
 	}
 }
 
+// Historical detail windows: too expensive for every 5 minutes. Refresh once
+// a day (after midnight data is in) and merge with the station cache on request.
+if($tstamp === '0121') {
+	exec(escapeshellarg(PHP_BIN) . ' -q ' . ROOT . 'warm_detail_summaries.php hist', $warmHOut, $warmHRc);
+	if($warmHRc !== 0) {
+		Page::quick_log('warm_detail_summaries_bad.txt', 'hist rc=' . $warmHRc . ' ' . substr(implode(' ', $warmHOut), 0, 200));
+	}
+}
+
 if(!file_exists(V5_CACHE_ROOT . 'serialised_datt.txt')
 		|| (file_exists(ROOT . 'datt' . $yr_yest . '.csv') && time() - filemtime(ROOT . 'datt' . $yr_yest . '.csv') < 65)) {
 	CacheSerialiser::serialiseCSV('datt');
@@ -164,6 +173,10 @@ if(!file_exists(V5_CACHE_ROOT . 'serialised_datm.txt')
 if(!file_exists(V5_CACHE_ROOT . 'serialised_historical_tmax.txt')
 		|| (file_exists(ROOT . 'historical.csv') && time() - filemtime(ROOT . 'historical.csv') < 60)) {
 	CacheSerialiser::serializeHistoricalData();
+	exec(escapeshellarg(PHP_BIN) . ' -q ' . ROOT . 'warm_detail_summaries.php hist', $warmHOut, $warmHRc);
+	if($warmHRc !== 0) {
+		Page::quick_log('warm_detail_summaries_bad.txt', 'histcsv rc=' . $warmHRc . ' ' . substr(implode(' ', $warmHOut), 0, 200));
+	}
 }
 
 // Monthly report

@@ -44,6 +44,7 @@ class ViewDetailedData {
 
 	public $periods_all;
 	public $startYrReport;
+	public $startYearOptions;
 	public static $periodCnt;
 
 	// LTA daily-anomaly available for these (tmean resolved dynamically via LTA)
@@ -51,8 +52,6 @@ class ViewDetailedData {
 
 
 	/**
-	 * Detail pages always summarise from the station record (Site::BASE_YEAR).
-	 *
 	 * @param string $groupName temp|baro|wind|rain|hum|dew|sun
 	 */
 	function __construct($groupName) {
@@ -223,7 +222,9 @@ class ViewDetailedData {
 		$this->type = $groupName;
 		$this->superlativeLow = $this->group["superlativeLo"];
 		$this->superlativeHigh = $this->group["superlativeHi"];
-		$this->startYrReport = Site::BASE_YEAR;
+		$this->startYearOptions = DataSummarizer::startYearOptionsForGroup($groupName);
+		$want = isset($_GET['start_year_rep']) ? (int)$_GET['start_year_rep'] : Site::BASE_YEAR;
+		$this->startYrReport = DataSummarizer::nearestStartYear($want, $this->startYearOptions);
 
 		// Load per-variable summarize() payloads from daily serialised cache
 		// (filled by first request or cron warm). Deduplicate by variable name.
@@ -275,6 +276,57 @@ class ViewDetailedData {
 	/** Effective start year after flooring to the variable's own start_year. */
 	public function effectiveStartYear() {
 		return $this->meanStartYear;
+	}
+
+	/** True when the selected window includes pre-station (pre-2009) data. */
+	public function usesHistorical() {
+		return $this->meanStartYear < Site::BASE_YEAR;
+	}
+
+	/**
+	 * Start-year chips for groups that have a pre-2009 series. Station (2009)
+	 * is the default; earlier chips load the merged historical window.
+	 */
+	public function startYearSelector() {
+		if (!is_array($this->startYearOptions) || count($this->startYearOptions) < 2) {
+			return;
+		}
+		echo '<div class="report-sel detail-start-sel">';
+		echo '<div class="report-sel-row report-sel-labelled">';
+		echo '<div class="wxsel-label">Start year</div>';
+		echo '<div class="wxsel-scale wxsel-start-years" role="tablist">';
+		foreach ($this->startYearOptions as $opt) {
+			$opt = (int)$opt;
+			$active = ($opt === (int)$this->startYrReport) ? ' active' : '';
+			$title = ($opt >= Site::BASE_YEAR)
+				? 'Station record from ' . $opt
+				: 'Include nearby long-term records from ' . $opt;
+			echo '<a class="wxsel-chip' . $active . '" href="' . htmlspecialchars($this->startYearUrl($opt))
+				. '" title="' . htmlspecialchars($title) . '">' . $opt . '</a>';
+		}
+		echo '</div></div></div>';
+	}
+
+	/** Preserve other query params (e.g. humidity type) when changing start year. */
+	private function startYearUrl($year) {
+		$q = $_GET;
+		$q['start_year_rep'] = (int)$year;
+		return '?' . http_build_query($q);
+	}
+
+	/** '*' marker for pre-2009 dates when the historical window is active. */
+	private function histStarFromTs($ts) {
+		if ($ts && $this->usesHistorical() && (int)date('Y', $ts) < Site::BASE_YEAR) {
+			return '*';
+		}
+		return '';
+	}
+
+	private function histStarFromYear($year) {
+		if ($this->usesHistorical() && (int)$year < Site::BASE_YEAR) {
+			return '*';
+		}
+		return '';
 	}
 
 	/** Chart selector group(s) for this detail page's variable family. */
@@ -551,9 +603,11 @@ class ViewDetailedData {
 				$lo = isset($ps[$d . 'd_lo_mean_alltime']) ? $ps[$d . 'd_lo_mean_alltime'] : null;
 				$hi = isset($ps[$d . 'd_hi_mean_alltime']) ? $ps[$d . 'd_hi_mean_alltime'] : null;
 				$this->dat[$stat][0][$rk] = $this->sval($lo, $aggKey);
-				$this->dat[$stat][0][$rk . 'date'] = $this->sval($lo, 'endDateFmt');
+				$this->dat[$stat][0][$rk . 'date'] = $this->fmtPeriodDate($this->sval($lo, 'endDate'), 'alltime')
+					?: $this->sval($lo, 'endDateFmt');
 				$this->dat[$stat][1][$rk] = $this->sval($hi, $aggKey);
-				$this->dat[$stat][1][$rk . 'date'] = $this->sval($hi, 'endDateFmt');
+				$this->dat[$stat][1][$rk . 'date'] = $this->fmtPeriodDate($this->sval($hi, 'endDate'), 'alltime')
+					?: $this->sval($hi, 'endDateFmt');
 			}
 			foreach ($recMap as $rk => $psk) {
 				$s = isset($ps[$psk]) ? $ps[$psk] : null;
@@ -891,7 +945,7 @@ class ViewDetailedData {
 		if ($raw === null || $raw === '') return '';
 		if ($type === 'annual') {
 			if (preg_match('/^(\d{4})/', (string)$raw, $m)) {
-				return Date::today((int)$m[1], false, false, true);
+				return Date::today((int)$m[1], false, false, true) . $this->histStarFromYear((int)$m[1]);
 			}
 			return (string)$raw;
 		}
@@ -900,12 +954,13 @@ class ViewDetailedData {
 		if ($type === 'monthly' || $type === 'monthlyCM') {
 			// Pass y/m (not tstamp) so "Current" matches any day in this month
 			// (Date::today fills day-of-month from today when $day is false).
-			return Date::today((int)date('Y', $ts), (int)date('n', $ts), false, true);
+			return Date::today((int)date('Y', $ts), (int)date('n', $ts), false, true)
+				. $this->histStarFromTs($ts);
 		}
 		if ($type === 'dailyCM') {
-			return Date::today(true, false, true, false, $ts);
+			return Date::today(true, false, true, false, $ts) . $this->histStarFromTs($ts);
 		}
-		return Date::today(true, true, true, false, $ts);
+		return Date::today(true, true, true, false, $ts) . $this->histStarFromTs($ts);
 	}
 
 	/**
@@ -924,18 +979,27 @@ class ViewDetailedData {
 			case 'latest_7d':
 			case 'latest_31d':
 			case 'curr_month':
-				return Date::today(false, false, true, false, $ts);
+				$label = Date::today(false, false, true, false, $ts);
+				break;
 			case 'curr_year':
 			case 'latest_365d':
-				return Date::today(false, true, true, false, $ts);
+				$label = Date::today(false, true, true, false, $ts);
+				break;
 			case 'all_this_month':
-				return Date::today(true, false, true, false, $ts);
+				$label = Date::today(true, false, true, false, $ts);
+				break;
 			case 'all_this_date':
-				return Date::today(true, false, false, false, $ts);
+				$label = Date::today(true, false, false, false, $ts);
+				break;
 			case 'alltime':
 			default:
-				return Date::today(true, true, true, false, $ts);
+				$label = Date::today(true, true, true, false, $ts);
+				break;
 		}
+		if ($pk === 'alltime' || $pk === 'all_this_month' || $pk === 'all_this_date') {
+			$label .= $this->histStarFromTs($ts);
+		}
+		return $label;
 	}
 
 	private function parseDateTs($raw) {
@@ -952,12 +1016,15 @@ class ViewDetailedData {
 
 	private function fmtRecDate($raw, $rk) {
 		if (!$raw) return '';
-		if ($rk === 'Ya') return (string) $raw;
+		if ($rk === 'Ya') {
+			$y = (int)$raw;
+			return (string)$raw . $this->histStarFromYear($y);
+		}
 		if (preg_match('/^(\d{4})-(\d{2})/', $raw, $m)) {
 			$y = (int)$m[1];
 			$mo = (int)$m[2];
 			// Month/year means: "Jul 2018", or red "Current" for this month
-			return Date::today($y, $mo, false, true);
+			return Date::today($y, $mo, false, true) . $this->histStarFromYear($y);
 		}
 		return (string) $raw;
 	}
@@ -1448,7 +1515,9 @@ class ViewDetailedData {
 	public function rainSpells($wid = 85) {
 		if ($this->groupName !== 'rain' || !isset($this->meanSum['spells'])) { return; }
 		$spells = $this->meanSum['spells'];
-		$lifetimeLabel = 'Station lifetime';
+		$lifetimeLabel = $this->usesHistorical()
+			? ('Long-term record (' . $this->effectiveStartYear() . '-' . Date::$dyear . ')')
+			: 'Station lifetime';
 
 		echo '<h2>Wet and Dry Spells</h2>';
 
@@ -1541,11 +1610,13 @@ class ViewDetailedData {
 
 	private function spellDate($raw) {
 		$ts = strtotime($raw);
-		return $ts ? date('d M Y', $ts) : $raw;
+		if (!$ts) { return $raw; }
+		return date('d M Y', $ts) . $this->histStarFromTs($ts);
 	}
 
 	function avgsExtrmsRecs($measures = null, $wid = 99) {
 		echo "<h2>Averages, Extremes, and Records</h2>";
+		$this->startYearSelector();
 		$this->renderAvgsExtrmsRecsBody($measures, $wid);
 	}
 
@@ -1605,7 +1676,9 @@ class ViewDetailedData {
 		echo "</div>";
 
 		echo "<div>";
-		echo "<h3>Station Lifetime (" . $effStart . "-" . Date::$dyear . ")</h3>";
+		echo "<h3>" . ($this->usesHistorical()
+			? ('Long-term record (' . $effStart . '-' . Date::$dyear . ')')
+			: ('Station Lifetime (' . $effStart . '-' . Date::$dyear . ')')) . "</h3>";
 
 		echo '<div class="detail-table-scroll">';
 		Html::table(null, $wid . '%" align="center', 6);
@@ -2102,6 +2175,7 @@ class ViewDetailedData {
 	function rankTables($rankNum = 10, $rankNumM = 10, $rankNumCM = 5, $rankNumY = 5) {
 		echo '<h2>Ranked Historical ' . $this->label . ' Data</h2>';
 		$this->renderRankTablesBody($rankNum, $rankNumM, $rankNumCM, $rankNumY);
+		echo DataSummarizer::historicalNoteHtml($this->effectiveStartYear());
 	}
 
 	/**
