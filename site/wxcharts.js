@@ -37,90 +37,95 @@
 
 	// Diagonal-stripe fill in the given colour (needs the pattern-fill module).
 	// ---- Categorical (daily / monthly / annual / climate) ----
+	function drawHistChart(containerId, json, opts) {
+		opts = opts || {};
+		if (!json || json.error || !json.series) {
+			if (!opts.silent) { $('#' + containerId).html('<p>No data available.</p>'); }
+			return null;
+		}
+		// yMinZero=false (e.g. pressure): let the axis auto-fit. Do not pass
+		// threshold:undefined — Highcharts 13 treats that as clearing the default
+		// threshold (0) and column bars end up with null height (invisible, but
+		// tooltips still work).
+		var autoscale = (json.yMinZero === false);
+		var series = json.series.map(function (s) {
+			var o = {
+				name: s.name,
+				data: s.data,
+				type: s.type || json.chartType || 'column',
+				color: s.color,
+				dashStyle: s.dashStyle || 'Solid',
+				marker: { enabled: false },
+				connectNulls: false
+			};
+			if (s.lineWidth != null) { o.lineWidth = s.lineWidth; }
+			if (s.opacity != null) { o.opacity = s.opacity; }
+			if (autoscale) {
+				o.threshold = null;
+				o.softThreshold = false;
+			}
+			return o;
+		});
+		var yAxis = {
+			title: { text: (json.unit ? json.unit : ''), style: { color: TEXT, fontSize: '0.8rem' } },
+			gridLineColor: '#ddd',
+			labels: { style: { color: TEXT } }
+		};
+		if (autoscale) { yAxis.min = null; }
+		var tips = json.categoryTips || null;
+		var unitSuffix = json.unit ? (' ' + json.unit) : '';
+		var decimals = (json.precision != null ? json.precision : undefined);
+		var tooltip = { shared: true, valueSuffix: unitSuffix, valueDecimals: decimals };
+		if (tips) {
+			tooltip.formatter = function () {
+				var idx = this.points[0].point.x;
+				var head = (tips[idx] != null) ? tips[idx] : this.x;
+				var html = '<span style="font-size:0.85em">' + head + '</span>';
+				for (var i = 0; i < this.points.length; i++) {
+					var p = this.points[i];
+					var val = (p.y == null) ? '—' : Highcharts.numberFormat(p.y, decimals != null ? decimals : 1);
+					html += '<br/><span style="color:' + p.color + '">\u25CF</span> '
+						+ p.series.name + ': <b>' + val + unitSuffix + '</b>';
+				}
+				return html;
+			};
+		}
+		var xAxis = {
+			categories: json.categories,
+			labels: {
+				style: { color: TEXT, fontSize: opts.labelFontSize || '0.7rem' },
+				rotation: 0,
+				autoRotation: false
+			},
+			gridLineWidth: 0
+		};
+		if (json.tickPositions && json.tickPositions.length) {
+			xAxis.tickPositions = json.tickPositions;
+		} else {
+			xAxis.tickInterval = opts.tickInterval || Math.max(1, Math.ceil(json.categories.length / 12));
+		}
+		Highcharts.chart(containerId, {
+			chart: { backgroundColor: '#ffffff', spacing: [12, 12, 8, 6], style: { color: TEXT } },
+			title: { text: opts.title || json.title, style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
+			credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
+			legend: { enabled: series.length > 1, itemStyle: { color: TEXT } },
+			xAxis: xAxis,
+			yAxis: yAxis,
+			tooltip: tooltip,
+			plotOptions: {
+				column: { borderWidth: 0, pointPadding: 0.02, groupPadding: 0.03 },
+				series: { animation: false }
+			},
+			series: series
+		});
+	}
+
 	function histChart(containerId, url, opts) {
 		opts = opts || {};
 		if (!opts.silent) { setLoading(containerId, true); }
 		return $.getJSON(url, function (json) {
 			if (!opts.silent) { setLoading(containerId, false); }
-			if (!json || json.error) {
-				if (!opts.silent) { $('#' + containerId).html('<p>No data available.</p>'); }
-				return null;
-			}
-			// yMinZero=false (e.g. pressure): let the axis auto-fit. Do not pass
-			// threshold:undefined — Highcharts 13 treats that as clearing the default
-			// threshold (0) and column bars end up with null height (invisible, but
-			// tooltips still work).
-			var autoscale = (json.yMinZero === false);
-			var series = json.series.map(function (s) {
-				var o = {
-					name: s.name,
-					data: s.data,
-					type: s.type || json.chartType || 'column',
-					color: s.color,
-					dashStyle: s.dashStyle || 'Solid',
-					marker: { enabled: false },
-					connectNulls: false
-				};
-				if (s.lineWidth != null) { o.lineWidth = s.lineWidth; }
-				if (s.opacity != null) { o.opacity = s.opacity; }
-				if (autoscale) {
-					o.threshold = null;
-					o.softThreshold = false;
-				}
-				return o;
-			});
-			var yAxis = {
-				title: { text: (json.unit ? json.unit : ''), style: { color: TEXT, fontSize: '0.8rem' } },
-				gridLineColor: '#ddd',
-				labels: { style: { color: TEXT } }
-			};
-			if (autoscale) { yAxis.min = null; }
-			var tips = json.categoryTips || null;
-			var unitSuffix = json.unit ? (' ' + json.unit) : '';
-			var decimals = (json.precision != null ? json.precision : undefined);
-			var tooltip = { shared: true, valueSuffix: unitSuffix, valueDecimals: decimals };
-			if (tips) {
-				tooltip.formatter = function () {
-					var idx = this.points[0].point.x;
-					var head = (tips[idx] != null) ? tips[idx] : this.x;
-					var html = '<span style="font-size:0.85em">' + head + '</span>';
-					for (var i = 0; i < this.points.length; i++) {
-						var p = this.points[i];
-						var val = (p.y == null) ? '—' : Highcharts.numberFormat(p.y, decimals != null ? decimals : 1);
-						html += '<br/><span style="color:' + p.color + '">\u25CF</span> '
-							+ p.series.name + ': <b>' + val + unitSuffix + '</b>';
-					}
-					return html;
-				};
-			}
-			var xAxis = {
-				categories: json.categories,
-				labels: {
-					style: { color: TEXT, fontSize: opts.labelFontSize || '0.7rem' },
-					rotation: 0,
-					autoRotation: false
-				},
-				gridLineWidth: 0
-			};
-			if (json.tickPositions && json.tickPositions.length) {
-				xAxis.tickPositions = json.tickPositions;
-			} else {
-				xAxis.tickInterval = opts.tickInterval || Math.max(1, Math.ceil(json.categories.length / 12));
-			}
-			Highcharts.chart(containerId, {
-				chart: { backgroundColor: '#ffffff', spacing: [12, 12, 8, 6], style: { color: TEXT } },
-				title: { text: opts.title || json.title, style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
-				credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
-				legend: { enabled: series.length > 1, itemStyle: { color: TEXT } },
-				xAxis: xAxis,
-				yAxis: yAxis,
-				tooltip: tooltip,
-				plotOptions: {
-					column: { borderWidth: 0, pointPadding: 0.02, groupPadding: 0.03 },
-					series: { animation: false }
-				},
-				series: series
-			});
+			drawHistChart(containerId, json, opts);
 		}).fail(function () {
 			if (opts.silent) { return; }
 			setLoading(containerId, false);
@@ -522,6 +527,7 @@
 			cume: !!cfg.defaultCume,
 			year: cfg.defaultYear || null
 		};
+		var cache = {};
 
 		function groupById(id) {
 			var i;
@@ -566,10 +572,22 @@
 			if (cfg.showYears && state.year) { title = state.year + ' ' + title; }
 			el.textContent = (cfg.headingPrefix != null ? cfg.headingPrefix : 'Custom: ') + title;
 		}
-		function load(fresh) {
-			updateHeading();
+		function allTypes() {
+			var out = [], seen = {}, i, opts, k;
+			for (i = 0; i < groups.length; i++) {
+				opts = groups[i].options || {};
+				for (k in opts) {
+					if (Object.prototype.hasOwnProperty.call(opts, k) && !seen[k]) {
+						seen[k] = true;
+						out.push(k);
+					}
+				}
+			}
+			return out;
+		}
+		function typeUrl(type, fresh) {
 			var url = cfg.url + (cfg.url.indexOf('?') >= 0 ? '&' : '?')
-				+ 'type=' + encodeURIComponent(state.type);
+				+ 'type=' + encodeURIComponent(type);
 			if (cfg.showYears && state.year) {
 				url += '&year=' + encodeURIComponent(state.year);
 			}
@@ -579,15 +597,49 @@
 			if (cfg.showNormals && state.lta && (!cfg.showAggregation || state.summary === 0 || state.summary === 1)) {
 				url += '&lta=1';
 			}
-			if (cfg.showCume && state.cume && metaFor(state.type).summable) {
+			if (cfg.showCume && state.cume && metaFor(type).summable) {
 				url += '&cume=1';
 			}
-			var chartOpts = cfg.opts || {};
-			if (fresh) {
-				url += '&_=' + Date.now();
-				chartOpts = $.extend({}, chartOpts, { silent: true });
+			if (fresh) { url += '&_=' + Date.now(); }
+			return url;
+		}
+		function drawCached() {
+			var json = cache[state.type];
+			if (!json) { return false; }
+			drawHistChart(cfg.containerId, json, $.extend({}, cfg.opts || {}, { silent: true }));
+			return true;
+		}
+		function prefetch(fresh, done) {
+			var types = allTypes();
+			if (!fresh) {
+				types = types.filter(function (t) { return !cache[t] && t !== state.type; });
 			}
-			histChart(cfg.containerId, url, chartOpts);
+			if (!types.length) { if (done) { done(); } return; }
+			var url = cfg.url + (cfg.url.indexOf('?') >= 0 ? '&' : '?')
+				+ 'types=' + types.map(encodeURIComponent).join(',');
+			if (fresh) { url += '&_=' + Date.now(); }
+			$.getJSON(url, function (json) {
+				if (json && json.charts) {
+					Object.keys(json.charts).forEach(function (t) {
+						var c = json.charts[t];
+						if (c && !c.error && c.series) { cache[t] = c; }
+					});
+				}
+				if (done) { done(); }
+			}).fail(function () { if (done) { done(); } });
+		}
+		function load(fresh) {
+			updateHeading();
+			if (!fresh && drawCached()) { return; }
+			if (fresh && cfg.prefetch) {
+				prefetch(true, function () { drawCached(); });
+				return;
+			}
+			var chartOpts = cfg.opts || {};
+			if (fresh) { chartOpts = $.extend({}, chartOpts, { silent: true }); }
+			histChart(cfg.containerId, typeUrl(state.type, fresh), chartOpts).done(function (json) {
+				if (json && !json.error && json.series) { cache[state.type] = json; }
+			});
 		}
 		function renderAggregation() {
 			if (!cfg.showAggregation || !aggEl) { return; }
@@ -673,6 +725,7 @@
 		}
 		renderSubtypes();
 		load();
+		if (cfg.prefetch) { prefetch(false); }
 		if (cfg.refreshOnFocus) {
 			document.addEventListener('visibilitychange', function () {
 				if (!document.hidden) { load(true); }

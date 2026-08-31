@@ -11,6 +11,7 @@
  *   mode         daily | monthly | annual | climate   (default daily)
  * Daily:
  *   length       last-N days (default 31)              [no year set]
+ *   types        comma-list of variables; last-N only. Returns { charts: { type: payload } }
  *   year, month  single month (month 1-12) or whole year (month 0)
  *   lta          1 to overlay the daily climate normal (whole-year only)
  *   cume         1 for a cumulative running total (whole-year only)
@@ -134,6 +135,56 @@ function climateColour($type) {
 		return Wx::colourHex(Wx::$daily[$type]['colour']);
 	}
 	return '#999999';
+}
+
+/** Last-N daily payload for one variable (home-page prefetch uses this in a batch). */
+function histDailyLastN($type, $length) {
+	$meta = Wx::$daily[$type];
+	$convType = Data::typeToConvType($type);
+	$colour = Wx::colourHex(isset($meta['colour']) ? $meta['colour'] : null);
+	$precision = Wx::precision($convType);
+	$cv = function ($v) use ($convType, $precision) {
+		if ($v === null || $v === '' || $v === '-' || !is_numeric($v)) { return null; }
+		return Wx::convNum($v, $convType, $precision);
+	};
+	$out = [
+		'type'        => $type,
+		'description' => $meta['description'],
+		'colour'      => $colour,
+		'unit'        => Wx::getUnitsText($convType),
+		'precision'   => $precision,
+		'yMinZero'    => !in_array($convType, [Wx::Pressure, Wx::Temperature, Wx::AbsTemp], true),
+		'mode'        => 'daily',
+		'chartType'   => 'column',
+		'xType'       => 'category',
+		'title'       => '',
+		'categories'  => [],
+		'series'      => [],
+	];
+	$startYr = (int)Date::$dyear - intval($length / 365) - 1;
+	$daily = Data::getDailyData($type, $startYr);
+	$flatVals = []; $flatLabels = []; $flatTips = [];
+	$fmt = ($length < 50) ? 'd' : (($length < 500) ? 'd M' : 'M-y');
+	$tipFmt = ($length < 50) ? 'd M' : (($length < 500) ? 'd M Y' : 'M Y');
+	foreach ($daily as $y => $months) {
+		foreach ($months as $m => $days) {
+			foreach ($days as $d => $v) {
+				$ts = Date::mkdate($m, $d, $y);
+				$flatVals[] = $cv($v);
+				$flatLabels[] = date($fmt, $ts);
+				$flatTips[] = date($tipFmt, $ts);
+			}
+		}
+	}
+	$length = min($length, count($flatVals));
+	$kind = ($length > 90 ? 'line' : 'column');
+	$out['categories'] = array_slice($flatLabels, -$length);
+	$out['categoryTips'] = array_slice($flatTips, -$length);
+	$out['series'][] = ['name' => $meta['description'], 'data' => array_slice($flatVals, -$length),
+		'color' => $colour, 'type' => $kind];
+	$out['chartType'] = $kind;
+	$out['title'] = "Last $length days " . $meta['description'];
+	return $out;
 }
 
 if ($mode === 'annual') {
@@ -371,31 +422,27 @@ if ($mode === 'annual') {
 			$out['series'][] = ['name' => $meta['description'], 'data' => $data, 'color' => $colour, 'type' => 'column'];
 		}
 	} else {
-		// Last-N days
+		// Last-N days. `types=a,b,c` returns every option in one payload so the
+		// home-page selector can switch without a round-trip.
 		$length = isset($_GET['length']) ? (int)$_GET['length'] : 31;
-		$startYr = (int)Date::$dyear - intval($length / 365) - 1;
-		$daily = Data::getDailyData($type, $startYr);
-		$flatVals = []; $flatLabels = []; $flatTips = [];
-		// Short windows keep day-of-month on the axis; tooltip adds the month.
-		$fmt = ($length < 50) ? 'd' : (($length < 500) ? 'd M' : 'M-y');
-		$tipFmt = ($length < 50) ? 'd M' : (($length < 500) ? 'd M Y' : 'M Y');
-		foreach ($daily as $y => $months) {
-			foreach ($months as $m => $days) {
-				foreach ($days as $d => $v) {
-					$ts = Date::mkdate($m, $d, $y);
-					$flatVals[] = cv($v);
-					$flatLabels[] = date($fmt, $ts);
-					$flatTips[] = date($tipFmt, $ts);
-				}
+		$typeList = [];
+		if ($typesParam !== '') {
+			foreach (explode(',', $typesParam) as $t) {
+				$t = preg_replace('/[^a-z0-9]/', '', $t);
+				if ($t !== '' && isset(Wx::$daily[$t])) { $typeList[] = $t; }
 			}
+			$typeList = array_values(array_unique($typeList));
+			if (count($typeList) > 24) { $typeList = array_slice($typeList, 0, 24); }
 		}
-		$length = min($length, count($flatVals));
-		$out['categories'] = array_slice($flatLabels, -$length);
-		$out['categoryTips'] = array_slice($flatTips, -$length);
-		$out['series'][] = ['name' => $meta['description'], 'data' => array_slice($flatVals, -$length),
-			'color' => $colour, 'type' => ($length > 90 ? 'line' : 'column')];
-		$out['chartType'] = ($length > 90 ? 'line' : 'column');
-		$out['title'] = "Last $length days " . $meta['description'];
+		if (count($typeList) > 1) {
+			$charts = [];
+			foreach ($typeList as $t) {
+				$charts[$t] = histDailyLastN($t, $length);
+			}
+			echo json_encode(['charts' => $charts]);
+			exit;
+		}
+		$out = histDailyLastN($type, $length);
 	}
 }
 

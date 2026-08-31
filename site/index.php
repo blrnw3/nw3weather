@@ -304,6 +304,7 @@ Charts::dailySelectable(
 		'groups' => Charts::simpleGroups(),
 		'headingPrefix' => '',
 		'refreshOnFocus' => true,
+		'prefetch' => true,
 	),
 	null,
 	'rain'
