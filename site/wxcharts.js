@@ -143,7 +143,8 @@
 		gust: { name: 'Gust', grad: ['#c23b86', '#f08fc0'], dp: 1, area: false },
 		rain: { name: 'Rainfall', col: '#2554c7', dp: 1, area: false },
 		pm25: { name: 'Air pollution (PM2.5)', grad: ['#4f7a4a', '#9ac98f'], dp: 1, area: false },
-		wdir: { name: 'Wind direction', col: '#555', dp: 0, dir: true }
+		wdir: { name: 'Wind direction', col: '#555', dp: 0, dir: true },
+		sun: { name: 'Sunshine (webcam)', col: '#e0a800', dp: 0, area: true, step: true, min: 0, max: 1 }
 	};
 
 	function pairs(json, key) {
@@ -216,6 +217,7 @@
 					name: kc.name,
 					data: data,
 					type: isDir ? 'scatter' : (kc.area ? 'area' : 'line'),
+					step: kc.step ? 'left' : undefined,
 					color: kc.col ? kc.col : gradient(kc.grad[0], kc.grad[1]),
 					lineWidth: isDir ? 0 : (kc.area ? 2.5 : 2),
 					marker: { enabled: isDir, radius: 2 },
@@ -335,7 +337,7 @@
 	function minOf(a) { var m = null, i; for (i = 0; i < a.length; i++) { if (a[i] != null && (m === null || a[i] < m)) { m = a[i]; } } return m; }
 	function maxOf(a) { var m = null, i; for (i = 0; i < a.length; i++) { if (a[i] != null && (m === null || a[i] > m)) { m = a[i]; } } return m; }
 
-	var DASH_KEYS = ['time', 'temp', 'dewp', 'humi', 'pres', 'wind', 'gust', 'wdir', 'rain', 'pm25'];
+	var DASH_KEYS = ['time', 'temp', 'dewp', 'humi', 'pres', 'wind', 'gust', 'wdir', 'rain', 'pm25', 'sun'];
 
 	// Return a shallow copy of `json` keeping only the last `hours` of samples.
 	function sliceWindow(json, hours) {

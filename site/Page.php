@@ -20,6 +20,7 @@ date_default_timezone_set('Europe/London');
 require_once("UtilsAndConsts.php");
 require_once("WxDefinition.php");
 require_once("WxFn.php");
+require_once("SunLog.php");
 require_once("Spells.php");
 require_once("ChartHelper.php");
 

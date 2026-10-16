@@ -87,7 +87,7 @@ class Charts {
 			$vars = array(
 				'temp' => 'Temp', 'dewp' => 'Dew pt', 'humi' => 'Humidity',
 				'pres' => 'Pressure', 'wind' => 'Wind', 'rain' => 'Rain',
-				'pm25' => 'Air pollution', 'wdir' => 'Direction',
+				'pm25' => 'Air pollution', 'wdir' => 'Direction', 'sun' => 'Sunshine',
 			);
 		}
 		// Longer windows (e.g. a full month) need server decimation.

@@ -123,12 +123,22 @@ file_put_contents(ROOT.'api_latest.txt', $newLine);
 
 //datm append
 if($tstamp == $datmCheckTime) {
+	// Webcam sunshine rollup (sun_model): only when enabled, and only ever appends yesterday's new datm row
+	// (DatmWriter::write refuses if the row already exists), so hand-reviewed history is never overwritten.
+	if(defined('NW3_SUN_AUTO_DATM') && NW3_SUN_AUTO_DATM) {
+		$sunYest = SunLog::dayTotal(date('Ymd', Date::$dtstamp_yest));
+		if($sunYest !== null) {
+			DatmWriter::write(strval(round($sunYest['hours'], 1)));
+		}
+	}
 	DatmWriter::checkWritten();
 }
 
 // v5 live and rolling caches.
 nw3_ensure_runtime_dirs();
 $newNOW = Data::dailyData();
+// Webcam sunshine so far today (sun_model/classify.py -> sunlog/), as a first-class live value.
+$newNOW['sun'] = SunLog::live();
 $GLOBALS['newNOW'] = $newNOW;
 nw3_atomic_write(V5_CACHE_ROOT . 'serialised_datNow.txt', serialize($newNOW));
 nw3_atomic_write(V5_CACHE_ROOT . 'serialised_datHr24.txt', serialize(Data::dailyData(date('Ymd'))));
