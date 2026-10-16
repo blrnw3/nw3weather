@@ -12,8 +12,8 @@ Nothing here touches datm or the historical sunhr values.
 """
 import argparse
 import gc
-import hashlib
 import json
+import math
 import os
 import sys
 from datetime import date, datetime, timedelta
@@ -29,10 +29,27 @@ from sun_model.solar import solar_pos, sun_times_utc                            
 
 FRAMES_DIR = "/mnt/webcam/html/camchive/hik"
 OUT_DIR = "/var/www/html/sunlog"
-CACHE_SCHEMA = 1
+CACHE_SCHEMA = 2
 FULL_COV, MIN_COV = 0.9, 0.5
-MAIN_MODEL = os.environ.get("NW3_SUN_MODEL", "rwc_sunny_lr_v1")       # placeholder until nw3_sunny_lr_v1 is trained
-SKY_MODEL = os.environ.get("NW3_SKY_MODEL", "rwc_skyclear_lr_v1")
+# nw3 tuning (2026-10-16, see NW3_NOTES.md): decision threshold on the main model, applied as a logit shift so the
+# rules' 0.5 / carry-confidence cut-offs keep their meaning; and an effective horizon (deg) by azimuth, fitted so
+# clear winter days match the hand-reviewed datm sunhr (nw3 sunmax precedent).
+DECISION_T = 0.85
+HORIZON_S, HORIZON_N = 2.0, 7.0          # az 110-250 (south: roofs / Heath trees) vs the rest
+STALE_EPS = 2e-4                         # frozen camera: grid features identical to the previous frame
+GRID = ["L%d%d" % (i, j) for i in range(4) for j in range(4)] + ["S%d%d" % (i, j) for i in range(4) for j in range(4)]
+
+
+def horizon(az):
+    return HORIZON_S if 110 <= az <= 250 else HORIZON_N
+
+
+def shift_p(p, t=DECISION_T):
+    p = min(max(p, 1e-6), 1 - 1e-6)
+    z = math.log(p / (1 - p)) - math.log(t / (1 - t))
+    return 1.0 / (1.0 + math.exp(-z))
+MAIN_MODEL = os.environ.get("NW3_SUN_MODEL", "nw3_sunny_lr_v1")
+SKY_MODEL = os.environ.get("NW3_SKY_MODEL", "nw3_skyclear_lr_v1")
 
 
 def list_frames(frames_dir, d):
@@ -55,24 +72,25 @@ def list_frames(frames_dir, d):
 
 
 def classify_frames(frames, cache, main, sky):
-    prev_sig = None
+    prev_g = None
     for t in sorted(frames):
         key = t.strftime("%Y%m%d%H%M")
         path = frames[t]
         if key in cache and cache[key].get("v") == main.version:
-            prev_sig = cache[key].get("sig")
+            prev_g = cache[key].get("g")
             continue
         try:
-            with open(path, "rb") as fh:
-                sig = hashlib.md5(fh.read()).hexdigest()
             f = feats(load_small(path))
         except Exception as e:          # truncated / corrupt file: leave it out (minute becomes 'missing')
             print("bad frame %s: %s" % (path, e))
             continue
         f["el"], f["az"] = solar_pos(t)
+        g = [round(f[k], 4) for k in GRID]
+        # the overlay timestamp makes every file unique, so a frozen camera is detected on the image content
+        stale = prev_g is not None and max(abs(a - b) for a, b in zip(g, prev_g)) < STALE_EPS
         cache[key] = dict(v=main.version, p=round(main.prob(f), 4), ps=round(sky.prob(f), 4),
-                          smean=round(f["Smean"], 4), pink=round(f["pink_bot"], 4), sig=sig, stale=(sig == prev_sig))
-        prev_sig = sig
+                          smean=round(f["Smean"], 4), pink=round(f["pink_bot"], 4), g=g, stale=stale)
+        prev_g = g
         gc.collect()
     return cache
 
@@ -81,7 +99,7 @@ def to_frames(cache):
     out = []
     for key, c in cache.items():
         t = datetime.strptime(key, "%Y%m%d%H%M")
-        out.append(Frame(t, c["p"], c["ps"], c["smean"], stale=c.get("stale", False),
+        out.append(Frame(t, shift_p(c["p"]), c["ps"], c["smean"], stale=c.get("stale", False),
                          glitch=c.get("pink", 0) > GLITCH_PINK, pink=c.get("pink")))
     return out
 
@@ -135,6 +153,10 @@ def run(d, frames_dir, out_dir, dry_run=False, now_utc=None):
     cadence = gaps[len(gaps) // 2] if gaps else 60
     tol = max(300, cadence / 2)
     grid = classify_day(to_frames(cache), sr, ss, tolerance_s=tol) if sr and ss else []
+    for m in grid:                       # sun below the local horizon (houses / trees): never sunny
+        if m.value == 1 and m.el < horizon(m.az):
+            m.value = 0
+            m.flags.add("horizon")
     tot = rollup(grid, now_utc)
     latest = None
     done = [m for m in grid if m.value is not None and (now_utc is None or m.t <= now_utc)]
