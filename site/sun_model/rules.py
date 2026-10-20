@@ -162,7 +162,8 @@ def fill_short_gaps(grid: List[Minute], max_gap_min: int = MAX_GAP_MIN,
 
 
 def classify_day(frames: List[Frame], sunrise: datetime, sunset: datetime,
-                 tolerance_s: float = TOLERANCE_S, max_gap_min: int = MAX_GAP_MIN) -> List[Minute]:
+                 tolerance_s: float = TOLERANCE_S, max_gap_min: int = MAX_GAP_MIN,
+                 obstruct_evening: bool = True) -> List[Minute]:
     """tolerance_s: how far a minute may be from its nearest frame (5 min live; 15 min for the 30-min archive)."""
     frames = sorted(frames, key=lambda f: f.t)
     mark_glitch_episodes(frames)
@@ -187,10 +188,13 @@ def classify_day(frames: List[Frame], sunrise: datetime, sunset: datetime,
         return grid
 
     main: List[Optional[int]] = [int(m.p >= 0.5) if m.ok else None for m in grid]
-    low = [m.ok and (m.fel < LOW_EL or (m.fel < OBSTRUCT_EL and m.p < 0.5 and m.ps >= CLEAR_PS)) for m in grid]
+    noon = max(range(len(grid)), key=lambda i: grid[i].el)
+    # obstruct carry (sun behind roofs, clear sky): v3 keeps it for the morning only, since in the evening the
+    # vegetation is a good clue and a dark foreground under a clear sky is genuinely not sunny (Ben, 2026-10-19)
+    low = [m.ok and (m.fel < LOW_EL or (m.fel < OBSTRUCT_EL and m.p < 0.5 and m.ps >= CLEAR_PS
+                                        and (obstruct_evening or i <= noon))) for i, m in enumerate(grid)]
     conf = [main[i] if (m.ok and not low[i] and (m.p < CARRY_CONF or m.p > 1 - CARRY_CONF)) else None
             for i, m in enumerate(grid)]
-    noon = max(range(len(grid)), key=lambda i: grid[i].el)
     carry: List[Optional[int]] = [None] * len(grid)
     nxt = None
     for i in range(noon, -1, -1):          # morning: next confident state

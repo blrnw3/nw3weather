@@ -41,3 +41,24 @@ sky model unchanged (v1). Validation (box, 550 sampled days 2021-09..2026-10, ex
   hazy n=11 (4-fold CV by day) v1 MAE 4.49 bias -4.49 -> v2 MAE 1.73 bias -1.23
 Default is now nw3_sunny_lr_v2; set NW3_SUN_MODEL=nw3_sunny_lr_v1 to roll back. Cache entries are keyed by model
 version, so frames are re-scored after the switch.
+
+## v3 main model (2026-10-19)
+Ben reviewed the 5 over-count days (2022-06-11, 2022-10-13, 2022-07-29, 2024-02-11, 2026-07-01): datm mostly right.
+Failure modes: (a) distant cloud lit while near vegetation is dark; (b) bright, mostly clear sky with dark vegetation.
+Rule: near vegetation is the best clue once the sun is up and in the evening; at low morning sun use sky brightness.
+- Vegetation masks (models/veg_mask_summer.png May-Oct, veg_mask_winter.png Nov-Apr; 192x108) from ~2,100 daytime
+  frames 2021-09+: pixels almost never sky-like. features.veg_feats(): lit/shadow percentiles, contrast, warmth,
+  greenness, saturation, highlight fractions, left/mid/right/crown means, sky median/p95/blue/clip and veg/sky ratios;
+  add_interactions(): ratios x sun height. ~15 ms/frame extra, numpy + Pillow only.
+- RegimeModel (model JSON type 'regime'): 'lowmorning' LR (before noon, el < 25) and 'main' LR, same 114 features.
+  Model JSON also carries decision_t (0.70) and rules.obstruct_evening=false (the roof/obstruction carry for
+  clear-sky el<16 frames applies in the morning only).
+- Labels: 734 hand labels, 13 relabelled 1->0 under Ben's rule (dark near vegetation), + 936 weak labels from the 16
+  Ben-reviewed datm-right days (ranked by stage-1 v3 p, top-K = datm hours, +-10% band dropped), weight 4, C=0.1.
+Validation (361 clean days; 16 weak days by 4-fold day CV, i.e. held out; 8 datm-error days excluded):
+            clean MAE/bias/r      summer MJJA      winter NDJF      hazy(11)        over-count(5)
+  v1        0.81 +0.35 0.968      1.02 +0.50       0.62 +0.37       4.49 -4.49      4.41 +4.41
+  v2        0.69 +0.30 0.975      0.77 +0.26       0.65 +0.51       (in-sample)     2.82 +2.82
+  v3 T0.70  0.63 -0.17 0.977      0.81 -0.39       0.43 +0.09       1.38 -0.08      1.81 +1.81
+v3 now slightly under-counts Jun-Sep (-0.35..-0.61 h/day); a summer threshold of 0.5 gives summer bias -0.11 but
+over-count days +2.3 h. Roll back with NW3_SUN_MODEL=nw3_sunny_lr_v2 (or _v1).

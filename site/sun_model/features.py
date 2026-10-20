@@ -71,3 +71,75 @@ def feats(img: Image.Image) -> Dict[str, float]:
     Rb, Gb, Bb = R[H // 2:], G[H // 2:], B[H // 2:]
     f["pink_bot"] = ((Rb - Gb > 0.08) & (Bb - Gb > 0.08) & (np.minimum(Rb, Bb) > 0.45)).mean()
     return {k: float(v) for k, v in f.items()}
+
+
+# ---- v3: near-vegetation features (camera era from 2021-09-07) ------------------------------------------------
+# Masks (192x108, white = near/far vegetation) were built from ~2,100 daytime frames: pixels that are almost never
+# sky-like (blue or bright).  Summer = leaf months May-Oct, winter = Nov-Apr; the bottom overlay bar is excluded.
+import os as _os
+_MASKS = {}
+
+
+def veg_mask(month):
+    season = "summer" if 5 <= month <= 10 else "winter"
+    if season not in _MASKS:
+        p = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "models", "veg_mask_%s.png" % season)
+        with Image.open(p) as m:
+            _MASKS[season] = np.asarray(m.convert("L")) > 127
+    return _MASKS[season]
+
+
+def veg_feats(img, month):
+    """Lit-vs-shadow cues on the near trees, and the same relative to the sky, so bright sky over dark foliage
+    (sun hidden behind a cloud, or only distant cloud lit) reads as not sunny."""
+    im = img.convert("RGB")
+    if im.size != (W, H):
+        im = im.resize((W, H), Image.BILINEAR)
+    a = np.asarray(im, np.float32) / 255.
+    R, G, B = a[..., 0], a[..., 1], a[..., 2]
+    L = 0.299 * R + 0.587 * G + 0.114 * B
+    mx, mn = a.max(axis=2), a.min(axis=2)
+    S = (mx - mn) / (mx + 1e-3)
+    M = veg_mask(month)
+    rows = np.nonzero(M.any(axis=1))[0]
+    top = rows.min() if len(rows) else H // 2
+    sky = np.zeros_like(M)
+    sky[:max(top - 2, 1)] = True
+    vL, sL = L[M], L[sky]
+    sm = float(np.median(sL)) + 1e-3
+    f = {}
+    f["vL_mean"] = vL.mean()
+    for q in (10, 50, 90):
+        f["vL_p%d" % q] = np.percentile(vL, q)
+    f["vL_std"] = vL.std()
+    f["v_warm"] = (R + G - 2 * B)[M].mean()
+    f["v_green"] = (G - 0.5 * (R + B))[M].mean()
+    f["v_S"] = S[M].mean()
+    f["v_hi"] = (vL > 0.45).mean()
+    f["v_hi_rel"] = (vL > 0.5 * sm).mean()
+    dx = np.abs(np.diff(L, axis=1))[M[:, 1:] & M[:, :-1]]
+    f["v_edge"] = dx.mean() if dx.size else 0.
+    xs = np.arange(W)[None, :].repeat(H, 0)
+    ys = np.arange(H)[:, None].repeat(W, 1)
+    for nm, sel in (("left", xs < W * 0.25), ("mid", (xs >= W * 0.25) & (xs < W * 0.6)), ("right", xs >= W * 0.6),
+                    ("crown", ys < top + (H - top) * 0.4)):
+        r = L[M & sel]
+        f["vL_" + nm] = r.mean() if r.size else f["vL_mean"]
+    f["sL_med"] = sm
+    f["sL_p95"] = np.percentile(sL, 95)
+    f["s_blue"] = (B - R)[sky].mean()
+    f["s_clip"] = (sL > 0.97).mean()
+    f["r_veg_sky"] = f["vL_mean"] / sm
+    f["r_vp90_sky95"] = f["vL_p90"] / (f["sL_p95"] + 1e-3)
+    f["r_crown_sky"] = f["vL_crown"] / sm
+    f["r_log"] = float(np.log((f["vL_mean"] + 0.02) / (sm + 0.02)))
+    return {k: float(v) for k, v in f.items()}
+
+
+def add_interactions(f):
+    """Sun-height interactions (needs f['el'] set): vegetation cues count for more as the sun climbs."""
+    h = min(max(f["el"], 0.0), 40.0) / 40.0
+    f["x_rveg_h"] = f["r_veg_sky"] * h
+    f["x_hirel_h"] = f["v_hi_rel"] * h
+    f["x_crown_h"] = f["r_crown_sky"] * h
+    return f

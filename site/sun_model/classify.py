@@ -21,7 +21,7 @@ from datetime import date, datetime, timedelta
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 
-from sun_model.features import feats, load_small                      # noqa: E402
+from sun_model.features import add_interactions, feats, load_small, veg_feats                      # noqa: E402
 from sun_model.localtime import local_day_bounds_utc, local_to_utc, utc_to_local   # noqa: E402
 from sun_model.model import LrModel                                    # noqa: E402
 from sun_model.rules import GLITCH_PINK, Frame, classify_day, summary  # noqa: E402
@@ -48,7 +48,7 @@ def shift_p(p, t=DECISION_T):
     p = min(max(p, 1e-6), 1 - 1e-6)
     z = math.log(p / (1 - p)) - math.log(t / (1 - t))
     return 1.0 / (1.0 + math.exp(-z))
-MAIN_MODEL = os.environ.get("NW3_SUN_MODEL", "nw3_sunny_lr_v2")
+MAIN_MODEL = os.environ.get("NW3_SUN_MODEL", "nw3_sunny_lr_v3")
 SKY_MODEL = os.environ.get("NW3_SKY_MODEL", "nw3_skyclear_lr_v1")
 
 
@@ -80,11 +80,17 @@ def classify_frames(frames, cache, main, sky):
             prev_g = cache[key].get("g")
             continue
         try:
-            f = feats(load_small(path))
+            img = load_small(path)
+            f = feats(img)
+            if main.needs_veg:
+                f.update(veg_feats(img, utc_to_local(t).month))
+            del img
         except Exception as e:          # truncated / corrupt file: leave it out (minute becomes 'missing')
             print("bad frame %s: %s" % (path, e))
             continue
         f["el"], f["az"] = solar_pos(t)
+        if main.needs_veg:
+            add_interactions(f)
         g = [round(f[k], 4) for k in GRID]
         # the overlay timestamp makes every file unique, so a frozen camera is detected on the image content
         stale = prev_g is not None and max(abs(a - b) for a, b in zip(g, prev_g)) < STALE_EPS
@@ -95,11 +101,11 @@ def classify_frames(frames, cache, main, sky):
     return cache
 
 
-def to_frames(cache):
+def to_frames(cache, decision_t=DECISION_T):
     out = []
     for key, c in cache.items():
         t = datetime.strptime(key, "%Y%m%d%H%M")
-        out.append(Frame(t, shift_p(c["p"]), c["ps"], c["smean"], stale=c.get("stale", False),
+        out.append(Frame(t, shift_p(c["p"], decision_t), c["ps"], c["smean"], stale=c.get("stale", False),
                          glitch=c.get("pink", 0) > GLITCH_PINK, pink=c.get("pink")))
     return out
 
@@ -152,7 +158,8 @@ def run(d, frames_dir, out_dir, dry_run=False, now_utc=None):
     gaps = sorted((b - a).total_seconds() for a, b in zip(ts, ts[1:]))
     cadence = gaps[len(gaps) // 2] if gaps else 60
     tol = max(300, cadence / 2)
-    grid = classify_day(to_frames(cache), sr, ss, tolerance_s=tol) if sr and ss else []
+    grid = classify_day(to_frames(cache, main.decision_t or DECISION_T), sr, ss, tolerance_s=tol,
+                        obstruct_evening=main.rules.get("obstruct_evening", True)) if sr and ss else []
     for m in grid:                       # sun below the local horizon (houses / trees): never sunny
         if m.value == 1 and m.el < horizon(m.az):
             m.value = 0
