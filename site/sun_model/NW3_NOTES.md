@@ -62,3 +62,26 @@ Validation (361 clean days; 16 weak days by 4-fold day CV, i.e. held out; 8 datm
   v3 T0.70  0.63 -0.17 0.977      0.81 -0.39       0.43 +0.09       1.38 -0.08      1.81 +1.81
 v3 now slightly under-counts Jun-Sep (-0.35..-0.61 h/day); a summer threshold of 0.5 gives summer bias -0.11 but
 over-count days +2.3 h. Roll back with NW3_SUN_MODEL=nw3_sunny_lr_v2 (or _v1).
+
+## v4 main model (2026-10-16)
+Trigger: 2022-06-11 still mis-called under v3. New full-resolution per-frame LLM labels (each frame read at
+full size, Ben's rules: sunny = direct sun / distinct shadows / near vegetation visibly lit; bright sky or lit
+distant cloud over dark near vegetation = not sunny; low-sun mornings use brightness / sun disc; winter clear sky
+with far trees lit = sunny):
+- 2022-06-11 every frame (15 min, 49 frames; archive stops at 17:15 local) -> 31 sunny = 7.75 h (datm 8.0).
+- 8 summer + 4 winter clean days with large v3 errors, 30-min cadence; the 15 other datm-right days at 60-min
+  cadence (image budget). These replace the datm-matched auto labels; daily sums checked, not forced, against datm
+  (mostly within 1 h; partial-archive days lower).
+- 18 summer hand labels near the v3 boundary / where v3 OOF disagreed re-checked: 6 changed.
+- Provenance in scripts/sun_research/v4/v4_labels.csv: hand_v1, relabel_v3, relabel_v4, auto (old weak, unused).
+Training: same 114 features + regime split as v3; 734 hand + 537 relabel_v4 frames (weight 3), C=0.1, no weak
+labels; decision_t 0.45 (tuned on the 73 tune days). Also tried: season-split main LR (May-Sep / Oct-Apr),
+seasonal thresholds, both, weights 1-4, C 0.03-0.3 -- none beat the single model (split models worse on winter).
+Validation (349 clean days, full model; 28 newly labelled days by 4-fold day CV = held out; 8 datm-error days out):
+            clean MAE/bias/r     summer May-Sep   winter Oct-Apr   hazy(11)     over(5)     over(4, no 06-11)  frame acc (537)
+  v3 T0.70  0.57 -0.14 0.982     0.76 -0.32       0.44 -0.02       1.38 -0.08   1.81 +1.81  1.85               0.791 (06-11 0.69)
+  v4 T0.45  0.53 +0.05 0.982     0.60 -0.14       0.49 +0.18       1.03 +0.24   2.12 +2.12  1.82               0.832 (06-11 0.84)
+2022-06-11 daily total is coverage-dominated: frames end 17:15 local (coverage 0.76), so rollup scales the measured
+hours up (v4 measures 8.6 h to 17:15, scaled 11.3; v3 7.4 -> 9.7). A perfect classifier would also read ~10 h; the
+fix there is the missing evening frames / scaling rule, not the model. Weak spot: Feb (+0.54 h/day bias, n=26).
+Roll back with NW3_SUN_MODEL=nw3_sunny_lr_v3.
