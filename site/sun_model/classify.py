@@ -48,7 +48,7 @@ def shift_p(p, t=DECISION_T):
     p = min(max(p, 1e-6), 1 - 1e-6)
     z = math.log(p / (1 - p)) - math.log(t / (1 - t))
     return 1.0 / (1.0 + math.exp(-z))
-MAIN_MODEL = os.environ.get("NW3_SUN_MODEL", "nw3_sunny_lr_v1")
+MAIN_MODEL = os.environ.get("NW3_SUN_MODEL", "nw3_sunny_lr_v2")
 SKY_MODEL = os.environ.get("NW3_SKY_MODEL", "nw3_skyclear_lr_v1")
 
 

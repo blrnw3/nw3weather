@@ -28,3 +28,16 @@ Server: py3.6.8, `~/sunenv` (pip 21.3.1, numpy 1.19.5, Pillow 8.4.0); ~105 ms/fr
 - Daily hours vs datm (62 held-out days, not in the labelled set): MAE 0.83 h, bias +0.25 h (5-7.5 min cadence 0.69 h,
   15 min 0.96 h). Clear winter days MAE 0.09 h. On the 17 days that also have old-model JSON: new 0.47 h / -0.18 vs old
   0.69 h / -0.22.
+
+## v2 main model (2026-10-19)
+Ben reviewed the top-25 |model - datm| days. 7 (+2024-05-25) are datm data errors (excluded from truth); 11 hazy /
+weak-sun days and 2022-10-13 (cloudy) are datm-right. v1 undercounted hazy sun badly (p mostly 0.2-0.85).
+v2 = v1 hand labels + weak labels from those 12 days: frames ranked by v1 p, top K = datm_h / cadence labelled sunny,
+the rest not sunny, +-10% band around the cut dropped; weight 4, C=0.1; same 89 features, same DECISION_T 0.85,
+sky model unchanged (v1). Validation (box, 550 sampled days 2021-09..2026-10, excluding labelled/tuned/weak/error days):
+  clean n=364  v1 MAE 0.83 bias +0.38 r 0.966  ->  v2 MAE 0.70 bias +0.31 r 0.974
+  summer MJJA  v1 MAE 1.07 bias +0.56         ->  v2 MAE 0.79 bias +0.29
+  winter NDJF  v1 MAE 0.65 bias +0.40         ->  v2 MAE 0.67 bias +0.53   (slightly worse)
+  hazy n=11 (4-fold CV by day) v1 MAE 4.49 bias -4.49 -> v2 MAE 1.73 bias -1.23
+Default is now nw3_sunny_lr_v2; set NW3_SUN_MODEL=nw3_sunny_lr_v1 to roll back. Cache entries are keyed by model
+version, so frames are re-scored after the switch.
