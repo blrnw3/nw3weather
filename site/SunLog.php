@@ -2,7 +2,7 @@
 /**
  * Webcam sunshine (sun_model/classify.py output) for the live site.
  *
- *   sunlog/YYYYMMDD.csv : one row per daylight minute, UK local: hhmm,value,p,ps,w,flags (value 1 / 0 / blank)
+ *   sunlog/YYYYMMDD.csv : one row per daylight minute, UK local: hhmm,value,p,ps,w,flags,pw (value 1 / 0 / blank; pw = possible-sun weight)
  *   sunlog/latest.json  : today's running total written by the classifier every few minutes
  *
  * PHP 5.4 compatible (prod is 5.4.16): no ??, no scalar type hints.
@@ -11,6 +11,8 @@ class SunLog {
 	const MAX_AGE_S = 1200;      // "sunny now" only if the newest classified minute is <= 20 min old
 	const FULL_COV = 0.9;
 	const MIN_COV = 0.5;
+	const EDGE_UNKNOWN_MIN = 60.0;   // possible-sun minutes: longer start/end-of-day gaps stay unknown
+	const LOCAL_WIN_MIN = 90;        // minutes either side of an interior gap used for its sunny fraction
 
 	public static function dir() {
 		return defined('NW3_SUNLOG_DIR') ? NW3_SUNLOG_DIR : ROOT . 'sunlog/';
@@ -45,6 +47,7 @@ class SunLog {
 				't' => mktime((int)substr($c[0], 0, 2), (int)substr($c[0], 2, 2), 0, $m, $d, $y),
 				'v' => ($c[1] === '') ? null : (int)$c[1],
 				'w' => (float)$c[4],
+				'pw' => (count($c) >= 7 && $c[6] !== '') ? (float)$c[6] : (float)$c[4],   // pre-v4 logs: pw = w
 				'flags' => $c[5],
 			);
 		}
@@ -59,26 +62,66 @@ class SunLog {
 	}
 
 	/**
-	 * Daily total with the coverage rule (>= 90% as is, 50-90% scaled, < 50% none).
-	 * $untilUnix limits to minutes already elapsed (today). Returns null or array(hours, coverage, scaled).
+	 * Daily total with the partial-day rule (mirrors sun_model/rules.py partial_total; see NW3_NOTES.md):
+	 * weights are possible-sun minutes (pw: daylight weight while the sun is above the local horizon cutoff);
+	 * coverage = classified pw / total pw. >= 90%: measured as is. < 50%: null. Between: interior gaps (and edge gaps
+	 * shorter than EDGE_UNKNOWN_MIN) take the sunny fraction of classified minutes within LOCAL_WIN_MIN either side;
+	 * a longer missing block at the start or end of the day is not extrapolated (unknown_h, partial = true, so the
+	 * total is a lower bound). $untilUnix limits to minutes already elapsed (today).
+	 * Returns null or array(hours, measured, filled, unknown, possible, coverage, scaled, partial).
 	 */
 	public static function dayTotal($ymd, $untilUnix = null) {
-		$daylight = $classified = $sun = 0.0;
+		$rows = array();
 		foreach (self::minutes($ymd) as $r) {
 			if ($untilUnix !== null && $r['t'] >= $untilUnix) { continue; }
-			$daylight += $r['w'];
-			if ($r['v'] !== null) {
-				$classified += $r['w'];
-				if ($r['v'] === 1) { $sun += $r['w']; }
+			$rows[] = $r;
+		}
+		return self::partialTotal($rows);
+	}
+
+	/** $rows: time-ordered array(w, pw, v). Pure function, unit-testable. */
+	public static function partialTotal($rows) {
+		$n = count($rows);
+		if (!$n) { return null; }
+		$possible = 0.0;
+		foreach ($rows as $r) { $possible += $r['pw']; }
+		if ($possible <= 0) {
+			foreach ($rows as $k => $r) { $rows[$k]['pw'] = $r['w']; $possible += $r['w']; }
+		}
+		if ($possible <= 0) { return null; }
+		$cls = $sun = 0.0;
+		foreach ($rows as $r) {
+			if ($r['v'] !== null) { $cls += $r['pw']; }
+			if ($r['v'] === 1) { $sun += $r['w']; }
+		}
+		$cov = $cls / $possible;
+		if ($cov < self::MIN_COV) { return null; }
+		$fill = $unknown = 0.0;
+		if ($cov < self::FULL_COV) {
+			$dayFrac = $cls > 0 ? $sun / $cls : 0.0;
+			$i = 0;
+			while ($i < $n) {
+				if ($rows[$i]['v'] !== null) { $i++; continue; }
+				$j = $i; $gap = 0.0;
+				while ($j < $n && $rows[$j]['v'] === null) { $gap += $rows[$j]['pw']; $j++; }
+				if (($i === 0 || $j === $n) && $gap >= self::EDGE_UNKNOWN_MIN) {
+					$unknown += $gap;
+				} elseif ($gap > 0) {
+					$c = $s = 0.0;
+					for ($k = max(0, $i - self::LOCAL_WIN_MIN); $k < min($n, $j + self::LOCAL_WIN_MIN); $k++) {
+						if (($k >= $i && $k < $j) || $rows[$k]['v'] === null) { continue; }
+						$c += $rows[$k]['pw'];
+						if ($rows[$k]['v'] === 1) { $s += $rows[$k]['w']; }
+					}
+					$frac = $c > 0 ? $s / $c : $dayFrac;
+					$fill += $gap * min(1.0, $frac);
+				}
+				$i = $j;
 			}
 		}
-		if ($daylight <= 0) { return null; }
-		$cov = $classified / $daylight;
-		if ($cov < self::MIN_COV) { return null; }
-		$hrs = $sun / 60;
-		$scaled = $cov < self::FULL_COV;
-		if ($scaled) { $hrs = $hrs / $cov; }
-		return array('hours' => round($hrs, 2), 'coverage' => round($cov, 3), 'scaled' => $scaled);
+		return array('hours' => round(($sun + $fill) / 60, 2), 'measured' => round($sun / 60, 2),
+			'filled' => round($fill / 60, 2), 'unknown' => round($unknown / 60, 2), 'possible' => round($possible / 60, 2),
+			'coverage' => round($cov, 3), 'scaled' => $fill > 0, 'partial' => $unknown > 0);
 	}
 
 	/** Spells for the ribbon: list of array(start, end (unix, exclusive), state sun|nosun|unknown). */
@@ -138,6 +181,8 @@ class SunLog {
 			'hours' => $hrs,
 			'coverage' => $tot ? $tot['coverage'] : null,
 			'scaled' => $tot ? $tot['scaled'] : false,
+			'partial' => $tot ? $tot['partial'] : false,
+			'unknown_h' => $tot ? $tot['unknown'] : null,
 			'pct_of_max' => ($hrs !== null && $max) ? (int)round(100 * min($hrs, $max) / $max) : null,
 			'sunmax' => $max,
 			'state' => $state,
@@ -162,7 +207,8 @@ function nw3_render_sun_card($now = null) {
 	echo '<span class="sun-badge sun-' . $state . '">' . $labels[$state] . '</span></div>';
 	echo '<div class="wx-card-rows">';
 	echo '<div><span class="k">Today so far</span><span class="v"><b>' . ($s['hours'] === null ? '-' : number_format($s['hours'], 1) . ' hrs') . '</b>'
-		. ($s['scaled'] ? ' <span title="Some webcam minutes missing; scaled up">*</span>' : '') . '</span></div>';
+		. ($s['partial'] ? ' <span title="Webcam data missing for part of the day (' . number_format($s['unknown_h'], 1) . ' hrs possible sun unknown); at least this much">+</span>'
+			: ($s['scaled'] ? ' <span title="Some webcam minutes missing; short gaps estimated from neighbouring minutes">*</span>' : '')) . '</span></div>';
 	echo '<div><span class="k">Of possible</span><span class="v">' . ($s['pct_of_max'] === null ? '-' : $s['pct_of_max'] . '%')
 		. ($s['sunmax'] ? ' <span class="sun-max">of ' . number_format($s['sunmax'], 1) . ' hrs</span>' : '') . '</span></div>';
 	echo '</div>';

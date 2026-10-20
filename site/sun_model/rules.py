@@ -233,3 +233,58 @@ def summary(grid: List[Minute]) -> dict:
     sun = sum(m.w for m in grid if m.value == 1)
     return dict(daylight_min=round(daylight, 2), sun_min=round(sun, 2), classified_min=round(classified, 2),
                 coverage=round(classified / daylight, 4) if daylight else 0.0)
+
+
+# Daily total from a partly covered day (2026-10-16 rule, mirrored in SunLog::dayTotal). See NW3_NOTES.md.
+#  - Weights are *possible-sun* minutes pw (daylight weight w when the sun is above the local horizon cutoff, else 0),
+#    so missing minutes at dawn/dusk or with the sun behind the houses cost nothing.
+#  - coverage = classified pw / total pw.  >= full_cov: measured as-is.  < min_cov: no total.
+#  - Between: interior gaps (and edge gaps shorter than EDGE_UNKNOWN_MIN possible-minutes) are filled with the sunny
+#    fraction of the classified minutes within LOCAL_WIN_MIN either side of the gap (whole-day fraction if none);
+#    a longer contiguous missing block at the start or end of the day is NOT extrapolated: it stays unknown and is
+#    reported as unknown_h, with partial=True (total is then a lower bound).
+EDGE_UNKNOWN_MIN = 60.0
+LOCAL_WIN_MIN = 90
+
+
+def partial_total(rows, full_cov=0.9, min_cov=0.5):
+    """rows: time-ordered (w, pw, value) per minute. Returns a dict with sun_h (None if < min_cov), measured_h,
+    filled_h, unknown_h, possible_h, coverage, scaled, partial."""
+    rows = list(rows)
+    possible = sum(r[1] for r in rows)
+    if possible <= 0:                                   # sun never above the cutoff: fall back to daylight weight
+        rows = [(w, w, v) for w, _, v in rows]
+        possible = sum(r[1] for r in rows)
+    cls = sum(r[1] for r in rows if r[2] is not None)
+    sun = sum(r[0] for r in rows if r[2] == 1)
+    out = dict(measured_h=round(sun / 60.0, 2), filled_h=0.0, unknown_h=0.0, possible_h=round(possible / 60.0, 2),
+               coverage=round(cls / possible, 4) if possible else 0.0, scaled=False, partial=False, sun_h=None)
+    if possible <= 0 or cls / possible < min_cov:
+        return out
+    if cls / possible >= full_cov:
+        out["sun_h"] = out["measured_h"]
+        return out
+    day_frac = sun / cls if cls else 0.0
+    n = len(rows)
+    fill = unknown = 0.0
+    i = 0
+    while i < n:
+        if rows[i][2] is not None:
+            i += 1
+            continue
+        j = i
+        while j < n and rows[j][2] is None:
+            j += 1
+        gap_pw = sum(r[1] for r in rows[i:j])
+        edge = i == 0 or j == n
+        if edge and gap_pw >= EDGE_UNKNOWN_MIN:
+            unknown += gap_pw
+        elif gap_pw > 0:
+            win = [r for r in rows[max(0, i - LOCAL_WIN_MIN):i] + rows[j:j + LOCAL_WIN_MIN] if r[2] is not None]
+            c = sum(r[1] for r in win)
+            frac = (sum(r[0] for r in win if r[2] == 1) / c) if c > 0 else day_frac
+            fill += gap_pw * min(1.0, frac)
+        i = j
+    out.update(filled_h=round(fill / 60.0, 2), unknown_h=round(unknown / 60.0, 2), scaled=fill > 0, partial=unknown > 0,
+               sun_h=round((sun + fill) / 60.0, 2))
+    return out

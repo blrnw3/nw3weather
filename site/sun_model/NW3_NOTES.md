@@ -85,3 +85,24 @@ Validation (349 clean days, full model; 28 newly labelled days by 4-fold day CV 
 hours up (v4 measures 8.6 h to 17:15, scaled 11.3; v3 7.4 -> 9.7). A perfect classifier would also read ~10 h; the
 fix there is the missing evening frames / scaling rule, not the model. Weak spot: Feb (+0.54 h/day bias, n=26).
 Roll back with NW3_SUN_MODEL=nw3_sunny_lr_v3.
+
+## Partial-day rule (2026-10-16; rules.partial_total, mirrored in SunLog::partialTotal)
+Old rule: hours / daylight-coverage when coverage was 50-90%, which inflated days whose archive stops early
+(2022-06-11 frames end 17:15 -> 8.6 h measured scaled to 11.3 h; datm 8.0).
+New rule:
+- Weights are possible-sun minutes pw = daylight weight while the sun is above the local horizon cutoff (2 deg south
+  az 110-250, 7 deg elsewhere), else 0. Coverage = classified pw / total pw, so gaps at dawn/dusk or with the sun
+  behind the houses don't count. sunlog CSV gains a 7th column pw (old 6-column logs: pw = w).
+- >= 90%: measured as-is. < 50%: no total (unchanged thresholds).
+- 50-90%: interior gaps, and edge gaps under 60 possible-minutes, are filled with the sunny fraction of the classified
+  minutes within 90 min either side of the gap (whole-day fraction if none) -> scaled=true.
+  A contiguous missing block of >= 60 possible-minutes at the start or end of the day is not extrapolated: it is
+  reported as unknown_h with partial=true and the total (= measured + interior fills) is a lower bound.
+- rollup()/latest.json and SunLog::live() expose measured_h/measured, filled, unknown, possible, coverage
+  (daylight_coverage kept), scaled, partial. Homepage card shows "+" (at least) for partial, "*" for scaled.
+- cron_main (NW3_SUN_AUTO_DATM) does not auto-write datm for partial days; they are left for hand entry.
+Effect (v4, 541 eval days): 11 totals change. 2022-06-11 11.30 -> 8.63 (+2.9 h unknown), 2022-06-16 14.26 -> 7.65
+(+6.7 unknown), 2024-05-20 14.37 -> 9.12 (+4.8 unknown), 2022-06-15 14.87 -> 8.65 (+5.9 unknown), 2026-06-25
+14.65 -> 7.55 (+7.0 unknown). Clean 349 days: MAE 0.53 +0.05 -> 0.54 +0.03 (n 348; one all-dull day drops under 50%).
+Partial days are now lower bounds, so their error vs datm is negative by design (16 days: old MAE 0.77 bias +0.57,
+new lower-bound MAE 1.34 bias -1.19); none is over-stated any more. Parity test: scripts/sun_research/partial.

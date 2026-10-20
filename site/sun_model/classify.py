@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.dirname(HERE))
 from sun_model.features import add_interactions, feats, load_small, veg_feats                      # noqa: E402
 from sun_model.localtime import local_day_bounds_utc, local_to_utc, utc_to_local   # noqa: E402
 from sun_model.model import LrModel                                    # noqa: E402
-from sun_model.rules import GLITCH_PINK, Frame, classify_day, summary  # noqa: E402
+from sun_model.rules import GLITCH_PINK, Frame, classify_day, partial_total, summary # noqa: E402
 from sun_model.solar import solar_pos, sun_times_utc                              # noqa: E402
 
 FRAMES_DIR = "/mnt/webcam/html/camchive/hik"
@@ -110,26 +110,28 @@ def to_frames(cache, decision_t=DECISION_T):
     return out
 
 
+def possible_w(m):
+    """Possible-sun weight of a minute: its daylight weight while the sun is above the local horizon cutoff."""
+    return m.w if m.el >= horizon(m.az) else 0.0
+
+
 def rollup(grid, now_utc):
     g = [m for m in grid if now_utc is None or m.t < now_utc]
     s = summary(g)
-    cov = s["coverage"]
-    hrs = s["sun_min"] / 60.0
-    if s["daylight_min"] <= 0 or cov < MIN_COV:
-        return dict(s, sun_h=None, scaled=False)
-    scaled = cov < FULL_COV
-    return dict(s, sun_h=round(hrs / cov if scaled else hrs, 2), scaled=scaled)
+    s["daylight_coverage"] = s.pop("coverage")
+    s.update(partial_total([(m.w, possible_w(m), m.value) for m in g], FULL_COV, MIN_COV))
+    return s
 
 
 def write_log(path, grid):
     tmp = path + ".tmp"
     with open(tmp, "w") as fh:
-        fh.write("hhmm,value,p,ps,w,flags\n")
+        fh.write("hhmm,value,p,ps,w,flags,pw\n")
         for m in grid:
             lt = utc_to_local(m.t)
-            fh.write("%s,%s,%s,%s,%.3f,%s\n" % (lt.strftime("%H%M"), "" if m.value is None else m.value,
+            fh.write("%s,%s,%s,%s,%.3f,%s,%.3f\n" % (lt.strftime("%H%M"), "" if m.value is None else m.value,
                                                 "" if m.p is None else "%.3f" % m.p, "" if m.ps is None else "%.3f" % m.ps,
-                                                m.w, "|".join(sorted(m.flags))))
+                                                m.w, "|".join(sorted(m.flags)), possible_w(m)))
     os.rename(tmp, path)
 
 

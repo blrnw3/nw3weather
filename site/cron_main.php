@@ -127,7 +127,8 @@ if($tstamp == $datmCheckTime) {
 	// (DatmWriter::write refuses if the row already exists), so hand-reviewed history is never overwritten.
 	if(defined('NW3_SUN_AUTO_DATM') && NW3_SUN_AUTO_DATM) {
 		$sunYest = SunLog::dayTotal(date('Ymd', Date::$dtstamp_yest));
-		if($sunYest !== null) {
+		// partial days (a long start/end block of missing webcam data) are a lower bound: leave datm for hand entry
+		if($sunYest !== null && !$sunYest['partial']) {
 			DatmWriter::write(strval(round($sunYest['hours'], 1)));
 		}
 	}
