@@ -35,6 +35,8 @@ class ViewDetailedData {
 	private $datMMCurr; // current (incomplete) month summary, same shape as one month of datMM
 	private $datSS;
 	private $datSSanom;
+	// Current season to date (from curr_season), for the latest-data cards
+	private $datSScurr;
 	private $ranks;
 	private $datToday;
 	private $datYest;
@@ -826,6 +828,16 @@ class ViewDetailedData {
 			$this->datSS['sdays'] = [];
 			$this->datSSanom['sdays'] = [];
 		}
+		// datSS holds the four most recently COMPLETED seasons (past-year table).
+		// The current, in-progress season comes from curr_season instead.
+		$this->datSScurr = ['val' => null, 'anom' => null];
+		$cps = isset($this->meanSum['period_summaries']['curr_season'])
+			? $this->meanSum['period_summaries']['curr_season'] : null;
+		if ($cps !== null) {
+			$aggKey = $this->isSummableVar($this->varMean) ? 'sum' : 'mean';
+			$this->datSScurr['val'] = $this->sval($cps, $aggKey);
+			$this->datSScurr['anom'] = $this->getAnom ? $this->periodAnom($cps) : null;
+		}
 		foreach ($statSums as $stat => $sum) {
 			$ss = $sum['season_summaries'];
 			$varForStat = ($stat === 'min') ? $this->varMin
@@ -1351,8 +1363,8 @@ class ViewDetailedData {
 				// Dry days are often untagged for wet hours — treat as 0 when rain was 0.
 				$yestWet = (is_numeric($yestRain) && (float)$yestRain == 0.0) ? 0 : null;
 			}
-			$seasTot = isset($this->datSS['mean'][$seasIdx]) ? $this->datSS['mean'][$seasIdx] : null;
-			$seasAnom = isset($this->datSSanom['mean'][$seasIdx]) ? $this->datSSanom['mean'][$seasIdx] : null;
+			$seasTot = $this->datSScurr['val'];
+			$seasAnom = $this->datSScurr['anom'];
 			$monthTot = isset($this->dat['mean'][2]['curr_month']) ? $this->dat['mean'][2]['curr_month'] : null;
 			$monthAnom = isset($this->dat['mean'][2]['curr_monthanom']) ? $this->dat['mean'][2]['curr_monthanom'] : null;
 			$yearTot = isset($this->dat['mean'][2]['curr_year']) ? $this->dat['mean'][2]['curr_year'] : null;
@@ -1400,8 +1412,8 @@ class ViewDetailedData {
 			$seasName = isset(Date::$snames[$seasIdx]) ? Date::$snames[$seasIdx] : 'Season';
 			$yestSun = isset($this->datYest[0]['mean']) ? $this->datYest[0]['mean'] : null;
 			$yestPct = Data::get('sunhrp', Date::$yr_yest, Date::$mon_yest, Date::$day_yest);
-			$seasTot = isset($this->datSS['mean'][$seasIdx]) ? $this->datSS['mean'][$seasIdx] : null;
-			$seasAnom = isset($this->datSSanom['mean'][$seasIdx]) ? $this->datSSanom['mean'][$seasIdx] : null;
+			$seasTot = $this->datSScurr['val'];
+			$seasAnom = $this->datSScurr['anom'];
 			$monthTot = isset($this->dat['mean'][2]['curr_month']) ? $this->dat['mean'][2]['curr_month'] : null;
 			$monthAnom = isset($this->dat['mean'][2]['curr_monthanom']) ? $this->dat['mean'][2]['curr_monthanom'] : null;
 			$yearTot = isset($this->dat['mean'][2]['curr_year']) ? $this->dat['mean'][2]['curr_year'] : null;
@@ -2008,7 +2020,8 @@ class ViewDetailedData {
 			$nwint = ($i + 1 < Date::$season || Date::$dmonth == 12) ? Date::$dyear : Date::$dyear - 1;
 			$wint = (Date::$dmonth > 2) ? $dfo1 . '/' . $dfo2 : $dfo3 . '/' . $dfo1;
 			$yr3 = array($wint, $nwint, $nwint, $nwint);
-			$hlite = ($i + 1 == Date::$season - 1) ? 'border-bottom:3px solid #8181F7' : '';
+			// Most recently completed season (Autumn while in Winter)
+			$hlite = ($i == ((int)Date::$season + 2) % 4) ? 'border-bottom:3px solid #8181F7' : '';
 
 			Html::tr(Html::colcol($i));
 			Html::td($this->dateToken(Date::$snames[$i] . ' ' . $yr3[$i]), $this->cssClass . '" style="' . $hlite);

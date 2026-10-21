@@ -268,6 +268,22 @@ class Date {
 		for($s2 = 0; $s2 < 3; $s2++) { $days += self::get_days_in_month(self::$snums[$sea][$s2]+1,$year); }
 		return $days;
 	}
+	/**
+	 * Midnight on the first day of the current meteorological season
+	 * (Dec 1 of the previous year during Jan/Feb). mktime normalises month 0 to Dec.
+	 * @return int timestamp
+	 */
+	public static function seasonStart() {
+		$m = (int)self::$dmonth;
+		return mktime(0, 0, 0, $m - ($m % 3), 1, (int)self::$dyear);
+	}
+	/** Days elapsed in the current season, including today (1 on the season's first day). */
+	public static function seasonDaysElapsed() {
+		$start = self::seasonStart();
+		$noonToday = mktime(12, 0, 0, (int)self::$dmonth, (int)self::$dday, (int)self::$dyear);
+		$noonStart = mktime(12, 0, 0, (int)date('n', $start), 1, (int)date('Y', $start));
+		return (int)round(($noonToday - $noonStart) / 86400) + 1;
+	}
 	public static function get_days_in_year($year) {
 		return date("z", Date::mkdate(12,31,$year)) + 1;
 	}
