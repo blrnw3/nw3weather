@@ -291,7 +291,7 @@ $moonName = isset($moonphasename) ? trim($moonphasename) : 'Moon phase';
 		</a>
 	</div>
 </div>
-<script src="https://code.highcharts.com/highcharts.js"></script>
+<?php Charts::assets(); /* Highcharts for the home chart; also used by the 31-day charts below, so load it via the once-only helper */ ?>
 <?php include 'charts-home.php'; ?>
 
 <h2>31-day trends</h2>
