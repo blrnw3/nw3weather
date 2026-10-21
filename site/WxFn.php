@@ -158,6 +158,7 @@ class DataSummarizer {
 	public $currentMonthAll; // current month, all years
 	public $currentDateAll; // current month-day, all years
 	public $currentYear;
+	public $currentSeason; // season to date (Dec 1 / Mar 1 / Jun 1 / Sep 1 .. today)
 	public $pastNDays = [];
 
 	// Monthly/yearly summaries for different periods
@@ -222,6 +223,12 @@ class DataSummarizer {
 
 		$this->currentYear = Util::array_filter_keys($this->vals, function($key) {
 			return substr($key, 0, 4) === Date::$dyear;
+		});
+
+		$seasonFrom = date('Y-m-d', Date::seasonStart());
+		$seasonTo = date('Y-m-d', Date::mkdate(Date::$dmonth, Date::$dday, Date::$dyear));
+		$this->currentSeason = Util::array_filter_keys($this->vals, function($key) use ($seasonFrom, $seasonTo) {
+			return $key >= $seasonFrom && $key <= $seasonTo;
 		});
 
 		foreach (self::$periods as $period) {
@@ -558,7 +565,7 @@ class DataSummarizer {
 		$sps = $station['period_summaries'];
 
 		$recentKeys = array(
-			'today', 'yest', 'curr_month', 'curr_year',
+			'today', 'yest', 'curr_month', 'curr_year', 'curr_season',
 			'latest_7d', 'latest_31d', 'latest_365d',
 		);
 		foreach ($recentKeys as $k) {
@@ -1123,6 +1130,11 @@ class DataSummarizer {
 		$doy = (int)date('z', Date::mkdate(Date::$dmonth, Date::$dday, Date::$dyear)) + 1;
 		$this->addAnomalies($currYear, LTA::getRecentPeriodMeanAnom($this->varName, $doy));
 
+		// Season to date vs the sum (or mean) of daily normals over the same days,
+		// matching curr_month / curr_year — not the full-season normal.
+		$currSeason = $this->getBaseSummary($this->currentSeason);
+		$this->addAnomalies($currSeason, LTA::getRecentPeriodMeanAnom($this->varName, Date::seasonDaysElapsed()));
+
 		$alltime = $this->getBaseSummary($this->vals);
 		$this->addAnomalies($alltime, LTA::getYearlyAnom($this->varName));
 
@@ -1143,6 +1155,7 @@ class DataSummarizer {
 			],
 			'curr_month' => $currMonth,
 			'curr_year' => $currYear,
+			'curr_season' => $currSeason,
 			'alltime' => $alltime,
 			'all_this_month' => $allThisMonth,
 			'all_this_date' => $allThisDate,
