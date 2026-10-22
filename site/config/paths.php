@@ -63,3 +63,13 @@ function nw3_atomic_write($path, $contents) {
 	@chmod($path, 0664);
 	return strlen($contents);
 }
+
+// Webcam sunshine (sun_model). Per-minute logfiles + latest.json written by scripts/run_sun_classify.sh.
+if(!defined('NW3_SUNLOG_DIR')) {
+	define('NW3_SUNLOG_DIR', ROOT . 'sunlog/');
+}
+// Off by default: when true, the 06:03 datm check appends yesterday's sunhr from the webcam log
+// (only if the row is not already written; existing / hand-reviewed rows are never changed).
+if(!defined('NW3_SUN_AUTO_DATM')) {
+	define('NW3_SUN_AUTO_DATM', false);
+}

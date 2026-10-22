@@ -47,10 +47,12 @@ $out = [
 		'rain' => Wx::getUnitsText(Wx::Rain),
 		'wdir' => '',
 		'pm25' => Wx::getUnitsText(Wx::Pm25),
+		'sun'  => '',
 	],
 	'time' => [], 'temp' => [], 'dewp' => [], 'humi' => [], 'pres' => [],
-	'wind' => [], 'gust' => [], 'wdir' => [], 'rain' => [], 'pm25' => [],
+	'wind' => [], 'gust' => [], 'wdir' => [], 'rain' => [], 'pm25' => [], 'sun' => [],
 ];
+$sunMaps = []; // Ymd => (unix minute => 1|0|null) from the webcam sunshine log
 
 // Gather the per-minute lines across the requested day span (oldest first).
 // Match legacy graphdaygen.php: single-day plots use logfiles/daily/{Ymd}log.txt.
@@ -160,6 +162,9 @@ for ($i = 0; $i < $total; $i++) {
 	$out['wind'][] = Wx::convNum($windOut, Wx::Wind, 1);
 	$out['gust'][] = Wx::convNum($c[4], Wx::Wind, 1);
 	$out['wdir'][] = ($dirOut < 0) ? null : round($dirOut);
+	$sunDay = date('Ymd', $ts);
+	if (!isset($sunMaps[$sunDay])) { $sunMaps[$sunDay] = SunLog::minuteMap($sunDay); }
+	$out['sun'][] = isset($sunMaps[$sunDay][$ts]) ? $sunMaps[$sunDay][$ts] : null;
 	$out['pm25'][] = (isset($c[11]) && $c[11] !== '') ? Wx::convNum($c[11], Wx::Pm25, Wx::precision(Wx::Pm25)) : null;
 }
 
@@ -171,7 +176,7 @@ if ($n > 1) {
 		if ($out['time'][$a] == $out['time'][$b]) { return ($a < $b) ? -1 : 1; }
 		return ($out['time'][$a] < $out['time'][$b]) ? -1 : 1;
 	});
-	$keys = ['time', 'temp', 'dewp', 'humi', 'pres', 'wind', 'gust', 'wdir', 'rain', 'pm25'];
+	$keys = ['time', 'temp', 'dewp', 'humi', 'pres', 'wind', 'gust', 'wdir', 'rain', 'pm25', 'sun'];
 	$sorted = [];
 	foreach ($keys as $k) { $sorted[$k] = []; }
 	$lastT = null;
@@ -194,7 +199,7 @@ $out['updated'] = $n ? (int)($out['time'][$n - 1] / 1000) : null;
 $maxpts = isset($_GET['maxpts']) ? max(0, (int)$_GET['maxpts']) : 0;
 if ($maxpts > 0 && $n > $maxpts) {
 	$step = (int)ceil($n / $maxpts);
-	$keys = ['time', 'temp', 'dewp', 'humi', 'pres', 'wind', 'gust', 'wdir', 'rain', 'pm25'];
+	$keys = ['time', 'temp', 'dewp', 'humi', 'pres', 'wind', 'gust', 'wdir', 'rain', 'pm25', 'sun'];
 	foreach ($keys as $k) {
 		$src = $out[$k];
 		$dst = [];

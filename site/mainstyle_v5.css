@@ -3124,3 +3124,18 @@ body.cam-modal-open {
 		display: none;
 	}
 }
+
+/* Webcam sunshine card */
+.wx-card-sunshine .wx-card-head { display: flex; align-items: center; justify-content: space-between; gap: .5em; }
+.sun-badge { font-size: .8em; padding: .15em .6em; border-radius: 1em; background: #e2e8f0; color: #333; white-space: nowrap; }
+.sun-badge.sun-sun { background: #f6c445; color: #3a2a00; font-weight: bold; }
+.sun-badge.sun-nosun { background: #9aa3ad; color: #fff; }
+.sun-badge.sun-night { background: #2d3748; color: #e2e8f0; }
+.sun-max { color: #777; font-size: .9em; }
+.sun-ribbon { display: flex; height: 14px; margin: .6em 0 .15em; border-radius: 3px; overflow: hidden; background: #edf2f7; }
+.sun-ribbon .seg { display: block; height: 100%; }
+.sun-ribbon .seg-sun { background: #f6c445; }
+.sun-ribbon .seg-nosun { background: #9aa3ad; }
+.sun-ribbon .seg-unknown { background: repeating-linear-gradient(45deg, #e2e8f0, #e2e8f0 4px, #cbd5e0 4px, #cbd5e0 8px); }
+.sun-ribbon .seg-future { background: #edf2f7; }
+.sun-ribbon-axis { display: flex; justify-content: space-between; font-size: .75em; color: #777; }

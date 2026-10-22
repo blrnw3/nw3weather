@@ -39,6 +39,7 @@ $ret = array(
 		'wind_direction' => Wx::degname(Live::$wdir),
 		'rain_today' => (float)Live::$rain,
 	),
+	'sun' => isset($NOW['sun']) ? $NOW['sun'] : SunLog::live(),
 	'today' => $NOW,
 	'24hr' => $HR24,
 );
