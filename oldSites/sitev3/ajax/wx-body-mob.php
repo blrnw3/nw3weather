@@ -39,9 +39,9 @@ $ajax = true;
 <td><?php echo sprintf('%.1f',$NOW['max']['dewp']), ' &deg;C at ', $NOW['timeMax']['dewp'], '<br/>', sprintf('%.1f',$NOW['min']['dewp']), ' &deg;C at ', $NOW['timeMin']['dewp']; ?></td>
 </tr><tr>
 <td><b>Pressure</b></td>
-<td><b><?php echo round($pres,0); ?> hPa</b> (<?php echo sprintf('%+.0f',$NOW['changeHr']['pres']); ?> /hr)</td>
-<td><?php echo round($NOW['max']['pres'],0); ?> hPa at <?php echo $NOW['timeMax']['pres']; ?><br/>
-<?php echo round($NOW['min']['pres'],0); ?> hPa at <?php echo $NOW['timeMin']['pres']; ?></td>
+<td><b><?php echo nw3_round($pres,0); ?> hPa</b> (<?php echo sprintf('%+.0f',$NOW['changeHr']['pres']); ?> /hr)</td>
+<td><?php echo nw3_round($NOW['max']['pres'],0); ?> hPa at <?php echo $NOW['timeMax']['pres']; ?><br/>
+<?php echo nw3_round($NOW['min']['pres'],0); ?> hPa at <?php echo $NOW['timeMin']['pres']; ?></td>
 </tr><tr>
 <td><b>Wind</b></td>
 <td><b><?php echo sprintf('%.1f',$wind), ' mph ',degname($wdir), ' </b><br />(Gusting ', sprintf('%.1f',$gustRaw), ' mph)'; ?></td>

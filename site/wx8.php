@@ -158,7 +158,7 @@ class Traffic {
 			if($yr > 2012) {
 				$last = $this->annual[$yr - 1]['sum'];
 				$diff = $data['sum'] - $last;
-				$this->annual[$yr]['yoy'] = (($diff > 0) ? "+ " : "") . round($diff/ $last * 100) ."%";
+				$this->annual[$yr]['yoy'] = (($diff > 0) ? "+ " : "") . nw3_round($diff/ $last * 100) ."%";
 			} else {
 				$this->annual[$yr]['yoy'] = "";
 			}
@@ -405,7 +405,7 @@ $traffic->prepare_annual_data_table();
 		<tfoot> <!-- Yes, it is meant to go here! -->
 			<tr>
 				<td>Total</td>
-				<td><?php echo number_format($traffic->annual_summary['sum']) ?></td>
+				<td><?php echo nw3_number_format($traffic->annual_summary['sum']) ?></td>
 				<td><?php echo $traffic->annual_summary['yoy'] ?></td>
 				<td><?php echo $traffic->annual_summary['mean'] ?></td>
 				<td class="hide-small"><?php echo $traffic->annual_summary['median'] ?></td>
@@ -417,7 +417,7 @@ $traffic->prepare_annual_data_table();
 			<?php foreach ($traffic->annual as $year => $data): ?>
 			<tr>
 				<td><?php echo $year ?></td>
-				<td><?php echo number_format($data['sum']); if($year == Date::$dyear) { echo "+ (to ${data['TO']})"; } ?></td>
+				<td><?php echo nw3_number_format($data['sum']); if($year == Date::$dyear) { echo "+ (to ${data['TO']})"; } ?></td>
 				<td><?php echo $data['yoy'] ?></td>
 				<td><?php echo $data['mean'] ?></td>
 				<td class="hide-small"><?php echo $data['median'] ?></td>

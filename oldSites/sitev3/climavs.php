@@ -49,8 +49,8 @@ for($v = 0; $v < count($vars); $v++) {
 		}
 	}
 	//Annual
-	$annualsum[$v] = array_sum($vars[$v]);
-	$annualav[$v] = round(mean($vars[$v]),1);
+	$annualsum[$v] = nw3_array_sum($vars[$v]);
+	$annualav[$v] = nw3_round(mean($vars[$v]),1);
 	$annualrange[$v] = max($vars[$v]) - min($vars[$v]);
 }
 $vars_to_climav_annual = [
@@ -114,8 +114,8 @@ class Climate {
 		$this->monthlyData = $data;
 
 		for($v = 0; $v < count($data); $v++) {
-			$this->annualSums[$v] = array_sum($data[$v]);
-			$this->annualAvs[$v] = round(mean($data[$v]),1);
+			$this->annualSums[$v] = nw3_array_sum($data[$v]);
+			$this->annualAvs[$v] = nw3_round(mean($data[$v]),1);
 		}
 	}
 }

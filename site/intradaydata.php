@@ -86,8 +86,8 @@ for ($d = $num - 1; $d >= 0; $d--) {
 // clock hours. ts=12 on a ~24h rolling today-log ⇒ skip the first 12h ⇒ last 12h.
 // Only applied for single-day requests (detailed-page mini charts).
 if ($num === 1 && count($lines) > 0 && ($startHr > 0 || isset($_GET['te']))) {
-	$startIdx = (int)round(60 * $startHr);
-	$endIdx = isset($_GET['te']) ? (int)round(60 * $endHr) : count($lines);
+	$startIdx = (int)nw3_round(60 * $startHr);
+	$endIdx = isset($_GET['te']) ? (int)nw3_round(60 * $endHr) : count($lines);
 	$startIdx = max(0, min($startIdx, count($lines)));
 	$endIdx = max($startIdx, min($endIdx, count($lines)));
 	$lines = array_slice($lines, $startIdx, $endIdx - $startIdx);
@@ -105,8 +105,8 @@ if (!class_exists('IntradayDirMean')) {
 			if ($this->pointer <= $this->size) { return $this->curr; }
 			$freqs = [];
 			for ($i = 0; $i <= 360 / self::BITIFIER; $i++) { $freqs[$i] = 0; }
-			for ($i = 0; $i < $this->size; $i++) { $freqs[(int)round($this->items[$i] / self::BITIFIER)]++; }
-			$pivot = array_search(min($freqs), $freqs) * self::BITIFIER;
+			for ($i = 0; $i < $this->size; $i++) { $freqs[(int)nw3_round($this->items[$i] / self::BITIFIER)]++; }
+			$pivot = nw3_array_search(min($freqs), $freqs) * self::BITIFIER;
 			$sum = 0;
 			for ($i = 0; $i < $this->size; $i++) { $sum += $this->items[$i]; if ($this->items[$i] > $pivot) { $sum -= 360; } }
 			$mean = $sum / $this->size; if ($mean < 0) { $mean += 360; }
@@ -159,7 +159,7 @@ for ($i = 0; $i < $total; $i++) {
 	$out['rain'][] = Wx::convNum($c[10], Wx::Rain, 2);
 	$out['wind'][] = Wx::convNum($windOut, Wx::Wind, 1);
 	$out['gust'][] = Wx::convNum($c[4], Wx::Wind, 1);
-	$out['wdir'][] = ($dirOut < 0) ? null : round($dirOut);
+	$out['wdir'][] = ($dirOut < 0) ? null : nw3_round($dirOut);
 	$out['pm25'][] = (isset($c[11]) && $c[11] !== '') ? Wx::convNum($c[11], Wx::Pm25, Wx::precision(Wx::Pm25)) : null;
 }
 
@@ -204,4 +204,4 @@ if ($maxpts > 0 && $n > $maxpts) {
 	}
 }
 
-echo json_encode($out);
+echo nw3_json_encode($out);

@@ -50,7 +50,7 @@ if (!is_readable($filePath)) {
 				for ($i = 0; $i < $dayCount; $i++) {
 					$oldLine = explode(',', $datmLines[$i]);
 					$newValue = isset($_POST['day-' . $i]) ? $_POST['day-' . $i] : '';
-					if (is_numeric($newValue)) {
+					if (nw3_is_numeric($newValue)) {
 						$oldLine[12] = $newValue;
 					} elseif ($i > 0 && $newValue !== '') {
 						$dateText = date('d M', Date::mkdate(1, $i, $year));
@@ -59,7 +59,7 @@ if (!is_readable($filePath)) {
 					}
 					$lastColumn = count($oldLine) - 1;
 					$oldLine[$lastColumn] = 0;
-					fputcsv($file, $oldLine);
+					nw3_fputcsv($file, $oldLine);
 				}
 				fclose($file);
 				echo '<p>Saved! <a href="/wxdataday.php?vartype=pond">View updated temperatures</a>'

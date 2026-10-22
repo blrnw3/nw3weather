@@ -120,7 +120,7 @@ class Report {
 	 * @param string $kind day|month|year|spells|periods|dataday|datamonth
 	 */
 	public function logRankRuntime($t0, $kind) {
-		$ms = (int)round((microtime(true) - $t0) * 1000);
+		$ms = (int)nw3_round((microtime(true) - $t0) * 1000);
 		Page::timeMetric('render', $ms, $kind);
 		$ip = filter_var(Page::$ip, FILTER_VALIDATE_IP);
 		$userAgent = preg_replace('/\s+/', '_', trim((string)Page::$browser));
@@ -309,7 +309,7 @@ class Report {
 		// Spell / count-threshold selectors share the same preset list.
 		$this->spellThresholds = Wx::thresholdPresets($this->type);
 		$defThresh = Wx::defaultThreshold($this->type, $this->unit);
-		if (isset($_GET['threshold']) && is_numeric($_GET['threshold'])) {
+		if (isset($_GET['threshold']) && nw3_is_numeric($_GET['threshold'])) {
 			$this->spellThreshold = (float)$_GET['threshold'];
 		} else {
 			$this->spellThreshold = $defThresh;
@@ -553,7 +553,7 @@ class Report {
 		// prev / next variable arrows
 		$flat = $this->flatCats();
 		$cnt = count($flat);
-		$idx = array_search($this->type, $flat, true);
+		$idx = nw3_array_search($this->type, $flat, true);
 		if ($idx !== false) {
 			$prev = $flat[Util::mod($idx - 1, $cnt)];
 			$next = $flat[($idx + 1) % $cnt];
@@ -1012,7 +1012,7 @@ class Report {
 			'headingPrefix' => $heading,
 			'fragId' => isset($fragIds[$mode]) ? $fragIds[$mode] : 'dd-fragment',
 		);
-		echo '<script>NW3_reportSel(' . json_encode($cfg) . ');</script>';
+		echo '<script>NW3_reportSel(' . nw3_json_encode($cfg) . ');</script>';
 	}
 
 	private function flatCats() {

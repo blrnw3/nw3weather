@@ -271,7 +271,7 @@ class Spells {
 
 	/** Human label for direction given a variable (unit sits on the threshold). */
 	public static function directionLabel($varName, $direction, $threshold) {
-		$thresh = is_numeric($threshold) ? (float)$threshold : 0;
+		$thresh = nw3_is_numeric($threshold) ? (float)$threshold : 0;
 		$unit = isset(Wx::$daily[$varName]['unit']) ? Wx::$daily[$varName]['unit'] : Wx::None;
 		$threshTxt = Wx::plainText(Wx::conv($thresh, $unit, true));
 		$sym = self::ruleSymbol($varName, $direction, $thresh);

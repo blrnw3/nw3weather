@@ -37,7 +37,7 @@ class Live {
 		$pm25File = V5_CACHE_ROOT . 'pm25_latest.txt';
 		if(file_exists($pm25File)) {
 			$pm25Raw = trim(file_get_contents($pm25File));
-			self::$pm25 = ($pm25Raw !== '' && is_numeric($pm25Raw)) ? (float)$pm25Raw : null;
+			self::$pm25 = ($pm25Raw !== '' && nw3_is_numeric($pm25Raw)) ? (float)$pm25Raw : null;
 		} else {
 			self::$pm25 = null;
 		}
@@ -627,17 +627,17 @@ class DataSummarizer {
 		foreach ($months as $y => $ms) {
 			foreach ($ms as $m => $s) {
 				$dt = $y . '-' . $m . '-01';
-				if (isset($s[$summaryKey]) && is_numeric($s[$summaryKey])) {
+				if (isset($s[$summaryKey]) && nw3_is_numeric($s[$summaryKey])) {
 					$monthMeans[$dt] = $s[$summaryKey];
 				}
-				if (isset($s['count_nonzero']) && is_numeric($s['count_nonzero'])) {
+				if (isset($s['count_nonzero']) && nw3_is_numeric($s['count_nonzero'])) {
 					$monthCounts[$dt] = $s['count_nonzero'];
 				}
 				if ((string)$m === (string)$cm) {
-					if (isset($s[$summaryKey]) && is_numeric($s[$summaryKey])) {
+					if (isset($s[$summaryKey]) && nw3_is_numeric($s[$summaryKey])) {
 						$thisMonthMeans[$dt] = $s[$summaryKey];
 					}
-					if (isset($s['count_nonzero']) && is_numeric($s['count_nonzero'])) {
+					if (isset($s['count_nonzero']) && nw3_is_numeric($s['count_nonzero'])) {
 						$thisMonthCounts[$dt] = $s['count_nonzero'];
 					}
 				}
@@ -649,10 +649,10 @@ class DataSummarizer {
 		$yearCounts = array();
 		foreach ($out['year_summaries'] as $y => $s) {
 			$dt = (string)$y;
-			if (isset($s[$summaryKey]) && is_numeric($s[$summaryKey])) {
+			if (isset($s[$summaryKey]) && nw3_is_numeric($s[$summaryKey])) {
 				$yearMeans[$dt] = $s[$summaryKey];
 			}
-			if (isset($s['count_nonzero']) && is_numeric($s['count_nonzero'])) {
+			if (isset($s['count_nonzero']) && nw3_is_numeric($s['count_nonzero'])) {
 				$yearCounts[$dt] = $s['count_nonzero'];
 			}
 		}
@@ -752,21 +752,21 @@ class DataSummarizer {
 			$summary['count'] += isset($ms['count']) ? (int)$ms['count'] : 0;
 			$summary['count_nonzero'] += isset($ms['count_nonzero']) ? (int)$ms['count_nonzero'] : 0;
 			$summary['count_internal'] += isset($ms['count_internal']) ? (int)$ms['count_internal'] : 0;
-			if (isset($ms['count']) && $ms['count'] > 0 && isset($ms['sum']) && is_numeric($ms['sum'])) {
+			if (isset($ms['count']) && $ms['count'] > 0 && isset($ms['sum']) && nw3_is_numeric($ms['sum'])) {
 				$summary['sum'] = ($summary['sum'] === null) ? $ms['sum'] : ($summary['sum'] + $ms['sum']);
 			}
-			if (isset($ms['min']) && is_numeric($ms['min']) && $ms['min'] < $summary['min']
+			if (isset($ms['min']) && nw3_is_numeric($ms['min']) && $ms['min'] < $summary['min']
 				&& $ms['min'] !== PHP_INT_MAX && $ms['min'] !== -1 * PHP_INT_MAX) {
 				$summary['min'] = $ms['min'];
 				$summary['minDate'] = isset($ms['minDate']) ? $ms['minDate'] : null;
 			}
-			if (isset($ms['max']) && is_numeric($ms['max']) && $ms['max'] > $summary['max']
+			if (isset($ms['max']) && nw3_is_numeric($ms['max']) && $ms['max'] > $summary['max']
 				&& $ms['max'] !== PHP_INT_MAX && $ms['max'] !== -1 * PHP_INT_MAX) {
 				$summary['max'] = $ms['max'];
 				$summary['maxDate'] = isset($ms['maxDate']) ? $ms['maxDate'] : null;
 			}
 		}
-		$summary['mean'] = ($summary['count'] > 0 && is_numeric($summary['sum']))
+		$summary['mean'] = ($summary['count'] > 0 && nw3_is_numeric($summary['sum']))
 			? $summary['sum'] / $summary['count'] : null;
 		return $summary;
 	}
@@ -779,7 +779,7 @@ class DataSummarizer {
 			'count' => $count,
 			'count_nonzero' => Util::cond_count($arr, true, 0),
 			'count_internal' => is_array($arr) ? count($arr) : 0,
-			'sum' => $count > 0 ? array_sum($arr) : null,
+			'sum' => $count > 0 ? nw3_array_sum($arr) : null,
 			'min' => $min,
 			'minDate' => $minDate,
 			'max' => $max,
@@ -791,7 +791,7 @@ class DataSummarizer {
 
 	private static function extractHighLowAssoc($arr, $n) {
 		$arr = Util::numericOnly($arr);
-		asort($arr);
+		nw3_asort($arr); // ties keep input (date) order on every PHP version
 		$bottom = array_slice($arr, 0, $n, true);
 		$top = array_reverse(array_slice($arr, -$n, $n, true), true);
 		$fmt = function ($assoc) {
@@ -807,7 +807,7 @@ class DataSummarizer {
 	private static function attachAnom($varName, &$summary, $norm) {
 		if (empty(Wx::$daily[$varName]['anomaly']) || !is_array($summary)) { return; }
 		$key = !empty(Wx::$daily[$varName]['summable']) ? 'sum' : 'mean';
-		if (is_numeric($norm) && isset($summary[$key]) && is_numeric($summary[$key])) {
+		if (nw3_is_numeric($norm) && isset($summary[$key]) && nw3_is_numeric($summary[$key])) {
 			$summary['anom'] = $summary[$key] - $norm;
 			$summary['anom_pct'] = ($norm != 0) ? $summary['anom'] / $norm * 100 : null;
 		}
@@ -821,14 +821,14 @@ class DataSummarizer {
 		if (!is_array($hist)) { return $station; }
 		if (!is_array($station)) { return $hist; }
 		$out = $hist;
-		if (isset($station['min']) && is_numeric($station['min'])
-			&& (!isset($hist['min']) || !is_numeric($hist['min'])
+		if (isset($station['min']) && nw3_is_numeric($station['min'])
+			&& (!isset($hist['min']) || !nw3_is_numeric($hist['min'])
 				|| $hist['min'] === PHP_INT_MAX || $station['min'] < $hist['min'])) {
 			$out['min'] = $station['min'];
 			$out['minDate'] = isset($station['minDate']) ? $station['minDate'] : null;
 		}
-		if (isset($station['max']) && is_numeric($station['max'])
-			&& (!isset($hist['max']) || !is_numeric($hist['max'])
+		if (isset($station['max']) && nw3_is_numeric($station['max'])
+			&& (!isset($hist['max']) || !nw3_is_numeric($hist['max'])
 				|| $hist['max'] === -1 * PHP_INT_MAX || $station['max'] > $hist['max'])) {
 			$out['max'] = $station['max'];
 			$out['maxDate'] = isset($station['maxDate']) ? $station['maxDate'] : null;
@@ -850,7 +850,7 @@ class DataSummarizer {
 	}
 
 	private static function ndaySumOk($s) {
-		return is_array($s) && isset($s['sum']) && is_numeric($s['sum'])
+		return is_array($s) && isset($s['sum']) && nw3_is_numeric($s['sum'])
 			&& $s['sum'] !== PHP_INT_MAX && $s['sum'] !== -1 * PHP_INT_MAX;
 	}
 
@@ -867,11 +867,11 @@ class DataSummarizer {
 		}
 		$vals = array();
 		foreach ($byDt as $dt => $e) {
-			if (isset($e['val']) && is_numeric($e['val'])) {
+			if (isset($e['val']) && nw3_is_numeric($e['val'])) {
 				$vals[$dt] = $e['val'];
 			}
 		}
-		asort($vals);
+		nw3_asort($vals); // ties keep input order on every PHP version
 		$slice = ($dir === 'hi')
 			? array_reverse(array_slice($vals, -$n, $n, true), true)
 			: array_slice($vals, 0, $n, true);
@@ -982,7 +982,7 @@ class DataSummarizer {
 			'count_internal' => count($arr),
 			// A period with no readings at all has no total: leaving it as 0 would
 			// make gaps (e.g. wet hours before Apr 2009) rank as record lows.
-			'sum' => $count > 0 ? array_sum($arr) : null,
+			'sum' => $count > 0 ? nw3_array_sum($arr) : null,
 			'min' => $min,
 			'minDate' => $minDate,
 			'max' => $max,
@@ -1022,7 +1022,7 @@ class DataSummarizer {
 	}
 
 	private function addAnomalies(&$summary, $anom) {
-		if($this->anomable && is_numeric($anom) && is_numeric($summary[$this->summaryKey])) {
+		if($this->anomable && nw3_is_numeric($anom) && nw3_is_numeric($summary[$this->summaryKey])) {
 			$summary['anom'] = $summary[$this->summaryKey] - $anom;
 			$summary['anom_pct'] = $anom != 0 ? $summary['anom'] / $anom * 100 : null;
 		}
@@ -1101,7 +1101,7 @@ class DataSummarizer {
 						$buff->add(floatval($val));
 					}
 					if ($buff->isFull) {
-						$currSum = array_sum($buff->items);
+						$currSum = nw3_array_sum($buff->items);
 						if (Util::opmom($currSum, $extremeVal, $i)) {
 							$extremeVal = $currSum;
 							$endDt = $dt;
@@ -1181,7 +1181,8 @@ class DataSummarizer {
 	private function extractHighLow($arr, $n) {
 		// Days/months with no reading must not rank as the lowest.
 		$arr = Util::numericOnly($arr);
-		asort($arr);  // NB: this is in-place
+		nw3_asort($arr);  // NB: this is in-place. Ties keep input (date) order on every PHP version
+
 		// Get bottom N
 		$bottom = array_slice($arr, 0, $n, true);
 		// Get top N (last N elements of the sorted array, reversed)
@@ -1327,7 +1328,7 @@ class Data {
 		}
 		$a = self::getStoredDay($srcMap[$name][0], $year, $month, $day);
 		$b = self::getStoredDay($srcMap[$name][1], $year, $month, $day);
-		if (!is_numeric($a) || !is_numeric($b)) {
+		if (!nw3_is_numeric($a) || !nw3_is_numeric($b)) {
 			return null;
 		}
 		if ($name === "ratemean") {
@@ -1389,7 +1390,7 @@ class Data {
 		foreach ($source as $year => $months) {
 			foreach ($months as $month => $days) {
 				foreach ($days as $day => $v) {
-					$res[$year][$month][$day] = is_numeric($v)
+					$res[$year][$month][$day] = nw3_is_numeric($v)
 						? self::percentOfMaxDay($varName, $v, $year, $month, $day)
 						: $v;
 				}
@@ -1403,13 +1404,13 @@ class Data {
 	 * percentage rounded to match Wx::Percentage display.
 	 */
 	private static function percentOfMaxDay($varName, $v, $year, $month, $day) {
-		if (!is_numeric($v)) {
+		if (!nw3_is_numeric($v)) {
 			return null;
 		}
 		if ($varName === 'sunhrp') {
 			$clim = LTA::getDailyAnom('maxsun', (int)$month, (int)$day, (int)$year);
 			$clim = is_string($clim) ? trim($clim) : $clim;
-			if (!is_numeric($clim) || (float)$clim <= 0) {
+			if (!nw3_is_numeric($clim) || (float)$clim <= 0) {
 				return null;
 			}
 			$val = ((float)$v / (float)$clim) * 100;
@@ -1419,7 +1420,7 @@ class Data {
 		if ($val > 100) { $val = 100; }
 		// Match Wx::Percentage display: 0 dp, or 1 dp when under 10%.
 		$dp = ($val > 0 && $val < 10) ? 1 : 0;
-		return round($val, $dp);
+		return nw3_round($val, $dp);
 	}
 
 
@@ -1472,7 +1473,7 @@ class Data {
 			return Util::mean($arr);
 		}
 		if($summary_type === Data::SUMMARY_SUM) {
-			return array_sum($arr);
+			return nw3_array_sum($arr);
 		}
 		if($summary_type === Data::SUMMARY_COUNT) {
 			// Days with a present non-zero value (rain days, sun days, event days, …).
@@ -1817,13 +1818,13 @@ class Data {
 		//get frequencies for each bitified angle
 		for($i = 0; $i < $end; $i++) {
 			if($speed[$i] > $calmThreshold) { // pivot not to be affected by calm times
-				$freqs[round($wdir[$i] / $bitifier)]++;
+				$freqs[nw3_round($wdir[$i] / $bitifier)]++;
 			}
 		}
 
 		//choose a pivot
 		$minfreq = min($freqs);
-		$pivot = array_search($minfreq, $freqs);
+		$pivot = nw3_array_search($minfreq, $freqs);
 		$pivot *= $bitifier;
 
 		//calculate the mean
@@ -1957,7 +1958,7 @@ class Data {
 					$rnr[$i] = $dat[10][$i] - $dat[10][$i-$r];
 					if($rnr[$i] > $RATE_THRESH) {
 						if($r === 1) { $rr[$i] = 60*$rnr[$i]; }
-						else { $rr[$i] = round(60/($r-1)*$rntipmm, 1); }
+						else { $rr[$i] = nw3_round(60/($r-1)*$rntipmm, 1); }
 						break;
 					}
 				}
@@ -2017,8 +2018,8 @@ class Data {
 
 		$minFeel = min($feels); $timesMin['feel'] = self::timeFromMM($minFeel, $feels, $custhr, $custmin);
 		$maxFeel = max($feels); $timesMax['feel'] = self::timeFromMM($maxFeel, $feels, $custhr, $custmin);
-		$mins['feel'] = round($minFeel, 1);
-		$maxs['feel'] = round($maxFeel, 1);
+		$mins['feel'] = nw3_round($minFeel, 1);
+		$maxs['feel'] = nw3_round($maxFeel, 1);
 
 		if(is_array($rn60)) {
 			$maxs['rnhr'] = max($rn60); if($maxs['rnhr'] > 0.2) { $timesMax['rnhr'] = self::timeFromMM($maxs['rnhr'], $rn60, $custhr, $custmin); }
@@ -2032,7 +2033,7 @@ class Data {
 		}
 		if(is_array($t10)) {
 			$w10max = max($wind10); $timesMax['w10m'] = self::timeFromMM($w10max, $wind10, $custhr, $custmin);
-			$maxs['w10m'] = round($w10max, 1);
+			$maxs['w10m'] = nw3_round($w10max, 1);
 			$maxs['rn10'] = max($rn10); if($maxs['rn10'] > 0.2) { $timesMax['rn10'] = self::timeFromMM($maxs['rn10'], $rn10, $custhr, $custmin); }
 			$t10min = min($t10); $timesMin['tchange10'] = self::timeFromMM($t10min, $t10, $custhr, $custmin);
 			$mins['tchange10'] = -1 * $t10min;
@@ -2049,7 +2050,7 @@ class Data {
 			$timesMax[$daytypes[$t]] = date('H:i', self::midpoint_of_longest($datt[$t]['timesMax'], 120));
 			$mins[$daytypes[$t]] = $datt[$t]['min'];
 			$maxs[$daytypes[$t]] = $datt[$t]['max'];
-			$means[$daytypes[$t]] = round( Util::mean($dat[$t]), $round_pt[$t] );
+			$means[$daytypes[$t]] = nw3_round( Util::mean($dat[$t]), $round_pt[$t] );
 
 			if($end > 61) {
 				$hrChanges[$daytypes[$t]] = $dat[$t][$end-1] - $dat[$t][$end-61];
@@ -2064,7 +2065,7 @@ class Data {
 		if($pm25Count > 0) {
 			$mins['pm25'] = $pm25Min;
 			$maxs['pm25'] = $pm25Max;
-			$means['pm25'] = round($pm25Sum / $pm25Count, 1);
+			$means['pm25'] = nw3_round($pm25Sum / $pm25Count, 1);
 			$timesMin['pm25'] = date('H:i', self::midpoint_of_longest($pm25MinTimes, 120));
 			$timesMax['pm25'] = date('H:i', self::midpoint_of_longest($pm25MaxTimes, 120));
 			if($end > 61 && isset($dat[11][$end-1]) && isset($dat[11][$end-61])) {
@@ -2075,10 +2076,10 @@ class Data {
 			}
 		}
 
-		$means['wind'] = round(Util::mean($dat[3]), 1);
-		$means['w10m'] = round(Util::mean($wind10), 1);
+		$means['wind'] = nw3_round(Util::mean($dat[3]), 1);
+		$means['w10m'] = nw3_round(Util::mean($wind10), 1);
 		$means['wdir'] = self::wdirMean($dat[5], $dat[3]);
-		$means['feel'] = round(Util::mean($feels), 1);
+		$means['feel'] = nw3_round(Util::mean($feels), 1);
 		$means['rain'] = $rncum;
 		if($means['rain'] < 0.2) {
 			$maxs['rnhr'] = $maxs['rn10'] = null;
@@ -2132,8 +2133,8 @@ class Data {
 					break;
 				}
 			}
-			$tipQuantity = ($last === 1) ? round(($rncum - $rncumArr[$end-2])/$rntipmm) : 1;
-			$currRateGuess = round(60/$last*$rntipmm*$tipQuantity, 1);
+			$tipQuantity = ($last === 1) ? nw3_round(($rncum - $rncumArr[$end-2])/$rntipmm) : 1;
+			$currRateGuess = nw3_round(60/$last*$rntipmm*$tipQuantity, 1);
 			$currRate = ($currRateGuess > $maxs['rate']) ? $maxs['rate'] : $currRateGuess;
 		} else {
 			$currRate = 0;
@@ -2193,14 +2194,14 @@ class Data {
 			$pond_temp = null;
 		}
 
-		$frosthrs = round($frostMins / 60, (int)($frostMins < 10) + 1);
+		$frosthrs = nw3_round($frostMins / 60, (int)($frostMins < 10) + 1);
 		$rnDuration = Util::roundToDp($duration / 60, 1);
 
 		return array("min" => $mins, "max" => $maxs, "mean" => $means, "timeMin" => $timesMin, "timeMax" => $timesMax,
 					"trend" => $trends, "trendRn" => $rnCums, "changeHr" => $hrChanges, "changeDay" => $hr24Changes,
 					"misc" => array("frosthrs" => $frosthrs, "rnrate" => $currRate, "rnduration" => $rnDuration,
 									"rnlast" => $lastRnFull, "wethrs" => $wethrs, "maxhrgst" => $maxhrgst, "cnt" => $end,
-									"prevRn" => date('r', $prevRn), "prevRnOld" => date('r', $prevRnOld),
+									"prevRn" => date('r', isset($prevRn) ? (int)$prevRn : 0), "prevRnOld" => date('r', isset($prevRnOld) ? (int)$prevRnOld : 0),
 									"pondTemp" => $pond_temp
 								),
 					"windDirs" => $windDirs
@@ -2208,7 +2209,7 @@ class Data {
 	}
 
 	public static function timeFromMM($mm, $arr, $hrs, $mins) {
-		$line = array_search($mm, $arr);
+		$line = nw3_array_search($mm, $arr);
 		return Util::zerolead($hrs[$line]).':'.Util::zerolead($mins[$line]);
 	}
 

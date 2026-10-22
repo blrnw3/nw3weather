@@ -16,7 +16,7 @@ $ajax = true;
 <?php
 $liveData = array((float)$temp, (int)$humi, (float)$dewp, (int)$pres, (float)$wind, (float)$rain);
 //for flash function in js
-echo '<input id="newData" type="hidden" value="'. json_encode($liveData) .'" />';
+echo '<input id="newData" type="hidden" value="'. nw3_json_encode($liveData) .'" />';
 
 $headings = array('', 'Measure', 'Current<span id="elapsedTime"> - ? s ago</span>', 'Max/Min', 'Rate', '24hr mean');
 $widths = array(0,  6, 15, 24, 21, 20, 14);

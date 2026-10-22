@@ -43,4 +43,4 @@ $ret = array(
 	'24hr' => $HR24,
 );
 
-echo json_encode($ret);
+echo nw3_json_encode($ret);

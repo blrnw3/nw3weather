@@ -1,7 +1,9 @@
 <?php
-const ROOT = '/var/www/html/';
+if(!defined('ROOT')) {
+	define('ROOT', '/var/www/html/'); // cron/bootstrap.php may have defined it already
+}
 require_once(ROOT . 'config/paths.php');
-const PHP_INT_MIN = -9223564353720;
+require_once(ROOT . 'compat.php'); // PHP 5.4/8.x shims (nw3_round etc.), PHP_INT_MIN polyfill
 
 const UNIT_UK = 0;
 const UNIT_US = 1;
@@ -86,8 +88,8 @@ class Date {
 		self::$dt = date('t');
 		self::$dtstamp = mktime(0, 0, 0);
 		self::$da = ['j' => self::$dday, 'n' => self::$dmonth, 'Y' => self::$dyear];
-		self::$sunrise = date_sunrise(time(), SUNFUNCS_RET_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I'));
-		self::$sunset = date_sunset(time(), SUNFUNCS_RET_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I'));
+		self::$sunrise = nw3_sunrise(time(), NW3_SUN_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I'));
+		self::$sunset = nw3_sunset(time(), NW3_SUN_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I'));
 		self::$dtstamp_yest = mktime(0, 0, 0, self::$dmonth, self::$dday-1, self::$dyear);
 		self::$yr_yest = date('Y',self::$dtstamp_yest);
 		self::$mon_yest = date('n',self::$dtstamp_yest);
@@ -253,7 +255,7 @@ class Date {
 	}
 	public static function decimal_timefix($dec) {
 		$hr = floor($dec*24);
-		return Util::zerolead($hr) . ':' . round(($dec*24-$hr)*60);
+		return Util::zerolead($hr) . ':' . nw3_round(($dec*24-$hr)*60);
 	}
 	public static function timeformat($time) {
 		if(strpos($time, ':')) { return date('H:i', strtotime($time)); }
@@ -282,7 +284,7 @@ class Date {
 		$start = self::seasonStart();
 		$noonToday = mktime(12, 0, 0, (int)self::$dmonth, (int)self::$dday, (int)self::$dyear);
 		$noonStart = mktime(12, 0, 0, (int)date('n', $start), 1, (int)date('Y', $start));
-		return (int)round(($noonToday - $noonStart) / 86400) + 1;
+		return (int)nw3_round(($noonToday - $noonStart) / 86400) + 1;
 	}
 	public static function get_days_in_year($year) {
 		return date("z", Date::mkdate(12,31,$year)) + 1;
@@ -307,11 +309,11 @@ class Date {
 	   }
 
 	   if($diff < 100) {
-		   $ago = round($diff) .' mins';
+		   $ago = nw3_round($diff) .' mins';
 	   } elseif($diff < 3000) {
-		   $ago = round($diff / 60) .' hours';
+		   $ago = nw3_round($diff / 60) .' hours';
 	   } else {
-		   $ago = round($diff / 60 / 24) .' days';
+		   $ago = nw3_round($diff / 60 / 24) .' days';
 	   }
 
 	   return $ago;
@@ -504,7 +506,7 @@ class Util {
 	   if(!is_array($array)) {
 		   return null;
 	   }
-	   return array_sum($array) / Util::mycount($array);
+	   return nw3_array_sum($array) / Util::mycount($array);
    }
 
    public static function extremeValAndKey($arr, $type) {
@@ -585,7 +587,8 @@ class Util {
 		if($isGreater) {
 			foreach($arr as $val) {
 				if( !Util::isBlank($val) ) {
-					if($val > $limit) {
+					// nw3_to_number: on 8.x a non-numeric string (e.g. 'c:b/o') compares to a number as a string
+					if(nw3_to_number($val) > $limit) {
 						$cnt++;
 					}
 				} else {
@@ -595,7 +598,7 @@ class Util {
 		} else {
 			foreach($arr as $val) {
 				if( !Util::isBlank($val) ) {
-					if($val < $limit) {
+					if(nw3_to_number($val) < $limit) {
 						$cnt++;
 					}
 				} else {
@@ -649,7 +652,7 @@ class Util {
 	}
 	public static function roundi($val) {
 		$dp = ($val < 10) ? 1 : 0;
-		return round($val, $dp);
+		return nw3_round($val, $dp);
 	}
 	/**
 	 * Converts a boolean into a true/false string (good for JS)
@@ -670,7 +673,7 @@ class Util {
 		$size = ($size < 1) ? 1 : $size;
 		if($dir === 0) { $new = floor($val / $size); }
 		elseif($dir === 1) { $new = ceil($val / $size); }
-		else { $new = round($val / $size); }
+		else { $new = nw3_round($val / $size); }
 		return $new * $size;
 	}
 	/**
@@ -694,8 +697,8 @@ class Util {
 			if($up) { if($near[$i] > 0) { $near[$i] = -99; } }
 			else { $near[$i] = abs($near[$i]); }
 		}
-		if($up) { $nearest = array_search( max($near), $near ); }
-		else { $nearest = array_search( min($near), $near ); }
+		if($up) { $nearest = nw3_array_search( max($near), $near ); }
+		else { $nearest = nw3_array_search( min($near), $near ); }
 		return $arr[$nearest];
 	}
 	public static function array_dswap($arr) {
@@ -724,7 +727,7 @@ class Util {
 		if(is_array($val)) {
 			debug_print_backtrace();
 		}
-		return (strlen($val) === 0 || $val === '-');
+		return (strlen((string)$val) === 0 || $val === '-');
 	}
 	/**
 	 * Tests for a blank string/value. NB: '-' also counts as empty.
@@ -793,7 +796,12 @@ class Util {
 	}
 
 	public static function listdir($dir) {
-		return array_diff(scandir($dir), array('.', '..'));
+		$list = @scandir($dir);
+		if($list === false) {
+			trigger_error("listdir: cannot read $dir", E_USER_WARNING);
+			return array(); // 5.4's array_diff(false, ...) also gave nothing; 8.x throws TypeError
+		}
+		return array_diff($list, array('.', '..'));
 	}
 
 	public static function array_filter_keys($array, $callback) {
@@ -819,7 +827,7 @@ class Util {
 		if (!is_array($array)) { return $result; }
 		foreach ($array as $k => $val) {
 			if ($val === null || is_array($val)) { continue; }
-			if (Util::isBlank($val) || !is_numeric($val)) { continue; }
+			if (Util::isBlank($val) || !nw3_is_numeric($val)) { continue; }
 			$result[$k] = floatval($val);
 		}
 		return $result;
@@ -844,10 +852,10 @@ class Misc {
 		$src = Site::CAM_ROOT."camchive/$cam";
 		if(is_null($name)) {
 			$period = is_null($twiset) ? "all" : "sun$twiset";
-			$name = "${cam}cam_test_${year}_m${month}_d${day}_f${freq}_p-${period}_r${frame_rate}";
+			$name = "{$cam}cam_test_{$year}_m{$month}_d{$day}_f{$freq}_p-{$period}_r{$frame_rate}";
 		}
 		$tmpdir = Site::VID_ROOT."tmpdir/$name";
-		$outfile = Site::VID_ROOT."timelapse/${name}.mp4";
+		$outfile = Site::VID_ROOT."timelapse/{$name}.mp4";
 
 		echo shell_exec("mkdir $tmpdir");
 
@@ -862,8 +870,8 @@ class Misc {
 					$sunrise = -1;
 					$sunset = 9999;
 				} else {
-					$sunrise = intval(date_sunrise($sproc, SUNFUNCS_RET_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) * 60 - $twiset);
-					$sunset = intval(date_sunset($sproc, SUNFUNCS_RET_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) * 60 + $twiset);
+					$sunrise = intval(nw3_sunrise($sproc, NW3_SUN_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) * 60 - $twiset);
+					$sunset = intval(nw3_sunset($sproc, NW3_SUN_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) * 60 + $twiset);
 				}
 				echo "Processing $dbase: sunrise: $sunrise, sunset: $sunset\n";
 				foreach(Util::listdir($dbase) as $c){
@@ -871,7 +879,7 @@ class Misc {
 					$min = substr($c, 2, 2);
 					$num = intval($hr) * 60 + intval($min);
 					if($num % $freq == 0 && $num > $sunrise && $num < $sunset) {
-						$trgt = "$tmpdir/$year$m${d}_$c";
+						$trgt = "$tmpdir/$year$m{$d}_$c";
 						if(file_exists($dbase . $c) && filesize($dbase . $c) > 1024) {
 							copy($dbase . $c, $trgt);
 						} else {

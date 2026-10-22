@@ -173,7 +173,7 @@ for($mm = (int)$isSum; $mm < $limitForSummaryLoop; $mm++) {
 			if($mm == 0 && is_array($data[ $arrnum[$i] ][$m])) {
 				$data[ $arrnum[$i] ][$m] = array_filter($data[ $arrnum[$i] ][$m], 'clearblank');
 			}
-			if(count($data[ $arrnum[$i] ][$m]) == 0) {
+			if(count((array)$data[ $arrnum[$i] ][$m]) == 0) { // (array): count(null) is a TypeError on 8.x
 				$putConv = '---';
 				$rconv = false;
 				$class = 'reportday';
@@ -184,7 +184,7 @@ for($mm = (int)$isSum; $mm < $limitForSummaryLoop; $mm++) {
 				$rconv = $typeconvs_all[$arrnum[$i]];
 
 				if($sumq_all[$arrnum[$i]] && $mm == 2) { //convert mean to sum and amend valuecolour setting
-					$put *= count($data[ $arrnum[$i] ][$m]);
+					$put *= count((array)$data[ $arrnum[$i] ][$m]);
 					$sumfix = $valcolSumOffset;
 				} else {
 					$sumfix = 1;
@@ -207,7 +207,7 @@ if($isSum) { //show count of values above zero
 	td( 'Count', 'reportttl" style="padding:4px' );
 	for($m = $st_mon - 1; $m <= $st_mon - 1 + $num; $m++) {
 		for($i = 0; $i < $varNum; $i++) {
-			if(count($data[ $arrnum[$i] ][$m]) === 0) {
+			if(count((array)$data[ $arrnum[$i] ][$m]) === 0) {
 				$put = '---';
 				$class = 'reportday';
 			}

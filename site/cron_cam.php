@@ -55,7 +55,7 @@ if($tstamp == $daily_proctime) {
 	for($h = 0; $h < 24; $h++) {
 		foreach($timestamps as $ts) {
 			$hh = Util::zerolead($h);
-			$f = CAM_ROOT . "camchive/hik/$stamp/${hh}${ts}hik.jpg";
+			$f = CAM_ROOT . "camchive/hik/$stamp/{$hh}{$ts}hik.jpg";
 			if(file_exists($f)) {
 				unlink($f);
 			}
@@ -108,7 +108,7 @@ if($tstamp == '0107') {
 	$rate = 18;
 	$qual = 24;
 	$mon_yest_zero = Util::zerolead($mon_yest);
-	$name = "skycam_monthly_${yr_yest}_${mon_yest_zero}";
+	$name = "skycam_monthly_{$yr_yest}_{$mon_yest_zero}";
 	$filf = Misc::extract_for_timelapse($yr_yest, $mon_yest, 0, $freq, $twiset, $cam, $rate, $qual, $name);
 	Page::quick_log( 'timelapse.txt', Cron::myround( microtime(true) - $t_start ) ." MONTHLY ". $filf);
 }
@@ -120,7 +120,7 @@ if($tstamp == '0112') {
 	$cam = "hik";
 	$rate = 15;
 	$qual = 24;
-	$name = "skycam_yearly_${yr_yest}";
+	$name = "skycam_yearly_{$yr_yest}";
 	$filf = Misc::extract_for_timelapse($yr_yest, 0, 0, $freq, $twiset, $cam, $rate, $qual, $name);
 	Page::quick_log( 'timelapse.txt', Cron::myround( microtime(true) - $t_start ) ." YEARLY ". $filf);
 }
@@ -132,7 +132,7 @@ if($tstamp == '0118') {
 	$cam = "hik";
 	$rate = 6;
 	$qual = 24;
-	$name = "skycam_yearly_midday_${yr_yest}";
+	$name = "skycam_yearly_midday_{$yr_yest}";
 	$filf = Misc::extract_for_timelapse($yr_yest, 0, 0, $freq, $twiset, $cam, $rate, $qual, $name);
 	Page::quick_log( 'timelapse.txt', Cron::myround( microtime(true) - $t_start ) ." YEARLY_MIDDAY ". $filf);
 }
@@ -164,7 +164,8 @@ function webcam_summary($frac, $w, $dest, $cam_type = "hik", $offset = 0, $wo = 
 	for($i = 0; $i < $imgno; $i++) {
 		if(($i % $w) == 0) { $hstep += 1; }
 		$stamp = Util::zerolead(floor($i/2)); if($i % 2 == 0) { $stamp .= '00'; } else { $stamp .= '30'; }
-		$image = imagecreatefromjpeg(cam_location($cam_type, $offset, $stamp));
+		$image = @imagecreatefromjpeg(cam_location($cam_type, $offset, $stamp));
+		if($image === false) { continue; } // missing frame: 5.4 warned and drew nothing; 8.x throws TypeError
 		imagecopyresampled($image_p, $image, ($wo*$frac+$sw)*($i % $w), $hstep*($ho*$frac+$sh), 0, 0, $wo*$frac, $ho*$frac, $wo, $ho);
 		imagestring($image_p, 4, ($wo*$frac+$sw)*($i % $w)+$frac*$wo*0.4, $hstep*($ho*$frac+$sh)+$ho*$frac+3, $stamp, imagecolorallocate($image_p, 54, 14, 14));
 		imagedestroy($image);

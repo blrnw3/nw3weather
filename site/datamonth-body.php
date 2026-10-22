@@ -23,7 +23,7 @@ function dm_cell($html, $class = 'reportday', $extraClass = '') {
  */
 function dm_fmt($report, $val, $st) {
 	if (Data::isCountSummary($st)) {
-		return (string)round($val, 1);
+		return (string)nw3_round($val, 1);
 	}
 	return Wx::conv($val, $report->summaryDisplayUnit($st), false);
 }
@@ -103,11 +103,11 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 			dm_cell('-', 'reportday', 'dm-yr');
 		} else {
 			if (Data::isThresholdSummary($st)) {
-				$yrVal = array_sum($months);
+				$yrVal = nw3_array_sum($months);
 			} elseif ($st === Data::SUMMARY_COUNT) {
 				$yrVal = Util::mean($months); // legacy: mean days/month
 			} elseif ($st === Data::SUMMARY_SUM) {
-				$yrVal = array_sum($months);
+				$yrVal = nw3_array_sum($months);
 			} elseif ($st === Data::SUMMARY_RANGE) {
 				$yrVal = Util::mean($months);
 			} else {

@@ -120,7 +120,7 @@ for($i = 1; $i < $cnt1; $i++) {
 	if($data[7][$i] == 98) { $data[7][$i] = 97.8; }
 	if($data[3][$i] < 0.1) { $data[3][$i] = 0.1; }
 	$data[10][$i] += $rnShamt;
-	if($num > 48) { $data['lab'][$i] = date('d M',mkdate(substr($procday,4,2),substr($procday,6,2)-round((1440-$i)*$num/1440))); }
+	if($num > 48) { $data['lab'][$i] = date('d M',mkdate(substr($procday,4,2),substr($procday,6,2)-nw3_round((1440-$i)*$num/1440))); }
 	$data['af'][$i] = $lineAF;
 
 	//essential to prevent spiky baro line
@@ -157,12 +157,12 @@ for($i = $cnt1-1; $i < $cnt1+60; $i++) { //fix issue with last label
 }
 
 $marg3 = 10; $labu = 60 * ceil(800/$dimx);
-if($num > 3) { $labu = round(24*60 / $num ) * ceil($num/$dimx*30); }
+if($num > 3) { $labu = nw3_round(24*60 / $num ) * ceil($num/$dimx*30); }
 if($num > 48) { $labu *= 2; }
 $shift = $data['startmin'];
 
 //footer string
-$phpload = microtime(get_as_float) - $scriptbeg;
+$phpload = microtime(true) - $scriptbeg;
 $footerstring .= '; Load time: ' . myround($phpload, 2) . ' s';
 
 
@@ -188,7 +188,7 @@ function graphdaydata($logf, $stt, $end, $multi, $wdirNeeded) {
 		}
 	}
 	if(!$end) { $end = count($filtot); } else { $end *= 60; }
-	if(!$stt) { $stt = 1; } else { $stt = round(60*$stt); }
+	if(!$stt) { $stt = 1; } else { $stt = nw3_round(60*$stt); }
 
 	for($i = $stt; $i < $end; $i+=$multi) {
 		$custl = explode(',', $filtot[$i]);
@@ -273,12 +273,12 @@ class rollingMean {
 
 		//get frequencies for each bitified angle
 		for($i = 0; $i < $this->size; $i++) {
-			$freqs[round($this->items[$i] / self::bitifier)]++;
+			$freqs[nw3_round($this->items[$i] / self::bitifier)]++;
 		}
 
 		//choose a pivot
 		$minfreq = min($freqs);
-		$pivot = array_search($minfreq, $freqs);
+		$pivot = nw3_array_search($minfreq, $freqs);
 		$pivot *= self::bitifier;
 
 		//calculate the mean

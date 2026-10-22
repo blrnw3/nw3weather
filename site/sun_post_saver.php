@@ -28,9 +28,9 @@ function save_sun() {
 
 	$base_dir = ROOT . 'sun/';
 	$targetFile = $base_dir . $dtStr . '.json';
-	$sunhrs = strval(round(intval($data['sun_mins']) / 60, 1));
+	$sunhrs = strval(nw3_round(intval($data['sun_mins']) / 60, 1));
 
-	if(file_put_contents($targetFile, json_encode($data))) {
+	if(file_put_contents($targetFile, nw3_json_encode($data))) {
 		echo "Data saved to $targetFile";
 	} else {
 		http_response_code(500);

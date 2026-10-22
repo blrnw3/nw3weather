@@ -92,7 +92,7 @@ for ($x = 0; $x < 3; $x++) {
 // Manual sun/wet
 $msdatm = [];
 for ($v = 0; $v < 2; $v++) {
-	$arr = array_map(function ($x) { return is_numeric($x) ? (float)$x : 0; }, isset($mdatm[$v]) ? $mdatm[$v] : []);
+	$arr = array_map(function ($x) { return nw3_is_numeric($x) ? (float)$x : 0; }, isset($mdatm[$v]) ? $mdatm[$v] : []);
 	$msdatm[$v] = count($arr) ? [Util::mymin($arr), Util::mymax($arr), Util::mean($arr)] : [0, 0, 0];
 }
 
@@ -112,28 +112,28 @@ $manomx = [['', '', ''], ['', '', ''], ['', '', '']];
 $manomm = [['', '', ''], ['', '', '']];
 if ($haveData) {
 	$mtdat[13][2] = 'Mean: ' . Wx::conv($msdat[13][2], Wx::Rain, true);
-	if (is_numeric($msdat[13][2])) { $msdat[13][2] *= $dim; }
-	if (is_numeric($msdat[$AFHRS_IDX][2])) { $msdat[$AFHRS_IDX][2] *= $dim; }
+	if (nw3_is_numeric($msdat[13][2])) { $msdat[13][2] *= $dim; }
+	if (nw3_is_numeric($msdat[$AFHRS_IDX][2])) { $msdat[$AFHRS_IDX][2] *= $dim; }
 
-	if ($tminN !== null && is_numeric($msdat[0][2])) { $manom[0][2] = ' (' . Wx::conv($msdat[0][2] - $tminN, Wx::AbsTemp, false, true) . ')'; }
-	if ($tmaxN !== null && is_numeric($msdat[1][2])) { $manom[1][2] = ' (' . Wx::conv($msdat[1][2] - $tmaxN, Wx::AbsTemp, false, true) . ')'; }
-	if ($tmeanN !== null && is_numeric($msdat[0][2]) && is_numeric($msdat[1][2])) {
+	if ($tminN !== null && nw3_is_numeric($msdat[0][2])) { $manom[0][2] = ' (' . Wx::conv($msdat[0][2] - $tminN, Wx::AbsTemp, false, true) . ')'; }
+	if ($tmaxN !== null && nw3_is_numeric($msdat[1][2])) { $manom[1][2] = ' (' . Wx::conv($msdat[1][2] - $tmaxN, Wx::AbsTemp, false, true) . ')'; }
+	if ($tmeanN !== null && nw3_is_numeric($msdat[0][2]) && nw3_is_numeric($msdat[1][2])) {
 		$manom[2][2] = ' (' . Wx::conv(($msdat[0][2] + $msdat[1][2]) / 2 - $tmeanN, Wx::AbsTemp, false, true) . ')';
 	}
-	if ($windN !== null && is_numeric($msdat[9][2])) { $manom[9][2] = ' (' . Wx::conv($msdat[9][2] - $windN, Wx::Wind, false, true) . ')'; }
+	if ($windN !== null && nw3_is_numeric($msdat[9][2])) { $manom[9][2] = ' (' . Wx::conv($msdat[9][2] - $windN, Wx::Wind, false, true) . ')'; }
 	if ($rainN !== null && $rainN > 0) { $manom[13][2] = ' ' . Util::percent($msdat[13][2], $rainN); }
 
-	if (is_numeric($msdat[12][2])) { $msdat[12][2] = round($msdat[12][2]); }
+	if (nw3_is_numeric($msdat[12][2])) { $msdat[12][2] = nw3_round($msdat[12][2]); }
 	for ($i = 0; $i < 3; $i++) {
-		if (is_numeric($msdat[12][$i]) && intval($msdat[12][$i]) > 0) { $msdat[12][$i] .= '&deg; [' . Wx::degname((int)$msdat[12][$i]) . ']'; }
+		if (nw3_is_numeric($msdat[12][$i]) && intval($msdat[12][$i]) > 0) { $msdat[12][$i] .= '&deg; [' . Wx::degname((int)$msdat[12][$i]) . ']'; }
 		else { $msdat[12][$i] = 'n/a'; }
 	}
 	$rangeN = ($tminN !== null && $tmaxN !== null) ? ($tmaxN - $tminN) : null;
-	if ($rangeN !== null && is_numeric($msdatx[0][2])) { $manomx[0][2] = ' (' . Wx::conv($msdatx[0][2] - $rangeN, Wx::AbsTemp, false, true) . ')'; }
+	if ($rangeN !== null && nw3_is_numeric($msdatx[0][2])) { $manomx[0][2] = ' (' . Wx::conv($msdatx[0][2] - $rangeN, Wx::AbsTemp, false, true) . ')'; }
 
 	for ($i = 0; $i < 2; $i++) { $msdatm[$i][2] = Util::roundi($msdatm[$i][2] * $dim); }
 	if ($sunN !== null && $maxsunN) {
-		$manomm[0][2] = ' ' . Util::percent($msdatm[0][2], $sunN) . ' [' . HTML::acronym('of a possible ' . round($maxsunN) . ' hrs', Util::roundi(100 * $msdatm[0][2] / $maxsunN) . '%', true) . ']';
+		$manomm[0][2] = ' ' . Util::percent($msdatm[0][2], $sunN) . ' [' . HTML::acronym('of a possible ' . nw3_round($maxsunN) . ' hrs', Util::roundi(100 * $msdatm[0][2] / $maxsunN) . '%', true) . ']';
 	}
 	if ($wetN !== null) {
 		$manomm[1][2] = ' ' . Util::percent($msdatm[1][2], $wetN) . ' [' . HTML::acronym('of a possible ' . (24 * $dim) . ' hrs', Util::roundi(100 * $msdatm[1][2] / (24 * $dim)) . '%', true) . ']';
@@ -168,7 +168,7 @@ if (!$haveData) {
 	return;
 }
 
-$fmt = function ($v, $unit) { return (is_numeric($v)) ? Wx::conv($v, $unit, true) : $v; };
+$fmt = function ($v, $unit) { return (nw3_is_numeric($v)) ? Wx::conv($v, $unit, true) : $v; };
 
 // ---- Summary table (column order: Measure | Mean/Sum (anom) | Min | Max | Mean Time) ----
 echo '<div class="report-table-scroll">';
@@ -319,7 +319,7 @@ echo '<h2 id="day-breakdown">Daily breakdown</h2>';
 echo '<p class="hm-break-note">Day numbers link to the detailed daily report. Wide tables can be scrolled horizontally.</p>';
 
 $blank = function ($v) {
-	return $v === '' || $v === '-' || $v === null || !is_numeric($v);
+	return $v === '' || $v === '-' || $v === null || !nw3_is_numeric($v);
 };
 
 // A column is either an index into datYYYY.csv, or the manual sunshine value
@@ -376,7 +376,7 @@ foreach ($breakGroups as $breakGroup) {
 				continue;
 			}
 			if ($type === 'wdir') {
-				$disp = round((float)$raw) . '&deg;';
+				$disp = nw3_round((float)$raw) . '&deg;';
 				$class = Report::valcolForType($type, (float)$raw);
 			} else {
 				$disp = Wx::conv($raw, $unit, false);

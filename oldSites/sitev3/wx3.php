@@ -50,8 +50,8 @@ if(!$ukUnits) {
 	log_events("nonUKwx3.txt", "Imperial: ". makeBool($imperial) . ', Metric:  '. makeBool($metric));
 } else {
 	echo '<button onclick="showMiniGraph();"> Toggle Graph Size </button>
-		<img id="bigiGraph" src="/stitchedmaingraph.png?id='. round(time()/10).'" alt="Graph of last 24hrs weather data" '. GRAPH_DIMS_LARGE .' />
-		<img id="miniGraph" src="/stitchedmaingraph_small.png?id='. round(time()/10).'" alt="Mini-Graph of last 24hrs weather" style="display:none" '. GRAPH_DIMS_SMALL .' />
+		<img id="bigiGraph" src="/stitchedmaingraph.png?id='. nw3_round(time()/10).'" alt="Graph of last 24hrs weather data" '. GRAPH_DIMS_LARGE .' />
+		<img id="miniGraph" src="/stitchedmaingraph_small.png?id='. nw3_round(time()/10).'" alt="Mini-Graph of last 24hrs weather" style="display:none" '. GRAPH_DIMS_SMALL .' />
 	';
 }
 ?>

@@ -2,7 +2,7 @@
 $message = in_array($file, array(5,2,6)) ? 'Caution: Information provided carries no guarantee.' :
 	'Caution: This data is recorded by an amateur-run personal weather station - its accuracy and reliability cannot be guaranteed.';
 
-$phpload = myround(microtime(get_as_float) - $scriptbeg, 3);
+$phpload = myround(microtime(true) - $scriptbeg, 3);
 if($dyear < 2000) { //some sort of non-inclusion
 	$dyear = date("Y");
 	$phpload = 0;
@@ -35,8 +35,8 @@ $liveHref = ($livePage !== '' && is_file(ROOT . $livePage)) ? '/' . $livePage : 
 			<?php
 			echo 'PHP executed '. acronym('Session count: '. $_SESSION['count'][$file], 'in ') . $phpload .'s';
 			if($me) {
-				$mem_usage = round(memory_get_usage() / 1024 / 1024, 1);
-				$mem_peak = round(memory_get_peak_usage() / 1024 / 1024, 1);
+				$mem_usage = nw3_round(memory_get_usage() / 1024 / 1024, 1);
+				$mem_peak = nw3_round(memory_get_peak_usage() / 1024 / 1024, 1);
 				echo "&nbsp; Mem: $mem_usage, Peak mem: $mem_peak";
 			}	?>
 		</span>

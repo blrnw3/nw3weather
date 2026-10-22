@@ -52,7 +52,7 @@ function nw3_rankperiods_cached_render(Report $report) {
 	$html = ob_get_clean();
 
 	$payload = array('html' => $html, 'meta' => $meta);
-	$json = json_encode($payload);
+	$json = nw3_json_encode($payload);
 	if ($json !== false) {
 		$tmp = $file . '.' . getmypid() . '.tmp';
 		if (@file_put_contents($tmp, $json, LOCK_EX) !== false) {

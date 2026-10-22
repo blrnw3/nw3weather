@@ -58,7 +58,7 @@ class DatmWriter {
 		$wethrs = file_exists(ROOT . 'wethrs.txt') ? file_get_contents(ROOT . 'wethrs.txt') : '0';
 		$listm = array($sunhrs, $wethrs, 'u', '', '', '', '', '', 'blr', '', '', '1', $pond_temp, '\n');
 		$fildatm = fopen($path, 'a');
-		fputcsv($fildatm, $listm);
+		nw3_fputcsv($fildatm, $listm);
 		fclose($fildatm);
 		return true;
 	}

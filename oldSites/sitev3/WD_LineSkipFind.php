@@ -81,7 +81,7 @@ function logneaten($fileopen) {
 		$custl[$i] = explode(',', $filcust[$i]);
 		$fields = count($custl[0]);
 		for($t = 0; $t < $fields; $t++) {
-			$custl[$i][$t] = round($custl[$i][$t],1);
+			$custl[$i][$t] = nw3_round($custl[$i][$t],1);
 		}
 	}
 

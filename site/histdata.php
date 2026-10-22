@@ -48,7 +48,7 @@ $type = isset($_GET['type']) ? preg_replace('/[^a-z0-9]/', '', $_GET['type']) : 
 if ($type === '' && count($climateTypes)) { $type = $climateTypes[0]; }
 if ($type === '') { $type = 'tmin'; }
 if (!isset(Wx::$daily[$type])) {
-	echo json_encode(['error' => 'unknown type']);
+	echo nw3_json_encode(['error' => 'unknown type']);
 	exit;
 }
 $meta = Wx::$daily[$type];
@@ -62,8 +62,8 @@ $precision = Wx::precision($convType);
 /** Convert a daily/monthly value to user units (raw counts stay unconverted). */
 function cv($v, $isCount = false) {
 	global $convType, $precision;
-	if ($v === null || $v === '' || $v === '-' || !is_numeric($v)) { return null; }
-	if ($isCount) { return round((float)$v, 0); }
+	if ($v === null || $v === '' || $v === '-' || !nw3_is_numeric($v)) { return null; }
+	if ($isCount) { return nw3_round((float)$v, 0); }
 	return Wx::convNum($v, $convType, $precision);
 }
 
@@ -144,7 +144,7 @@ function histDailyLastN($type, $length) {
 	$colour = Wx::colourHex(isset($meta['colour']) ? $meta['colour'] : null);
 	$precision = Wx::precision($convType);
 	$cv = function ($v) use ($convType, $precision) {
-		if ($v === null || $v === '' || $v === '-' || !is_numeric($v)) { return null; }
+		if ($v === null || $v === '' || $v === '-' || !nw3_is_numeric($v)) { return null; }
 		return Wx::convNum($v, $convType, $precision);
 	};
 	$out = [
@@ -272,7 +272,7 @@ if ($mode === 'annual') {
 		$lta = ltaMonthly($st);
 		$data = [];
 		for ($m = 0; $m < 12; $m++) {
-			if ($lta === null || !isset($lta[$m]) || !is_numeric($lta[$m])) {
+			if ($lta === null || !isset($lta[$m]) || !nw3_is_numeric($lta[$m])) {
 				$data[] = null;
 			} else {
 				$data[] = Wx::convNum($lta[$m], $stConv, $stPrec);
@@ -305,7 +305,7 @@ if ($mode === 'annual') {
 		$mon = isset($_GET['month']) ? (int)$_GET['month'] : 0;
 		$yr  = (int)$_GET['year'];
 		if ($yr > (int)Date::$dyear || ($yr == (int)Date::$dyear && $mon > (int)Date::$dmonth)) {
-			echo json_encode(['error' => 'invalid period']); exit;
+			echo nw3_json_encode(['error' => 'invalid period']); exit;
 		}
 		if ($mon === 0) {
 			// Whole year (day-of-year aligned), with optional cume + lta + multiyr overlays
@@ -316,7 +316,7 @@ if ($mode === 'annual') {
 				$series = []; $run = 0;
 				foreach ($flat as $v) {
 					$val = cv($v);
-					if ($cume) { $run += ($val === null ? 0 : $val); $series[] = round($run, 2); }
+					if ($cume) { $run += ($val === null ? 0 : $val); $series[] = nw3_round($run, 2); }
 					else { $series[] = $val; }
 				}
 				return $series;
@@ -394,7 +394,7 @@ if ($mode === 'annual') {
 				$ltaSeries = []; $run = 0;
 				for ($z = 0; $z < $axisLen; $z++) {
 					$lv = isset($ltaDaily[$z]) ? cv($ltaDaily[$z]) : null;
-					if ($cume) { $run += ($lv === null ? 0 : $lv); $ltaSeries[] = round($run, 2); }
+					if ($cume) { $run += ($lv === null ? 0 : $lv); $ltaSeries[] = nw3_round($run, 2); }
 					else { $ltaSeries[] = $lv; }
 				}
 				// Same colour as the main series, dotted (legacy jpgraph style).
@@ -439,11 +439,11 @@ if ($mode === 'annual') {
 			foreach ($typeList as $t) {
 				$charts[$t] = histDailyLastN($t, $length);
 			}
-			echo json_encode(['charts' => $charts]);
+			echo nw3_json_encode(['charts' => $charts]);
 			exit;
 		}
 		$out = histDailyLastN($type, $length);
 	}
 }
 
-echo json_encode($out);
+echo nw3_json_encode($out);

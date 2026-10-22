@@ -109,7 +109,7 @@ if($tstamp == '0000') {
 
 nw3_atomic_write(
 	ROOT . 'Logs/cron_legacy_success.txt',
-	date('c') . "\t" . round(microtime(true) - $started, 3) . "s\n"
+	date('c') . "\t" . nw3_round(microtime(true) - $started, 3) . "s\n"
 );
 flock($lock, LOCK_UN);
 fclose($lock);

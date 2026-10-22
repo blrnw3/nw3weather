@@ -117,11 +117,11 @@ if ($totCnt > 0) {
 $colours = ['#999999', '#f1c40f', '#e67e22', '#e03131', '#2554c7', '#7b2fb0', '#111111'];
 $outSeries = [];
 foreach ($buckets as $bi => $b) {
-	$data = array_map(function($v) { return round($v, 2); }, $series[$bi]);
+	$data = array_map(function($v) { return nw3_round($v, 2); }, $series[$bi]);
 	$outSeries[] = ['name' => $bucketLabels[$bi], 'data' => $data, 'color' => $colours[$bi % count($colours)]];
 }
 
-echo json_encode([
+echo nw3_json_encode([
 	'title'      => "Wind rose for $roseDate",
 	'total'      => $totCnt,
 	'categories' => $dirLabels,

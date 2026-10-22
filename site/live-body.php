@@ -151,7 +151,7 @@ function nw3_render_cards() {
 		(float)Live::$wind, (float)Live::$rain,
 		(Live::$pm25 === null ? null : (float)Live::$pm25),
 	);
-	echo '<input id="newData" type="hidden" value="' . htmlspecialchars(json_encode($flashData), ENT_QUOTES) . '" />';
+	echo '<input id="newData" type="hidden" value="' . htmlspecialchars(nw3_json_encode($flashData), ENT_QUOTES) . '" />';
 
 	// Temperature
 	$nowHtml = '<span id="var0">' . Wx::conv(Live::$temp, Wx::Temperature) . '</span> '
@@ -270,7 +270,7 @@ function nw3_render_cards() {
 			? '<span id="var6" class="daqi-status daqi-unknown"><span class="daqi-dot"></span>No data</span>'
 			: '<span id="var6" class="daqi-status ' . $daqiClass . $daqiBandClass . '"><span class="daqi-dot"></span>AQI ' . $usAqi . '</span>';
 		$pm25Sub = (Live::$pm25 === null) ? ''
-			: 'PM2.5 source <b>' . number_format((float)Live::$pm25, 1) . ' &micro;g/m&sup3;</b>';
+			: 'PM2.5 source <b>' . nw3_number_format((float)Live::$pm25, 1) . ' &micro;g/m&sup3;</b>';
 	} else {
 		$pmDpa = -1;
 		$pm25Now = (Live::$pm25 === null)

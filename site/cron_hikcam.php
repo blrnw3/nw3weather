@@ -24,7 +24,7 @@ $hw = 933;
 
 $image_raw = imagecreatefromjpeg($root.$img_name);
 if($image_raw) {
-	$gst = round(Live::$gust);
+	$gst = nw3_round(Live::$gust);
 	$name = file_get_contents($root."skycam_name.txt");
 	$dateraw = substr($name, 15, 14);
 	$datetime = mktime(
@@ -33,7 +33,7 @@ if($image_raw) {
 	);
 	$datestr = date("H:i:s Y-m-d", $datetime);
 
-	$str = "$datestr         " . Live::$temp . "C " . Live::$humi . "% ${gst} mph " . Live::$rain . " mm";
+	$str = "$datestr         " . Live::$temp . "C " . Live::$humi . "% {$gst} mph " . Live::$rain . " mm";
 	$copystr = "@nw3weather";
 
 	$image_hd = imagecreatetruecolor($wt, $ht);

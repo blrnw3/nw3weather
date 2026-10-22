@@ -69,8 +69,8 @@
 							<?php
 							echo 'PHP executed '. HTML::acronym('Session count: '. $_SESSION['count'][$file], 'in ') . $phpload .'s';
 							if($me) {
-								$mem_usage = round(memory_get_usage() / 1024 / 1024, 1);
-								$mem_peak = round(memory_get_peak_usage() / 1024 / 1024, 1);
+								$mem_usage = nw3_round(memory_get_usage() / 1024 / 1024, 1);
+								$mem_peak = nw3_round(memory_get_peak_usage() / 1024 / 1024, 1);
 								echo "&nbsp; Mem: $mem_usage, Peak mem: $mem_peak";
 							}	?>
 						</span>
