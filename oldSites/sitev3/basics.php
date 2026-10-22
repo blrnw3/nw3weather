@@ -1,8 +1,9 @@
 <?php
 date_default_timezone_set('Europe/London');
 
-const ROOT = '/var/www/html/';
+if(!defined('ROOT')) { define('ROOT', '/var/www/html/'); }
 require_once(ROOT . 'config/paths.php');
+require_once(ROOT . 'compat.php'); // PHP 5.4/8.x shims shared with the current site
 const VID_ROOT = '/mnt/nw3-vol1/html/';
 const CAM_ROOT = '/mnt/webcam/html/';
 const IMG_ROOT = '/static-images/';
@@ -21,7 +22,7 @@ $siteRoot = __DIR__ . '/';
 const ARCHIVE_WEB = '/oldSites/sitev3';
 $archiveWeb = ARCHIVE_WEB;
 
-$scriptbeg = microtime(get_as_float);
+$scriptbeg = microtime(true); // was the bare word get_as_float: a notice on 5.4, a fatal Error on 8.x
 
 $rareTags = ROOT . 'rareTags.php';
 
@@ -40,8 +41,8 @@ $da = array('j' => $dday, 'n' => $dmonth, 'Y' => $dyear);
 $lat = 51.556;
 $lng = -0.154;
 $zenith = 90.2;
-$sunrise = date_sunrise(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenith, date('I'));
-$sunset = date_sunset(time(), SUNFUNCS_RET_STRING, $lat, $lng, $zenith, date('I'));
+$sunrise = nw3_sunrise(time(), NW3_SUN_STRING, $lat, $lng, $zenith, date('I'));
+$sunset = nw3_sunset(time(), NW3_SUN_STRING, $lat, $lng, $zenith, date('I'));
 
 $dtstamp_yest = mktime(0, 0, 0, $dmonth, $dday-1, $dyear);
 $yr_yest = date('Y',$dtstamp_yest);
@@ -72,7 +73,7 @@ $temp_styr = 2009;
 
 $pgather = array(7,31,365);
 
-const PHP_INT_MIN = -92233720;
+// PHP_INT_MIN: native on 7+, polyfilled in compat.php for 5.4
 
 //Season processing
 $sc = date('n') % 3 + 1; //Months elapsed during current meteorological season

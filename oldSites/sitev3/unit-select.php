@@ -3,7 +3,7 @@ require_once(__DIR__ . '/basics.php');
 
 // Block excessive curler
 $curlers = array("35.176.125.39", "92.237.11.251", "71.187.230.231");
-if(in_array($_SERVER['REMOTE_ADDR'], $curlers) && strpos($_SERVER['HTTP_USER_AGENT'], "urllib") !== false) {
+if(isset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']) && in_array($_SERVER['REMOTE_ADDR'], $curlers) && strpos($_SERVER['HTTP_USER_AGENT'], "urllib") !== false) {
 	http_response_code(429);
 	die("Too many requests. IP temporarily blocked. Please reduce the request rate to under 6 per hour. Email blr@nw3weather.co.uk to appeal. Thank you");
 }
@@ -19,7 +19,7 @@ class GenConsts {
 
 if (!isset($_SESSION)) {
 	session_start();
-	if (count($_SESSION['count']) == 0) {
+	if (!isset($_SESSION['count']) || count((array)$_SESSION['count']) == 0) {
 		$_SESSION['count'] = array();
 	}
 }

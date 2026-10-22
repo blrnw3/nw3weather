@@ -51,7 +51,7 @@ function conv($tag, $type, $unit = true, $sign = false, $dpa = 0, $abs = false, 
 	if(($type == 9 || $type == 6) && $dat < 1 && $dat > 0) { $dpa++; }
 	if($abs) { $dat = abs($dat); }
 
-	$dpf = round($dp[intval($type)]+$dpa);
+	$dpf = nw3_round($dp[intval($type)]+$dpa);
 	$strret = $pom.'.'. $dpf.'f';
 	return sprintf("%$strret", $dat).$uarr[intval($type)];
 }
@@ -66,7 +66,7 @@ function thundername($val) {
 }
 function degname($winddegree) {
 	$windlabels = array ("N","NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW","SW", "WSW", "W", "WNW", "NW", "NNW","N");
-	return $windlabels[ round($winddegree / 22.5, 0) ];
+	return $windlabels[ nw3_round($winddegree / 22.5, 0) ];
 }
 
 /**
@@ -95,7 +95,7 @@ function zerolead($tag) {
 }
 function roundi($val) {
 	if($val < 10) { $dp = 1; }
-	return round($val,$dp);
+	return nw3_round($val,$dp);
 }
 
 /**
@@ -118,7 +118,7 @@ function roundbig($val, $size = 5, $dir = false) {
 	$size = ($size < 1) ? 1 : $size;
 	if($dir === 0) { $new = floor($val / $size); }
 	elseif($dir === 1) { $new = ceil($val / $size); }
-	else { $new = round($val / $size); }
+	else { $new = nw3_round($val / $size); }
 	return $new * $size;
 }
 
@@ -160,7 +160,7 @@ function time_av($times) {
 }
 function decimal_timefix($dec) {
 	$hr = floor($dec*24);
-	return zerolead($hr) . ':' . round(($dec*24-$hr)*60);
+	return zerolead($hr) . ':' . nw3_round(($dec*24-$hr)*60);
 }
 function timeformat($time) {
 	if(strpos($time, ':')) { return date('H:i', strtotime($time)); }
@@ -328,7 +328,7 @@ function daytotimeCM($days) {
 }
 
 function rate_fix($rate) {
-	if(round($rate) > 5) { return round($rate); } else { return $rate; }
+	if(nw3_round($rate) > 5) { return nw3_round($rate); } else { return $rate; }
 }
 
 /**
@@ -363,7 +363,7 @@ function mean($array, $cnt = false) {
 
 	$finalCnt = $cnt ? $cnt : $validCnt;
 
-	return ($validCnt > 0) ? array_sum($array)/$finalCnt : '';
+	return ($validCnt > 0) ? nw3_array_sum($array)/$finalCnt : '';
 }
 
 /**
@@ -751,11 +751,11 @@ function secsToReadable($secs) {
 	}
 
 	if($diff < 100) {
-		$ago = round($diff) .' mins';
+		$ago = nw3_round($diff) .' mins';
 	} elseif($diff < 3000) {
-		$ago = round($diff / 60) .' hours';
+		$ago = nw3_round($diff / 60) .' hours';
 	} else {
-		$ago = round($diff / 60 / 24) .' days';
+		$ago = nw3_round($diff / 60 / 24) .' days';
 	}
 
 	return $ago;
@@ -873,10 +873,10 @@ function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset =
 	$src = CAM_ROOT."camchive/$cam";
 	if(is_null($name)) {
 		$period = is_null($twiset) ? "all" : "sun$twiset";
-		$name = "${cam}cam_test_${year}_m${month}_d${day}_f${freq}_p-${period}_r${frame_rate}";
+		$name = "{$cam}cam_test_{$year}_m{$month}_d{$day}_f{$freq}_p-{$period}_r{$frame_rate}";
 	}
 	$tmpdir = VID_ROOT."tmpdir/$name";
-	$outfile = VID_ROOT."timelapse/${name}.mp4";
+	$outfile = VID_ROOT."timelapse/{$name}.mp4";
 
 	echo shell_exec("mkdir $tmpdir");
 
@@ -891,8 +891,8 @@ function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset =
 				$sunrise = -1;
 				$sunset = 9999;
 			} else {
-				$sunrise = intval(date_sunrise($sproc, SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) * 60 - $twiset);
-				$sunset = intval(date_sunset($sproc, SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) * 60 + $twiset);
+				$sunrise = intval(nw3_sunrise($sproc, NW3_SUN_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) * 60 - $twiset);
+				$sunset = intval(nw3_sunset($sproc, NW3_SUN_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) * 60 + $twiset);
 			}
 			echo "Processing $dbase: sunrise: $sunrise, sunset: $sunset\n";
 			foreach(listdir($dbase) as $c){
@@ -900,7 +900,7 @@ function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset =
 				$min = substr($c, 2, 2);
 				$num = intval($hr) * 60 + intval($min);
 				if($num % $freq == 0 && $num > $sunrise && $num < $sunset) {
-					$trgt = "$tmpdir/$year$m${d}_$c";
+					$trgt = "$tmpdir/$year$m{$d}_$c";
 					if(file_exists($dbase . $c) && filesize($dbase . $c) > 1024) {
 						copy($dbase . $c, $trgt);
 					} else {

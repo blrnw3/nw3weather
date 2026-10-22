@@ -101,7 +101,7 @@ $wp->setRanges($buckets);
 //$wp->setRangeStyle(RANGE_DISCRETE);
 $wp->SetDataKeyEncoding(KEYENCODING_CLOCKWISE);
 
-$phpload = microtime(get_as_float) - $scriptbeg;
+$phpload = microtime(true) - $scriptbeg;
 $footerstring = "@nw3weather. Generated: $date $time; Load time: " . myround($phpload, 2) . ' s';
 $graph->footer->center->Set($footerstring);
 

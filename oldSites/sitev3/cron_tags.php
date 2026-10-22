@@ -251,13 +251,13 @@ if ($daysnorain > 0) {
 
 $rndays_all = acronym("Proportion of days: " . percent($rndays_all, $rainallCnt), $rndays_all, true);
 
-$allrn = array_sum($rainall);
+$allrn = nw3_array_sum($rainall);
 $rain365a = $rain2[$dyear] + $rain2[$dyear - 1];
 //print_r($rain365a);
 $raintots = array_merge($rain3[$dyear] + $rain3[$dyear - 1]);
 $day_rain_last_year = $rains[$dyear - 1][$dmonth][$dday];
-$monthrn = array_sum($rains[$dyear][$dmonth]);
-$yearrn = array_sum($rain2[$dyear]);
+$monthrn = nw3_array_sum($rains[$dyear][$dmonth]);
+$yearrn = nw3_array_sum($rain2[$dyear]);
 $yestrn = $ystdrain = $rain2[$yr_yest][$dz_yest];
 
 $rndays_week = 0;
@@ -268,14 +268,14 @@ for ($d = 1; $d <= 7; $d++) {
 	}
 }
 $rndays_week = acronym("Proportion of days: " . percent($rndays_week, 7), $rndays_week, true);
-$rainweek = array_sum($rainweekVals);
+$rainweek = nw3_array_sum($rainweekVals);
 $rainweekMax = max($rainweekVals);
 $rainweekDate = today(null, $display_mon, true, null, mkday($dday - array_search($rainweekMax, $rainweekVals) + 1));
 
 for ($d = 1; $d <= 31; $d++) {
 	$rain31 += $rain365a[date('z', mkday($dday - $d)) + 1];
 }
-$rain365 = array_sum($rain365a);
+$rain365 = nw3_array_sum($rain365a);
 $raindays_month = $raindays_year = 0;
 $timeMonthago = mkdate($dmonth - 1, 1, $dyear);
 for ($d = 1; $d <= count($rains[$dyear][$dmonth]); $d++) {
@@ -311,18 +311,18 @@ $lymrain = $rain3[$dyear - 1][$dmonth];
 $lymrain1 = $rain3[date('Y', mkdate($dmonth - 1, 1, $dyear - 1))][date('n', mkdate($dmonth - 1, 1, $dyear - 1))];
 $lymrain2 = $rain3[date('Y', mkdate($dmonth - 2, 1, $dyear - 1))][date('n', mkdate($dmonth - 2, 1, $dyear - 1))];
 //conv($monthrn, 2) . ' (' .
-$monthrnF = ' (' . acronym('Of final expected: ' . round(100 * $monthrn / $rainav_curr) . '%', round(100 * $monthrn / ($rainav_curr / $dt * $dday)) . '%', true) . ')';
+$monthrnF = ' (' . acronym('Of final expected: ' . nw3_round(100 * $monthrn / $rainav_curr) . '%', nw3_round(100 * $monthrn / ($rainav_curr / $dt * $dday)) . '%', true) . ')';
 for ($m = 0; $m < $dmonth - 1; $m++) {
 	$curryearrainav += $rainav[$m];
 }//conv($yearrn, 2) . ' (' .
-$yearrnF = ' (' . acronym('Of final expected: ' . round(100 * $yearrn / array_sum($rainav)) . '%', round(100 * $yearrn / ($rainav_curr / $dt * $dday + $curryearrainav)) . '%', true) . ')';
-$seasonrnF = ' (' . acronym('Of final expected: ' . round(100 * $total / $s_avg) . '%', round(100 * $total / $s_avg_r) . '%', true) . ')'; //conv($total, 2) .
-$raindays_monthF = acronym('Proportion of days: ' . round(100 * $raindays_month / ($dday)) . '%', $raindays_month, true);
-$raindays_yearF = acronym('Proportion of days: ' . round(100 * $raindays_year / (date('z') + 1)) . '%', $raindays_year, true);
+$yearrnF = ' (' . acronym('Of final expected: ' . nw3_round(100 * $yearrn / nw3_array_sum($rainav)) . '%', nw3_round(100 * $yearrn / ($rainav_curr / $dt * $dday + $curryearrainav)) . '%', true) . ')';
+$seasonrnF = ' (' . acronym('Of final expected: ' . nw3_round(100 * $total / $s_avg) . '%', nw3_round(100 * $total / $s_avg_r) . '%', true) . ')'; //conv($total, 2) .
+$raindays_monthF = acronym('Proportion of days: ' . nw3_round(100 * $raindays_month / ($dday)) . '%', $raindays_month, true);
+$raindays_yearF = acronym('Proportion of days: ' . nw3_round(100 * $raindays_year / (date('z') + 1)) . '%', $raindays_year, true);
 
 for ($y = 2009; $y <= $dyear; $y++) {
 	if ($y != $dyear) {
-		$wettestyra[$y] = array_sum($rain2[$y]);
+		$wettestyra[$y] = nw3_array_sum($rain2[$y]);
 	}
 	$maxrainDa[$y] = $rains[$y][$dmonth][$dday];
 	if (is_array($rains[$y][$dmonth])) {
@@ -746,9 +746,9 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 			}
 			$totals[$c]['today'] = $tdat1[$dyear][$dmonth][$dday];
 			$totals[$c]['yest'] = $tdat2[$yr_yest][$dz_yest];
-			$totals[$c]['m'] = array_sum($tdat1[$dyear][$dmonth]);
-			$totals[$c]['y'] = array_sum($tdat2[$dyear]);
-			$totals[$c]['a'] = array_sum($tdatall);
+			$totals[$c]['m'] = nw3_array_sum($tdat1[$dyear][$dmonth]);
+			$totals[$c]['y'] = nw3_array_sum($tdat2[$dyear]);
+			$totals[$c]['a'] = nw3_array_sum($tdatall);
 
 			$daysof[$c]['m'] = sum_cond($tdat1[$dyear][$dmonth], true, 0.1);
 			$daysof[$c]['y'] = sum_cond($tdat2[$dyear], true, 0.1);
@@ -758,7 +758,7 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 			for ($m = 0; $m < $dmonth - 1; $m++) {
 				$curryrLTAtotal += $GLOBALS[$totType.'av'][$m];
 			}
-			$annualLTA = array_sum($GLOBALS[$totType.'av']);
+			$annualLTA = nw3_array_sum($GLOBALS[$totType.'av']);
 			$currMonAv = $GLOBALS[$totType.'av'][$dmonth-1] * $daysGone / $dt;
 
 			$totalsAnoms[$c]['m'] = percent($totals[$c]['m'], $currMonAv);
@@ -841,7 +841,7 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 						$buff->add(floatval($tdatall[$k]));
 					}
 					if ($buff->isFull) {
-						$tdatcum = array_sum($buff->items);
+						$tdatcum = nw3_array_sum($buff->items);
 						if (opmom($tdatcum, $tdatcumfix, $i)) {
 							$tdatcumfix = $tdatcum;
 							$cumend = $k;

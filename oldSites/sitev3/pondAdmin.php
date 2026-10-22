@@ -51,16 +51,16 @@ if(isset($_POST['pwd'])) {
 			die("pond_err");
 		}
 		for($i = 0; $i < $day_count; $i++) {
-			$old_line = split(',', $datm_lines[$i]);
+			$old_line = explode(',', $datm_lines[$i]);
 			$new_val = $_POST["day-$i"];
-			if(is_numeric($new_val)) {
+			if(nw3_is_numeric($new_val)) {
 				$old_line[12] = $new_val;
 			} elseif($i > 0 && $new_val !== '') {
 					$dt = date('d M', mkdate(1, $i, $yr));
 					echo "<p>Ignored non-numeric value $new_val for $dt</p>";
 			}
 			$old_line[count($old_line) - 1] = 0; // Last val in row 'spare' cannot be newline char
-			fputcsv($fildatm, $old_line);
+			nw3_fputcsv($fildatm, $old_line);
 		}
 		fclose($fildatm);
 		echo '<p>Saved! <a href="http://nw3weather.co.uk/wxdataday.php?vartype=pond">View updated temps</a> (takes up to 1 minute to update)</p>';
@@ -76,7 +76,7 @@ if(isset($_POST['pwd'])) {
 		<input type="submit" value="Submit Changes" />
 		<table style="margin:1em 3em;" border="1" cellpadding="2">';
 	for($i = $day_count-1; $i > 0; $i--) {
-		$line = split(',', $datm_lines[$i]);
+		$line = explode(',', $datm_lines[$i]);
 		if($i % 2 == 0) { $style = 'light'; } else { $style = 'dark'; }
 		echo '<tr class="row', $style ,'"><td class="td10C">', date('d M', mkdate(1, $i, $yr)), '</td>
 			<td><input type="text" name="day-', $i, '" value="'. $line[12] .'" /> </td>';

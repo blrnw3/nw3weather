@@ -36,7 +36,7 @@ $numsH = array(40, 40.1, 41, 42, 85, 86, 87, 32);
 $numsO = array(96, 15, 9);
 
 $cfile = explode('/', $_SERVER['PHP_SELF']);
-define(PAGE_NAME, $cfile[count($cfile)-1]);
+define('PAGE_NAME', $cfile[count($cfile)-1]);
 
 function sidebarGroup($items, $titles, $names, $nums) {
 	global $subfile, $file;

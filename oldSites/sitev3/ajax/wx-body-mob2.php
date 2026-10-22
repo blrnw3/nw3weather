@@ -46,16 +46,16 @@ showElapsedTimea()
 <td><b><?php echo sprintf('%.1f',$dew); ?> &deg;C</b> (<?php echo sprintf('%+.1f',$dewchangelasthour); ?> /hr)</td>
 </tr><tr>
 <td><b>Pressure</b></td>
-<td><b><?php echo round($live[6],0); ?> hPa</b> (<?php echo sprintf('%+.0f',$trend); ?> /hr)</td>
+<td><b><?php echo nw3_round($live[6],0); ?> hPa</b> (<?php echo sprintf('%+.0f',$trend); ?> /hr)</td>
 </tr><tr>
 <td><b>Wind</b></td>
-<td><b><?php echo round($live[1]*1.152,1), ' mph ',$dirlabel, ' </b><br />(Gusting ', round($live[2],1), ')'; ?></td>
+<td><b><?php echo nw3_round($live[1]*1.152,1), ' mph ',$dirlabel, ' </b><br />(Gusting ', nw3_round($live[2],1), ')'; ?></td>
 </tr><tr>
 <td><b>Daily Rain</b></td>
 <td><b><?php echo $live[7]; ?> mm</b> (Hour: <?php echo $hourrn; ?>)</td>
 </tr><tr>
 <td colspan="2"><b>Free Memory: </b><?php if($freememory<0): echo 4000+$freememory; else: echo $freememory; endif; ?> MB</td></tr><tr>
-<td colspan="2"><b>10m Wind: </b><?php echo $avtenminutewind; ?> mph - <b>Gust:</b> <?php echo round($live[133]*1.152,1); ?><br />
+<td colspan="2"><b>10m Wind: </b><?php echo $avtenminutewind; ?> mph - <b>Gust:</b> <?php echo nw3_round($live[133]*1.152,1); ?><br />
 <b>10-min Rain: </b><?php echo $rainlast10min; ?> mm<?php if($rainlast10min > 0) { echo ' Last:',$timeoflastrainalways; } ?></td>
 </tr></table>
 

@@ -137,12 +137,12 @@ $daysofOtherDescrip[6] = 'Total Events';
 //Misc.
 $snowfall = 0;
 foreach ($mdatm[3] as $d => $sn) {
-	$snowfall += (float)($sn == 'y') ? $mdat[13][$d] : $sn;
+	$snowfall += nw3_to_number(($sn == 'y') ? $mdat[13][$d] : $sn); // 8.x: '' + int is a TypeError
 }
 if($daysofRn[2] > 0) {
 	$misc[0] = 'Mean rainfall for days with >0.3mm: '. conv($msdat[13][2]*$dim / $daysofRn[2], 2);
 	$misc[1] = 'Total snowfall: '. conv($snowfall, 6) .' - '. percent($snowfall, $msdat[13][2]*$dim, 0, true, false) .' of the total precipitation';
-	$misc[2] = 'Total lying snow: '. conv(array_sum($mdatm[4]), 6);
+	$misc[2] = 'Total lying snow: '. conv(nw3_array_sum($mdatm[4]), 6);
 } else {
 	$misc[0] = 'Nothing to report';
 }
@@ -155,16 +155,16 @@ for($i = 0; $i < 2; $i++) { $manom[$i][2] = ' (' . conv($msdat[$i][2]-$tdatav[$m
 $manom[2][2] = ' (' . conv(($msdat[0][2]+$msdat[1][2])/2-$tdatav['mean'][$mproc-1],1.1,0,1) . ')';
 $manom[9][2] = ' (' . conv($msdat[9][2]-$windav[$mproc-1],4,0,1) . ')';
 $manom[13][2] = ' ' . percent($msdat[13][2],($rainav[$mproc-1]));
-$msdat[12][2] = round($msdat[12][2]);
+$msdat[12][2] = nw3_round($msdat[12][2]);
 for($i = 0; $i < 3; $i++) { if(intval($msdat[12][$i]) > 0) { $msdat[12][$i] .= '&deg; [' . degname($msdat[12][$i]) . ']'; } else { $msdat[12][$i] = 'n/a'; } }
 
 
 //extra fix-up
 $manomx[0][2] = ' (' . conv($msdatx[0][2]-$tdatav['range'][$mproc-1],1.1,0,1) . ')';
-$msdatx[1][2] = round($msdatx[1][2]);
+$msdatx[1][2] = nw3_round($msdatx[1][2]);
 
 //manual fix-up
-for($i = 0; $i < 2; $i++) { $mtdatm[$i][2] = 'Mean: ' . round($msdatm[$i][2],1); $msdatm[$i][2] = roundi($msdatm[$i][2] * $dim); }
+for($i = 0; $i < 2; $i++) { $mtdatm[$i][2] = 'Mean: ' . nw3_round($msdatm[$i][2],1); $msdatm[$i][2] = roundi($msdatm[$i][2] * $dim); }
 $manomm[0][2] = ' ' . percent($msdatm[0][2],$sunav[$mproc-1]).' ['.acronym('of a possible '.$maxsun[$mproc-1].' hrs', roundi(100*$msdatm[0][2]/$maxsun[$mproc-1]).'%',true).']';
 $manomm[1][2] = ' ' . percent($msdatm[1][2],$wetav[$mproc-1]).' [' .acronym('of a possible '. (24*$dim) . ' hrs', roundi(100*$msdatm[1][2]/(24*$dim)) . '%', true) . ']';
 

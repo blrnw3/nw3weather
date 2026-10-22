@@ -112,7 +112,7 @@ if(mkdate() == $sproc) { //include today
 	);
 
 	$todfix = '&amp;ts=' . (23-date('H')); $pastcamstamp = 'today';
-	for($v = 0; $v < count($data_description); $v++) { $mcdat[$v] += $ddat[$v]/$dproc; }
+	for($v = 0; $v < count($data_description); $v++) { $mcdat[$v] += nw3_to_number($ddat[$v])/$dproc; }
 	//for($v = 0; $v < 3; $v++) { $mctanom[$v] += $dtanom[$v]/$dproc; }
 	$todcond = time() > mktime(0,6);
 	$rec[$dyear] = $ddat; $rec = array_dswap($rec);
@@ -120,9 +120,9 @@ if(mkdate() == $sproc) { //include today
 if(mkdate() == $sproc+24*3600) { if(time() > mktime(0,6)) { $todcond2 = true; } else { $todcond2 = false; } } else { $todcond2 = true; }
 //Cumulative values
 for($d = 0; $d < $dproc; $d++) {
-	$mdat = explode(',', $dfdat[date('z',$sproc)+1-$d]); for($v = 0; $v < count($data_description); $v++) { $mcdat[$v] += $mdat[$v]/$dproc; }
-	$mdatm = explode(',', $dfdatm[date('z',$sproc)+1-$d]); for($v = 0; $v < 2; $v++) { $mcdatm[$v] += $mdatm[$v]; } $mcdatm[7] += intval($mdatm[11]);
-	$mtanom = explode(',', $dtfanom[date('z',$sproc)+1-$d]); $mctanom[3] = $mtanom[1] - $mtanom[0]; for($v = 0; $v < 3; $v++) { $mctanom[$v] += $mtanom[$v]/$dproc; }
+	$mdat = explode(',', $dfdat[date('z',$sproc)+1-$d]); for($v = 0; $v < count($data_description); $v++) { $mcdat[$v] += nw3_to_number($mdat[$v])/$dproc; }
+	$mdatm = explode(',', $dfdatm[date('z',$sproc)+1-$d]); for($v = 0; $v < 2; $v++) { $mcdatm[$v] += nw3_to_number($mdatm[$v]); } $mcdatm[7] += intval($mdatm[11]);
+	$mtanom = explode(',', $dtfanom[date('z',$sproc)+1-$d]); $mctanom[3] = nw3_to_number($mtanom[1]) - nw3_to_number($mtanom[0]); for($v = 0; $v < 3; $v++) { $mctanom[$v] += nw3_to_number($mtanom[$v])/$dproc; }
 	$mcsanom += $dsun[date('z',$sproc)+1-$d] / ($maxsun[$mproc-1]/$sunav[$mproc-1]); $maxsuntd += $dsun[date('z',$sproc)+1-$d];
 }
 $mcdat[13] *= $dproc;
@@ -160,7 +160,7 @@ for($v = 0; $v < 3; $v++) {
 if($ddat[13] == 0.1) { $ddat[13] = 'trace'; $typeconv[13] = false; }
 $ddanom[2] = ' (' . conv(($ddat[0]+$ddat[1]-$dtanom[0]-$dtanom[1])/2,1.1,0,1) . ')'; $mcanom[2] = ' (' . conv(($mcdat[0]+$mcdat[1]-$mctanom[0]-$mctanom[1])/2,1.1,0,1) . ')';
 $ddanom[9] = ' (' . conv($ddat[9]-$windav[$mproc-1],4,0,1) . ')'; $mcanom[9] = ' (' . conv($mcdat[9]-$windav[$mproc-1],4,0,1) . ')';
-$mcanom[13] = ' (' . round(100*$mcdat[13]/($rainav[$mproc-1]/date('t',$sproc)*$dproc)).'%)';
+$mcanom[13] = ' (' . nw3_round(100*$mcdat[13]/($rainav[$mproc-1]/date('t',$sproc)*$dproc)).'%)';
 for($i = 0; $i < 2; $i++) {
 	$ddanom[$i] = ' (' . conv($ddat[$i]-$dtanom[$i],1.1,0,1) . ')';
 	$mcanom[$i] = ' (' . conv($mcdat[$i]-$mctanom[$i],1.1,0,1) . ')';
@@ -176,7 +176,7 @@ for($i=0;$i<2;$i++) { if($ddat[$i] != $ddat[20+$i]) { $bold[20+$i] = '* '; $bold
 
 //Fix-up extra value-set
 $ddatx[0] = $ddat[1] - $ddat[0]; $mcdatx[0] = $mcdat[1] - $mcdat[0];
-$ddatx[1] = $ddat[4] - $ddat[3]; $mcdatx[1] = round($mcdat[4] - $mcdat[3]);
+$ddatx[1] = $ddat[4] - $ddat[3]; $mcdatx[1] = nw3_round($mcdat[4] - $mcdat[3]);
 $ddatx[2] = $ddat[7] - $ddat[6]; $mcdatx[2] = $mcdat[7] - $mcdat[6];
 $ddanomx[0] = ' (' . conv($ddatx[0]-$dtanom[3],1.1,0,1) . ')'; $mcdanomx[0] = ' (' . conv($mcdat[1]-$mctanom[1]-$mcdat[0]+$mctanom[0],1.1,0,1) . ')';
 $hianomx[0] = ' (' . conv($hix[0]-$dtanom[3],1.1,0,1) . ')'; $loanomx[0] = ' (' . conv($lox[0]-$dtanom[3],1.1,0,1) . ')';
@@ -186,7 +186,7 @@ $hianomx[0] = ' (' . conv($hix[0]-$dtanom[3],1.1,0,1) . ')'; $loanomx[0] = ' (' 
 $sunMax = $dsun[date('z',$sproc)];
 if($ddatm[0] == 'b') { $ddatm[0] = 0; }
 if($ddatm[0]/$sunMax > 0.95) { $maxsunevent = true; }
-$ddatm[0] .= ' [' . acronym('Out of ' . conv($sunMax,0,0) . ' hrs possible', round($ddatm[0]/$sunMax*100) . '%',true) . ']';
+$ddatm[0] .= ' [' . acronym('Out of ' . conv($sunMax,0,0) . ' hrs possible', nw3_round($ddatm[0]/$sunMax*100) . '%',true) . ']';
 if($ddatm[1] > 0.4 && $ddat[13] >= 0.4) { $ddatm[1] .=  '<br />[Mean rain rate: '. conv($ddat[13]/$ddatm[1],2.1) . ']'; }
 $mcdatm[0] = roundi($mcdatm[0]) . ' hrs ' . percent($mcdatm[0],$mcsanom) . ' ['. acronym('Of a possible '. roundi($maxsuntd),roundi(100*$mcdatm[0]/$maxsuntd),true) . '%]';
 $mcdatm[1] = roundi($mcdatm[1]) . ' hrs ' . percent($mcdatm[1],$wetav[$mproc-1]*$dproc/date('t',$sproc)) . ' ['. acronym('Of a possible '. 24*$dproc,roundi(100*$mcdatm[1]/$dproc/24),true) . '%]';
