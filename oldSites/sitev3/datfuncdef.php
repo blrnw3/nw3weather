@@ -431,7 +431,7 @@ function wdirMean($wdir, $speed) {
 
 	//choose a pivot
 	$minfreq = min($freqs);
-	$pivot = array_search($minfreq, $freqs);
+	$pivot = nw3_array_search($minfreq, $freqs);
 	$pivot *= $bitifier;
 
 	//calculate the mean
@@ -817,7 +817,7 @@ function dailyData($procfil = 'today') {
 }
 
 function timeFromMM($mm, $arr, $hrs, $mins) {
-	$line = array_search($mm, $arr);
+	$line = nw3_array_search($mm, $arr);
 	return zerolead($hrs[$line]).':'.zerolead($mins[$line]);
 }
 

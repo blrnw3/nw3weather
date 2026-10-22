@@ -95,7 +95,7 @@ class CurrVar {
 }
 
 //Logic for cycling of drop-downs
-$catNum = array_search($type, $flatCats);
+$catNum = nw3_array_search($type, $flatCats);
 $wxvarCount = count($flatCats);
 $prevType = $types_all[$flatCats[mod( $catNum-1, $wxvarCount)]];
 $nextType = $types_all[$flatCats[($catNum+1) % $wxvarCount]];

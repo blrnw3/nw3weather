@@ -697,8 +697,8 @@ class Util {
 			if($up) { if($near[$i] > 0) { $near[$i] = -99; } }
 			else { $near[$i] = abs($near[$i]); }
 		}
-		if($up) { $nearest = array_search( max($near), $near ); }
-		else { $nearest = array_search( min($near), $near ); }
+		if($up) { $nearest = nw3_array_search( max($near), $near ); }
+		else { $nearest = nw3_array_search( min($near), $near ); }
 		return $arr[$nearest];
 	}
 	public static function array_dswap($arr) {

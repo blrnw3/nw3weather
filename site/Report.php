@@ -553,7 +553,7 @@ class Report {
 		// prev / next variable arrows
 		$flat = $this->flatCats();
 		$cnt = count($flat);
-		$idx = array_search($this->type, $flat, true);
+		$idx = nw3_array_search($this->type, $flat, true);
 		if ($idx !== false) {
 			$prev = $flat[Util::mod($idx - 1, $cnt)];
 			$next = $flat[($idx + 1) % $cnt];

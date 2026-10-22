@@ -68,8 +68,8 @@ for($v = 0; $v < count($data_description); $v++) {
 	if(is_array($mdat[$v])) { $mdat[$v] = array_filter($mdat[$v],'clearblank'); }
 	if(count($mdat[$v]) > 0) {
 		$msdat[$v][2] = mean($mdat[$v]); $mtdat[$v][2] = 'From ' . count($mdat[$v]) . ' days data';
-		$msdat[$v][0] = min($mdat[$v]); $mtdat[$v][0] = 'On day: ' . ($dim - intval(array_search($msdat[$v][0], $mdat[$v])));
-		$msdat[$v][1] = max($mdat[$v]); $mtdat[$v][1] = 'On day: ' . ($dim - intval(array_search($msdat[$v][1], $mdat[$v])));
+		$msdat[$v][0] = min($mdat[$v]); $mtdat[$v][0] = 'On day: ' . ($dim - intval(nw3_array_search($msdat[$v][0], $mdat[$v])));
+		$msdat[$v][1] = max($mdat[$v]); $mtdat[$v][1] = 'On day: ' . ($dim - intval(nw3_array_search($msdat[$v][1], $mdat[$v])));
 		$msdatt[$v] = time_av($mdatt[$v]);
 	}
 	else { for($i = 0; $i < 3; $i++) { $msdat[$v][$i] = $mtdat[$v][$i] = $msdatt[$v] = 'n/a'; $typeconv[$v] = false; } }
@@ -77,13 +77,13 @@ for($v = 0; $v < count($data_description); $v++) {
 
 for($v = 0; $v < 2; $v++) {
 	$msdatm[$v][2] = mean($mdatm[$v]); $mtdatm[$v][2] = 'From ' . $dim . ' days data';
-	$msdatm[$v][0] = mymin($mdatm[$v]); $mtdatm[$v][0] = 'On day: ' . ($dim - intval(array_search($msdatm[$v][0], $mdatm[$v])));
-	$msdatm[$v][1] = mymax($mdatm[$v]); $mtdatm[$v][1] = 'On day: ' . ($dim - intval(array_search($msdatm[$v][1], $mdatm[$v])));
+	$msdatm[$v][0] = mymin($mdatm[$v]); $mtdatm[$v][0] = 'On day: ' . ($dim - intval(nw3_array_search($msdatm[$v][0], $mdatm[$v])));
+	$msdatm[$v][1] = mymax($mdatm[$v]); $mtdatm[$v][1] = 'On day: ' . ($dim - intval(nw3_array_search($msdatm[$v][1], $mdatm[$v])));
 }
 for($v = 0; $v < 3; $v++) {
 	$msdatx[$v][2] = mean($mdatx[$v]); $mtdatx[$v][2] = 'From ' . $dim . ' days data';
-	$msdatx[$v][0] = min($mdatx[$v]); $mtdatx[$v][0] = 'On day: ' . ($dim - intval(array_search($msdatx[$v][0], $mdatx[$v])));
-	$msdatx[$v][1] = max($mdatx[$v]); $mtdatx[$v][1] = 'On day: ' . ($dim - intval(array_search($msdatx[$v][1], $mdatx[$v])));
+	$msdatx[$v][0] = min($mdatx[$v]); $mtdatx[$v][0] = 'On day: ' . ($dim - intval(nw3_array_search($msdatx[$v][0], $mdatx[$v])));
+	$msdatx[$v][1] = max($mdatx[$v]); $mtdatx[$v][1] = 'On day: ' . ($dim - intval(nw3_array_search($msdatx[$v][1], $mdatx[$v])));
 }
 
 //Days of... section

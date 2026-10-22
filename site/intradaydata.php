@@ -106,7 +106,7 @@ if (!class_exists('IntradayDirMean')) {
 			$freqs = [];
 			for ($i = 0; $i <= 360 / self::BITIFIER; $i++) { $freqs[$i] = 0; }
 			for ($i = 0; $i < $this->size; $i++) { $freqs[(int)nw3_round($this->items[$i] / self::BITIFIER)]++; }
-			$pivot = array_search(min($freqs), $freqs) * self::BITIFIER;
+			$pivot = nw3_array_search(min($freqs), $freqs) * self::BITIFIER;
 			$sum = 0;
 			for ($i = 0; $i < $this->size; $i++) { $sum += $this->items[$i]; if ($this->items[$i] > $pivot) { $sum -= 360; } }
 			$mean = $sum / $this->size; if ($mean < 0) { $mean += 360; }

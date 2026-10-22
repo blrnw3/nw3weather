@@ -143,17 +143,17 @@ for($y = $temp_styr; $y <= $yrend; $y++) {
 for($v = 0; $v < count($data_description); $v++) {
 	if(is_array($rec[$v])) {
 		$hi[$v] = max($rec[$v]); $lo[$v] = min($rec[$v]); $av[$v] = mean($rec[$v]);
-		$hiY[$v] = yrec_hlite(array_search($hi[$v],$rec[$v]), $yproc); $loY[$v] = yrec_hlite(array_search($lo[$v],$rec[$v]), $yproc);
+		$hiY[$v] = yrec_hlite(nw3_array_search($hi[$v],$rec[$v]), $yproc); $loY[$v] = yrec_hlite(nw3_array_search($lo[$v],$rec[$v]), $yproc);
 	}
 	else { $typeconv[$v] = false; $hi[$v] = $lo[$v] = 'n/a'; $hiY[$v] = $loY[$v] = ''; }
 }
 for($v = 0; $v < 2; $v++) {
 	$him[$v] = max($recm[$v]); $lom[$v] = min($recm[$v]); $avm[$v] = mean($recm[$v]);
-	$hiYm[$v] = yrec_hlite(array_search($him[$v],$recm[$v]), $yproc); $loYm[$v] = yrec_hlite(array_search($lom[$v],$recm[$v]), $yproc);
+	$hiYm[$v] = yrec_hlite(nw3_array_search($him[$v],$recm[$v]), $yproc); $loYm[$v] = yrec_hlite(nw3_array_search($lom[$v],$recm[$v]), $yproc);
 }
 for($v = 0; $v < 3; $v++) {
 	$hix[$v] = max($recx[$v]); $lox[$v] = min($recx[$v]); $avx[$v] = mean($recx[$v]);
-	$hiYx[$v] = yrec_hlite(array_search($hix[$v],$recx[$v]), $yproc); $loYx[$v] = yrec_hlite(array_search($lox[$v],$recx[$v]), $yproc);
+	$hiYx[$v] = yrec_hlite(nw3_array_search($hix[$v],$recx[$v]), $yproc); $loYx[$v] = yrec_hlite(nw3_array_search($lox[$v],$recx[$v]), $yproc);
 }
 
 //Fix-up standard value-set
@@ -336,7 +336,7 @@ if($todcond) {
 	for($i = 0; $i < 20; $i++) {
 		if($ddat[$i] == '' || $ddat[$i] == '-') { $ddat[$i] = 'n/a'; $typeconv[$i] = false; }
 		if($i % 2 == 0) { $style = 'light'; } else { $style = 'dark'; }
-		if($ddatt[$i] < 1 && $ddatt[$i] > 0) { $ddatt[$i] = decimal_timefix($ddatt[$i]); } elseif(!strpos($ddatt[$i],'*')) { $ddatt[$i] = timeformat($ddatt[$i]); }
+		if(nw3_to_number($ddatt[$i]) < 1 && nw3_to_number($ddatt[$i]) > 0) { $ddatt[$i] = decimal_timefix($ddatt[$i]); } elseif(!strpos($ddatt[$i],'*')) { $ddatt[$i] = timeformat($ddatt[$i]); }
 		echo '<tr class="row', $style, '">
 			<td width="',$w1,'%" class="td', $data_num[$i]+10, 'C">', $data_description[$i], '</td>
 			<td width="',$w2,'%" class="td', $data_num[$i]+10, 'C" style="font-size:105%">', conv($ddat[$i],$typeconv[$i]), $ddanom[$i], '</td>
@@ -354,7 +354,7 @@ if($todcond) {
 	for($i = 20; $i < count($data_description); $i++) {
 		if($ddat[$i] == '' || $ddat[$i] == '-') { $ddat[$i] = 'n/a'; $typeconv[$i] = false; }
 		if($i % 2 == 0) { $style = 'light'; } else { $style = 'dark'; }
-		if($ddatt[$i] < 1 && $ddatt[$i] > 0) { $ddatt[$i] = decimal_timefix($ddatt[$i]); } elseif(!strpos($ddatt[20],'*')) { $ddatt[$i] = timeformat($ddatt[$i]); } else { $nmint = true; }
+		if(nw3_to_number($ddatt[$i]) < 1 && nw3_to_number($ddatt[$i]) > 0) { $ddatt[$i] = decimal_timefix($ddatt[$i]); } elseif(!strpos($ddatt[20],'*')) { $ddatt[$i] = timeformat($ddatt[$i]); } else { $nmint = true; }
 
 		echo '<tr class="row', $style, '">
 			<td width="',$w1,'%" class="td', $data_num[$i]+10, 'C">', $data_description[$i], '</td>

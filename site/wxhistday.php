@@ -134,8 +134,8 @@ $yrecHlite = function ($yr, $sel) { $col = ($yr == $sel) ? '#FF8989' : 'gray'; r
 for ($v = 0; $v < $NCOL; $v++) {
 	if (isset($rec[$v]) && is_array($rec[$v]) && count($rec[$v])) {
 		$hi[$v] = max($rec[$v]); $lo[$v] = min($rec[$v]); $av[$v] = Util::mean($rec[$v]);
-		$hiY[$v] = $yrecHlite(array_search($hi[$v], $rec[$v]), $yproc);
-		$loY[$v] = $yrecHlite(array_search($lo[$v], $rec[$v]), $yproc);
+		$hiY[$v] = $yrecHlite(nw3_array_search($hi[$v], $rec[$v]), $yproc);
+		$loY[$v] = $yrecHlite(nw3_array_search($lo[$v], $rec[$v]), $yproc);
 	} else { $hi[$v] = $lo[$v] = 'n/a'; $hiY[$v] = $loY[$v] = ''; }
 }
 
@@ -189,8 +189,8 @@ for ($xi = 0; $xi < 3; $xi++) {
 	$mcdatx[$xi] = $mcdat[$p[1]] - $mcdat[$p[0]];
 	$hix[$xi] = isset($recx[$xi]) && count($recx[$xi]) ? max($recx[$xi]) : 'n/a';
 	$lox[$xi] = isset($recx[$xi]) && count($recx[$xi]) ? min($recx[$xi]) : 'n/a';
-	$hiYx[$xi] = (isset($recx[$xi]) && count($recx[$xi])) ? $yrecHlite(array_search($hix[$xi], $recx[$xi]), $yproc) : '';
-	$loYx[$xi] = (isset($recx[$xi]) && count($recx[$xi])) ? $yrecHlite(array_search($lox[$xi], $recx[$xi]), $yproc) : '';
+	$hiYx[$xi] = (isset($recx[$xi]) && count($recx[$xi])) ? $yrecHlite(nw3_array_search($hix[$xi], $recx[$xi]), $yproc) : '';
+	$loYx[$xi] = (isset($recx[$xi]) && count($recx[$xi])) ? $yrecHlite(nw3_array_search($lox[$xi], $recx[$xi]), $yproc) : '';
 }
 $ddanomx0 = (!$blank($ddat[0]) && !$blank($ddat[1])) ? ' (' . Wx::conv(($ddat[1] - $ddat[0]) - $dtanom[3], Wx::AbsTemp, false, true) . ')' : '';
 

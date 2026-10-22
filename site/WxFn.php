@@ -1824,7 +1824,7 @@ class Data {
 
 		//choose a pivot
 		$minfreq = min($freqs);
-		$pivot = array_search($minfreq, $freqs);
+		$pivot = nw3_array_search($minfreq, $freqs);
 		$pivot *= $bitifier;
 
 		//calculate the mean
@@ -2209,7 +2209,7 @@ class Data {
 	}
 
 	public static function timeFromMM($mm, $arr, $hrs, $mins) {
-		$line = array_search($mm, $arr);
+		$line = nw3_array_search($mm, $arr);
 		return Util::zerolead($hrs[$line]).':'.Util::zerolead($mins[$line]);
 	}
 

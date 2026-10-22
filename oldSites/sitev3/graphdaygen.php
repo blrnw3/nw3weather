@@ -278,7 +278,7 @@ class rollingMean {
 
 		//choose a pivot
 		$minfreq = min($freqs);
-		$pivot = array_search($minfreq, $freqs);
+		$pivot = nw3_array_search($minfreq, $freqs);
 		$pivot *= self::bitifier;
 
 		//calculate the mean

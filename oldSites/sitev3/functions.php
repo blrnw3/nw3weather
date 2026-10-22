@@ -143,8 +143,8 @@ function find_nearest($val, $arr, $up = false) {
 		if($up) { if($near[$i] > 0) { $near[$i] = -99; } }
 		else { $near[$i] = abs($near[$i]); }
 	}
-	if($up) { $nearest = array_search( max($near), $near ); }
-	else { $nearest = array_search( min($near), $near ); }
+	if($up) { $nearest = nw3_array_search( max($near), $near ); }
+	else { $nearest = nw3_array_search( min($near), $near ); }
 	return $arr[$nearest];
 }
 
@@ -152,7 +152,7 @@ function time_av($times) {
 	for($i = 0; $i < count($times); $i++) {
 		if(!strpos($times[$i], '*')) {
 			if(strpos($times[$i], ':') > 0) { $mktimes[$i] = strtotime($times[$i]); }
-			elseif($times[$i] < 1 && $times[$i] > 0) { $mktimes[$i] = decimal_timefix($times[$i]); }
+			elseif(nw3_to_number($times[$i]) < 1 && nw3_to_number($times[$i]) > 0) { $mktimes[$i] = decimal_timefix($times[$i]); }
 		}
 	}
 	$meanTime = mean($mktimes);

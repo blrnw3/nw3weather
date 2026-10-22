@@ -152,6 +152,33 @@ function nw3_str_to_num($s) {
 	return 0;
 }
 
+/**
+ * Loose (==) comparison with PHP 5.4 rules for number vs string: 5.4 converted a non-numeric string
+ * to its leading number (so 0 == '' and 0 == 'c:b/o' were true); 8.x compares them as strings.
+ */
+function nw3_loose_eq($a, $b) {
+	if ((is_int($a) || is_float($a)) && is_string($b)) {
+		return $a == nw3_str_to_num($b);
+	}
+	if ((is_int($b) || is_float($b)) && is_string($a)) {
+		return $b == nw3_str_to_num($a);
+	}
+	return $a == $b;
+}
+
+/** array_search() (non-strict) with PHP 5.4 number/string comparison (native on 5.x/7.x). */
+function nw3_array_search($needle, $haystack, $strict = false) {
+	if ($strict || PHP_VERSION_ID < 80000) {
+		return array_search($needle, $haystack, $strict);
+	}
+	foreach ($haystack as $k => $v) {
+		if (nw3_loose_eq($needle, $v)) {
+			return $k;
+		}
+	}
+	return false;
+}
+
 /** array_sum() as in 5.4: non-numeric strings count as their leading number (8.3+ warns). */
 function nw3_array_sum($arr) {
 	$sum = 0;

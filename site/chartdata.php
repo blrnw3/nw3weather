@@ -158,7 +158,7 @@ class ChartDirMean {
 		for ($i = 0; $i < $this->size; $i++) {
 			$freqs[(int)nw3_round($this->items[$i] / self::BITIFIER)]++;
 		}
-		$pivot = array_search(min($freqs), $freqs) * self::BITIFIER;
+		$pivot = nw3_array_search(min($freqs), $freqs) * self::BITIFIER;
 		$sum = 0;
 		for ($i = 0; $i < $this->size; $i++) {
 			$sum += $this->items[$i];
