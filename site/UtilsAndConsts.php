@@ -587,7 +587,8 @@ class Util {
 		if($isGreater) {
 			foreach($arr as $val) {
 				if( !Util::isBlank($val) ) {
-					if($val > $limit) {
+					// nw3_to_number: on 8.x a non-numeric string (e.g. 'c:b/o') compares to a number as a string
+					if(nw3_to_number($val) > $limit) {
 						$cnt++;
 					}
 				} else {
@@ -597,7 +598,7 @@ class Util {
 		} else {
 			foreach($arr as $val) {
 				if( !Util::isBlank($val) ) {
-					if($val < $limit) {
+					if(nw3_to_number($val) < $limit) {
 						$cnt++;
 					}
 				} else {

@@ -919,9 +919,9 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 		//n-Day Averages
 		for ($p = 0; $p < count($pgather); $p++) {
 			for ($d = 1; $d <= $pgather[$p]; $d++) {
-				$tdat[$key][2][$pgather[$p]] += $tdatall[$datallCnt - $d] / $pgather[$p];
+				$tdat[$key][2][$pgather[$p]] += nw3_to_number($tdatall[$datallCnt - $d]) / $pgather[$p];
 				if ($getExtra) {
-					$tdat[$key][2][$pgather[$p] . 'anom'] += ($tdatall[$datallCnt - $d] / $pgather[$p] - $lta[$x][date('z', mkday($dday - $d + 1))] / $pgather[$p]);
+					$tdat[$key][2][$pgather[$p] . 'anom'] += (nw3_to_number($tdatall[$datallCnt - $d]) / $pgather[$p] - nw3_to_number($lta[$x][date('z', mkday($dday - $d + 1))]) / $pgather[$p]);
 				}
 			}
 		}
@@ -939,7 +939,7 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 		for ($m = 0; $m < 12; $m++) {
 			$tdatMM[$key][2][0][$m] = mean($tdatMMa[$m]);
 // 			$tdatMM[$key][2][1][$m] = '';
-			$tdatMM[$key][2][2][$m] = $tdatMM[$key][2][0][$m] - $tdatav[$key][$m];
+			$tdatMM[$key][2][2][$m] = nw3_to_number($tdatMM[$key][2][0][$m]) - nw3_to_number($tdatav[$key][$m]);
 			for ($j = 0; $j < 2; $j++) {
 				$tdatMM[$key][2]['extr'][$j] = mom($tdatMM[$key][2][0], $j);
 			}
@@ -947,9 +947,9 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 
 		for ($s = 0; $s < 4; $s++) {
 			for ($s2 = 0; $s2 < 3; $s2++) {
-				$tdatSS[$key][$s] += $tdatMM[$key][2][0][$snums[$s][$s2]] / 3;
+				$tdatSS[$key][$s] += nw3_to_number($tdatMM[$key][2][0][$snums[$s][$s2]]) / 3;
 				if ($getExtra) {
-					$tdatSSanom[$key][$s] += $tdatMM[$key][2][2][$snums[$s][$s2]] / 3;
+					$tdatSSanom[$key][$s] += nw3_to_number($tdatMM[$key][2][2][$snums[$s][$s2]]) / 3;
 				}
 			}
 		}
@@ -962,11 +962,11 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 			$highest[$i] = $data_sort[count($data_sort) - $i];
 			$dayRecH = array_search($highest[$i], $tdatGood);
 			$highest_day[$i] = today(true, true, true, null, daytotime($dayRecH));
-			$tdatGood[$dayRecH] -= 0.01; //prevent duplicated dates
+			$tdatGood[$dayRecH] = nw3_to_number($tdatGood[$dayRecH]) - 0.01; //prevent duplicated dates
 			$lowest[$i] = $data_sort[$i - 1];
 			$dayRecL = array_search($lowest[$i], $tdatGood);
 			$lowest_day[$i] = today(true, true, true, null, daytotime($dayRecL));
-			$tdatGood[$dayRecL] -= 0.01; //prevent duplicated dates
+			$tdatGood[$dayRecL] = nw3_to_number($tdatGood[$dayRecL]) - 0.01; //prevent duplicated dates
 		}
 		//Extreme Monthly Ranked
 		$tdatallMGood = array_filter($tdatallM, 'isNotBlank');
