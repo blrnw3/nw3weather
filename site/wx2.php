@@ -20,7 +20,7 @@ function hik_frame_url($ts) {
 
 Page::Start();
 
-$sunrise_hr = date_sunrise(time(), SUNFUNCS_RET_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I'));
+$sunrise_hr = nw3_sunrise(time(), NW3_SUN_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I'));
 $risetime = $sunrise_hr - 1;
 $risesecs = 2.5 * $risetime;  // 2.5s per hour timelapse
 $yr_yest = Date::$yr_yest;
@@ -37,7 +37,7 @@ $days_seen = array();
 for ($i = 0; $i <= 47; $i++) {
 	$ts = $base - $i * 1800;
 	$stamp = date('Hi', $ts);
-	$thumb_rel = "camchive/thumbs/hik/${stamp}hik.jpg";
+	$thumb_rel = "camchive/thumbs/hik/{$stamp}hik.jpg";
 	$thumb_path = Site::CAM_ROOT . $thumb_rel;
 	$has_thumb = file_exists($thumb_path);
 	$thumb_url = '/' . $thumb_rel;
@@ -80,7 +80,7 @@ foreach (array_keys($days_seen) as $day) {
 }
 
 // Timelapse placeholder: sunrise frame (assumed present every minute), else midnight if before sunrise
-$rise_mins = (int) round($sunrise_hr * 60);
+$rise_mins = (int) nw3_round($sunrise_hr * 60);
 $now_mins = (int) Date::$dhr * 60 + (int) date('i');
 if ($now_mins >= $rise_mins) {
 	$placeholder_stamp = Util::zerolead((int) floor($rise_mins / 60)) . Util::zerolead($rise_mins % 60);

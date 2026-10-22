@@ -114,7 +114,7 @@ if (is_readable($file)) {
 		$out['rain'][] = Wx::convNum($c[10], Wx::Rain, 2);
 		$out['wind'][] = Wx::convNum($windOut, Wx::Wind, 1);
 		$out['gust'][] = Wx::convNum($c[4], Wx::Wind, 1);
-		$out['wdir'][] = ($dirOut < 0) ? null : round($dirOut);
+		$out['wdir'][] = ($dirOut < 0) ? null : nw3_round($dirOut);
 		$out['pm25'][] = (isset($c[11]) && $c[11] !== '') ? Wx::convNum($c[11], Wx::Pm25, Wx::precision(Wx::Pm25)) : null;
 	}
 
@@ -122,7 +122,7 @@ if (is_readable($file)) {
 	$out['updated'] = $n ? (int)($out['time'][$n - 1] / 1000) : filemtime($file);
 }
 
-echo json_encode($out);
+echo nw3_json_encode($out);
 
 /**
  * Rolling vector mean for wind direction (degrees), ported from the legacy
@@ -156,7 +156,7 @@ class ChartDirMean {
 			$freqs[$i] = 0;
 		}
 		for ($i = 0; $i < $this->size; $i++) {
-			$freqs[(int)round($this->items[$i] / self::BITIFIER)]++;
+			$freqs[(int)nw3_round($this->items[$i] / self::BITIFIER)]++;
 		}
 		$pivot = array_search(min($freqs), $freqs) * self::BITIFIER;
 		$sum = 0;

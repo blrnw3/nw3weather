@@ -17,8 +17,8 @@ $yproc = isset($_GET['year']) ? intval($_GET['year']) : Date::$dyear;
 $sproc = Date::mkdate($mproc, $dproc, $yproc);
 $datedescrip = date('jS F Y', $sproc);
 
-$riseproc = date_sunrise($sproc, SUNFUNCS_RET_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) - 1.5;
-$setproc = date_sunset($sproc, SUNFUNCS_RET_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) + 1.5;
+$riseproc = nw3_sunrise($sproc, NW3_SUN_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) - 1.5;
+$setproc = nw3_sunset($sproc, NW3_SUN_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) + 1.5;
 
 $archive_start = Date::mkdate(8, 1, 2010);
 $cond1 = $sproc > $archive_start;
@@ -275,7 +275,7 @@ if ($all_frames) {
 <script type="text/javascript">
 //<![CDATA[
 $(function() {
-	var frames = <?php echo json_encode($modal_frames); ?>;
+	var frames = <?php echo nw3_json_encode($modal_frames); ?>;
 	var $modal = $('#cam-modal');
 	var $img = $('#cam-modal-img');
 	var $label = $('#cam-modal-label');

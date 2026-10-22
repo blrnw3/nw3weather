@@ -10,8 +10,8 @@ Page::Start();
 
 require Site::$rareTags;
 $zenithTwi = 96;
-$twilightAM = date_sunrise(time(), SUNFUNCS_RET_STRING, site::LATITUDE, site::LONGITUDE, $zenithTwi, date('I'));
-$twilightPM = date_sunset(time(), SUNFUNCS_RET_STRING, site::LATITUDE, site::LONGITUDE, $zenithTwi, date('I'));
+$twilightAM = nw3_sunrise(time(), NW3_SUN_STRING, site::LATITUDE, site::LONGITUDE, $zenithTwi, date('I'));
+$twilightPM = nw3_sunset(time(), NW3_SUN_STRING, site::LATITUDE, site::LONGITUDE, $zenithTwi, date('I'));
 $splitmoon = explode(" ", $moonage);
 $moonImg = "moon13.jpg";
 if ($splitmoon[2] < 2): $moonImg = 'moon1.jpg';

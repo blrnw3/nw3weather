@@ -104,7 +104,7 @@ for ($d = 0; $d < $dproc; $d++) {
 	$ln = $zidx + 1 - $d;
 	if (isset($datLines[$ln])) {
 		$row = explode(',', $datLines[$ln]);
-		for ($v = 0; $v < $NCOL; $v++) { if (isset($row[$v]) && is_numeric($row[$v])) { $mcdat[$v] += (float)$row[$v] / $dproc; } }
+		for ($v = 0; $v < $NCOL; $v++) { if (isset($row[$v]) && nw3_is_numeric($row[$v])) { $mcdat[$v] += (float)$row[$v] / $dproc; } }
 	}
 	$az = $zidx - $d;
 	if (isset($anomLines[$az])) {
@@ -140,7 +140,7 @@ for ($v = 0; $v < $NCOL; $v++) {
 }
 
 // ---- Formatting helpers ----
-$blank = function ($v) { return $v === '' || $v === '-' || $v === null || !is_numeric($v); };
+$blank = function ($v) { return $v === '' || $v === '-' || $v === null || !nw3_is_numeric($v); };
 $fmt = function ($v, $unit) use ($blank) { return $blank($v) ? 'n/a' : Wx::conv($v, $unit, true); };
 $anomT = function ($v, $n) { return ' (' . Wx::conv($v - $n, Wx::AbsTemp, false, true) . ')'; };
 
@@ -161,12 +161,12 @@ if (!$blank($ddat[9])) {
 }
 $daysInMon = (int)date('t', $sproc);
 if ($rainav[$mproc - 1] > 0) {
-	$mcanom[13] = ' (' . round(100 * $mcdat[13] / ($rainav[$mproc - 1] / $daysInMon * $dproc)) . '%)';
+	$mcanom[13] = ' (' . nw3_round(100 * $mcdat[13] / ($rainav[$mproc - 1] / $daysInMon * $dproc)) . '%)';
 }
 $hianom = $loanom = array_fill(0, $NCOL, '');
 for ($i = 0; $i < 2; $i++) {
-	if (is_numeric($hi[$i])) { $hianom[$i] = $anomT($hi[$i], $dtanom[$i]); }
-	if (is_numeric($lo[$i])) { $loanom[$i] = $anomT($lo[$i], $dtanom[$i]); }
+	if (nw3_is_numeric($hi[$i])) { $hianom[$i] = $anomT($hi[$i], $dtanom[$i]); }
+	if (nw3_is_numeric($lo[$i])) { $loanom[$i] = $anomT($lo[$i], $dtanom[$i]); }
 }
 
 // Wind direction text
@@ -219,7 +219,7 @@ $decodeCloud = function ($ts) use ($ccd, $ccdGet) {
 };
 $cloudText = $decodeCloud(isset($ddatm[2]) ? $ddatm[2] : '');
 
-$events = array(); $afFlag = (isset($ddat[20]) && is_numeric($ddat[20]) && $ddat[20] < 0);
+$events = array(); $afFlag = (isset($ddat[20]) && nw3_is_numeric($ddat[20]) && $ddat[20] < 0);
 $sn = isset($ddatm[3]) ? $ddatm[3] : ''; if ($sn !== '') { $events[] = 'Snowfall' . ($sn === '0.1' ? ' (trace)' : ''); }
 $ly = isset($ddatm[4]) ? $ddatm[4] : ''; if ($ly !== '') { $events[] = 'Lying Snow' . ($ly === '0.1' ? ' (trace)' : ''); }
 $hl = isset($ddatm[5]) ? $ddatm[5] : ''; if ($hl !== '') { $events[] = 'Hail (' . ($hl == '1' ? 'small' : ($hl == '2' ? 'medium' : 'large')) . ' stones)'; }
@@ -234,8 +234,8 @@ $pondText = (isset($ddatm[12]) && $ddatm[12] !== '') ? Wx::conv($ddatm[12], Wx::
 $sunMax = isset($sunLines[$zidx]) ? (float)$sunLines[$zidx] : 0;
 $sunRaw = isset($ddatm[0]) ? $ddatm[0] : '';
 $sunVal = ($sunRaw === 'b') ? 0 : $sunRaw;
-$sunText = is_numeric($sunVal) ? (round($sunVal, 1) . ' hrs' . ($sunMax > 0 ? ' [' . HTML::acronym('Out of ' . round($sunMax) . ' hrs possible', round($sunVal / $sunMax * 100) . '%', true) . ']' : '')) : 'n/a';
-$wetText = (isset($ddatm[1]) && is_numeric($ddatm[1])) ? round($ddatm[1], 1) . ' hrs' : 'n/a';
+$sunText = nw3_is_numeric($sunVal) ? (nw3_round($sunVal, 1) . ' hrs' . ($sunMax > 0 ? ' [' . HTML::acronym('Out of ' . nw3_round($sunMax) . ' hrs possible', nw3_round($sunVal / $sunMax * 100) . '%', true) . ']' : '')) : 'n/a';
+$wetText = (isset($ddatm[1]) && nw3_is_numeric($ddatm[1])) ? nw3_round($ddatm[1], 1) . ' hrs' : 'n/a';
 ?>
 
 <h1>Daily Report for <?php echo date('jS F Y', $sproc); ?></h1>
@@ -264,7 +264,7 @@ if (!$todcond) {
 
 $timeCell = function ($t) {
 	if ($t === '' || $t === null) { return ''; }
-	if (is_numeric($t) && $t < 1 && $t > 0) { return Date::decimal_timefix($t); }
+	if (nw3_is_numeric($t) && $t < 1 && $t > 0) { return Date::decimal_timefix($t); }
 	if (strpos($t, '*') === false) { return Date::timeformat($t); }
 	return str_replace('*', '', $t);
 };

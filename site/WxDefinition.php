@@ -317,7 +317,7 @@ class Wx {
 	 * @return float|null
 	 */
 	public static function convNum($val, $type, $dp = null) {
-		if($val === null || $val === '' || $val === '-' || !is_numeric($val)) {
+		if($val === null || $val === '' || $val === '-' || !nw3_is_numeric($val)) {
 			return null;
 		}
 		$value = (float)$val;
@@ -330,7 +330,7 @@ class Wx {
 				$value = call_user_func('Wx::_conv_'. $var['name'], $value);
 			}
 		}
-		return ($dp === null) ? $value : round($value, $dp);
+		return ($dp === null) ? $value : nw3_round($value, $dp);
 	}
 
 	/**
@@ -382,7 +382,7 @@ class Wx {
 			// Unitless values are shown as-is (comments, flags, stored counts),
 			// but an aggregate such as a mean of event days arrives as a float
 			// and would otherwise print at full precision.
-			return is_float($val) ? (string)round($val, 2) : $val;
+			return is_float($val) ? (string)nw3_round($val, 2) : $val;
 		} elseif( is_null($val) || (is_string($val) && Util::isBlank($val)) ) {
 			return ($val === null) ? 'null' : '';
 		} elseif($type === 'wdir' || $type === self::Direction) {
@@ -440,7 +440,7 @@ class Wx {
 	}
 	public static function degname($winddegree) {
 		$windlabels = array ("N","NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW","SW", "WSW", "W", "WNW", "NW", "NNW","N");
-		return $windlabels[ round($winddegree / 22.5, 0) ];
+		return $windlabels[ nw3_round($winddegree / 22.5, 0) ];
 	}
 	/**
 	 * Convert from wind speeed in mph to a beaufort value and descriptive string
@@ -468,7 +468,7 @@ class Wx {
 	 * @return array [band 1-10 (0 = unknown), name Low/Moderate/High/Very High, css-class]
 	 */
 	public static function daqi($pm25) {
-		if($pm25 === null || $pm25 === '' || !is_numeric($pm25)) {
+		if($pm25 === null || $pm25 === '' || !nw3_is_numeric($pm25)) {
 			return array(0, 'Unknown', 'daqi-unknown');
 		}
 		$pm = (float)$pm25;
@@ -489,7 +489,7 @@ class Wx {
 	 * @return int|null AQI 0-500, or null if no value
 	 */
 	public static function usAqi($pm25) {
-		if($pm25 === null || $pm25 === '' || !is_numeric($pm25)) {
+		if($pm25 === null || $pm25 === '' || !nw3_is_numeric($pm25)) {
 			return null;
 		}
 		$c = floor((float)$pm25 * 10) / 10; // truncate to 1 dp
@@ -503,13 +503,13 @@ class Wx {
 		);
 		foreach($bp as $b) {
 			if($c <= $b[1]) {
-				return (int)round(($b[3] - $b[2]) / ($b[1] - $b[0]) * ($c - $b[0]) + $b[2]);
+				return (int)nw3_round(($b[3] - $b[2]) / ($b[1] - $b[0]) * ($c - $b[0]) + $b[2]);
 			}
 		}
 		return 500;
 	}
 	public static function rate_fix($rate) {
-		if(round($rate) > 5) { return round($rate); } else { return $rate; }
+		if(nw3_round($rate) > 5) { return nw3_round($rate); } else { return $rate; }
 	}
 	public static function norain_fix($time, $val, $rate = false) {
 		$thresh = 0.1; if($rate) { $thresh = 0.5; }
@@ -1176,7 +1176,7 @@ class LTA {
 		}
 		foreach(self::$vars as $key => &$obj) {
 			if(is_array($obj) && array_key_exists("monthly", $obj)) {
-				$obj["year_sum"] = array_sum($obj["monthly"]);
+				$obj["year_sum"] = nw3_array_sum($obj["monthly"]);
 				$obj["year_mean"] = $obj["year_sum"] / 12;
 				$obj["season_sum"] = [];
 				$obj["season_mean"] = [];
@@ -1209,7 +1209,7 @@ class LTA {
 		if ($pair !== null) {
 			$a = self::getDailyAnom($pair[0], $month, $day, $yr);
 			$b = self::getDailyAnom($pair[1], $month, $day, $yr);
-			if (!is_numeric($a) || !is_numeric($b)) { return null; }
+			if (!nw3_is_numeric($a) || !nw3_is_numeric($b)) { return null; }
 			return ($type === 'trange') ? ($b - $a) : (($a + $b) / 2);
 		}
 		$z = date("z", Date::mkdate($month, $day, $yr));
@@ -1224,7 +1224,7 @@ class LTA {
 		if ($pair !== null) {
 			$a = self::getMonthlyAnom($pair[0], $month);
 			$b = self::getMonthlyAnom($pair[1], $month);
-			if (!is_numeric($a) || !is_numeric($b)) { return null; }
+			if (!nw3_is_numeric($a) || !nw3_is_numeric($b)) { return null; }
 			return ($type === 'trange') ? ($b - $a) : (($a + $b) / 2);
 		}
 		if(!isset(self::$vars[$type]) || !is_array(self::$vars[$type]) || !isset(self::$vars[$type]["monthly"])) {
@@ -1238,7 +1238,7 @@ class LTA {
 		if ($pair !== null) {
 			$a = self::getYearlyAnom($pair[0]);
 			$b = self::getYearlyAnom($pair[1]);
-			if (!is_numeric($a) || !is_numeric($b)) { return null; }
+			if (!nw3_is_numeric($a) || !nw3_is_numeric($b)) { return null; }
 			return ($type === 'trange') ? ($b - $a) : (($a + $b) / 2);
 		}
 		if(!isset(self::$vars[$type]) || !is_array(self::$vars[$type])) {
@@ -1253,7 +1253,7 @@ class LTA {
 		if ($pair !== null) {
 			$a = self::getSeasonAnom($pair[0], $season);
 			$b = self::getSeasonAnom($pair[1], $season);
-			if (!is_numeric($a) || !is_numeric($b)) { return null; }
+			if (!nw3_is_numeric($a) || !nw3_is_numeric($b)) { return null; }
 			return ($type === 'trange') ? ($b - $a) : (($a + $b) / 2);
 		}
 		if(!isset(self::$vars[$type]) || !is_array(self::$vars[$type])) {
@@ -1273,7 +1273,7 @@ class LTA {
 		for ($i = 0; $i < $days; $i++) {
 			$ts = Date::mkdate(Date::$dmonth, Date::$dday - $i, Date::$dyear);
 			$norm = self::getDailyAnom($type, (int)date('n', $ts), (int)date('j', $ts), (int)date('Y', $ts));
-			if (is_numeric($norm)) {
+			if (nw3_is_numeric($norm)) {
 				$sum += $norm;
 				$n++;
 			}

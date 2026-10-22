@@ -53,7 +53,7 @@ function dataModSunnyRanges($jsonPath, $returnAsString) {
 	foreach ($ranges as $range) {
 		$start = sprintf('%02d:%02d', floor($range[0] / 60), $range[0] % 60);
 		$end = sprintf('%02d:%02d', floor($range[1] / 60), $range[1] % 60);
-		$formatted[] = $start . '-' . $end . ' (' . round(($range[1] - $range[0]) / 60, 1) . 'h)';
+		$formatted[] = $start . '-' . $end . ' (' . nw3_round(($range[1] - $range[0]) / 60, 1) . 'h)';
 	}
 	return $returnAsString ? implode(', ', $formatted) : $formatted;
 }
@@ -70,7 +70,7 @@ function dataModWriteCsv($path, $lines, $stripQuotes) {
 		}
 		$last = count($row) - 1;
 		$row[$last] = intval($row[$last]);
-		fputcsv($file, $row);
+		nw3_fputcsv($file, $row);
 	}
 	fclose($file);
 	return true;
@@ -114,8 +114,8 @@ $datPath = ROOT . 'dat' . $year . '.csv';
 $dattPath = ROOT . 'datt' . $year . '.csv';
 $datmPath = ROOT . 'datm' . $year . '.csv';
 
-$sunriseTime = date_sunrise($modTimestamp, SUNFUNCS_RET_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $modTimestamp));
-$sunsetTime = date_sunset($modTimestamp, SUNFUNCS_RET_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $modTimestamp));
+$sunriseTime = nw3_sunrise($modTimestamp, NW3_SUN_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $modTimestamp));
+$sunsetTime = nw3_sunset($modTimestamp, NW3_SUN_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $modTimestamp));
 ?>
 
 <div class="admin-page">
@@ -209,7 +209,7 @@ if (isset($_POST['pwd'])) {
 			&& dataModWriteCsv($datmPath, $modDataM, true);
 		if ($saved) {
 			clearstatcache(true, $datPath);
-			echo '<p>Saved!</p><p>New file size: ' . dataModEscape(number_format(filesize($datPath))) . ' bytes</p>';
+			echo '<p>Saved!</p><p>New file size: ' . dataModEscape(nw3_number_format(filesize($datPath))) . ' bytes</p>';
 		} else {
 			echo Page::getStatusDiv('Server error while saving data.', true);
 		}
