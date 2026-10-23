@@ -8,9 +8,12 @@ if(isset($_GET['y'])) { $dimy = ($_GET['y'] > 1500) ? 1500 : (int)$_GET['y']; } 
 if(isset($_GET['type'])) { $dtype = $_GET['type']; } else { $dtype = 'temp'; }
 if(isset($_GET['nofooter'])) { $nofooter = true; $fmarge = 20; } else { $fmarge = 45; }
 
-//cron settings
-$fileName = $argv[1];
-if($argv[2] == 's' || $argv[3] == 's') {
+//cron settings (no CLI args when served over HTTP)
+$argc = isset($argc) ? $argc : 0;
+$fileName = isset($argv[1]) ? $argv[1] : null;
+$cliArg2 = isset($argv[2]) ? $argv[2] : null;
+$cliArg3 = isset($argv[3]) ? $argv[3] : null;
+if($cliArg2 == 's' || $cliArg3 == 's') {
 	$dimx = $argv[4];
 	$dimy = $argv[3];
 	$legendBoxWeight = 0;
@@ -22,9 +25,9 @@ if($argv[2] == 's' || $argv[3] == 's') {
 	$skipYaxis = true;
 	$legendBoxWeight = 0;
 }
-if($argv[2] == 'wdir') { //main (wx3) graph
+if($cliArg2 == 'wdir') { //main (wx3) graph
 	$dtype = 'wdir';
-	$dimy = ($argv[3] == 's') ? 150 : 220;
+	$dimy = ($cliArg3 == 's') ? 150 : 220;
 }
 if($argc > 5) { //main-page mini-graphs
 	$_GET['type1'] = $argv[2];
@@ -76,13 +79,13 @@ if(false && file_exists($cacheName)) {
 	die();
 }
 
-if($autoscale) { // see graphdayA. Need here to optimise data collection
+if(!empty($autoscale)) { // see graphdayA. Need here to optimise data collection
 	for($i = 1; $i < 9; $i++) {
 		if(isset($_GET['type'.$i])) { $dextra[$i] = $_GET['type'.$i]; $dble[$i] = true; $more = true; } else { $dble[$i] = false; }
-		if($dextra[$i] == 'wdir') { $dtype = 'wdir'; unset($dextra[$i]); $dble[$i] = false; }
+		if(isset($dextra[$i]) && $dextra[$i] == 'wdir') { $dtype = 'wdir'; unset($dextra[$i]); $dble[$i] = false; }
 		if(!$dble[$i]) { unset($dble[$i]); }
 	}
-	if($more) { $dextra = array_merge($dextra); $dble = array_merge($dble); if($dtype == 'temp') { $dtype = $dextra[count($dble)-1]; $dble[count($dble)-1] = false; } }
+	if(!empty($more)) { $dextra = array_merge($dextra); $dble = array_merge($dble); if($dtype == 'temp') { $dtype = $dextra[count($dble)-1]; $dble[count($dble)-1] = false; } }
 }
 
 $data = graphdaydata($procday, $stt, $end, $num, $dtype == 'wdir');
@@ -91,7 +94,7 @@ for($i = 0; $i <= 11; $i++) {
 }
 $data['lab'] = array_merge($data['lab']);
 
-if($rem) {
+if(!empty($rem)) {
 	$footerstring = 'Last Updated: '.$data['enddate'];
 }
 if($imperial) {
@@ -225,7 +228,7 @@ function graphdaydata($logf, $stt, $end, $multi, $wdirNeeded) {
 		$dat['lab'][$i] = ($multi > 3) ? $custl[2] : date('H', mktime($custl[0], $custl[1]+1));
 	}
 
-	if(is_array($dat[0])) {
+	if(isset($dat[0]) && is_array($dat[0])) {
 		$dat['startmin'] = $dat[1][$stt]; if($multi > 1) { $dat['startmin'] = 0; }
 		$dat['rnmax'] = mymax($dat[10]);
 		$dat['enddate'] = date('H:i, jS M', mktime($dat[0][$i-$multi],$dat[1][$i-$multi],0,$GLOBALS['dmonth'],$dat[2][$i-$multi]));

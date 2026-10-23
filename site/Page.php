@@ -637,6 +637,9 @@ END;
 	   }
 
 	   $fil = fopen(ROOT.'Logs/'.$txtname, "a");
+	   if($fil === false) {
+		   return; // log not writable: skip rather than fail the page
+	   }
 	   fwrite( $fil, date("H:i:s d/m/Y") . "\t" . $content .
 		   Util::str_subpad( filter_input(INPUT_SERVER, "REQUEST_URI", FILTER_SANITIZE_URL), 100 ) .
 		   Util::str_subpad(filter_input(INPUT_SERVER, "HTTP_REFERER", FILTER_SANITIZE_URL), 120) .

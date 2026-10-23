@@ -90,7 +90,7 @@ if($gtype == 'yA') {
 	for($t = 1; $t <= count($daytypes); $t++) {
 		$find = array(' (10-min)', 'Direction', 'Wind Speed'); $repl = array('','Drctn','Speed');
 		$tvargv = explode('/',$daynames[$daytypes[$t-1]]); $datnam = str_replace($find,$repl,$tvargv[0]);
-		if(($daytypes[$t-1] == $type[$t] || (!$more && $t == 1)) && $gtype == 'yA') { $checked = 'checked="checked" '; } else { $checked = ''; }
+		if(($daytypes[$t-1] == ($type[$t] ?? null) || (empty($more) && $t == 1)) && $gtype == 'yA') { $checked = 'checked="checked" '; } else { $checked = ''; }
 		echo '<label><input type="checkbox" name="type',$t,'" value="', $daytypes[$t-1], '" ', $checked, '/> ', $datnam, ' &nbsp;</label>
 			';
 	}

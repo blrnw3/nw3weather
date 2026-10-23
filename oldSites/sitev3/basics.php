@@ -4,22 +4,22 @@ date_default_timezone_set('Europe/London');
 if(!defined('ROOT')) { define('ROOT', '/var/www/html/'); }
 require_once(ROOT . 'config/paths.php');
 require_once(ROOT . 'compat.php'); // PHP 5.4/8.x shims shared with the current site
-const VID_ROOT = '/srv/nw3weather/cam/video/';
-const CAM_ROOT = '/srv/nw3weather/cam/stills/';
-const IMG_ROOT = '/static-images/';
+if(!defined('VID_ROOT')) { define('VID_ROOT', '/srv/nw3weather/cam/video/'); }
+if(!defined('CAM_ROOT')) { define('CAM_ROOT', '/srv/nw3weather/cam/stills/'); }
+if(!defined('IMG_ROOT')) { define('IMG_ROOT', '/static-images/'); }
 $root = ROOT;
 
-const EXEC_PATH = '/usr/bin/php -q /var/www/html/';
+if(!defined('EXEC_PATH')) { define('EXEC_PATH', '/usr/bin/php -q /var/www/html/'); }
 
 /** Path to the live data text file */
-const LIVE_DATA_PATH = '/var/www/html/clientraw.txt';
+if(!defined('LIVE_DATA_PATH')) { define('LIVE_DATA_PATH', '/var/www/html/clientraw.txt'); }
 
 // Archived copy: $siteRoot resolves code inside this directory, while $fullpath
 // keeps pointing at docroot where the live CSV data lives.
 $fullpath = ROOT;
 $siteRoot = __DIR__ . '/';
 // Public URL prefix for this archive (nav, CSS, in-archive links).
-const ARCHIVE_WEB = '/oldSites/sitev3';
+if(!defined('ARCHIVE_WEB')) { define('ARCHIVE_WEB', '/oldSites/sitev3'); }
 $archiveWeb = ARCHIVE_WEB;
 
 $scriptbeg = microtime(true); // was the bare word get_as_float: a notice on 5.4, a fatal Error on 8.x
@@ -35,7 +35,7 @@ $time = date('H:i');
 $dst = date("I") ? "BST" : "GMT";
 $dday = date('j'); $dmonth = date('n'); $dyear = date('Y'); $dz = date('z'); $dhr = date('H'); $dt = date('t');
 $dtstamp = mktime(0, 0, 0);
-define('DDAY', $dday);
+if(!defined('DDAY')) { define('DDAY', $dday); }
 $da = array('j' => $dday, 'n' => $dmonth, 'Y' => $dyear);
 
 $lat = 51.556;
@@ -53,9 +53,9 @@ $dz_yest = date('z',$dtstamp_yest);
 $firstday = (date('j') == 1);
 $too_early = $dday < 15;
 
-const checkHTML = 'checked="checked"';
-const disableHTML = 'disabled="disabled"';
-const selectHTML = 'selected="selected"';
+if(!defined('checkHTML')) { define('checkHTML', 'checked="checked"'); }
+if(!defined('disableHTML')) { define('disableHTML', 'disabled="disabled"'); }
+if(!defined('selectHTML')) { define('selectHTML', 'selected="selected"'); }
 
 $dnm = array('min','max','mean');
 $lhm = array('Low','High','Mean');
@@ -85,15 +85,15 @@ $seasonname = $snames[$season-1];
 $mailBuffer = array(); //used for delaying email sending
 $mailBufferCount = 0;
 
-const HTML_START = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+if(!defined('HTML_START')) { define('HTML_START', '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 	"https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 	<html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-	';
+	'); }
 
-const JQUERY = '<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>';
+if(!defined('JQUERY')) { define('JQUERY', '<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>'); }
 
-const GRAPH_DIMS_LARGE = ' height="1017" width="850" ';
-const GRAPH_DIMS_SMALL = ' height="619" width="542" ';
+if(!defined('GRAPH_DIMS_LARGE')) { define('GRAPH_DIMS_LARGE', ' height="1017" width="850" '); }
+if(!defined('GRAPH_DIMS_SMALL')) { define('GRAPH_DIMS_SMALL', ' height="619" width="542" '); }
 
 $datmCheckTime = '0603'; // When to check if datm has been written
 

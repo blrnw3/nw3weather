@@ -277,7 +277,7 @@ echo '<tr class="table-top"><td class="td4" width="22%">Measure</td><td class="t
 $renderRow = function ($i) use ($DESC, $UNIT, $CNUM, $ddat, $ddatt, $ddanom, $mcdat, $mcanom, $hi, $lo, $hiY, $loY, $hianom, $loanom, $fmt, $blank, $timeCell) {
 	$c = 'td' . ($CNUM[$i] + 10) . 'C';
 	$style = ($i % 2 == 0) ? 'light' : 'dark';
-	$valDisp = ($i == 12) ? ($blank($ddat[12]) ? 'n/a' : $ddat[12]) : $fmt($ddat[$i], $UNIT[$i]);
+	$valDisp = ($i == 12) ? ($blank($ddat[12]) ? 'n/a' : $ddat[12]) : $fmt($ddat[$i] ?? null, $UNIT[$i]); // older rows have fewer columns
 	echo '<tr class="row' . $style . '">'
 		. '<td width="22%" class="' . $c . '">' . $DESC[$i] . '</td>'
 		. '<td width="23%" class="' . $c . '" style="font-size:105%">' . $valDisp . $ddanom[$i] . '</td>'

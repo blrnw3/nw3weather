@@ -15,7 +15,8 @@ if(isset($_GET['x'])) { $dimx = ($_GET['x'] > 2000) ? 2000 : (int)$_GET['x']; } 
 if(isset($_GET['y'])) { $dimy = ($_GET['y'] > 1500) ? 1500 : (int)$_GET['y']; } else { $dimy = 700; }
 
 // cron settings
-if($argc > 0 || isset($_GET["cron_test"])) {
+$file_name = null; // HTTP: stream the image
+if(isset($argc) && $argc > 0 || isset($_GET["cron_test"])) {
 	$en_raw = $argv[1];
 	$file_name = $argv[2];
 	$st_raw = ($en_raw === "year") ? date("Ymd", mkdate(1, 1, $yr_yest)) : null;
@@ -122,7 +123,7 @@ function combineRoses($roses) {
 					continue;
 //					echo("Suspect: $dir $cnt {$rose['dt']}<br />");
 				}
-				$overall[$dir][$spd] += $cnt;
+				$overall[$dir][$spd] = (isset($overall[$dir][$spd]) ? $overall[$dir][$spd] : 0) + $cnt;
 				$tot_cnt += $cnt;
 			}
 		}
@@ -143,7 +144,7 @@ function extract_roses($st, $en) {
 	$lines = file(ROOT."datwdirdaily.dat");
 	$roses = [];
 	foreach($lines as $i => $line) {
-		$rose = unserialize($line);
+		$rose = unserialize(rtrim($line, "\r\n")); // one serialised rose per line
 		$dt = $rose["dt"];
 		if($dt > $en) {
 			break;

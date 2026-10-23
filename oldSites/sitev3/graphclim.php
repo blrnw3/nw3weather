@@ -9,6 +9,7 @@ include_once($siteRoot.'climavs.php');
 if(isset($_GET['x'])) { $dimx = $_GET['x']; } else { $dimx = 850; }
 if(isset($_GET['y'])) { $dimy = $_GET['y']; } else { $dimy = 350; }
 
+$cnt = 0;
 for($i = 0; $i < count($vars); $i++) {
 	if(isset($_GET['type'.$i])) {
 		for($m = 0; $m < 12; $m++) { $datay[$i][$m] = conv($vars[$i][$m],$clim_unit[$i],0); } $typeset[$i] = true; $cnt++;
@@ -29,7 +30,7 @@ $graph->xaxis->SetTickLabels($months);
 
 // Create a bar pot
 for($i = 0; $i < count($vars); $i++) {
-	if($typeset[$i]) { $bplot[$i] = new BarPlot($datay[$i]); if($cnt > 1) { $bplot[$i]->SetLegend($clim_descrip[$i]); } }
+	if(!empty($typeset[$i])) { $bplot[$i] = new BarPlot($datay[$i]); if($cnt > 1) { $bplot[$i]->SetLegend($clim_descrip[$i]); } }
 }
 if($cnt > 1) { $gbplot = new GroupBarPlot(array_merge($bplot)); }
 else { $splot = array_merge($bplot); $gbplot = $splot[0]; }
@@ -45,7 +46,7 @@ $graph->title->SetFont(FF_FONT1,FS_BOLD);
 $graph->yaxis->title->SetFont(FF_FONT1,FS_BOLD);
 $graph->xaxis->title->SetFont(FF_FONT1,FS_BOLD);
 for($i = 0; $i < count($vars); $i++) {
-	if($typeset[$i]) { $bplot[$i]->SetFillColor($clim_colours[$i]); }
+	if(!empty($typeset[$i])) { $bplot[$i]->SetFillColor($clim_colours[$i]); }
 }
 $graph->legend->SetPos(0.5,0.85,'center','top');
 $graph->legend->SetLayout(LEGEND_HOR);

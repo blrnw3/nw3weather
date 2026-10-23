@@ -83,8 +83,8 @@ foreach( $AVAIL_SUMMARY_TYPES as $smry_type ) {
 	$extraMon = ($month === 0) ? "" : ' for '. $months3[$month-1];
 	$hideTab = ($smry_type === $GET_SUMMARY_TYPE) ? "" : "style='display:none'";
 	echo "<div id='rank-$smry_type' class='rank-tab' $hideTab>";
-	rankTable($highest, $highest_day, $typeconvNum, $typevalcolNum, $valcolAbsfix, $limit, "Top monthly-$SUMMARY_NAMES[$smry_type]", true, true, $footCond, false, $sumfix, $smry_type === 2);
-	rankTable($lowest, $lowest_day, $typeconvNum, $typevalcolNum, $valcolAbsfix, $limit, "Bottom monthly-$SUMMARY_NAMES[$smry_type]", false, true, $footCond, false, $sumfix, $smry_type === 2);
+	rankTable($highest, $highest_day, $typeconvNum, $typevalcolNum, $valcolAbsfix ?? null, $limit, "Top monthly-$SUMMARY_NAMES[$smry_type]", true, true, $footCond, false, $sumfix, $smry_type === 2);
+	rankTable($lowest, $lowest_day, $typeconvNum, $typevalcolNum, $valcolAbsfix ?? null, $limit, "Bottom monthly-$SUMMARY_NAMES[$smry_type]", false, true, $footCond, false, $sumfix, $smry_type === 2);
 	echo "<p>$description monthly extremes: ${SUMMARY_EXPLAIN[$smry_type]}<br />";
 	echo "For $description, there are<b> $sortLen </b>valid months for the chosen period from $startYrReport to present$extraMon in London, nw3.</p>";
 	echo "</div>";

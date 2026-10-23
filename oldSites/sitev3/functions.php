@@ -28,14 +28,14 @@ function conv($tag, $type, $unit = true, $sign = false, $dpa = 0, $abs = false, 
 	if( is_null($tag) ) { return 'null'; } //null takes grater precedence than blank
 	if( isBlank($tag) ) { if($debug) { echo 'Bad tag<br />'; } return ''; }
 
-	if($unit) { $uarr = $conv_units; }
+	$uarr = $unit ? $conv_units : array();
 
 	if($type == 4.5) { return $noText ? $dat : degname($dat); }
 	elseif($type == 0.1) { return $noText ? $dat : hailname($dat); }
 	elseif($type == 0.2) { return $noText ? $dat : thundername($dat); }
 
 	elseif($type == 2.1) { if($unit) { $uarr[2] .= '/h'; } if($dat > 5) { $dpa = -1; } }
-	elseif($type == 8 && $dat > 1) { $uarr[8] .= 's'; }
+	elseif($type == 8 && $dat > 1) { $uarr[8] = (isset($uarr[8]) ? $uarr[8] : '') . 's'; }
 
 	if($sign) { $pom = '+'; } else { $pom = ''; }
 
@@ -53,7 +53,7 @@ function conv($tag, $type, $unit = true, $sign = false, $dpa = 0, $abs = false, 
 
 	$dpf = nw3_round($dp[intval($type)]+$dpa);
 	$strret = $pom.'.'. $dpf.'f';
-	return sprintf("%$strret", $dat).$uarr[intval($type)];
+	return sprintf("%$strret", $dat).(isset($uarr[intval($type)]) ? $uarr[intval($type)] : '');
 }
 
 function hailname($val) {
@@ -94,7 +94,7 @@ function zerolead($tag) {
 	return $tag;
 }
 function roundi($val) {
-	if($val < 10) { $dp = 1; }
+	$dp = ($val < 10) ? 1 : 0;
 	return nw3_round($val,$dp);
 }
 
@@ -149,7 +149,9 @@ function find_nearest($val, $arr, $up = false) {
 }
 
 function time_av($times) {
-	for($i = 0; $i < count($times); $i++) {
+	$mktimes = array();
+	$n = is_array($times) ? count($times) : 0; // no times for the period: 'n/a', as on PHP 5
+	for($i = 0; $i < $n; $i++) {
 		if(!strpos($times[$i], '*')) {
 			if(strpos($times[$i], ':') > 0) { $mktimes[$i] = strtotime($times[$i]); }
 			elseif(nw3_to_number($times[$i]) < 1 && nw3_to_number($times[$i]) > 0) { $mktimes[$i] = decimal_timefix($times[$i]); }
@@ -422,6 +424,7 @@ function get_days_in_month($month, $year = 2009) {
 }
 function get_seasondays($sea, $year = 2009) {
 	$days = 0;
+	global $snums; // was missing: every season counted as 3 x 31 days
 	for($s2 = 0; $s2 < 3; $s2++) { $days += get_days_in_month($snums[$sea][$s2]+1,$year); }
 	return $days;
 }
@@ -635,6 +638,7 @@ function tr_end() {
  */
 function td($value, $class = null, $width = false, $colspan = false, $rowspan = false) {
 	if(is_null($class)) { $class = 'td4'; }
+	$wid = $csp = $rsp = '';
 	if($width) { $wid = ' width="'.$width.'%"'; }
 	if($colspan) { $csp = ' colspan="'.$colspan.'"'; }
 	if($rowspan) { $rsp = ' rowspan="'.$rowspan.'"'; }

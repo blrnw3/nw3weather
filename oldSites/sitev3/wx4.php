@@ -140,8 +140,8 @@ for($o = 0; $o < count($fulldatNames); $o++) {
 	$windFix = ($o === 3); //fix for mean wind being in the 'min' array key
 	$values[$o][0] = $NOW['mean'][$mappingsToDailyDataKey[$fulldatNames[$o]]];
 	$values[$o][1] = ${$fulldatNames[$o] .'datYest'}[0][$windFix ? 'min' : 'mean'];
-	$anoms[$o][0] = ${$fulldatNames[$o] .'datToday'}[2]['mean'];
-	$anoms[$o][1] = ${$fulldatNames[$o] .'datYest'}[2]['mean'];
+	$anoms[$o][0] = ${$fulldatNames[$o] .'datToday'}[2]['mean'] ?? null;
+	$anoms[$o][1] = ${$fulldatNames[$o] .'datYest'}[2]['mean'] ?? null;
 	foreach($pOrder as $po) {
 		$values[$o][] = ($o <= 4) ? ${$fulldatNames[$o] .'dat'}[$windFix ? 'min' : 'mean'][2][$po] : ${$fulldatNames[$o] .'totals'}[0][$po];
 		$anoms[$o][] = ($o === 0) ? ${$fulldatNames[$o] .'dat'}['mean'][2][$po.'anom'] :
@@ -165,7 +165,7 @@ for($r = 0; $r < count($values); $r++) {
 	for($c = 0; $c < count($values[0]); $c++) {
 		$anomOrNo = isBlank($anoms[$r][$c]) ? '' : ( "<br />".
 			( ($r === 0) ? '('. conv($anoms[$r][$c], 1.1, false, true) .')' : $anoms[$r][$c] ) );
-		$daysofOrNo = isBlank($daysof[$r][$c-2]) ? '' : "<br />". $daysof[$r][$c-2] .' days';
+		$daysofOrNo = isBlank($daysof[$r][$c-2] ?? null) ? '' : "<br />". $daysof[$r][$c-2] .' days';
 		td( "<b>" . conv($values[$r][$c], $dataConv[$r]) ."</b>". $anomOrNo . $daysofOrNo, $tdClass );
 	}
 	tr_end();

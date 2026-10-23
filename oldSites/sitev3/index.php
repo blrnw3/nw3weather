@@ -185,7 +185,7 @@ $weather = 'Dry'; //default
 if($nw3Raining) { //Rained in past hour
 	//Detect showers by 30-min temp/hum change
 	$isShower = ( $HR24['trend'][0]['temp'] - $HR24['trend'][30]['temp'] <= -0.3
-		|| $HR24['trend'][0]['hum'] - $HR24['trend'][30]['hum'] >= 5 );
+		|| $HR24['trend'][0]['humi'] - $HR24['trend'][30]['humi'] >= 5 );
 	$rnType = $isShower ? 'Shower' : 'Rain';
 
 	//Detect intensity based on current rain rate

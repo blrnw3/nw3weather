@@ -1366,12 +1366,13 @@ class Data {
 		foreach ($var1 as $year => $arr1) {
 			foreach ($arr1 as $month => $arr2) {
 				foreach ($arr2 as $day => $val) {
+					$val2 = $var2[$year][$month][$day] ?? null;
 					if($varName === "ratemean") {
-						$res[$year][$month][$day] = ($var2[$year][$month][$day]  > 0.4 && $val > 0.3) ?
-							$val / $var2[$year][$month][$day] : null;
+						$res[$year][$month][$day] = ($val2  > 0.4 && $val > 0.3) ?
+							$val / $val2 : null;
 					}
 					else {
-						$res[$year][$month][$day] = $var2[$year][$month][$day] - $val;
+						$res[$year][$month][$day] = $val2 - $val;
 					}
 				}
 			}
@@ -1983,7 +1984,8 @@ class Data {
 
 			// Wdir
 			$dir_quantised = floor(($dat[5][$i] + 11.25) / 22.5) % 16;
-			$windDirs[$dir_quantised][floor($dat[3][$i])]++;
+			$speed_bucket = floor($dat[3][$i]);
+			$windDirs[$dir_quantised][$speed_bucket] = ($windDirs[$dir_quantised][$speed_bucket] ?? 0) + 1;
 		}
 
 		//Trends
@@ -2011,7 +2013,7 @@ class Data {
 		$mins['nightTomoz'] = $nightmin1T;
 		$maxs['day'] = $daymax1;
 		$timesMin['night'] = date( 'H:i', ($nightmint1 + $nightmint2) / 2 );
-		$timesMin['nightTomoz'] = date( 'H:i', ($nightmint1T + $nightmint2T) / 2 );
+		$timesMin['nightTomoz'] = date( 'H:i', (($nightmint1T ?? 0) + ($nightmint2T ?? 0)) / 2 );
 
 		$maxs['wind'] = max($dat[3]); $timesMax['wind'] = self::timeFromMM($maxs['wind'], $dat[3], $custhr, $custmin);
 		$maxs['gust'] = max($dat[4]); $timesMax['gust'] = self::timeFromMM($maxs['gust'], $dat[4], $custhr, $custmin);
@@ -2021,7 +2023,7 @@ class Data {
 		$mins['feel'] = nw3_round($minFeel, 1);
 		$maxs['feel'] = nw3_round($maxFeel, 1);
 
-		if(is_array($rn60)) {
+		if(isset($rn60) && is_array($rn60)) {
 			$maxs['rnhr'] = max($rn60); if($maxs['rnhr'] > 0.2) { $timesMax['rnhr'] = self::timeFromMM($maxs['rnhr'], $rn60, $custhr, $custmin); }
 			$maxs['tchangehr'] = max($tchangehr); $timesMax['tchangehr'] = self::timeFromMM($maxs['tchangehr'], $tchangehr, $custhr, $custmin);
 			$maxs['hchangehr'] = max($hchangehr); $timesMax['hchangehr'] = self::timeFromMM($maxs['hchangehr'], $hchangehr, $custhr, $custmin);
@@ -2031,7 +2033,7 @@ class Data {
 			$mins['hchangehr'] = -1 * $hchhr;
 
 		}
-		if(is_array($t10)) {
+		if(isset($t10) && is_array($t10)) {
 			$w10max = max($wind10); $timesMax['w10m'] = self::timeFromMM($w10max, $wind10, $custhr, $custmin);
 			$maxs['w10m'] = nw3_round($w10max, 1);
 			$maxs['rn10'] = max($rn10); if($maxs['rn10'] > 0.2) { $timesMax['rn10'] = self::timeFromMM($maxs['rn10'], $rn10, $custhr, $custmin); }
@@ -2039,7 +2041,7 @@ class Data {
 			$mins['tchange10'] = -1 * $t10min;
 			$maxs['tchange10'] = max($t10); $timesMax['tchange10'] = self::timeFromMM($maxs['tchange10'], $t10, $custhr, $custmin);
 		}
-		if(is_array($rr)) {
+		if(isset($rr) && is_array($rr)) {
 			$maxs['rate'] = max($rr);
 			$timesMax['rate'] = self::timeFromMM($maxs['rate'], $rr, $custhr, $custmin);
 			$maxs['rate'] = $maxs['rate'];
@@ -2058,7 +2060,7 @@ class Data {
 			}
 		}
 
-		$hrChanges['wind'] = $dat[3][$end-1] - $dat[3][$end-61];
+		$hrChanges['wind'] = $dat[3][$end-1] - ($dat[3][$end-61] ?? null); // < 1h of data just after midnight
 		$hr24Changes['wind'] = $dat[3][$end-1] - $dat[3][1];
 
 		// PM2.5 summary - only when data was present this period
@@ -2077,7 +2079,7 @@ class Data {
 		}
 
 		$means['wind'] = nw3_round(Util::mean($dat[3]), 1);
-		$means['w10m'] = nw3_round(Util::mean($wind10), 1);
+		$means['w10m'] = nw3_round(Util::mean($wind10 ?? null), 1);
 		$means['wdir'] = self::wdirMean($dat[5], $dat[3]);
 		$means['feel'] = nw3_round(Util::mean($feels), 1);
 		$means['rain'] = $rncum;
@@ -2087,11 +2089,11 @@ class Data {
 		$rnCums[0] = $rncum;
 
 		//rain duration
-		if($rncum > 0 && $rnCums[0] - $rnCums[1] != 0) {
+		if($rncum > 0 && $rnCums[0] - ($rnCums[1] ?? 0) != 0) {
 			$duration = 0;
 			$lastTip = 1;
 			for($i = 0; $i < $end; $i++) {
-				if($rncumArr[$end-$i-1] == $rncumArr[$end-$i-2]) {
+				if(($rncumArr[$end-$i-1] ?? null) == ($rncumArr[$end-$i-2] ?? null)) {
 					$lastTip++;
 				} else {
 					$duration += $lastTip;
@@ -2125,7 +2127,7 @@ class Data {
 		$wethrs = ceil($wetmins / 60);
 
 		//current rain rate guess (based on last rain tip - so inaccurate when tipped after long break -> revert to max rate
-		if($rnCums[0] - $rnCums[1] != 0) {
+		if($rnCums[0] - ($rnCums[1] ?? 0) != 0) {
 			$last = 60;
 			for($i = 1; $i < 61; $i++) {
 				if($rncumArr[$end-$i-1] != $rncum) {
@@ -2179,7 +2181,7 @@ class Data {
 		//maxhr gust
 		$maxhrgst = 0;
 		for($i = 1; $i <= 60; $i++) {
-			if($dat[4][$end-$i] > $maxhrgst) {
+			if(($dat[4][$end-$i] ?? null) > $maxhrgst) {
 				$maxhrgst = $dat[4][$end-$i];
 			}
 		}
@@ -2195,12 +2197,12 @@ class Data {
 		}
 
 		$frosthrs = nw3_round($frostMins / 60, (int)($frostMins < 10) + 1);
-		$rnDuration = Util::roundToDp($duration / 60, 1);
+		$rnDuration = Util::roundToDp(($duration ?? 0) / 60, 1);
 
 		return array("min" => $mins, "max" => $maxs, "mean" => $means, "timeMin" => $timesMin, "timeMax" => $timesMax,
 					"trend" => $trends, "trendRn" => $rnCums, "changeHr" => $hrChanges, "changeDay" => $hr24Changes,
 					"misc" => array("frosthrs" => $frosthrs, "rnrate" => $currRate, "rnduration" => $rnDuration,
-									"rnlast" => $lastRnFull, "wethrs" => $wethrs, "maxhrgst" => $maxhrgst, "cnt" => $end,
+									"rnlast" => $lastRnFull ?? null, "wethrs" => $wethrs, "maxhrgst" => $maxhrgst, "cnt" => $end,
 									"prevRn" => date('r', isset($prevRn) ? (int)$prevRn : 0), "prevRnOld" => date('r', isset($prevRnOld) ? (int)$prevRnOld : 0),
 									"pondTemp" => $pond_temp
 								),

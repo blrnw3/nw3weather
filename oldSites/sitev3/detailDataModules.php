@@ -110,7 +110,7 @@ class DetailedDataModule {
 
 			tr(self::rowColour($r));
 			td($GLOBALS['mmmFull'][$r], $this->cssClass);
-			td( '<b>'. conv($currVal, $this->conv) .'</b>'. $anom .'<br />'. $NOW['time'.$mmmr[$r]][$key], $this->cssClass );
+			td( '<b>'. conv($currVal, $this->conv) .'</b>'. $anom .'<br />'. ($NOW['time'.$mmmr[$r]][$key] ?? ''), $this->cssClass );
 			td( '<b>'. conv($datYest[0][$dnm[$r]], $this->conv) .'</b>'. $anomY .'<br />'. $datYest[1][$r], $this->cssClass );
 			tr_end();
 		}
@@ -147,7 +147,7 @@ class DetailedDataModule {
 			for($c = 0; $c < self::$periodCnt; $c++) {
 				if($r != 6) {
 					$anom = $this->letter == 't' ? '<br />(' . conv($values[$r][self::$periods[$c].'anom'], 1.1,0,1) . ')' : '';
-					$date = ($values[$r][self::$periods[$c].'date'] != '') ? '<br />'. $values[$r][self::$periods[$c].'date'] : '';
+					$date = (($values[$r][self::$periods[$c].'date'] ?? '') != '') ? '<br />'. $values[$r][self::$periods[$c].'date'] : '';
 					td( '<b>'. conv($values[$r][self::$periods[$c]], $this->conv) .'</b>'. $anom . $date, $this->cssClass );
 				} else {
 					td('&nbsp;', $this->cssClass);
@@ -195,7 +195,7 @@ class DetailedDataModule {
 					else { $colour = ''; }
 
 					$anom = $this->letter == 't' ? '<br />(' . conv($values[$r][2][$mt], 1.1,0,1) . ')' : '';
-					$date = ($values[$r][1][$mt] != '') ? '<br />'. datefull($values[$r][1][$mt]) : '';
+					$date = (($values[$r][1][$mt] ?? '') != '') ? '<br />'. datefull($values[$r][1][$mt]) : '';
 					td( '<b>'. conv($values[$r][0][$mt], $this->conv) .'</b>'. $anom . $date, $this->cssClass . $colour );
 				} else {
 					td($months3[$mt], $this->cssClass);

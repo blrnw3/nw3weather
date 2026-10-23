@@ -9,6 +9,7 @@ include_once($siteRoot.'climavs.php');
 if(isset($_GET['x'])) { $dimx = $_GET['x']; } else { $dimx = 850; }
 if(isset($_GET['y'])) { $dimy = $_GET['y']; } else { $dimy = 350; }
 
+$cnt = 0;
 for($i = 0; $i < count($lta); $i++) {
 	if(isset($_GET['type'.$i])) {
 		for($d = 0; $d < 365; $d++) { $datay[$i][$d] = conv($lta[$i][$d],$lta_unit[$i],0,0,2); $days[$d] = date('d M',mkz($d,2009)); }
@@ -33,7 +34,7 @@ $graph->xgrid->SetColor('lightgray');
 
 // Create a bar pot
 for($i = 0; $i < count($lta); $i++) {
-	if($typeset[$i]) {
+	if(!empty($typeset[$i])) {
 		$bplot[$i] = new LinePlot($datay[$i]);
 		$graph->Add($bplot[$i]);
 		$bplot[$i]->SetColor($lta_colours[$i]);
