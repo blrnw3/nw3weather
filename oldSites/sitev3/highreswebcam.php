@@ -220,9 +220,15 @@ function cam_table($imgs, $heading, $day_offset) {
 	foreach($img_rows as $null => $img_row) {
 		echo "<tr>";
 		foreach($img_row as $img) {
-			$dir = date('Y/m/d', $sproc + 24 * 3600 * $day_offset);
+			$day_ts = $sproc + 24 * 3600 * $day_offset;
+			$dir = date('Y/m/d', $day_ts);
 			$src = "camchive/$cam_type/$dir/$img$cam_type.jpg";
-			if(file_exists(CAM_ROOT.$src)) {
+			// days no longer held locally are served from the long-term archive via the same URL
+			$archived = $day_ts < mkdate() && !is_dir(CAM_ROOT."camchive/$cam_type/$dir");
+			if($archived) {
+				echo '<td align="center"><img src="/', $src, '" alt="webcam" width="', $width, '" height="', $height,
+					'" onerror="this.parentNode.innerHTML=\'No image\'" /></td>';
+			} elseif(file_exists(CAM_ROOT.$src)) {
 				echo '<td align="center"><img src="/', $src, '?', $qrand ,'" alt="webcam" width="', $width, '" height="', $height, '" /></td>';
 			} else {
 				echo '<td align="center">No image</td>';
