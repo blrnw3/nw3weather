@@ -245,6 +245,14 @@ function cam_table($imgs, $heading, $day_offset) {
 }
 ?>
 </table>
+<?php
+// coarse intervals: show the daily summary after the frames
+$summary_rel = date('Y/Ymd', $sproc) . 'dailywebcam.jpg';
+if($freq > 30 && file_exists(ROOT . $summary_rel)) {
+	echo '<h2 style="text-align:center">Daily summary</h2><p style="text-align:center"><img src="/', $summary_rel, '?', $qrand,
+		'" alt="Webcam summary for ', $datedescrip, '" style="max-width:100%" /></p>';
+}
+?>
 
 </div>
 
