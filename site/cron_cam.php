@@ -66,8 +66,8 @@ if($tstamp == $daily_proctime) {
 	//webcam_summary(.22, 6, date('Y/Ymd', true) . '/dailygwebcam.jpg');
 
 	$FREE_THRESH = 256 * 1024 * 1024;
-	$cam_free = disk_free_space("/mnt/webcam");
-	$vid_free = disk_free_space("/mnt/nw3-vol1");
+	$cam_free = disk_free_space(CAM_ROOT);
+	$vid_free = disk_free_space(VID_ROOT);
 	if($cam_free < $FREE_THRESH  || $vid_free < $FREE_THRESH) {
 		mail("alerts@nw3weather.co.uk","Cam disk filling up", "Cam free: $cam_free. Vid free: $vid_free");
 	}

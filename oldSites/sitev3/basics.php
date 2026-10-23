@@ -4,8 +4,8 @@ date_default_timezone_set('Europe/London');
 if(!defined('ROOT')) { define('ROOT', '/var/www/html/'); }
 require_once(ROOT . 'config/paths.php');
 require_once(ROOT . 'compat.php'); // PHP 5.4/8.x shims shared with the current site
-const VID_ROOT = '/mnt/nw3-vol1/html/';
-const CAM_ROOT = '/mnt/webcam/html/';
+const VID_ROOT = '/srv/nw3weather/cam/video/';
+const CAM_ROOT = '/srv/nw3weather/cam/stills/';
 const IMG_ROOT = '/static-images/';
 $root = ROOT;
 

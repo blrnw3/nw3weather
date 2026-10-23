@@ -11,8 +11,8 @@ const UNIT_EU = 2;
 
 class Site {
 	const MAIN_ROOT = ROOT;
-	const VID_ROOT = '/mnt/nw3-vol1/html/';
-	const CAM_ROOT = '/mnt/webcam/html/';
+	const VID_ROOT = '/srv/nw3weather/cam/video/';
+	const CAM_ROOT = '/srv/nw3weather/cam/stills/';
 	const IMG_ROOT = '/static-images/';
 
 	const EXEC_PATH = '/usr/bin/php -q /var/www/html/';
