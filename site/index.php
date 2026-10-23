@@ -22,7 +22,7 @@ $weather = 'Dry';
 if ($nw3Raining) {
 	$isShower = (nw3_live_get($HR24, 'trend', 0) !== null
 		&& ($HR24['trend'][0]['temp'] - $HR24['trend'][30]['temp'] <= -0.3
-			|| $HR24['trend'][0]['hum'] - $HR24['trend'][30]['hum'] >= 5));
+			|| $HR24['trend'][0]['humi'] - $HR24['trend'][30]['humi'] >= 5));
 	$rnType = $isShower ? 'Shower' : 'Rain';
 	$intensities = array('', 'Slight', 'Light', 'Moderate', 'Heavy', 'Very Heavy', 'Torrential');
 	$intensityThresholds = array(0.1, 0.5, 2, 8, 35, 60, 500);

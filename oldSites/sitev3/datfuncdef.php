@@ -206,7 +206,7 @@ function datAnom($varName, $sourceData, $originalVarNum) {
 					$climVal = 24;
 				}
 				if($originalSummable) {
-					$val = $v / $climVal * 100;
+					$val = nw3_to_number($v) / $climVal * 100; // non-numeric entries count as 0, as on PHP 5
 				} else {
 					$val = $v - $climVal;
 				}
@@ -400,8 +400,8 @@ function typeToConvType($type) {
 
 $daytypes = array('temp' => 6, 'hum' => 7, 'dew' => 9, 'rain' => 10, 'baro' => 8, 'wdir' => 11, 'gust' => 4, 'wind' => 3);
 $daycols = array('temp' => 'orange', 'hum' => 'darkgreen', 'dew' => 'chartreuse', 'rain' => 'blue', 'baro' => 'darkred', 'wdir' => 'red', 'gust' => 'palevioletred1', 'wind' => 'darkblue');
-$daynames = array('temp' => 'Temperature / '. $unitT, 'hum' => 'Humidity / %', 'dew' => 'Dew Point / '. $unitT, 'rain' => 'Rainfall / '.$unitR, 'baro' => 'Pressure / '.$unitP,
-	'wdir' => 'Wind Direction / deg', 'gust' => 'Gust / '.$unitW, 'wind' => 'Wind Speed /'.$unitW);
+$daynames = array('temp' => 'Temperature / '. ($unitT ?? ''), 'hum' => 'Humidity / %', 'dew' => 'Dew Point / '. ($unitT ?? ''), 'rain' => 'Rainfall / '.($unitR ?? ''), 'baro' => 'Pressure / '.($unitP ?? ''),
+	'wdir' => 'Wind Direction / deg', 'gust' => 'Gust / '.($unitW ?? ''), 'wind' => 'Wind Speed /'.($unitW ?? ''));
 $nums = array(1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 24, 30, 32, 45, 60, 72, 90); //excl: 9, 16, 18, 36, 40, 48, 82, 96, 120, 144, 180, 240, 360, 160, 288, 720, 1440
 $nums_poss = array(1,2,3,4,5,6,8,9,10,12,15,16,18,20,24,30,32);
 
@@ -424,7 +424,7 @@ function wdirMean($wdir, $speed) {
 
 	//get frequencies for each bitified angle
 	for($i = 0; $i < $end; $i++) {
-		if($speed[$i] > $calmThreshold) { // pivot not to be affected by calm times
+		if(($speed[$i] ?? null) > $calmThreshold) { // pivot not to be affected by calm times
 			$freqs[nw3_round($wdir[$i] / $bitifier)]++;
 		}
 	}
@@ -439,7 +439,7 @@ function wdirMean($wdir, $speed) {
 	$count = 0;
 	for($i = 0; $i < $end; $i++) {
 		//values from calm times or near pivot are anomalous => ignore
-		if(abs($wdir[$i] - $pivot) >= $bitifier && $speed[$i] > $calmThreshold) {
+		if(abs($wdir[$i] - $pivot) >= $bitifier && ($speed[$i] ?? null) > $calmThreshold) {
 			$sum += $wdir[$i];
 			$count++;
 			if($wdir[$i] > $pivot) {
@@ -591,7 +591,8 @@ function dailyData($procfil = 'today') {
 
 		// Wdir
 		$dir_quantised = floor(($dat[5][$i] + 11.25) / 22.5) % 16;
-		$windDirs[$dir_quantised][floor($dat[3][$i])]++;
+		$speed_bucket = floor($dat[3][$i]);
+		$windDirs[$dir_quantised][$speed_bucket] = ($windDirs[$dir_quantised][$speed_bucket] ?? 0) + 1;
 	}
 
 	//Trends
@@ -803,13 +804,13 @@ function dailyData($procfil = 'today') {
 	}
 
 	$frosthrs = nw3_round($frostMins / 60, (int)($frostMins < 10) + 1);
-	$rnDuration = roundToDp($duration / 60, 1);
+	$rnDuration = roundToDp(($duration ?? 0) / 60, 1);
 
 	return array("min" => $mins, "max" => $maxs, "mean" => $means, "timeMin" => $timesMin, "timeMax" => $timesMax,
 				"trend" => $trends, "trendRn" => $rnCums, "changeHr" => $hrChanges, "changeDay" => $hr24Changes,
 				"misc" => array("frosthrs" => $frosthrs, "rnrate" => $currRate, "rnduration" => $rnDuration,
-								"rnlast" => $lastRnFull, "wethrs" => $wethrs, "maxhrgst" => $maxhrgst, "cnt" => $end,
-								"prevRn" => date('r', $prevRn), "prevRnOld" => date('r', $prevRnOld),
+								"rnlast" => $lastRnFull ?? null, "wethrs" => $wethrs, "maxhrgst" => $maxhrgst, "cnt" => $end,
+								"prevRn" => date('r', isset($prevRn) ? (int)$prevRn : 0), "prevRnOld" => date('r', isset($prevRnOld) ? (int)$prevRnOld : 0),
 								"pondTemp" => $pond_temp
 							),
 				"windDirs" => $windDirs

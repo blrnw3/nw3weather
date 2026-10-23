@@ -80,9 +80,9 @@ $wind365 = mean($wind365a);
 //for($d = 1; $d <= count($winds[$dyear][$dmonth]); $d++) { $windtodmonthago += $winds[$yr_yest][date('n',mkdate($dmonth-1,1,$dyear))][$d]; }
 //for($d = 1; $d <= count($wind2[$dyear]); $d++) { $windtodyearago += $wind2[$dyear-1][$d]; }
 
-for($e=0; $e < $sc; $e++) { $total += floatval($windtots[date('n',mkdate($e+$s_offset, 1))-1]); }
-for($f=0; $f < 3; $f++) { $s_avgW += floatval($windav[date('n',mkdate($f+$s_offset, 1))-1]); }
-for($g=1; $g < $sc; $g++) { $s_avg_wd += floatval($windav[date('n',mkdate($g+$s_offset, 1))-1]); } $s_avg_wd += $windav_curr/date('t')*$dday;
+for($e=0; $e < $sc; $e++) { $total += floatval($windtots[date('n',mkdate($e+($s_offset ?? 0), 1))-1]); }
+for($f=0; $f < 3; $f++) { $s_avgW += floatval($windav[date('n',mkdate($f+($s_offset ?? 0), 1))-1]); }
+for($g=1; $g < $sc; $g++) { $s_avg_wd += floatval($windav[date('n',mkdate($g+($s_offset ?? 0), 1))-1]); } $s_avg_wd += $windav_curr/date('t')*$dday;
 
 $lymwind = $wind3[$dyear-1][$dmonth];
 $lymwind1 = $wind3[date('Y',mkdate($dmonth-1,1,$dyear-1))][date('n',mkdate($dmonth-1,1,$dyear-1))];

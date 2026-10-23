@@ -88,7 +88,7 @@ class MonthlySummaryDataTables {
 			td("<a href='./wxdataday.php?year=$y' title='View full data for year'>$y</a>", 'row' . colcol($y) . '" style="text-align:center; font-weight:bold');
 
 			for ($m = 1; $m <= 12; $m++) {
-				$cnt = count((array)$this->DAT[$y][$m]); // (array): count(null) is a TypeError on 8.x
+				$cnt = count((array)($this->DAT[$y][$m] ?? null)); // (array): count(null) is a TypeError on 8.x
 
 				//initalise to default for month not arrived
 				$anom = '';

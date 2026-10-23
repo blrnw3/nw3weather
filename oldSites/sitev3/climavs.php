@@ -44,6 +44,7 @@ for($v = 0; $v < count($vars); $v++) {
 	//Seasonal
 	if($sumorno[$v]) { $divorno = 1; } else { $divorno = 3; }
 	for($s = 0; $s < 4; $s++) {
+		$seasonav[$v][$s] = 0;
 		for($s2 = 0; $s2 < 3; $s2++) {
 			$seasonav[$v][$s] += $vars[$v][$snums[$s][$s2]] / $divorno;
 		}

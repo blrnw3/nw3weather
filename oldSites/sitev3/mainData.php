@@ -1,5 +1,6 @@
 <?php
 $crsizeFinal = filesize(LIVE_DATA_PATH);
+$badCRdata = $slept = false;
 
 //Select appropriate file to use
 if($crsizeFinal === 0) {
@@ -39,7 +40,7 @@ $OUTAGE = $diff > 3600;
 // Other multi-use weather vars
 $maxgsthr = $HR24['misc']['maxhrgst'];
 $maxgstToday = $NOW['max']['gust'];
-$maxavgToday = $maxavgspd;
+$maxavgToday = null; // no max-average source in this archive
 
 // Harpenden data
 // July 1st 2024: wind outage
@@ -124,7 +125,7 @@ if($DOWN || $OUTAGE) {
 
 
 
-$feel = feelsLike($temp, $gust, $dewp);
 // Derived current weather variables
 $dewp = dewPoint($temp, $humi);
+$feel = feelsLike($temp, $gust, $dewp); // after $dewp (was before it, so humidex never applied)
 ?>

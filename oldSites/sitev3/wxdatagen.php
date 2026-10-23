@@ -16,7 +16,7 @@ if(isset($_SESSION['vartype']) && in_array($_SESSION['vartype'], $types_alltoget
 	$type = 'rain';
 }
 
-if($showMonth && $month > 0) {
+if(!empty($showMonth) && $month > 0) {
 	$datgenHeading .= ' for ' . date('F', mkdate($month, 1));
 }
 
@@ -144,7 +144,7 @@ $col_descrip = array('temp','humi','press', 'wind','degr','rain', 'rtmax','tchg'
 
 $valcolSumOffset = 250 / $valcol[$typevalcolNum][count($valcol[$typevalcolNum])-1];
 
-if(!$badCats) {
+if(empty($badCats)) {
 	$badCats = [];
 }
 if($description === 'Pond Temperature') {
@@ -156,8 +156,8 @@ echo '<h1>'. $datgenHeading .' - ', $description,
 $valcolConvert = !in_array($type, array('hail', 'thunder', 'wdir')); //don't convert textual values before entering valcol function
 
 //Main form for data type (and year)
-$isDailyC1 = $isDaily ? disableHTML: '';
-$isDailyC2 = !$isDaily ? disableHTML : '';
+$isDailyC1 = !empty($isDaily) ? disableHTML: '';
+$isDailyC2 = empty($isDaily) ? disableHTML : '';
 echo '<div style="padding:10px">
 	<form action="./'.$linkToOther.'.php">
 		<input type="submit" value="Daily" '.$isDailyC1.' style="padding:0.4em" />
@@ -186,7 +186,7 @@ echo '</select>';
 dropdownCycle(false, buildSlug("vartype", $types_alltogether[$prevType]), $descriptions_all[$prevType] );
 dropdownCycle(true,  buildSlug("vartype", $types_alltogether[$nextType]), $descriptions_all[$nextType] );
 
-if($showYear) {
+if(!empty($showYear)) {
 	echo '<span style="padding-left:25px;padding-right:3px;" class="rep">Year</span>';
 	dropdownCycle(false,  buildSlug("year", $prevYear), $prevYear );
 	echo '<select name="year" onchange="this.form.submit()">';
@@ -199,11 +199,11 @@ if($showYear) {
 	echo '</select>';
 	dropdownCycle(true, buildSlug("year", $nextYear), $nextYear );
 }
-if($showMonth) {
+if(!empty($showMonth)) {
 	echo '<span style="padding-left:25px;padding-right:3px;" class="rep">Month</span>';
 	dropdownCycle(false, buildSlug("month", $prevMonth), $months[$prevMonth-1] );
 	echo '<select name="month" onchange="this.form.submit()">
-		<option value="0" ' . $isallCheck . '>All</option>';
+		<option value="0" ' . ($isallCheck ?? '') . '>All</option>';
 	for($i = 1; $i <= 12; $i++) {
 		echo '<option value="' . $i . '"';
 		if($i == $month) { echo ' selected="selected"'; }
@@ -213,7 +213,7 @@ if($showMonth) {
 	echo '</select>';
 	dropdownCycle(true, buildSlug("month", $nextMonth), $months[$nextMonth-1] );
 }
-if($showStartYearSelect) {
+if(!empty($showStartYearSelect)) {
 	echo '<span style="padding-left:25px" class="rep">Start Year</span>
 		<select name="start_year_rep" onchange="this.form.submit()">';
 	for($i = 0; $i < count($startYearOptions); $i++) {
@@ -233,7 +233,7 @@ echo '</form>';
 echo '</div>
 	<a name="start"> </a>';
 
-if($SHOW_TABS) {
+if(!empty($SHOW_TABS)) {
 	echo "<div class='rank-tab-buttons'>";
 	foreach( $AVAIL_SUMMARY_TYPES as $smry_type ) {
 		$extraClass = ($smry_type === $GET_SUMMARY_TYPE) ? disableHTML : "";

@@ -83,7 +83,7 @@ function nw3_dataday_payload(Report $report) {
 			} elseif (Util::isBlank($val)) {
 				$cells[] = array('c' => 'invalid', 't' => "\xC2\xA0");
 			} else {
-				$cumuls[$m] += $val;
+				$cumuls[$m] += nw3_to_number($val); // non-numeric codes count as 0, as on PHP 5
 				$cumcnts[$m]++;
 				$num = $report->valcolConvert ? Wx::convNum($val, $unit) : (float)$val;
 				$cells[] = array(

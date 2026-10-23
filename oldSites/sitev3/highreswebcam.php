@@ -66,15 +66,16 @@ if(!$cond1) { echo '<b>Archive begins on 20th March 2012 (patchy until 27 Jun 20
 $is_today = (mkdate() === $sproc);
 
 $height_mult = 0.75;
+$choseng = $chosens = $chosenh = $chosend = $chosena = '';
 if(isset($_GET['camtype']) && $_GET['camtype'] == "gnd") {
 	$cam_type = "gnd"; $choseng = checkHTML;
-} else if($_GET['camtype'] == "sky") {
+} else if(isset($_GET['camtype']) && $_GET['camtype'] == "sky") {
 	$cam_type = "sky"; $chosens = checkHTML;
 } else {
 	$cam_type = "hik"; $chosenh = checkHTML; $height_mult = 0.666;
 }
 if(isset($_GET['light']) && $_GET['light'] == "day") { $light = "day"; $chosend = checkHTML; } else { $light = "all"; $chosena = checkHTML; }
-if(isset($_GET['width']) && $widths[(int)$_GET['width']] ) { $width_opt = (int)$_GET['width']; } else { $width_opt = 3; }
+if(isset($_GET['width']) && !empty($widths[(int)$_GET['width']]) ) { $width_opt = (int)$_GET['width']; } else { $width_opt = 3; }
 if(isset($_GET['freq']) && in_array((int)$_GET['freq'], $freqs) ) { $freq = (int)$_GET['freq']; } else { $freq = $freqs[2]; }
 if(isset($_GET['frame']) && (int)$_GET['frame'] < 24) { $frame = intval($_GET['frame']); } else { $frame = $is_today ? (int)date("H") : 12; }
 

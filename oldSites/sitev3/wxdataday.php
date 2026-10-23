@@ -48,6 +48,7 @@ $key = $types_all[$type];
 $_GET['vartype'.$key] = $types_alltogether[$key];
 //echo 'Key: '. $key;
 $data = array();
+$extra = $catcher = 0;
 while($valid) {
 	for($i = 0; $i < count($types_all); $i++) {
 		if(isset($_GET['vartype'.$i])) {
@@ -140,8 +141,8 @@ for($day = 1; $day <= 31; $day++) {
 				$rconv = $typeconvs_all[$arrnum[$i]];
 				$put = $data[ $arrnum[$i] ][$m][$day];
 
-				$cumuls[$m] += $put;
-				$cumcnts[$m]++;
+				$cumuls[$m] = ($cumuls[$m] ?? 0) + $put;
+				$cumcnts[$m] = ($cumcnts[$m] ?? 0) + 1;
 
 				$finalVal = conv( $put, $rconv, false );
 				$valcolval = $valcolConvert ? $finalVal : $put;
@@ -170,10 +171,10 @@ for($mm = (int)$isSum; $mm < $limitForSummaryLoop; $mm++) {
 
 	for($m = $st_mon - 1; $m <= $st_mon - 1 + $num; $m++) {
 		for($i = 0; $i < $varNum; $i++) {
-			if($mm == 0 && is_array($data[ $arrnum[$i] ][$m])) {
+			if($mm == 0 && isset($data[ $arrnum[$i] ][$m]) && is_array($data[ $arrnum[$i] ][$m])) {
 				$data[ $arrnum[$i] ][$m] = array_filter($data[ $arrnum[$i] ][$m], 'clearblank');
 			}
-			if(count((array)$data[ $arrnum[$i] ][$m]) == 0) { // (array): count(null) is a TypeError on 8.x
+			if(count((array)($data[ $arrnum[$i] ][$m] ?? null)) == 0) { // (array): count(null) is a TypeError on 8.x
 				$putConv = '---';
 				$rconv = false;
 				$class = 'reportday';
@@ -207,7 +208,7 @@ if($isSum) { //show count of values above zero
 	td( 'Count', 'reportttl" style="padding:4px' );
 	for($m = $st_mon - 1; $m <= $st_mon - 1 + $num; $m++) {
 		for($i = 0; $i < $varNum; $i++) {
-			if(count((array)$data[ $arrnum[$i] ][$m]) === 0) {
+			if(count((array)($data[ $arrnum[$i] ][$m] ?? null)) === 0) {
 				$put = '---';
 				$class = 'reportday';
 			}
@@ -230,7 +231,7 @@ if(!$isNotSummarisable) {
 	td( 'Cumu'.$cumExt, 'reportttl" style="padding:4px' );
 	for($m = $st_mon - 1; $m <= $st_mon - 1 + $num; $m++) {
 		for($i = 0; $i < $varNum; $i++) {
-			if($cumcnts[$m] == 0) {
+			if(($cumcnts[$m] ?? 0) == 0) {
 				$putConv = '---';
 				$rconv = false;
 				$class = 'reportday';
@@ -239,8 +240,8 @@ if(!$isNotSummarisable) {
 			else {
 				$put = $putCnt = 0;
 				for ($c = 0; $c <= $m; $c++) {
-					$put += $cumuls[$c];
-					$putCnt += $cumcnts[$c];
+					$put += $cumuls[$c] ?? 0;
+					$putCnt += $cumcnts[$c] ?? 0;
 				}
 				if(!$isSum) {
 					$put /= $putCnt;

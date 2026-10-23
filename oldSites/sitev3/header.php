@@ -2,8 +2,8 @@
 <div id="page">
 <?php
 //$timestampWD = sysWDtimes(false);
-$timestampWD = $unix;
-if(strlen($timeRare) > 2 && $file > 1) {
+$timestampWD = $unix ?? null;
+if(isset($timeRare) && strlen($timeRare) > 2 && $file > 1) {
 	$dateaRare = explode("/", $dateRare);
 	$dateGoodRare = date('Y-m-d', mkdate($dateaRare[1],$dateaRare[0],$dateaRare[2]));
 	$timestampWDRare = strtotime("$timeRare $dateGoodRare");
@@ -16,8 +16,8 @@ $timeStampBest = min($timestampCrontags, $dateTimeStamp); //oldest
 echo "<!-- WDtimestamp: $dateTimeStamp, CrontagsTimestamp: $timestampCrontags -->";
 
 if($file == 20): $shr = 'Last Updated: Jan 2022'; //climate
-elseif($file == 7 && !$subfile): $shr = 'Last Upload: Sep 2017';
-elseif($file == 7 && $subfile): $shr = 'Uploaded on ' . $uploadDate;
+elseif($file == 7 && empty($subfile)): $shr = 'Last Upload: Sep 2017';
+elseif($file == 7 && !empty($subfile)): $shr = 'Uploaded on ' . $uploadDate;
 elseif($file == 8): $shr = 'Last Updated: Mar 2023';
 elseif($file == 9): $shr = 'Page Last Updated: Mar 2013';
 elseif($file == 0): $shr = ''; //blank for generic e.g. error pages
@@ -58,7 +58,7 @@ function shownewhead() {
 		</div>
 		<div class="subHeaderR">
 			<?php
-			if($isBot || $file == 0) {
+			if(!empty($isBot) || $file == 0) {
 				echo '<h4 style="display: inline; padding: 0px; margin: 0px 3em 0px 0px; color:#454;">
 					nw3 weather, Hampstead London England UK</h4>';
 			}

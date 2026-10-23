@@ -27,4 +27,4 @@ if( $me || $nw3 ||
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
   })();
 </script>
-<?php if($skip) { echo '-->';} ?>
+<?php if(!empty($skip)) { echo '-->';} ?>
