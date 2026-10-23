@@ -291,8 +291,17 @@ function hrwMissing(img) {
 		hrw_render_grid($pre_frames, 'Yesterday', $width_opt);
 	}
 	hrw_render_grid($post_frames, $is_today ? 'Today' : $datedescrip, $width_opt);
-	if ($any_archived) {
-		hrw_render_summary(hrw_daily_summary($sproc), $is_today ? 'Today' : $datedescrip, $datedescrip, $qrand, true);
+	$summaries = ($freq > 30 || $any_archived) ? hrw_daily_summary($sproc) : null;
+	if ($freq > 30 && $summaries) {
+		// coarse intervals: show the daily summary after the frames (it also covers frames that fail to load)
+		echo '<div class="hrw-summary"><h2>Daily summary</h2>';
+		foreach ($summaries as $sum) {
+			echo '<img class="hrw-summary-img" src="', htmlspecialchars($sum['url']), '?', $qrand,
+				'" alt="Webcam summary for ', htmlspecialchars($datedescrip), '" />';
+		}
+		echo '</div>';
+	} elseif ($any_archived) {
+		hrw_render_summary($summaries, $is_today ? 'Today' : $datedescrip, $datedescrip, $qrand, true);
 	}
 }
 
