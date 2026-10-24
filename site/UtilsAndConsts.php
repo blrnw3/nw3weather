@@ -845,43 +845,141 @@ class Util {
 
 class Misc {
 
+	// Yearly timelapses sample every 3 h in daylight (and midday). tl_src/<cam>/Y/m/d/ keeps just those frames
+	// (same layout as camchive/) so a yearly build never needs the full year of frames on disk.
+	const TL_SRC_FREQ = 180;
+
+	public static function tl_src_root() {
+		return Site::CAM_ROOT . 'tl_src';
+	}
+
+	/** Daylight window for a day as minutes of the day: array(sunrise - $twiset, sunset + $twiset). */
+	public static function timelapse_window($day_ts, $twiset) {
+		$rise = nw3_sunrise($day_ts, NW3_SUN_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $day_ts));
+		$set = nw3_sunset($day_ts, NW3_SUN_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $day_ts));
+		return array(intval($rise * 60 - $twiset), intval($set * 60 + $twiset));
+	}
+
+	/** Whether a frame (minute of the day $num, on the day starting $day_ts) belongs in tl_src. */
+	public static function tl_src_wants($day_ts, $num) {
+		if($num % self::TL_SRC_FREQ !== 0) { return false; }
+		list($rise, $set) = self::timelapse_window($day_ts, 0); // superset of every yearly build's window
+		return $num > $rise && $num < $set;
+	}
+
+	/**
+	 * Copy one camchive frame into tl_src if it is a sampled frame and not there yet.
+	 * @param string $ymd 'Y/m/d'  @param string $file e.g. '1200hik.jpg'
+	 * @return bool true if a frame was added
+	 */
+	public static function tl_src_add($cam, $ymd, $file, $src_path) {
+		if(!preg_match('/^(\d{2})(\d{2})' . preg_quote($cam, '/') . '\.jpg$/', $file, $mt)) { return false; }
+		$num = intval($mt[1]) * 60 + intval($mt[2]);
+		if($num % self::TL_SRC_FREQ !== 0) { return false; }
+		$p = explode('/', $ymd);
+		if(count($p) !== 3 || !self::tl_src_wants(mktime(0, 0, 0, intval($p[1]), intval($p[2]), intval($p[0])), $num)) {
+			return false;
+		}
+		$dir = self::tl_src_root() . "/$cam/$ymd";
+		$dst = "$dir/$file";
+		if(file_exists($dst) || !is_file($src_path) || filesize($src_path) <= 1024) { return false; }
+		if(!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) { return false; }
+		$tmp = "$dst.part";
+		if(!@copy($src_path, $tmp)) { @unlink($tmp); return false; }
+		return rename($tmp, $dst);
+	}
+
+	/** Fill tl_src from camchive for the last $days days (today included). Self-heals missed minutes. @return int added */
+	public static function tl_src_sync($cam, $days = 7) {
+		$added = 0;
+		for($i = $days - 1; $i >= 0; $i--) {
+			$ymd = date('Y/m/d', mktime(0, 0, 0, date('n'), date('j') - $i, date('Y')));
+			for($num = 0; $num < 1440; $num += self::TL_SRC_FREQ) {
+				$file = sprintf('%02d%02d%s.jpg', floor($num / 60), $num % 60, $cam);
+				if(self::tl_src_add($cam, $ymd, $file, Site::CAM_ROOT . "camchive/$cam/$ymd/$file")) { $added++; }
+			}
+		}
+		return $added;
+	}
+
+	/** First and last day ('Y/m/d') held in tl_src for a year, or false if none. */
+	public static function tl_src_span($cam, $year) {
+		$first = $last = false;
+		$ybase = self::tl_src_root() . "/$cam/$year";
+		if(!is_dir($ybase)) { return false; }
+		foreach(self::sorted_dir($ybase) as $m) {
+			foreach(self::sorted_dir("$ybase/$m") as $d) {
+				if(!glob("$ybase/$m/$d/*.jpg")) { continue; }
+				if($first === false) { $first = "$year/$m/$d"; }
+				$last = "$year/$m/$d";
+			}
+		}
+		return $first === false ? false : array($first, $last);
+	}
+
+	private static function sorted_dir($dir) {
+		if(!is_dir($dir)) { return array(); }
+		$list = array_values(array_filter(Util::listdir($dir), function($n) { return ctype_digit($n); }));
+		sort($list);
+		return $list;
+	}
+
+	/**
+	 * Build a timelapse mp4 from archived frames.
+	 * @param string $src_root frames root laid out <cam>/Y/m/d/HHMM<cam>.jpg (default: the full camchive)
+	 * @return string|false the output file, or false if nothing was built (the existing file is left untouched)
+	 */
 	public static function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset = null, $cam = "sky",
-		$frame_rate = 24, $crf = 25, $name = null, $scale = "1080x720") {
+		$frame_rate = 24, $crf = 25, $name = null, $scale = "1080x720", $src_root = null) {
 
 		$months = $month ? array($month) : range(1, 12);
-		$src = Site::CAM_ROOT."camchive/$cam";
+		$src = ($src_root === null ? Site::CAM_ROOT . "camchive" : rtrim($src_root, '/')) . "/$cam";
 		if(is_null($name)) {
 			$period = is_null($twiset) ? "all" : "sun$twiset";
 			$name = "{$cam}cam_test_{$year}_m{$month}_d{$day}_f{$freq}_p-{$period}_r{$frame_rate}";
 		}
-		$tmpdir = Site::VID_ROOT."tmpdir/$name";
-		$outfile = Site::VID_ROOT."timelapse/{$name}.mp4";
+		if(!preg_match('/^[A-Za-z0-9_.-]+$/', $name) || !preg_match('/^\d+[x*:]\d+$/', $scale)) {
+			echo "extract_for_timelapse: bad name or scale\n";
+			return false;
+		}
+		$year = intval($year);
+		$freq = max(1, intval($freq));
+		$tmpdir = Site::VID_ROOT . "tmpdir/$name";
+		$tmpout = Site::VID_ROOT . "tmpdir/$name.mp4";
+		$outfile = Site::VID_ROOT . "timelapse/{$name}.mp4";
 
-		echo shell_exec("mkdir $tmpdir");
+		self::rm_frames_dir($tmpdir); // leftovers of an interrupted run
+		if(!is_dir($tmpdir) && !mkdir($tmpdir, 0775, true)) {
+			echo "cannot create $tmpdir\n";
+			return false;
+		}
 
+		$count = 0;
 		foreach($months as $mi) {
 			$m = Util::zerolead($mi);
 			$mbase = "$src/$year/$m/";
+			if(!is_dir($mbase)) { continue; }
 			$days = ($day == 0) ? Util::listdir($mbase) : array(Util::zerolead($day));
 			foreach($days as $d) {
 				$dbase = $mbase . $d . "/";
+				if(!is_dir($dbase)) { continue; }
 				$sproc = Date::mkdate($mi, intval($d), $year);
 				if(is_null($twiset)) {
 					$sunrise = -1;
 					$sunset = 9999;
 				} else {
-					$sunrise = intval(nw3_sunrise($sproc, NW3_SUN_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) * 60 - $twiset);
-					$sunset = intval(nw3_sunset($sproc, NW3_SUN_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) * 60 + $twiset);
+					list($sunrise, $sunset) = self::timelapse_window($sproc, $twiset);
 				}
 				echo "Processing $dbase: sunrise: $sunrise, sunset: $sunset\n";
 				foreach(Util::listdir($dbase) as $c){
+					if(!preg_match('/^\d{4}[a-z]+\.jpg$/', $c)) { continue; }
 					$hr = substr($c, 0, 2);
 					$min = substr($c, 2, 2);
 					$num = intval($hr) * 60 + intval($min);
 					if($num % $freq == 0 && $num > $sunrise && $num < $sunset) {
 						$trgt = "$tmpdir/$year$m{$d}_$c";
 						if(file_exists($dbase . $c) && filesize($dbase . $c) > 1024) {
-							copy($dbase . $c, $trgt);
+							if(copy($dbase . $c, $trgt)) { $count++; }
 						} else {
 							echo "$c missing or empty \n";
 						}
@@ -889,17 +987,43 @@ class Misc {
 				}
 			}
 		}
-		$cmd = "/usr/bin/ffmpeg -r $frame_rate -pattern_type glob -y -i \"$tmpdir/*.jpg\" -crf $crf -vf scale=$scale $outfile";
+		echo "$count frames\n";
+		if($count === 0) {
+			self::rm_frames_dir($tmpdir);
+			echo "no frames: $outfile not rebuilt\n";
+			return false;
+		}
+
+		@unlink($tmpout);
+		$cmd = "/usr/bin/ffmpeg -nostdin -loglevel error -r " . intval($frame_rate) . " -pattern_type glob -y -i "
+			. escapeshellarg("$tmpdir/*.jpg") . " -crf " . intval($crf) . " -vf " . escapeshellarg("scale=$scale")
+			. " " . escapeshellarg($tmpout);
 		echo $cmd . "\n";
+		$out = array();
+		exec($cmd . ' 2>&1', $out, $rc);
+		echo implode("\n", $out) . "\n";
+		self::rm_frames_dir($tmpdir);
 
-		echo shell_exec("ls $tmpdir");
-
-		$ffmpeg_res = shell_exec($cmd);
-		echo $ffmpeg_res . "\n";
-
-		$res = shell_exec("rm -rf $tmpdir");
-		echo $res . "\n";
+		if($rc !== 0 || !is_file($tmpout) || filesize($tmpout) === 0) {
+			@unlink($tmpout);
+			echo "ffmpeg failed (exit $rc): $outfile not rebuilt\n";
+			return false;
+		}
+		if(!@rename($tmpout, $outfile)) { // e.g. the published file is locked
+			@unlink($tmpout);
+			echo "cannot replace $outfile\n";
+			return false;
+		}
 		return $outfile;
+	}
+
+	/** Remove a timelapse scratch dir (flat, files only). */
+	private static function rm_frames_dir($dir) {
+		if(!is_dir($dir) || is_link($dir)) { return; }
+		foreach(Util::listdir($dir) as $f) {
+			if(is_file("$dir/$f") || is_link("$dir/$f")) { unlink("$dir/$f"); }
+		}
+		@rmdir($dir);
 	}
 
 }
