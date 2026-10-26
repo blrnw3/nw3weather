@@ -73,7 +73,7 @@ $dfdatm = file($fdatm);
 // no line yet for today
 $ddat = explode(',', $dfdat[date('z',$sproc)+1] ?? '');
 $ddatt = explode(',', $dfdatt[date('z',$sproc)+1] ?? '');
-$ddatm = explode(',', $dfdatm[date('z',$sproc)+1] ?? '');
+$ddatm = array_pad(explode(',', $dfdatm[date('z',$sproc)+1] ?? ''), 16, null); // no row yet: fields read as null
 $dtanom = explode(',', $dtfanom[date('z',$sproc)]); $dtanom[3] = $dtanom[1] - $dtanom[0];
 $pastcamstamp = date("Y/Ymd", $sproc) . 'daily'; $todcond = true; $nmint = false;
 $todfix = '';

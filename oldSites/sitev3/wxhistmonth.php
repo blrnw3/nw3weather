@@ -168,7 +168,7 @@ $manomx[0][2] = ' (' . conv($msdatx[0][2]-$tdatav['range'][$mproc-1],1.1,0,1) . 
 $msdatx[1][2] = nw3_round($msdatx[1][2]);
 
 //manual fix-up
-for($i = 0; $i < 2; $i++) { $mtdatm[$i][2] = 'Mean: ' . nw3_round($msdatm[$i][2],1); $msdatm[$i][2] = roundi($msdatm[$i][2] * $dim); }
+for($i = 0; $i < 2; $i++) { $mtdatm[$i][2] = 'Mean: ' . nw3_round($msdatm[$i][2],1); $msdatm[$i][2] = roundi(nw3_to_number($msdatm[$i][2]) * $dim); }
 $manomm[0][2] = ' ' . percent($msdatm[0][2],$sunav[$mproc-1]).' ['.acronym('of a possible '.$maxsun[$mproc-1].' hrs', roundi(100*$msdatm[0][2]/$maxsun[$mproc-1]).'%',true).']';
 $manomm[1][2] = ' ' . percent($msdatm[1][2],$wetav[$mproc-1]).' [' .acronym('of a possible '. (24*$dim) . ' hrs', roundi(100*$msdatm[1][2]/(24*$dim)) . '%', true) . ']';
 

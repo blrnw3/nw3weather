@@ -233,11 +233,11 @@ function datDerived($varName, $include_historic) {
 		foreach ($arr1 as $month => $arr2) {
 			foreach ($arr2 as $day => $val) {
 				if($varName === "ratemean") {
-					$res[$year][$month][$day] = ($var2[$year][$month][$day]  > 0.4 && $val > 0.3) ?
+					$res[$year][$month][$day] = (($var2[$year][$month][$day] ?? null) > 0.4 && $val > 0.3) ?
 						$val / $var2[$year][$month][$day] : null;
 				}
 				else {
-					$res[$year][$month][$day] = $var2[$year][$month][$day] - $val;
+					$res[$year][$month][$day] = ($var2[$year][$month][$day] ?? null) - $val;
 				}
 			}
 		}
@@ -353,7 +353,7 @@ function getDailyData($var, $start_year) {
  */
 function getDailyDataForYear($var, $year) {
 	$data = varNumToDatArray($GLOBALS["types_all"][$var], $year);
-	return $data[$year];
+	return $data[$year] ?? null;
 }
 /**
  * Returns array[year][month] = summary_val

@@ -58,11 +58,11 @@ function conv($tag, $type, $unit = true, $sign = false, $dpa = 0, $abs = false, 
 
 function hailname($val) {
 	$types = array('No', 'Small', 'Med', 'Large');
-	return $types[$val];
+	return $types[(int)$val] ?? null;
 }
 function thundername($val) {
 	$types = array('N', 'Y', 'Light', 'Mod', 'Sevr');
-	return $types[$val];
+	return $types[(int)$val] ?? null;
 }
 function degname($winddegree) {
 	$windlabels = array ("N","NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW","SW", "WSW", "W", "WNW", "NW", "NNW","N");
