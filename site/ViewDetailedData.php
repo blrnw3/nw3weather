@@ -99,6 +99,8 @@ class ViewDetailedData {
 				"measures" => ['Max Gust', 'Max Speed', 'Max 10-min Speed', 'Calmest Day', 'Windiest Day', 'Mean Speed'],
 				// var_min/max/mean are gust/speed/mean here, not a low-high pair.
 				"latestLabels" => ['min' => 'Max Gust', 'max' => 'Max Speed', 'mean' => 'Mean Speed'],
+				// Live (today) stat sources: [section, key] in Live::$NOW.
+				"liveStats" => ['min' => ['max', 'gust'], 'max' => ['max', 'wind'], 'mean' => ['mean', 'wind']],
 				"trendTypes" => ['wmean', 'gust', 'wmax', 'w10max'],
 				"seasonCols" => [
 					['label' => 'Mean Speed', 'stat' => 'mean'],
@@ -657,25 +659,20 @@ class ViewDetailedData {
 		$todMinTime = $this->sval($todMin, 'time');
 		$todMaxTime = $this->sval($todMax, 'time');
 
-		// Prefer live TODAY snapshot (matches legacy recentAvgsExtrms / $NOW)
+		// Prefer live TODAY snapshot (matches legacy recentAvgsExtrms / $NOW).
+		// Value and time come from the same live stat so a fresh value is never
+		// paired with a time from the once-a-day times cache.
 		$liveKey = isset(Wx::$mappingsToDailyDataKey[$this->letter])
 			? Wx::$mappingsToDailyDataKey[$this->letter] : null;
 		if ($liveKey && is_array(Live::$NOW)) {
-			if (isset(Live::$NOW['min'][$liveKey]) && Util::isNotBlank(Live::$NOW['min'][$liveKey])) {
-				$todMinVal = Live::$NOW['min'][$liveKey];
-			}
-			if (isset(Live::$NOW['max'][$liveKey]) && Util::isNotBlank(Live::$NOW['max'][$liveKey])) {
-				$todMaxVal = Live::$NOW['max'][$liveKey];
-			}
-			if (isset(Live::$NOW['mean'][$liveKey]) && Util::isNotBlank(Live::$NOW['mean'][$liveKey])) {
-				$todMeanVal = Live::$NOW['mean'][$liveKey];
-			}
-			if (!empty(Live::$NOW['timeMin'][$liveKey])) {
-				$todMinTime = Live::$NOW['timeMin'][$liveKey];
-			}
-			if (!empty(Live::$NOW['timeMax'][$liveKey])) {
-				$todMaxTime = Live::$NOW['timeMax'][$liveKey];
-			}
+			$liveStats = !empty($this->group['liveStats']) ? $this->group['liveStats']
+				: ['min' => ['min', $liveKey], 'max' => ['max', $liveKey], 'mean' => ['mean', $liveKey]];
+			$min = $this->liveStat($liveStats['min']);
+			if ($min !== null) { $todMinVal = $min[0]; $todMinTime = $min[1]; }
+			$max = $this->liveStat($liveStats['max']);
+			if ($max !== null) { $todMaxVal = $max[0]; $todMaxTime = $max[1]; }
+			$mean = $this->liveStat($liveStats['mean']);
+			if ($mean !== null) { $todMeanVal = $mean[0]; }
 		}
 
 		$this->datToday = [
@@ -1268,6 +1265,20 @@ class ViewDetailedData {
 	}
 
 	// ---- rendering ----
+
+	/**
+	 * Live::$NOW value and time for [section, key], or null if not available.
+	 * Time is from timeMin/timeMax matching the section (null for means).
+	 */
+	private function liveStat($src) {
+		list($section, $key) = $src;
+		if (!isset(Live::$NOW[$section][$key]) || !Util::isNotBlank(Live::$NOW[$section][$key])) {
+			return null;
+		}
+		$timeSection = ($section === 'min') ? 'timeMin' : (($section === 'max') ? 'timeMax' : null);
+		$time = ($timeSection && !empty(Live::$NOW[$timeSection][$key])) ? Live::$NOW[$timeSection][$key] : null;
+		return [Live::$NOW[$section][$key], $time];
+	}
 
 	/**
 	 * Makes a "current/latest" table
