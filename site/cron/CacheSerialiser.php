@@ -7,7 +7,7 @@ class CacheSerialiser {
 		$dyear = Date::$dyear;
 		$dmonth = Date::$dmonth;
 		$dday = Date::$dday;
-		$newNOW = isset($GLOBALS['newNOW']) ? $GLOBALS['newNOW'] : null;
+		$newNOW = isset($GLOBALS['newNOW']) ? Data::withOptionalKeys($GLOBALS['newNOW']) : null;
 
 		$data = array();
 		$dataNew = array();

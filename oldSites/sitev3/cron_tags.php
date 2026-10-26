@@ -530,10 +530,10 @@ for ($i = 0; $i < 7; $i++) {
 	}
 }
 
-$maxhourrn = $NOW['max']['rnhr'];
-$maxhourrnt = $NOW['timeMax']['rnhr'];
-$maxrainratehr = $NOW['max']['rate'];
-$maxrainratetime = $NOW['timeMax']['rate'];
+$maxhourrn = $NOW['max']['rnhr'] ?? null;
+$maxhourrnt = $NOW['timeMax']['rnhr'] ?? null;
+$maxrainratehr = $NOW['max']['rate'] ?? null;
+$maxrainratetime = $NOW['timeMax']['rate'] ?? null;
 
 $outputRn = '
 $rnallcount = \'' . $rainallCnt . '\';
