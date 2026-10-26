@@ -6,7 +6,7 @@ class MidnightData {
 	public static function run() {
 		$t_start = microtime(true);
 		$stamp = date('Ymd', time() - 22 * 3600);
-		$yestNow = Data::dailyData($stamp);
+		$yestNow = Data::withOptionalKeys(Data::dailyData($stamp));
 		$yr_yest = Date::$yr_yest;
 		$day_yest = Date::$day_yest;
 		$root = ROOT;

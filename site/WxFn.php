@@ -1234,6 +1234,24 @@ class CircularBuffer {
 }
 
 class Data {
+	/** Keys dailyData() only sets once there is enough data (some rain; 10 min / 1 h of log). */
+	public static $optionalDailyKeys = array('rate', 'rnhr', 'rn10', 'tchange10', 'tchangehr', 'hchangehr', 'w10m');
+
+	/**
+	 * Copy of a dailyData() result with the optional keys present (null when unset),
+	 * for code that lists every column. Values that are set are unchanged.
+	 */
+	public static function withOptionalKeys($daily) {
+		if (!is_array($daily)) {
+			return $daily;
+		}
+		$blank = array_fill_keys(self::$optionalDailyKeys, null);
+		foreach (array('min', 'max', 'timeMin', 'timeMax') as $s) {
+			$daily[$s] = ((isset($daily[$s]) && is_array($daily[$s])) ? $daily[$s] : array()) + $blank;
+		}
+		return $daily;
+	}
+
 
 	public static $CACHE_DAT = [];
 	public static $CACHE_DAT_TIMES = null;
@@ -2137,7 +2155,7 @@ class Data {
 			}
 			$tipQuantity = ($last === 1) ? nw3_round(($rncum - $rncumArr[$end-2])/$rntipmm) : 1;
 			$currRateGuess = nw3_round(60/$last*$rntipmm*$tipQuantity, 1);
-			$currRate = ($currRateGuess > $maxs['rate']) ? $maxs['rate'] : $currRateGuess;
+			$currRate = ($currRateGuess > ($maxs['rate'] ?? null)) ? ($maxs['rate'] ?? null) : $currRateGuess;
 		} else {
 			$currRate = 0;
 		}
