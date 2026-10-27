@@ -38,7 +38,7 @@ function getMonthlyRanked($varName, $summary_type, $month, $startY, $endY) {
 	$ranked = [];
 	foreach (getMonthlyData($varName, $summary_type, $startY, $endY) as $y => $months) {
 		foreach ($months as $m => $v) {
-			if($month === 0 || $m === $month) {
+			if(($month === 0 || $m === $month) && $v !== '' && $v !== null) { // skip months with no data
 				$ranked[] = [$v, mkdate($m, 1, $y)];
 			}
 		}

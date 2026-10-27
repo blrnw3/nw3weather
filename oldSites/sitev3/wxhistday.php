@@ -144,8 +144,13 @@ for($y = $temp_styr; $y <= $yrend; $y++) {
 	$ddatR = explode(',', $dfdatR[date('z',$sprocR)+1] ?? '');
 	$ddatmR = explode(',', $dfdatmR[date('z',$sprocR)+1] ?? '');
 	for($v = 0; $v < count($data_description); $v++) { if(isset($ddatR[$v]) && $ddatR[$v] != '' && $ddatR[$v] != '-') { $rec[$v][$y] = $ddatR[$v]; } }
-	for($v = 0; $v < 2; $v++) { $recm[$v][$y] = $ddatmR[$v]; if($ddatmR[$v] == 'b') { $recm[$v][$y] = 0; } }
-	for($v = 0; $v < 3; $v++) { $recx[$v][$y] = $ddatR[3*$v+1]-$ddatR[3*$v]; }
+	// Skip a year whose row isn't written yet (the day being processed, just after midnight)
+	if(isset($dfdatmR[date('z',$sprocR)+1])) {
+		for($v = 0; $v < 2; $v++) { $recm[$v][$y] = $ddatmR[$v] ?? ''; if($recm[$v][$y] == 'b') { $recm[$v][$y] = 0; } }
+	}
+	if(isset($dfdatR[date('z',$sprocR)+1])) {
+		for($v = 0; $v < 3; $v++) { $recx[$v][$y] = nw3_to_number($ddatR[3*$v+1] ?? null) - nw3_to_number($ddatR[3*$v] ?? null); }
+	}
 	unset($dfdatR,$dfdatmR,$ddatR,$ddatmR);
 }
 for($v = 0; $v < count($data_description); $v++) {
