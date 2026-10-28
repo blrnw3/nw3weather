@@ -1,5 +1,6 @@
 <?php
 require 'Page.php';
+require_once ROOT . 'cron/DatmWriter.php';
 
 Page::init(array(
 	'fileNum' => 0,
@@ -58,22 +59,35 @@ function dataModSunnyRanges($jsonPath, $returnAsString) {
 	return $returnAsString ? implode(', ', $formatted) : $formatted;
 }
 
-function dataModWriteCsv($path, $lines, $stripQuotes) {
+function dataModWriteCsv($path, $lines) {
 	$file = fopen($path, 'w');
 	if ($file === false) {
 		return false;
 	}
 	foreach ($lines as $line) {
 		$row = explode(',', $line);
-		if ($stripQuotes) {
-			$row = str_ireplace('"', '', $row);
-		}
 		$last = count($row) - 1;
 		$row[$last] = intval($row[$last]);
 		nw3_fputcsv($file, $row);
 	}
 	fclose($file);
 	return true;
+}
+
+/** datm: header kept as is, rows unquoted so repeated saves stay the same size. */
+function dataModWriteDatm($path, $lines) {
+	$out = array();
+	foreach ($lines as $i => $line) {
+		if ($i === 0) {
+			$out[] = $line;
+			continue;
+		}
+		$row = DatmWriter::parseLine($line);
+		$last = count($row) - 1;
+		$row[$last] = intval($row[$last]);
+		$out[] = DatmWriter::formatLine($row);
+	}
+	return DatmWriter::writeLines($path, $out);
 }
 
 if (!Page::$me && !Page::$nw3) {
@@ -167,7 +181,7 @@ if ($lineIndex < 0 || $lineIndexT < 0 || $lineIndexM < 0
 
 $modLine = explode(',', $modData[$lineIndex]);
 $modLineT = explode(',', $modDataT[$lineIndexT]);
-$modLineM = str_ireplace('?', ',', explode(',', $modDataM[$lineIndexM]));
+$modLineM = str_ireplace('?', ',', DatmWriter::parseLine($modDataM[$lineIndexM]));
 
 $missing = array();
 for ($i = count($modDataM) - 1; $i >= 0; $i--) {
@@ -202,11 +216,12 @@ if (isset($_POST['pwd'])) {
 				$modLineM[$i] = str_ireplace(',', '?', $_POST[$name]);
 			}
 		}
-		$modDataM[$lineIndexM] = implode(',', $modLineM);
+		// formatLine turns the display commas back into '?' so no field is split
+		$modDataM[$lineIndexM] = DatmWriter::formatLine($modLineM);
 
-		$saved = dataModWriteCsv($datPath, $modData, false)
-			&& dataModWriteCsv($dattPath, $modDataT, false)
-			&& dataModWriteCsv($datmPath, $modDataM, true);
+		$saved = dataModWriteCsv($datPath, $modData)
+			&& dataModWriteCsv($dattPath, $modDataT)
+			&& dataModWriteDatm($datmPath, $modDataM);
 		if ($saved) {
 			clearstatcache(true, $datPath);
 			echo '<p>Saved!</p><p>New file size: ' . dataModEscape(nw3_number_format(filesize($datPath))) . ' bytes</p>';
