@@ -14,6 +14,9 @@ $reload = isset($_GET['reload']) ? max(10, intval($_GET['reload'])) : 30;
 		body { margin: 0; padding: 0.5em; font-family: sans-serif; }
 		#mob-body { min-height: 200px; }
 		#mob-links ul { padding-left: 1.2em; }
+		#mob-links { color: #d3f4d0; }
+		#mob-links a { color: #a9ffa3; }
+		#mob-links a:visited { color: #8fd98a; }
 	</style>
 	<?php include_once("ggltrack.php"); ?>
 </head>

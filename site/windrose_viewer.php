@@ -1,7 +1,7 @@
 <?php
 require("Page.php");
 Page::init([
-	"fileNum" => 31,
+	"fileNum" => 13, // highlight Wind in the nav
 	"isSubFile" => true,
 	"title" => "Wind Roses",
 	"description" => "Interactive wind roses for Hampstead, London: last 24 hours, any month, any year, and all-time."

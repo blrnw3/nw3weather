@@ -308,7 +308,7 @@ END;
 		}
 		if(Live::$outage) {
 			$extraMessage = "";
-			$html .= self::getStatusDiv("<b>". date('H:m d M: ', time() - Live::$diff) . "Weather server outage detected automatically</b>."
+			$html .= self::getStatusDiv("<b>". date('H:i d M: ', time() - Live::$diff) . "Weather server outage detected automatically</b>."
 				. "<br /> Data is being served from nearby stations. Site admin has been notified. Problem age: "
 				. intval(Live::$diff / 3600) . " hours<br />$extraMessage", true);
 		}

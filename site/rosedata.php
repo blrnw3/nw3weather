@@ -18,6 +18,12 @@ header('Content-Type: application/json; charset=utf-8');
 $stRaw = isset($_GET['st']) ? preg_replace('/[^0-9]/', '', $_GET['st']) : '';
 $enRaw = isset($_GET['en']) ? preg_replace('/[^a-z0-9]/', '', $_GET['en']) : 'month';
 
+$validStamp = function ($v) { return ctype_digit($v) && strlen($v) === 8 && checkdate((int)substr($v, 4, 2), (int)substr($v, 6, 2), (int)substr($v, 0, 4)); };
+if ($stRaw !== '' && !$validStamp($stRaw)) {
+	http_response_code(400);
+	echo json_encode(['error' => 'bad st']);
+	exit;
+}
 $st = ($stRaw === '') ? Date::mkdate(Date::$mon_yest, 1, Date::$yr_yest) : Date::datestamp_to_ts($stRaw);
 
 if ($enRaw === 'month') {
@@ -32,9 +38,13 @@ if ($enRaw === 'month') {
 } elseif ($enRaw === '24hrs') {
 	$st = time(); $en = time();
 	$roseDate = 'past 24 hours';
-} else {
+} elseif ($validStamp($enRaw)) {
 	$en = Date::datestamp_to_ts($enRaw);
 	$roseDate = ($en === $st) ? date('d M Y', $st) : date('d M Y', $st) . ' to ' . date('d M Y', $en);
+} else {
+	http_response_code(400);
+	echo json_encode(['error' => 'bad en']);
+	exit;
 }
 
 $buckets = [1, 3, 5, 8, 11, 15, 20, 50];
@@ -114,7 +124,7 @@ if ($totCnt > 0) {
 	}
 }
 
-$colours = ['#999999', '#f1c40f', '#e67e22', '#e03131', '#2554c7', '#7b2fb0', '#111111'];
+$colours = ['#999999', '#f1c40f', '#e67e22', '#e03131', '#2554c7', '#7b2fb0', '#111111', '#d6336c'];
 $outSeries = [];
 foreach ($buckets as $bi => $b) {
 	$data = array_map(function($v) { return nw3_round($v, 2); }, $series[$bi]);
