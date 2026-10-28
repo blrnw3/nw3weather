@@ -96,15 +96,36 @@ if ($isToday) {
 	}
 }
 
+// Columns that started later (e.g. PM2.5 in 2026) sit where older files have a
+// spare 0 column, so skip years before each column's start year.
+$KEYS = ['tmin','tmax','tmean','hmin','hmax','hmean','pmin','pmax','pmean','wmean','wmax','gust','wdir','rain','hrmax','10max','ratemax',
+	'dmin','dmax','dmean','nightmin','daymax','tc10max','tchrmax','hchrmax','tc10min','tchrmin','hchrmin','w10max','fmin','fmax','fmean','afhrs',
+	'aqmin','aqmax','aqmean'];
+$startYr = [];
+foreach ($KEYS as $v => $k) {
+	$startYr[$v] = isset(Wx::$daily[$k]['start_year']) ? (int)Wx::$daily[$k]['start_year'] : Site::BASE_YEAR;
+}
+
 // ---- Month-to-date cumulative ----
-$mcdat = array_fill(0, $NCOL, 0);
+// Mean of each column over the days that have a value (blanks are skipped, not
+// counted as 0). For today, the live row built above stands in for the CSV row.
+$mcsum = array_fill(0, $NCOL, 0);
+$mcnum = array_fill(0, $NCOL, 0);
 $mctanom = array_fill(0, 4, 0);
 $datLines = is_file($datFile) ? file($datFile) : [];
+$mcAdd = function ($row) use (&$mcsum, &$mcnum, $NCOL, $startYr, $yproc) {
+	for ($v = 0; $v < $NCOL; $v++) {
+		if ($yproc < $startYr[$v]) { continue; }
+		$x = isset($row[$v]) ? trim((string)$row[$v]) : '';
+		if ($x !== '' && nw3_is_numeric($x)) { $mcsum[$v] += (float)$x; $mcnum[$v]++; }
+	}
+};
 for ($d = 0; $d < $dproc; $d++) {
 	$ln = $zidx + 1 - $d;
-	if (isset($datLines[$ln])) {
-		$row = explode(',', $datLines[$ln]);
-		for ($v = 0; $v < $NCOL; $v++) { if (isset($row[$v]) && nw3_is_numeric($row[$v])) { $mcdat[$v] += (float)$row[$v] / $dproc; } }
+	if ($d === 0 && $isToday) {
+		$mcAdd($ddat);
+	} elseif (isset($datLines[$ln])) {
+		$mcAdd(explode(',', $datLines[$ln]));
 	}
 	$az = $zidx - $d;
 	if (isset($anomLines[$az])) {
@@ -112,7 +133,10 @@ for ($d = 0; $d < $dproc; $d++) {
 		for ($v = 0; $v < 2; $v++) { $mctanom[$v] += (float)$ma[$v] / $dproc; }
 	}
 }
-$mcdat[13] *= $dproc; // rain accumulates as a total, not a mean
+$mcdat = array_fill(0, $NCOL, '');
+for ($v = 0; $v < $NCOL; $v++) {
+	if ($mcnum[$v] > 0) { $mcdat[$v] = ($v == 13) ? $mcsum[$v] : $mcsum[$v] / $mcnum[$v]; } // rain is a total
+}
 
 // ---- Records for this calendar date across years ----
 $yrend = (Date::mkdate($mproc, $dproc, (int)Date::$dyear) < Date::mkdate((int)Date::$dmonth, (int)Date::$dday, (int)Date::$dyear))
@@ -126,6 +150,7 @@ for ($y = 2009; $y <= $yrend; $y++) {
 	if (!isset($lines[$zy + 1])) { continue; }
 	$row = explode(',', $lines[$zy + 1]);
 	for ($v = 0; $v < $NCOL; $v++) {
+		if ($y < $startYr[$v]) { continue; }
 		if (isset($row[$v]) && !Util::isBlank($row[$v])) { $rec[$v][$y] = (float)$row[$v]; }
 	}
 }
@@ -151,16 +176,20 @@ if (!$blank($ddat[0]) && !$blank($ddat[1])) {
 	$ddanom[0] = $anomT($ddat[0], $dtanom[0]);
 	$ddanom[1] = $anomT($ddat[1], $dtanom[1]);
 	$ddanom[2] = ' (' . Wx::conv((($ddat[0] + $ddat[1]) - ($dtanom[0] + $dtanom[1])) / 2, Wx::AbsTemp, false, true) . ')';
+}
+if (!$blank($mcdat[0]) && !$blank($mcdat[1])) {
 	$mcanom[0] = $anomT($mcdat[0], $mctanom[0]);
 	$mcanom[1] = $anomT($mcdat[1], $mctanom[1]);
 	$mcanom[2] = ' (' . Wx::conv((($mcdat[0] + $mcdat[1]) - ($mctanom[0] + $mctanom[1])) / 2, Wx::AbsTemp, false, true) . ')';
 }
 if (!$blank($ddat[9])) {
 	$ddanom[9] = ' (' . Wx::conv($ddat[9] - $windav[$mproc - 1], Wx::Wind, false, true) . ')';
+}
+if (!$blank($mcdat[9])) {
 	$mcanom[9] = ' (' . Wx::conv($mcdat[9] - $windav[$mproc - 1], Wx::Wind, false, true) . ')';
 }
 $daysInMon = (int)date('t', $sproc);
-if ($rainav[$mproc - 1] > 0) {
+if ($rainav[$mproc - 1] > 0 && !$blank($mcdat[13])) {
 	$mcanom[13] = ' (' . nw3_round(100 * $mcdat[13] / ($rainav[$mproc - 1] / $daysInMon * $dproc)) . '%)';
 }
 $hianom = $loanom = array_fill(0, $NCOL, '');
@@ -169,7 +198,8 @@ for ($i = 0; $i < 2; $i++) {
 	if (nw3_is_numeric($lo[$i])) { $loanom[$i] = $anomT($lo[$i], $dtanom[$i]); }
 }
 
-// Wind direction text
+// Wind direction text (keep the raw value: the formatted text is not numeric)
+$wdirRaw = isset($ddat[12]) ? $ddat[12] : '';
 if (isset($ddat[12]) && intval($ddat[12]) > 0) { $ddat[12] = $ddat[12] . '&deg; [' . Wx::degname((int)$ddat[12]) . ']'; }
 
 // Range (extra) section
@@ -186,7 +216,7 @@ for ($y = 2009; $y <= $yrend; $y++) {
 for ($xi = 0; $xi < 3; $xi++) {
 	$p = $rangePairs[$xi];
 	$ddatx[$xi] = (!$blank($ddat[$p[0]]) && !$blank($ddat[$p[1]])) ? ($ddat[$p[1]] - $ddat[$p[0]]) : '';
-	$mcdatx[$xi] = $mcdat[$p[1]] - $mcdat[$p[0]];
+	$mcdatx[$xi] = (!$blank($mcdat[$p[0]]) && !$blank($mcdat[$p[1]])) ? ($mcdat[$p[1]] - $mcdat[$p[0]]) : '';
 	$hix[$xi] = isset($recx[$xi]) && count($recx[$xi]) ? max($recx[$xi]) : 'n/a';
 	$lox[$xi] = isset($recx[$xi]) && count($recx[$xi]) ? min($recx[$xi]) : 'n/a';
 	$hiYx[$xi] = (isset($recx[$xi]) && count($recx[$xi])) ? $yrecHlite(nw3_array_search($hix[$xi], $recx[$xi]), $yproc) : '';
@@ -274,10 +304,10 @@ echo '<table class="table1" width="98%" cellpadding="2" cellspacing="0">';
 echo '<tr class="table-top"><td class="td4" width="22%">Measure</td><td class="td4" width="23%">Value (anomaly)</td><td class="td4" width="8%">Time</td>'
 	. '<td class="td4" width="17%">Month cumul.</td><td class="td4" width="15%">Record High</td><td class="td4" width="15%">Record Low</td></tr>';
 
-$renderRow = function ($i) use ($DESC, $UNIT, $CNUM, $ddat, $ddatt, $ddanom, $mcdat, $mcanom, $hi, $lo, $hiY, $loY, $hianom, $loanom, $fmt, $blank, $timeCell) {
+$renderRow = function ($i) use ($wdirRaw, $DESC, $UNIT, $CNUM, $ddat, $ddatt, $ddanom, $mcdat, $mcanom, $hi, $lo, $hiY, $loY, $hianom, $loanom, $fmt, $blank, $timeCell) {
 	$c = 'td' . ($CNUM[$i] + 10) . 'C';
 	$style = ($i % 2 == 0) ? 'light' : 'dark';
-	$valDisp = ($i == 12) ? ($blank($ddat[12]) ? 'n/a' : $ddat[12]) : $fmt($ddat[$i] ?? null, $UNIT[$i]); // older rows have fewer columns
+	$valDisp = ($i == 12) ? ($blank($wdirRaw) ? 'n/a' : $ddat[12]) : $fmt($ddat[$i] ?? null, $UNIT[$i]); // older rows have fewer columns
 	echo '<tr class="row' . $style . '">'
 		. '<td width="22%" class="' . $c . '">' . $DESC[$i] . '</td>'
 		. '<td width="23%" class="' . $c . '" style="font-size:105%">' . $valDisp . $ddanom[$i] . '</td>'
