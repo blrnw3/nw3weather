@@ -9,6 +9,11 @@ Page::init(array(
 ));
 Page::Start();
 
+require_once ROOT . 'AdminAuth.php';
+if (!AdminAuth::configured('ADMIN_DATAMOD_PASSWORD')) {
+	echo Page::getStatusDiv('Editing is disabled: the admin password is not configured on this server.', true);
+}
+
 function dataModEscape($value) {
 	return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
@@ -196,7 +201,7 @@ foreach ($missing as $missingDay) {
 echo '</p>';
 
 if (isset($_POST['pwd'])) {
-	if ($_POST['pwd'] == 'datachanges') {
+	if (AdminAuth::check('ADMIN_DATAMOD_PASSWORD', $_POST['pwd'])) {
 		$dailyLimit = min(count($modLine) - 2, count($types_original));
 		for ($i = 0; $i < $dailyLimit; $i++) {
 			$name = $types_original[$i];
@@ -228,6 +233,8 @@ if (isset($_POST['pwd'])) {
 		} else {
 			echo Page::getStatusDiv('Server error while saving data.', true);
 		}
+	} elseif (!AdminAuth::configured('ADMIN_DATAMOD_PASSWORD')) {
+		echo Page::getStatusDiv(AdminAuth::notConfiguredMessage(), true);
 	} else {
 		echo '<p>Password fail.</p>';
 	}

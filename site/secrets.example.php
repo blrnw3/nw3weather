@@ -2,8 +2,8 @@
 /**
  * Template for secrets.php (which is git-excluded).
  *
- * Copy to secrets.php and fill in real values on each environment. This file is
- * included ONLY by cron_main.php, so the keys never reach page-serving code.
+ * Copy to secrets.php and fill in real values on each environment. It is
+ * included by cron_main.php and, via AdminAuth.php, by the admin edit forms.
  *
  *   cp secrets.example.php secrets.php   # then edit the values
  */
@@ -13,3 +13,8 @@ define('APRSFI_KEY', '');
 
 // PurpleAir API key - used for the air-quality (PM2.5) fetch.
 define('PURPLEAIR_KEY', '');
+
+// Admin edit form passwords (datamod.php, pondAdmin.php). Use long random values.
+// Editing is refused while either is missing or still the placeholder.
+define('ADMIN_DATAMOD_PASSWORD', 'CHANGE_ME_PLACEHOLDER');
+define('ADMIN_POND_PASSWORD', 'CHANGE_ME_PLACEHOLDER');
