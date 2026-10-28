@@ -132,6 +132,7 @@ class Page {
 		<meta name="author" content="Ben Masschelein Rodgers" />
 		<meta name="description" content="$description" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
 		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20261021a" media="screen" title="screen" />
