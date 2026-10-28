@@ -64,5 +64,5 @@ $linCol = ($length > 100) ? $colours_all[$types_all[$dtype]] : "#c0c0c0";
 $bplot->setColor($linCol);
 
 // Display the graph
-$graph->Stroke($fileName);
+$graph->Stroke($fileName ?? '');
 ?>

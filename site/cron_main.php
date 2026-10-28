@@ -414,7 +414,6 @@ if(true && (date('i') % 5 == 4)) {
 if(date('i') % 5 == 1) {
 	$repStamp = mktime(0,0,0,$dmonth,$dday-1);
 	$report = date("FY", $repStamp).'.htm';
-	$graphDaily = date("Ymd", $repStamp).'.gif';
 	$repStamp2 = mktime(0,0,0,$dmonth-1,$dday);
 	$report2 = 'dailynoaareport'. date("n", $repStamp2).date("Y", $repStamp2).'.htm';
 	$oldWDfiles = array("wx18.html", "wx19.html", "dailydatalog.txt", "dailyreport.htm", "dailynoaareport.htm",
@@ -433,7 +432,6 @@ if(date('i') % 5 == 1) {
 }
 if($tstamp == '0721') {
 	//Some files are not here because they are frequently uploaded, so it is best to use 0444 perms to block them instead
-	copy(ROOT. $graphDaily, ROOT.date("Y", $repStamp).'/'.$graphDaily);
 	$daystamp = date("Ymd", $repStamp);
 	$WDfilesToDelete_daily = array($daystamp.'.gif', 'windtempraintrend'.$dmonth.'.gif', 'windtempraintrend3d'.$dmonth.'.gif',
 		'yesterdaygraph.gif', date("Ymd", $repStamp).'dailywebcam.gif', date("Ymd", $repStamp).'dailywebcam2.gif',

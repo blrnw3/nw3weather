@@ -78,7 +78,7 @@ if(isset($_GET['lta']) && array_key_exists($dtype, $vars_to_climav) && $summary_
 }
 
 $graph->SetShadow();
-$graph->SetMargin(30+$bfix,10,20,$botMargin);
+$graph->SetMargin(30+($bfix ?? 0),10,20,$botMargin);
 $graph->xaxis->SetTickLabels($datay[1]);
 $graph->xaxis->SetTextTickInterval($interval);
 
@@ -111,5 +111,5 @@ if($lta_on) {
 	$graph->graph_theme=null;  // Disable massive margin for legend
 }
 // Display the graph
-$graph->Stroke($fileName);
+$graph->Stroke($fileName ?? '');
 ?>

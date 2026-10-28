@@ -439,7 +439,7 @@ function wdirMean($wdir, $speed) {
 	$count = 0;
 	for($i = 0; $i < $end; $i++) {
 		//values from calm times or near pivot are anomalous => ignore
-		if(abs($wdir[$i] - $pivot) >= $bitifier && ($speed[$i] ?? null) > $calmThreshold) {
+		if(abs(($wdir[$i] ?? 0) - $pivot) >= $bitifier && ($speed[$i] ?? null) > $calmThreshold) {
 			$sum += $wdir[$i];
 			$count++;
 			if($wdir[$i] > $pivot) {

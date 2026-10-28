@@ -80,7 +80,7 @@ class DetailedDataModule {
 		for ($r = 0; $r < $cnt; $r++) {
 			tr(self::rowColour($r));
 			td($measures[$r], $this->cssClass);
-			td(conv($values[$r], $convs[$r]), $this->cssClass);
+			td(conv($values[$r] ?? null, $convs[$r]), $this->cssClass);
 			tr_end();
 		}
 
@@ -211,7 +211,7 @@ class DetailedDataModule {
 		global $dnm, $season, $dmonth, $dyear, $snames;
 
 		$dat = $GLOBALS[$this->letter.'datSS'];
-		$datAnom = $GLOBALS[$this->letter.'datSSanom'];
+		$datAnom = $GLOBALS[$this->letter.'datSSanom'] ?? null;
 
 		table(null, $wid . '%" align="center', 6, true);
 		tableHead("Past Year Seasonal Averages", 4);

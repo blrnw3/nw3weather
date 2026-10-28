@@ -8,8 +8,8 @@
 </script>
 
 <?php
-if( $me || $nw3 ||
-	($auto && $metaRefreshable && $_SESSION['count'][$file] > 2) ) {
+if( !empty($me) || !empty($nw3) ||
+	(!empty($auto) && !empty($metaRefreshable) && ($_SESSION['count'][$file] ?? 0) > 2) ) {
 		echo '<!--'; $skip = true;
 }
 ?>

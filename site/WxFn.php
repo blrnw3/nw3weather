@@ -2079,7 +2079,7 @@ class Data {
 		}
 
 		$hrChanges['wind'] = $dat[3][$end-1] - ($dat[3][$end-61] ?? null); // < 1h of data just after midnight
-		$hr24Changes['wind'] = $dat[3][$end-1] - $dat[3][1];
+		$hr24Changes['wind'] = $dat[3][$end-1] - ($dat[3][1] ?? null);
 
 		// PM2.5 summary - only when data was present this period
 		if($pm25Count > 0) {
