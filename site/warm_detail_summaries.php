@@ -10,6 +10,11 @@
  *   php warm_detail_summaries.php datm      # only the datm-sourced vars
  *   php warm_detail_summaries.php hist      # pre-2009 windows (daily / hist.csv)
  */
+if (PHP_SAPI !== 'cli') {
+	http_response_code(403);
+	die("CLI only.\n");
+}
+
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~2048); // 2048 = E_STRICT (constant deprecated in PHP 8.4)
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');

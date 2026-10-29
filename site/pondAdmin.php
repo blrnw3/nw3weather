@@ -9,6 +9,11 @@ Page::init(array(
 ));
 Page::Start();
 
+require_once ROOT . 'AdminAuth.php';
+if (!AdminAuth::configured('ADMIN_POND_PASSWORD')) {
+	echo Page::getStatusDiv('Editing is disabled: the admin password is not configured on this server.', true);
+}
+
 function pondAdminEscape($value) {
 	return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
@@ -43,7 +48,7 @@ if (!is_readable($filePath)) {
 	$dayCount = count($datmLines);
 
 	if (isset($_POST['pwd'])) {
-		if ($_POST['pwd'] === 'cold') {
+		if (AdminAuth::check('ADMIN_POND_PASSWORD', $_POST['pwd'])) {
 			$newLines = array($datmLines[0]);
 			for ($i = 1; $i < $dayCount; $i++) {
 				$oldLine = DatmWriter::parseLine($datmLines[$i]);
@@ -65,6 +70,8 @@ if (!is_readable($filePath)) {
 				echo '<p>Saved! <a href="/wxdataday.php?vartype=pond">View updated temperatures</a>'
 					. ' (takes up to 1 minute to update).</p>';
 			}
+		} elseif (!AdminAuth::configured('ADMIN_POND_PASSWORD')) {
+			echo Page::getStatusDiv(AdminAuth::notConfiguredMessage(), true);
 		} else {
 			echo '<p>Password fail. Try again.</p>';
 		}
