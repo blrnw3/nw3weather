@@ -355,7 +355,7 @@ class Traffic {
 	</p>
 
 	<p>
-		<b><a href="/oldSites/sitev2">Site version 2</a></b> (10th Sep 2011 - 20th May 2013). <br />
+		<b><a href="/oldSites/sitev2-static/">Site version 2</a> (archived copy)</b> (10th Sep 2011 - 20th May 2013). <br />
 		This involved a change in the procedure for getting data, using
 		<abbr title="PHP: Hypertext Preprocessor (processed by the server into HTML before the page loads)">PHP</abbr>, which
 		was also used extensively across the site to enable most of the new features and site-areas: obtaining all the historical data, displaying when

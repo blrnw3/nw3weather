@@ -350,7 +350,7 @@ Page::Start();
 		<p>
 			On account of these fairly significant changes, the loss of a few of the site v2 features, and given that I no longer have any interest in supporting
 			old (pre-8) versions of Internet Explorer, you may well decide to stick with the old site, version 2. <br />
-			Thus, <strong>I will be keeping site v2 going for a while yet, at <a href="/oldSites/sitev2/">this link</a></strong>.
+			Thus, <strong>I will be keeping site v2 going for a while yet, at <a href="/oldSites/sitev2-static/">this link</a></strong>.
 		</p>
 		<p>
 			As ever, I will continue to work on improving the site, and <a href="contact.php" title='contact me'>welcome suggestions</a> for the next site upgrade.
