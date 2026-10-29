@@ -113,7 +113,7 @@ $moonImg .= "?" . time();
 			<div><?php echo $changeindayjun; ?></div>
 		</div>
 		<div class="rowlight">
-			<div>Chance since Winter Solstice </div>
+			<div>Change since Winter Solstice</div>
 			<div><?php echo $changeindaydec; ?> </div>
 		</div>
 		<div class="rowdark empty">
@@ -154,7 +154,13 @@ $moonImg .= "?" . time();
 	</div>
 	<div class="rowdark">
 		<div>Moon Transit</div>
-		<div><?php echo str_ireplace('local', Date::$dst, $moontransit); ?> </div>
+		<div><?php
+			$mt = str_ireplace('local', Date::$dst, $moontransit);
+			// WD gives 'HH:MM D M YYYY'; show the date as e.g. 28 Oct 2026
+			if (preg_match('/^(\d{1,2}:\d{2})\s+(\d{1,2})\s+(\d{1,2})\s+(\d{4})(.*)$/', trim($mt), $m) && checkdate((int)$m[3], (int)$m[2], (int)$m[4])) {
+				$mt = $m[1] . ' ' . date('j M Y', mktime(12, 0, 0, (int)$m[3], (int)$m[2], (int)$m[4])) . $m[5];
+			}
+			echo $mt; ?> </div>
 	</div>
 	<div class="rowlight">
 		<div>Next Lunar Eclipse</div>

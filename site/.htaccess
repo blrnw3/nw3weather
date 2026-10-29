@@ -498,3 +498,10 @@ RewriteRule ^IMG_0417e?.JPG$ /photos/IMG_0417.JPG [R=301,L]
 RewriteCond %{HTTP_HOST} ^nw3weather\.co\.uk$ [OR]
 RewriteCond %{HTTP_HOST} ^www\.nw3weather\.co\.uk$
 RewriteRule ^index\.php$ "https\:\/\/nw3weather\.co\.uk\/" [R=301,L]
+
+# Legacy v3 pages ask for their own favicon.
+redirect 301 /oldSites/sitev3/favicon.ico /favicon.ico
+
+# Two album-1 photos are stored with a lower-case extension.
+RewriteRule ^photos/italy20103\.JPG$ photos/italy20103.jpg [L]
+RewriteRule ^photos/italy20109s\.JPG$ photos/italy20109s.jpg [L]
