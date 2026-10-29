@@ -201,7 +201,7 @@ if(!empty($showYear)) {
 }
 if(!empty($showMonth)) {
 	echo '<span style="padding-left:25px;padding-right:3px;" class="rep">Month</span>';
-	dropdownCycle(false, buildSlug("month", $prevMonth), $months[$prevMonth-1] );
+	dropdownCycle(false, buildSlug("month", $prevMonth), $months[$prevMonth-1] ?? '' );
 	echo '<select name="month" onchange="this.form.submit()">
 		<option value="0" ' . ($isallCheck ?? '') . '>All</option>';
 	for($i = 1; $i <= 12; $i++) {
@@ -281,7 +281,7 @@ function rankTable($values, $dates, $conv, $colour, $absfix, $rankNum, $title, $
 	for($i = 1; $i <= $rankNum; $i++) {
 		tr( "row". colcol($i) );
 		td($i);
-		td( conv($values[$i], $conv, false), valcolr( conv($values[$i] / $sumfix, $conv, false, false, false, $absfix), $colour, $isCount) );
+		td( conv($values[$i], $conv, false), valcolr( conv(nw3_to_number($values[$i]) / $sumfix, $conv, false, false, false, $absfix), $colour, $isCount) );
 		td( $dates[$i] );
 		tr_end();
 	}
@@ -296,12 +296,12 @@ function rankTable($values, $dates, $conv, $colour, $absfix, $rankNum, $title, $
 		}
 		if($showToday) {
 			tr('tblfoot" style="border-top:3px solid #6F7;');
-			td($dates['today']);
-			td( conv($values['today'], $conv, false), valcolr( conv($values['today'] / $sumfix, $conv, false, false, false, $absfix), $colour, $isCount) );
+			td($dates['today'] ?? '');
+			td( conv($values['today'] ?? null, $conv, false), valcolr( conv(nw3_to_number($values['today'] ?? null) / $sumfix, $conv, false, false, false, $absfix), $colour, $isCount) );
 			td($today);
 			tr_end();
 		}
-		if($values["yest"] !== null) {
+		if(($values["yest"] ?? null) !== null) {
 			tr("tblfoot");
 			td($dates['yest']);
 			td( conv($values['yest'], $conv, false), valcolr( conv($values["yest"] / $sumfix, $conv, false, false, false, $absfix), $colour, $isCount) );

@@ -401,11 +401,11 @@ $traffic->prepare_annual_data_table();
 			<tr>
 				<td>Total</td>
 				<td><?php echo nw3_number_format($traffic->annual_summary['sum']) ?></td>
-				<td><?php echo $traffic->annual_summary['yoy'] ?></td>
-				<td><?php echo $traffic->annual_summary['mean'] ?></td>
-				<td><?php echo $traffic->annual_summary['median'] ?></td>
-				<td><?php echo $traffic->annual_summary['max'] ?></td>
-				<td><?php echo $traffic->annual_summary['min'] ?></td>
+				<td><?php echo $traffic->annual_summary['yoy'] ?? '' ?></td>
+				<td><?php echo $traffic->annual_summary['mean'] ?? '' ?></td>
+				<td><?php echo $traffic->annual_summary['median'] ?? '' ?></td>
+				<td><?php echo $traffic->annual_summary['max'] ?? '' ?></td>
+				<td><?php echo $traffic->annual_summary['min'] ?? '' ?></td>
 			</tr>
 		</tfoot>
 		<tbody>
@@ -413,7 +413,7 @@ $traffic->prepare_annual_data_table();
 			<tr>
 				<td><?php echo $year ?></td>
 				<td><?php echo nw3_number_format($data['sum']); if($year == $dyear) echo "+ (to ${data['TO']})"; ?></td>
-				<td><?php echo $data['yoy'] ?></td>
+				<td><?php echo $data['yoy'] ?? '' ?></td>
 				<td><?php echo $data['mean'] ?></td>
 				<td><?php echo $data['median'] ?></td>
 				<td><?php echo $data['max'] ?> (<?php echo $data['max_date'] ?>)</td>

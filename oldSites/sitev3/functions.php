@@ -132,7 +132,8 @@ function roundbig($val, $size = 5, $dir = false) {
  * @return string
  */
 function percent($val, $div, $dp = 0, $showp = true, $brackets = true) {
-	$dat = sprintf('%.'.$dp.'f',$val/$div*100);
+	$div = nw3_to_number($div); // blank inputs fatal on PHP 8
+	$dat = sprintf('%.'.$dp.'f', $div ? nw3_to_number($val)/$div*100 : 0);
 	if($showp) { $dat .= '%'; }
 	if($brackets) { $dat = '(' . $dat . ')'; }
 	return $dat;

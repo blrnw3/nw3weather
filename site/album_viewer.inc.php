@@ -19,8 +19,9 @@ if ($albnum === null || $albnum < 1 || $albnum > $albCount) {
 }
 $_SESSION['albnum'] = $albnum;
 
-// Album data may reference $unitW for distance wording.
+// Album data may reference $unitW / $unitR for distance and depth wording.
 $unitW = Wx::getUnitsText(Wx::Wind);
+$unitR = Wx::getUnitsText(Wx::Rain);
 $albumFile = ROOT . 'photos/albums/' . $albumFilePrefix . $albnum . '.php';
 if (!is_file($albumFile)) {
 	$albumFile = ROOT . 'albums/' . $albumFilePrefix . $albnum . '.php';

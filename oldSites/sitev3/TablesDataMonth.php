@@ -56,7 +56,7 @@ class MonthlySummaryDataTables {
 		$this->startYr = $startYr;
 
 		$this->climateConvType = ($this->CVAR->typeconvNum == 1) ? 1.1 : $this->CVAR->typeconvNum;
-		$this->climateMapping = $this->CLIMATE->mapping[$this->CVAR->typeNum];
+		$this->climateMapping = $this->CLIMATE->mapping[$this->CVAR->typeNum] ?? null;
 	}
 
 	/**
@@ -210,7 +210,7 @@ foreach( $AVAIL_SUMMARY_TYPES as $smry_type ) {
 if($isAnom) {
 	echo '<p>Figures in brackets refer to departure from <strong>recent</strong> 
 		<a href="wxaverages.php" title="Long-term NW3 climate averages">average conditions</a>';
-	if($endyr == $dyear) {
+	if(isset($endyr) && $endyr == $dyear) {
 		echo " (note that the anomaly for the current month is unadjusted for the month's degree of completeness)";
 	}
 	echo '.</p>';

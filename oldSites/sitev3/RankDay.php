@@ -105,6 +105,7 @@ if($isSum) {
 	$extraCount = ", and $c values > 0";
 }
 
+$extraMon = $extraMon ?? ''; $extraCount = $extraCount ?? '';
 echo "<p>Ranked daily data from $startYrReport to present for London, nw3. For $description, there are<b> $sortLen </b>valid values$extraMon$extraCount</p>";
 
 historical_info($startYrReport);
