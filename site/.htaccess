@@ -463,7 +463,7 @@ redirect 301 /curr24hourgraph.gif /stitchedmaingraph_small.png
 redirect 301 /jpgwebcam.jpg /currcam.jpg
 redirect 301 /webcamimage.gif /currcam.jpg
 
-redirect 301 /Historical.php /oldSites/sitev2/Historical.php
+redirect 301 /Historical.php /oldSites/sitev2-static/Historical.html
 redirect 301 /sitemap.php /
 redirect 301 /sitev3 /
 redirect 301 /wx100.php /wx10.php?humtype=dew
