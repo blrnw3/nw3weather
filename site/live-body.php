@@ -209,7 +209,7 @@ function nw3_render_cards() {
 	$nowHtml = '<span id="var4">' . Wx::conv(Live::$wind, Wx::Wind) . '</span> ' . Wx::conv(Live::$wdir, Wx::Direction);
 	nw3_card('wind', 'icon-wind.svg', 'Wind', 'wx13.php', 'Detailed wind data',
 		$nowHtml,
-		'Gusting to <b>' . Wx::conv(Live::$gustRaw, Wx::Wind, true, false, -1) . '</b> &middot; ' . nw3_bft_force(Live::$wind),
+		'Gusting to <b>' . Wx::conv(Live::gustNow(), Wx::Wind, true, false, -1) . '</b> &middot; ' . nw3_bft_force(Live::$wind),
 		array(
 			array('Max gust', nw3_at($maxGust, Wx::Wind, nw3_live_get($NOW, 'timeMax', 'gust'), -1)),
 			array('Max hr gust', (Live::$maxgsthr === null ? '-' : '<b>' . Wx::conv(Live::$maxgsthr, Wx::Wind, true, false, -1) . '</b>')),

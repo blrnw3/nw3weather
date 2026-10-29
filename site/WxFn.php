@@ -28,6 +28,11 @@ class Live {
 	public static $updated;
 	public static $outage = false;
 
+	/** Current gust for display: never below the current average wind speed. */
+	public static function gustNow() {
+		return max((float)self::$gustRaw, (float)self::$wind);
+	}
+
 	public static function init() {
 		self::$NOW = unserialize(file_get_contents(CACHE_ROOT . 'serialised_datNow.txt'));
 		self::$HR24 = unserialize(file_get_contents(CACHE_ROOT . 'serialised_datHr24.txt'));
