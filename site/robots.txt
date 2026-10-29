@@ -19,3 +19,5 @@ Disallow: /*.php/
 # Meta's AI crawler pulled ~1.7 TB of /cam/ timelapse videos Jun-Oct 2026. It obeys only its own group.
 User-agent: meta-externalagent
 Disallow: /
+
+Sitemap: https://nw3weather.co.uk/sitemap.xml
