@@ -29,6 +29,7 @@
 
 <?php
 $typeconv = $typeconv2 = $typeconv;
+$badMessage = false;
 
 //pre-lim / day values and times
 if(isset($_GET['day'])) { $dproc = intval($_GET['day']); } else { $dproc = $day_yest; }
@@ -69,11 +70,18 @@ $dtfanom = file($root.'tminmaxav.csv');
 $dfdat = file($fdat);
 $dfdatt = file($fdatt);
 $dfdatm = file($fdatm);
-$ddat = explode(',', $dfdat[date('z',$sproc)+1]);
-$ddatt = explode(',', $dfdatt[date('z',$sproc)+1]);
-$ddatm = explode(',', $dfdatm[date('z',$sproc)+1]);
+// no line yet for today
+$ddat = explode(',', $dfdat[date('z',$sproc)+1] ?? '');
+$ddatt = explode(',', $dfdatt[date('z',$sproc)+1] ?? '');
+$ddatm = array_pad(explode(',', $dfdatm[date('z',$sproc)+1] ?? ''), 16, null); // no row yet: fields read as null
 $dtanom = explode(',', $dtfanom[date('z',$sproc)]); $dtanom[3] = $dtanom[1] - $dtanom[0];
 $pastcamstamp = date("Y/Ymd", $sproc) . 'daily'; $todcond = true; $nmint = false;
+$todfix = '';
+//month-to-date accumulators
+$mcdat = array_fill(0, count($data_description), 0);
+$mcdatm = array(0 => 0, 1 => 0, 7 => 0);
+$mctanom = array(0, 0, 0);
+$mcsanom = $maxsuntd = 0;
 if(mkdate() == $sproc) { //include today
 	if(time() > mktime(0,6)) { $custom = $NOW; }
 	if($dhr < 21) { $nmin = $NOW['min']['night']; } else { $nmin = ''; }
@@ -112,7 +120,7 @@ if(mkdate() == $sproc) { //include today
 	);
 
 	$todfix = '&amp;ts=' . (23-date('H')); $pastcamstamp = 'today';
-	for($v = 0; $v < count($data_description); $v++) { $mcdat[$v] += $ddat[$v]/$dproc; }
+	for($v = 0; $v < count($data_description); $v++) { $mcdat[$v] += nw3_to_number($ddat[$v] ?? null)/$dproc; }
 	//for($v = 0; $v < 3; $v++) { $mctanom[$v] += $dtanom[$v]/$dproc; }
 	$todcond = time() > mktime(0,6);
 	$rec[$dyear] = $ddat; $rec = array_dswap($rec);
@@ -120,9 +128,9 @@ if(mkdate() == $sproc) { //include today
 if(mkdate() == $sproc+24*3600) { if(time() > mktime(0,6)) { $todcond2 = true; } else { $todcond2 = false; } } else { $todcond2 = true; }
 //Cumulative values
 for($d = 0; $d < $dproc; $d++) {
-	$mdat = explode(',', $dfdat[date('z',$sproc)+1-$d]); for($v = 0; $v < count($data_description); $v++) { $mcdat[$v] += $mdat[$v]/$dproc; }
-	$mdatm = explode(',', $dfdatm[date('z',$sproc)+1-$d]); for($v = 0; $v < 2; $v++) { $mcdatm[$v] += $mdatm[$v]; } $mcdatm[7] += intval($mdatm[11]);
-	$mtanom = explode(',', $dtfanom[date('z',$sproc)+1-$d]); $mctanom[3] = $mtanom[1] - $mtanom[0]; for($v = 0; $v < 3; $v++) { $mctanom[$v] += $mtanom[$v]/$dproc; }
+	$mdat = explode(',', $dfdat[date('z',$sproc)+1-$d] ?? ''); for($v = 0; $v < count($data_description); $v++) { $mcdat[$v] += nw3_to_number(isset($mdat[$v]) ? $mdat[$v] : null)/$dproc; }
+	$mdatm = explode(',', $dfdatm[date('z',$sproc)+1-$d] ?? ''); for($v = 0; $v < 2; $v++) { $mcdatm[$v] += nw3_to_number($mdatm[$v] ?? null); } $mcdatm[7] += intval(isset($mdatm[11]) ? $mdatm[11] : null);
+	$mtanom = explode(',', $dtfanom[date('z',$sproc)+1-$d]); $mctanom[3] = nw3_to_number($mtanom[1]) - nw3_to_number($mtanom[0]); for($v = 0; $v < 3; $v++) { $mctanom[$v] += nw3_to_number($mtanom[$v] ?? null)/$dproc; }
 	$mcsanom += $dsun[date('z',$sproc)+1-$d] / ($maxsun[$mproc-1]/$sunav[$mproc-1]); $maxsuntd += $dsun[date('z',$sproc)+1-$d];
 }
 $mcdat[13] *= $dproc;
@@ -133,34 +141,39 @@ for($y = $temp_styr; $y <= $yrend; $y++) {
 	$sprocR = mkdate($mproc,$dproc,$y);
 	$dfdatR = file($fullpath."dat".$y.".csv");
 	$dfdatmR = file($fullpath."datm".$y.".csv");
-	$ddatR = explode(',', $dfdatR[date('z',$sprocR)+1]);
-	$ddatmR = explode(',', $dfdatmR[date('z',$sprocR)+1]);
-	for($v = 0; $v < count($data_description); $v++) { if($ddatR[$v] != '' && $ddatR[$v] != '-') { $rec[$v][$y] = $ddatR[$v]; } }
-	for($v = 0; $v < 2; $v++) { $recm[$v][$y] = $ddatmR[$v]; if($ddatmR[$v] == 'b') { $recm[$v][$y] = 0; } }
-	for($v = 0; $v < 3; $v++) { $recx[$v][$y] = $ddatR[3*$v+1]-$ddatR[3*$v]; }
+	$ddatR = explode(',', $dfdatR[date('z',$sprocR)+1] ?? '');
+	$ddatmR = explode(',', $dfdatmR[date('z',$sprocR)+1] ?? '');
+	for($v = 0; $v < count($data_description); $v++) { if(isset($ddatR[$v]) && $ddatR[$v] != '' && $ddatR[$v] != '-') { $rec[$v][$y] = $ddatR[$v]; } }
+	// Skip a year whose row isn't written yet (the day being processed, just after midnight)
+	if(isset($dfdatmR[date('z',$sprocR)+1])) {
+		for($v = 0; $v < 2; $v++) { $recm[$v][$y] = $ddatmR[$v] ?? ''; if($recm[$v][$y] == 'b') { $recm[$v][$y] = 0; } }
+	}
+	if(isset($dfdatR[date('z',$sprocR)+1])) {
+		for($v = 0; $v < 3; $v++) { $recx[$v][$y] = nw3_to_number($ddatR[3*$v+1] ?? null) - nw3_to_number($ddatR[3*$v] ?? null); }
+	}
 	unset($dfdatR,$dfdatmR,$ddatR,$ddatmR);
 }
 for($v = 0; $v < count($data_description); $v++) {
-	if(is_array($rec[$v])) {
+	if(isset($rec[$v]) && is_array($rec[$v])) {
 		$hi[$v] = max($rec[$v]); $lo[$v] = min($rec[$v]); $av[$v] = mean($rec[$v]);
-		$hiY[$v] = yrec_hlite(array_search($hi[$v],$rec[$v]), $yproc); $loY[$v] = yrec_hlite(array_search($lo[$v],$rec[$v]), $yproc);
+		$hiY[$v] = yrec_hlite(nw3_array_search($hi[$v],$rec[$v]), $yproc); $loY[$v] = yrec_hlite(nw3_array_search($lo[$v],$rec[$v]), $yproc);
 	}
 	else { $typeconv[$v] = false; $hi[$v] = $lo[$v] = 'n/a'; $hiY[$v] = $loY[$v] = ''; }
 }
 for($v = 0; $v < 2; $v++) {
 	$him[$v] = max($recm[$v]); $lom[$v] = min($recm[$v]); $avm[$v] = mean($recm[$v]);
-	$hiYm[$v] = yrec_hlite(array_search($him[$v],$recm[$v]), $yproc); $loYm[$v] = yrec_hlite(array_search($lom[$v],$recm[$v]), $yproc);
+	$hiYm[$v] = yrec_hlite(nw3_array_search($him[$v],$recm[$v]), $yproc); $loYm[$v] = yrec_hlite(nw3_array_search($lom[$v],$recm[$v]), $yproc);
 }
 for($v = 0; $v < 3; $v++) {
 	$hix[$v] = max($recx[$v]); $lox[$v] = min($recx[$v]); $avx[$v] = mean($recx[$v]);
-	$hiYx[$v] = yrec_hlite(array_search($hix[$v],$recx[$v]), $yproc); $loYx[$v] = yrec_hlite(array_search($lox[$v],$recx[$v]), $yproc);
+	$hiYx[$v] = yrec_hlite(nw3_array_search($hix[$v],$recx[$v]), $yproc); $loYx[$v] = yrec_hlite(nw3_array_search($lox[$v],$recx[$v]), $yproc);
 }
 
 //Fix-up standard value-set
 if($ddat[13] == 0.1) { $ddat[13] = 'trace'; $typeconv[13] = false; }
 $ddanom[2] = ' (' . conv(($ddat[0]+$ddat[1]-$dtanom[0]-$dtanom[1])/2,1.1,0,1) . ')'; $mcanom[2] = ' (' . conv(($mcdat[0]+$mcdat[1]-$mctanom[0]-$mctanom[1])/2,1.1,0,1) . ')';
 $ddanom[9] = ' (' . conv($ddat[9]-$windav[$mproc-1],4,0,1) . ')'; $mcanom[9] = ' (' . conv($mcdat[9]-$windav[$mproc-1],4,0,1) . ')';
-$mcanom[13] = ' (' . round(100*$mcdat[13]/($rainav[$mproc-1]/date('t',$sproc)*$dproc)).'%)';
+$mcanom[13] = ' (' . nw3_round(100*$mcdat[13]/($rainav[$mproc-1]/date('t',$sproc)*$dproc)).'%)';
 for($i = 0; $i < 2; $i++) {
 	$ddanom[$i] = ' (' . conv($ddat[$i]-$dtanom[$i],1.1,0,1) . ')';
 	$mcanom[$i] = ' (' . conv($mcdat[$i]-$mctanom[$i],1.1,0,1) . ')';
@@ -172,11 +185,12 @@ if(intval($ddat[12]) > 0) { $ddat[12] .= '&deg; [' . degname($ddat[12]) . ']'; }
 $loY[12] = norain_fix($loY[12], $lo[12]);
 
 //Fix-up standard 2 value-set
+$bold = $boldE = array();
 for($i=0;$i<2;$i++) { if($ddat[$i] != $ddat[20+$i]) { $bold[20+$i] = '* '; $boldE[20+$i] = ' *'; } }
 
 //Fix-up extra value-set
 $ddatx[0] = $ddat[1] - $ddat[0]; $mcdatx[0] = $mcdat[1] - $mcdat[0];
-$ddatx[1] = $ddat[4] - $ddat[3]; $mcdatx[1] = round($mcdat[4] - $mcdat[3]);
+$ddatx[1] = $ddat[4] - $ddat[3]; $mcdatx[1] = nw3_round($mcdat[4] - $mcdat[3]);
 $ddatx[2] = $ddat[7] - $ddat[6]; $mcdatx[2] = $mcdat[7] - $mcdat[6];
 $ddanomx[0] = ' (' . conv($ddatx[0]-$dtanom[3],1.1,0,1) . ')'; $mcdanomx[0] = ' (' . conv($mcdat[1]-$mctanom[1]-$mcdat[0]+$mctanom[0],1.1,0,1) . ')';
 $hianomx[0] = ' (' . conv($hix[0]-$dtanom[3],1.1,0,1) . ')'; $loanomx[0] = ' (' . conv($lox[0]-$dtanom[3],1.1,0,1) . ')';
@@ -185,9 +199,10 @@ $hianomx[0] = ' (' . conv($hix[0]-$dtanom[3],1.1,0,1) . ')'; $loanomx[0] = ' (' 
 // echo 'date-z + 1 = ' . (date('z',$sproc)+1) . '<br />';
 $sunMax = $dsun[date('z',$sproc)];
 if($ddatm[0] == 'b') { $ddatm[0] = 0; }
-if($ddatm[0]/$sunMax > 0.95) { $maxsunevent = true; }
-$ddatm[0] .= ' [' . acronym('Out of ' . conv($sunMax,0,0) . ' hrs possible', round($ddatm[0]/$sunMax*100) . '%',true) . ']';
-if($ddatm[1] > 0.4 && $ddat[13] >= 0.4) { $ddatm[1] .=  '<br />[Mean rain rate: '. conv($ddat[13]/$ddatm[1],2.1) . ']'; }
+$maxsunevent = (nw3_to_number($ddatm[0])/$sunMax > 0.95); // '' (no obs yet) counts as 0, as on PHP 5
+$ddatm[0] .= ' [' . acronym('Out of ' . conv($sunMax,0,0) . ' hrs possible', nw3_round(nw3_to_number($ddatm[0])/$sunMax*100) . '%',true) . ']';
+if(nw3_to_number($ddatm[1]) > 0.4 && nw3_to_number($ddat[13]) >= 0.4) { // numeric compare as on PHP 5 ('b' = blank)
+	$ddatm[1] .=  '<br />[Mean rain rate: '. conv($ddat[13]/$ddatm[1],2.1) . ']'; }
 $mcdatm[0] = roundi($mcdatm[0]) . ' hrs ' . percent($mcdatm[0],$mcsanom) . ' ['. acronym('Of a possible '. roundi($maxsuntd),roundi(100*$mcdatm[0]/$maxsuntd),true) . '%]';
 $mcdatm[1] = roundi($mcdatm[1]) . ' hrs ' . percent($mcdatm[1],$wetav[$mproc-1]*$dproc/date('t',$sproc)) . ' ['. acronym('Of a possible '. 24*$dproc,roundi(100*$mcdatm[1]/$dproc/24),true) . '%]';
 $him[0] .= ' [' . acronym('Out of ' . conv($sunMax,0,0) . ' hrs possible', percent($him[0],$sunMax,0,1,0),true) . ']';
@@ -213,7 +228,10 @@ else {
 	else { $fs_fc = 'not available'; }
 }
 $ddatm[2] = $fs_fc;
-unset($fs);
+//events decode
+$fs = '';
+$ec = 0;
+$snow = false;
 
 $ts = $ddatm[3]; //Snowfall decode
 if($ts != '') {
@@ -299,6 +317,7 @@ if($badMessage) { echo "<br /><b>Bad date specified. Defaulted to $badMessage re
 if(mkdate() == $sproc && $todcond) { echo 'Based on data up to ', date('H:i',filemtime($root.'logfiles/daily/todaylog.txt')), '<br />'; }
 
 $prevs = $sproc - 3600*24; $nexts = $sproc + 3600*24;
+$c1 = $c2 = false;
 $prevd = date('j', $prevs); $prevm = date('n', $prevs); $prevy = date('Y', $prevs);
 $nextd = date('j', $nexts); $nextm = date('n', $nexts); $nexty = date('Y', $nexts);
 ?>
@@ -326,6 +345,12 @@ Next Day&gt;&gt;<?php if($c2) { echo '</a>'; } ?></td>
 
 <?php
 $dstring = date('jS F Y', $sproc);
+//cells without an anomaly/marker print nothing
+$blankCells = array_fill(0, count($data_description), '');
+$ddanom += $blankCells; $mcanom += $blankCells; $hianom += $blankCells; $loanom += $blankCells;
+$bold += $blankCells; $boldE += $blankCells;
+$blankCellsX = array_fill(0, 3, '');
+$ddanomx += $blankCellsX; $mcdanomx += $blankCellsX; $hianomx += $blankCellsX; $loanomx += $blankCellsX;
 $w1 = 22; $w2 = 23; $w3 = 8; $w4 = 17; $w5 = 15; $w6 = 15;
 if($todcond) {
 	 //standard
@@ -334,9 +359,11 @@ if($todcond) {
 		<td class="td4" width="',$w4,'%">Month cumul.</td> <td class="td4" width="',$w5,'%">Record High</td> <td class="td4" width="',$w6,'%">Record Low</td> </tr>';
 
 	for($i = 0; $i < 20; $i++) {
+		if(!isset($ddat[$i])) { $ddat[$i] = null; }
+		if(!isset($ddatt[$i])) { $ddatt[$i] = null; }
 		if($ddat[$i] == '' || $ddat[$i] == '-') { $ddat[$i] = 'n/a'; $typeconv[$i] = false; }
 		if($i % 2 == 0) { $style = 'light'; } else { $style = 'dark'; }
-		if($ddatt[$i] < 1 && $ddatt[$i] > 0) { $ddatt[$i] = decimal_timefix($ddatt[$i]); } elseif(!strpos($ddatt[$i],'*')) { $ddatt[$i] = timeformat($ddatt[$i]); }
+		if(nw3_to_number($ddatt[$i]) < 1 && nw3_to_number($ddatt[$i]) > 0) { $ddatt[$i] = decimal_timefix($ddatt[$i]); } elseif(!strpos($ddatt[$i],'*')) { $ddatt[$i] = timeformat($ddatt[$i]); }
 		echo '<tr class="row', $style, '">
 			<td width="',$w1,'%" class="td', $data_num[$i]+10, 'C">', $data_description[$i], '</td>
 			<td width="',$w2,'%" class="td', $data_num[$i]+10, 'C" style="font-size:105%">', conv($ddat[$i],$typeconv[$i]), $ddanom[$i], '</td>
@@ -352,9 +379,11 @@ if($todcond) {
 		<td class="td4" width="',$w4,'%">Month cumul.</td> <td class="td4" width="',$w5,'%">Record High</td> <td class="td4" width="',$w6,'%">Record Low</td> </tr>';
 
 	for($i = 20; $i < count($data_description); $i++) {
+		if(!isset($ddat[$i])) { $ddat[$i] = null; }
+		if(!isset($ddatt[$i])) { $ddatt[$i] = null; }
 		if($ddat[$i] == '' || $ddat[$i] == '-') { $ddat[$i] = 'n/a'; $typeconv[$i] = false; }
 		if($i % 2 == 0) { $style = 'light'; } else { $style = 'dark'; }
-		if($ddatt[$i] < 1 && $ddatt[$i] > 0) { $ddatt[$i] = decimal_timefix($ddatt[$i]); } elseif(!strpos($ddatt[20],'*')) { $ddatt[$i] = timeformat($ddatt[$i]); } else { $nmint = true; }
+		if(nw3_to_number($ddatt[$i]) < 1 && nw3_to_number($ddatt[$i]) > 0) { $ddatt[$i] = decimal_timefix($ddatt[$i]); } elseif(!strpos($ddatt[20],'*')) { $ddatt[$i] = timeformat($ddatt[$i]); } else { $nmint = true; }
 
 		echo '<tr class="row', $style, '">
 			<td width="',$w1,'%" class="td', $data_num[$i]+10, 'C">', $data_description[$i], '</td>

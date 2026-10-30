@@ -843,7 +843,7 @@ Your browser does not support the video tag.
 		<li>Snowiest year since 2013, with 8 days of snow on the ground and 16cm total snowfall</li>
 		<li>March had 52% above avg rainfall, with rain on 23 days; both new records for that month</li>
 		<li>The 19th of April was the hottest April day at 28.4C, and over 15C above average,
-			<a href="http://nw3weather.co.uk/RankDay.php?vartype=tmaxa&month=0&rankLimit=20" title="see rankings">a record anomaly</a></li>
+			<a href="/RankDay.php?vartype=tmaxa&month=0&rankLimit=20" title="see rankings">a record anomaly</a></li>
 		<li>June was the driest month on record, with only 0.8mm of rain (99% below average), from 4 separate days each with under an hour of rainfall</li>
 		<li>July was the warmest month I've recorded, 3.8C above average, with a daily mean high of 27.2C</li>
 		<li>July was also the sunniest month I've recorded, 42% above avg, with daily sun averaging 8.5 hrs</li>

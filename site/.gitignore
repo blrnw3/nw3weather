@@ -21,6 +21,7 @@ lastrn
 
 # Generated images/video
 *.png
+!/apple-touch-icon.png
 *.gif
 *.jpg
 *.jpeg

@@ -28,6 +28,9 @@
 	<div id="main">
 
 <?php
+$toofar = false;
+$num_adv = 0;
+$c1 = $c2 = false;
 if(isset($_GET['month'])) { $mproc = intval($_GET['month']); } else { $mproc = ($dmonth == 1) ? 12 : $dmonth-1; }
 if(isset($_GET['year'])) { $yproc = (int) $_GET['year']; } else { $yproc = ($dmonth == 1) ? $dyear-1 : $dyear; }
 $sproc1 = mkdate($mproc,1,$yproc); $dim = date('t',$sproc1); $sproc = mkdate($mproc,$dim,$yproc);
@@ -65,25 +68,26 @@ $mdat = array_dswap($mdat); $mdatm = array_dswap($mdatm); $mdatt = array_dswap($
 if(is_array($mdat[29])) { $mdat[29] = array_map('clearblank2',$mdat[29]); } //special case due to weird issue with csv end-of-line blanks
 
 for($v = 0; $v < count($data_description); $v++) {
+	if(!isset($mdat[$v])) { $mdat[$v] = array(); } // older months have fewer columns: 'n/a' below
 	if(is_array($mdat[$v])) { $mdat[$v] = array_filter($mdat[$v],'clearblank'); }
 	if(count($mdat[$v]) > 0) {
 		$msdat[$v][2] = mean($mdat[$v]); $mtdat[$v][2] = 'From ' . count($mdat[$v]) . ' days data';
-		$msdat[$v][0] = min($mdat[$v]); $mtdat[$v][0] = 'On day: ' . ($dim - intval(array_search($msdat[$v][0], $mdat[$v])));
-		$msdat[$v][1] = max($mdat[$v]); $mtdat[$v][1] = 'On day: ' . ($dim - intval(array_search($msdat[$v][1], $mdat[$v])));
-		$msdatt[$v] = time_av($mdatt[$v]);
+		$msdat[$v][0] = min($mdat[$v]); $mtdat[$v][0] = 'On day: ' . ($dim - intval(nw3_array_search($msdat[$v][0], $mdat[$v])));
+		$msdat[$v][1] = max($mdat[$v]); $mtdat[$v][1] = 'On day: ' . ($dim - intval(nw3_array_search($msdat[$v][1], $mdat[$v])));
+		$msdatt[$v] = time_av($mdatt[$v] ?? null);
 	}
 	else { for($i = 0; $i < 3; $i++) { $msdat[$v][$i] = $mtdat[$v][$i] = $msdatt[$v] = 'n/a'; $typeconv[$v] = false; } }
 }
 
 for($v = 0; $v < 2; $v++) {
 	$msdatm[$v][2] = mean($mdatm[$v]); $mtdatm[$v][2] = 'From ' . $dim . ' days data';
-	$msdatm[$v][0] = mymin($mdatm[$v]); $mtdatm[$v][0] = 'On day: ' . ($dim - intval(array_search($msdatm[$v][0], $mdatm[$v])));
-	$msdatm[$v][1] = mymax($mdatm[$v]); $mtdatm[$v][1] = 'On day: ' . ($dim - intval(array_search($msdatm[$v][1], $mdatm[$v])));
+	$msdatm[$v][0] = mymin($mdatm[$v]); $mtdatm[$v][0] = 'On day: ' . ($dim - intval(nw3_array_search($msdatm[$v][0], $mdatm[$v])));
+	$msdatm[$v][1] = mymax($mdatm[$v]); $mtdatm[$v][1] = 'On day: ' . ($dim - intval(nw3_array_search($msdatm[$v][1], $mdatm[$v])));
 }
 for($v = 0; $v < 3; $v++) {
 	$msdatx[$v][2] = mean($mdatx[$v]); $mtdatx[$v][2] = 'From ' . $dim . ' days data';
-	$msdatx[$v][0] = min($mdatx[$v]); $mtdatx[$v][0] = 'On day: ' . ($dim - intval(array_search($msdatx[$v][0], $mdatx[$v])));
-	$msdatx[$v][1] = max($mdatx[$v]); $mtdatx[$v][1] = 'On day: ' . ($dim - intval(array_search($msdatx[$v][1], $mdatx[$v])));
+	$msdatx[$v][0] = min($mdatx[$v]); $mtdatx[$v][0] = 'On day: ' . ($dim - intval(nw3_array_search($msdatx[$v][0], $mdatx[$v])));
+	$msdatx[$v][1] = max($mdatx[$v]); $mtdatx[$v][1] = 'On day: ' . ($dim - intval(nw3_array_search($msdatx[$v][1], $mdatx[$v])));
 }
 
 //Days of... section
@@ -137,34 +141,34 @@ $daysofOtherDescrip[6] = 'Total Events';
 //Misc.
 $snowfall = 0;
 foreach ($mdatm[3] as $d => $sn) {
-	$snowfall += (float)($sn == 'y') ? $mdat[13][$d] : $sn;
+	$snowfall += nw3_to_number(($sn == 'y') ? $mdat[13][$d] : $sn); // 8.x: '' + int is a TypeError
 }
 if($daysofRn[2] > 0) {
 	$misc[0] = 'Mean rainfall for days with >0.3mm: '. conv($msdat[13][2]*$dim / $daysofRn[2], 2);
 	$misc[1] = 'Total snowfall: '. conv($snowfall, 6) .' - '. percent($snowfall, $msdat[13][2]*$dim, 0, true, false) .' of the total precipitation';
-	$misc[2] = 'Total lying snow: '. conv(array_sum($mdatm[4]), 6);
+	$misc[2] = 'Total lying snow: '. conv(nw3_array_sum($mdatm[4]), 6);
 } else {
 	$misc[0] = 'Nothing to report';
 }
 
 //standard fix-up
 $mtdat[13][2] = 'Mean: ' . conv($msdat[13][2],2);
-$msdat[13][2] *= $dim; //mean => sum conversion
-$msdat[count($data_description)-1][2] *= $dim; //mean => sum conversion
-for($i = 0; $i < 2; $i++) { $manom[$i][2] = ' (' . conv($msdat[$i][2]-$tdatav[$mmm[$i]][$mproc-1],1.1,0,1) . ')'; }
-$manom[2][2] = ' (' . conv(($msdat[0][2]+$msdat[1][2])/2-$tdatav['mean'][$mproc-1],1.1,0,1) . ')';
-$manom[9][2] = ' (' . conv($msdat[9][2]-$windav[$mproc-1],4,0,1) . ')';
+$msdat[13][2] = nw3_to_number($msdat[13][2]) * $dim; //mean => sum conversion ('n/a' counts as 0, as on PHP 5)
+$msdat[count($data_description)-1][2] = nw3_to_number($msdat[count($data_description)-1][2]) * $dim; //mean => sum conversion
+for($i = 0; $i < 2; $i++) { $manom[$i][2] = ' (' . conv(nw3_to_number($msdat[$i][2])-$tdatav[$mmm[$i]][$mproc-1],1.1,0,1) . ')'; }
+$manom[2][2] = ' (' . conv((nw3_to_number($msdat[0][2])+nw3_to_number($msdat[1][2]))/2-$tdatav['mean'][$mproc-1],1.1,0,1) . ')';
+$manom[9][2] = ' (' . conv(nw3_to_number($msdat[9][2])-$windav[$mproc-1],4,0,1) . ')';
 $manom[13][2] = ' ' . percent($msdat[13][2],($rainav[$mproc-1]));
-$msdat[12][2] = round($msdat[12][2]);
+$msdat[12][2] = nw3_round($msdat[12][2]);
 for($i = 0; $i < 3; $i++) { if(intval($msdat[12][$i]) > 0) { $msdat[12][$i] .= '&deg; [' . degname($msdat[12][$i]) . ']'; } else { $msdat[12][$i] = 'n/a'; } }
 
 
 //extra fix-up
 $manomx[0][2] = ' (' . conv($msdatx[0][2]-$tdatav['range'][$mproc-1],1.1,0,1) . ')';
-$msdatx[1][2] = round($msdatx[1][2]);
+$msdatx[1][2] = nw3_round($msdatx[1][2]);
 
 //manual fix-up
-for($i = 0; $i < 2; $i++) { $mtdatm[$i][2] = 'Mean: ' . round($msdatm[$i][2],1); $msdatm[$i][2] = roundi($msdatm[$i][2] * $dim); }
+for($i = 0; $i < 2; $i++) { $mtdatm[$i][2] = 'Mean: ' . nw3_round($msdatm[$i][2],1); $msdatm[$i][2] = roundi(nw3_to_number($msdatm[$i][2]) * $dim); }
 $manomm[0][2] = ' ' . percent($msdatm[0][2],$sunav[$mproc-1]).' ['.acronym('of a possible '.$maxsun[$mproc-1].' hrs', roundi(100*$msdatm[0][2]/$maxsun[$mproc-1]).'%',true).']';
 $manomm[1][2] = ' ' . percent($msdatm[1][2],$wetav[$mproc-1]).' [' .acronym('of a possible '. (24*$dim) . ' hrs', roundi(100*$msdatm[1][2]/(24*$dim)) . '%', true) . ']';
 
@@ -253,7 +257,7 @@ if($sproc1 < mkdate($dmonth,$dday+1,$dyear) && $sproc > mkdate(2,0,2009) && !$to
 		td($data_description[$i], $tdClass);
 		for($t = 0; $t < 3; $t++) {
 			$index = $orders[$t+1] - 1;
-			td( acronym($mtdat[$i][$index],conv($msdat[$i][$index],$typeconv[$i])) . $manom[$i][$index], $tdClass );
+			td( acronym($mtdat[$i][$index] ?? null, conv($msdat[$i][$index] ?? null, $typeconv[$i])) . ($manom[$i][$index] ?? ''), $tdClass );
 		}
 		td($msdatt[$i],  $tdClass );
 		tr_end();
@@ -286,7 +290,7 @@ if($sproc1 < mkdate($dmonth,$dday+1,$dyear) && $sproc > mkdate(2,0,2009) && !$to
 		for($t = 0; $t < 3; $t++) {
 			$index = $orders[$t+1] - 1;
 // 			if($t == 2) { $cspanm = 2; } else { $cspanm = 1; }
-			td( acronym($mtdatx[$i][$index], conv($msdatx[$i][$index],$typeconvx[$i])) . $manomx[$i][$index], $tdClass );
+			td( acronym($mtdatx[$i][$index] ?? null, conv($msdatx[$i][$index] ?? null, $typeconvx[$i])) . ($manomx[$i][$index] ?? ''), $tdClass );
 		}
 		tr_end();
 	}
@@ -310,7 +314,7 @@ if($sproc1 < mkdate($dmonth,$dday+1,$dyear) && $sproc > mkdate(2,0,2009) && !$to
 			for($t = 0; $t < 3; $t++) {
 				$index = $orders[$t+1] - 1;
 // 				$cspanm = ($t == 2) ? 2 : 1;
-				td( acronym($mtdatm[$i][$index], $msdatm[$i][$index]). $manomm[$i][$index], $tdClass );
+				td( acronym($mtdatm[$i][$index] ?? null, $msdatm[$i][$index] ?? null). ($manomm[$i][$index] ?? ''), $tdClass );
 			}
 			tr_end();
 		}

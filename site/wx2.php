@@ -20,7 +20,7 @@ function hik_frame_url($ts) {
 
 Page::Start();
 
-$sunrise_hr = date_sunrise(time(), SUNFUNCS_RET_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I'));
+$sunrise_hr = nw3_sunrise(time(), NW3_SUN_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I'));
 $risetime = $sunrise_hr - 1;
 $risesecs = 2.5 * $risetime;  // 2.5s per hour timelapse
 $yr_yest = Date::$yr_yest;
@@ -30,14 +30,14 @@ $lastyear = intval(Date::$dyear) - 1;
 $today_seek = (intval(Date::$dhr) - 2) < $risetime ? 0 : $risesecs;
 $yest_seek = $risesecs;
 
-// Rolling 24hr half-hour thumbnails + high-res frame index for the modal
+// Rolling 24hr half-hour thumbnails (newest first) + high-res frame index for the modal
 $base = floor(time() / 1800) * 1800; // most recent completed half-hour
 $grid_frames = array();
 $days_seen = array();
-for ($i = 47; $i >= 0; $i--) {
+for ($i = 0; $i <= 47; $i++) {
 	$ts = $base - $i * 1800;
 	$stamp = date('Hi', $ts);
-	$thumb_rel = "camchive/thumbs/hik/${stamp}hik.jpg";
+	$thumb_rel = "camchive/thumbs/hik/{$stamp}hik.jpg";
 	$thumb_path = Site::CAM_ROOT . $thumb_rel;
 	$has_thumb = file_exists($thumb_path);
 	$thumb_url = '/' . $thumb_rel;
@@ -80,7 +80,7 @@ foreach (array_keys($days_seen) as $day) {
 }
 
 // Timelapse placeholder: sunrise frame (assumed present every minute), else midnight if before sunrise
-$rise_mins = (int) round($sunrise_hr * 60);
+$rise_mins = (int) nw3_round($sunrise_hr * 60);
 $now_mins = (int) Date::$dhr * 60 + (int) date('i');
 if ($now_mins >= $rise_mins) {
 	$placeholder_stamp = Util::zerolead((int) floor($rise_mins / 60)) . Util::zerolead($rise_mins % 60);
@@ -140,7 +140,14 @@ $(function() {
 <p>Click a thumbnail to view the higher-resolution frame. A <a href="highreswebcam.php" title="Full-resolution summary"><b>full-day higher resolution view</b></a> is also available.</p>
 <div class="cam-grid">
 <?php
+$grid_today = date('Y-m-d');
+$grid_sep_done = false;
 foreach ($grid_frames as $f) {
+	if (!$grid_sep_done && $f['day'] !== $grid_today) {
+		// Frames are newest first: mark where yesterday's (UK local) frames begin
+		echo '<div class="cam-grid-sep"><span>Yesterday, ', date('D jS M', $f['ts']), '</span></div>';
+		$grid_sep_done = true;
+	}
 	echo '<figure>';
 	if ($f['has']) {
 		echo '<button type="button" class="cam-grid-thumb" data-day="', htmlspecialchars($f['day']), '"'

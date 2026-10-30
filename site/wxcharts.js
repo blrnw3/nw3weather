@@ -43,6 +43,19 @@
 			if (!opts.silent) { $('#' + containerId).html('<p>No data available.</p>'); }
 			return null;
 		}
+		// opts.zeroMessage: say so instead of drawing an empty chart when every value is 0 / blank.
+		if (opts.zeroMessage) {
+			var anyValue = json.series.some(function (s) {
+				return (s.data || []).some(function (p) {
+					var y = (p !== null && typeof p === 'object') ? (Array.isArray(p) ? p[p.length - 1] : p.y) : p;
+					return y !== null && y !== undefined && Number(y) !== 0;
+				});
+			});
+			if (!anyValue) {
+				$('#' + containerId).css('min-height', '0').html('<p class="chart-none">' + (json.title ? json.title + ': ' : '') + 'none recorded.</p>');
+				return null;
+			}
+		}
 		// yMinZero=false (e.g. pressure): let the axis auto-fit. Do not pass
 		// threshold:undefined — Highcharts 13 treats that as clearing the default
 		// threshold (0) and column bars end up with null height (invisible, but

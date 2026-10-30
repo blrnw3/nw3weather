@@ -80,9 +80,9 @@ $wind365 = mean($wind365a);
 //for($d = 1; $d <= count($winds[$dyear][$dmonth]); $d++) { $windtodmonthago += $winds[$yr_yest][date('n',mkdate($dmonth-1,1,$dyear))][$d]; }
 //for($d = 1; $d <= count($wind2[$dyear]); $d++) { $windtodyearago += $wind2[$dyear-1][$d]; }
 
-for($e=0; $e < $sc; $e++) { $total += floatval($windtots[date('n',mkdate($e+$s_offset, 1))-1]); }
-for($f=0; $f < 3; $f++) { $s_avgW += floatval($windav[date('n',mkdate($f+$s_offset, 1))-1]); }
-for($g=1; $g < $sc; $g++) { $s_avg_wd += floatval($windav[date('n',mkdate($g+$s_offset, 1))-1]); } $s_avg_wd += $windav_curr/date('t')*$dday;
+for($e=0; $e < $sc; $e++) { $total += floatval($windtots[date('n',mkdate($e+($s_offset ?? 0), 1))-1]); }
+for($f=0; $f < 3; $f++) { $s_avgW += floatval($windav[date('n',mkdate($f+($s_offset ?? 0), 1))-1]); }
+for($g=1; $g < $sc; $g++) { $s_avg_wd += floatval($windav[date('n',mkdate($g+($s_offset ?? 0), 1))-1]); } $s_avg_wd += $windav_curr/date('t')*$dday;
 
 $lymwind = $wind3[$dyear-1][$dmonth];
 $lymwind1 = $wind3[date('Y',mkdate($dmonth-1,1,$dyear-1))][date('n',mkdate($dmonth-1,1,$dyear-1))];
@@ -97,33 +97,33 @@ $yearwdF = conv($yearwd,4) .' ('. conv($yearwd-$curryearwindav,4,0,true).')';
 
 for($y = 2010; $y <= $dyear; $y++) {
 	$maxwindDa[$y] = $winds[$y][$dmonth][$dday];
-	if(is_array($winds[$y][$dmonth])) { $maxwindMDa[$y] = max($winds[$y][$dmonth]); $maxwindMDdatea[$y] = array_search($maxwindMDa[$y], $winds[$y][$dmonth]);
-	$minwindMDa[$y] = min($winds[$y][$dmonth]); $minwindMDdatea[$y] = array_search($minwindMDa[$y], $winds[$y][$dmonth]); }
+	if(is_array($winds[$y][$dmonth])) { $maxwindMDa[$y] = max($winds[$y][$dmonth]); $maxwindMDdatea[$y] = nw3_array_search($maxwindMDa[$y], $winds[$y][$dmonth]);
+	$minwindMDa[$y] = min($winds[$y][$dmonth]); $minwindMDdatea[$y] = nw3_array_search($minwindMDa[$y], $winds[$y][$dmonth]); }
 	$monthwd_max_curra[$y] = $monthwd_min_curra[$y] = $wind3[$y][$dmonth];
-	$monthwd_mina[$y] = min($wind3[$y]); $monthwd_mindatea[$y] = array_search($monthwd_mina[$y], $wind3[$y]);
-	$monthwd_maxa[$y] = max($wind3[$y]); $monthwd_maxdatea[$y] = array_search($monthwd_maxa[$y], $wind3[$y]);
-	$maxwindYDa[$y] = max($wind2[$y]); $maxwindYDdatea[$y] = array_search($maxwindYDa[$y], $wind2[$y]);
-	$minwindYDa[$y] = min($wind2[$y]); $minwindYDdatea[$y] = array_search($minwindYDa[$y], $wind2[$y]);
+	$monthwd_mina[$y] = min($wind3[$y]); $monthwd_mindatea[$y] = nw3_array_search($monthwd_mina[$y], $wind3[$y]);
+	$monthwd_maxa[$y] = max($wind3[$y]); $monthwd_maxdatea[$y] = nw3_array_search($monthwd_maxa[$y], $wind3[$y]);
+	$maxwindYDa[$y] = max($wind2[$y]); $maxwindYDdatea[$y] = nw3_array_search($maxwindYDa[$y], $wind2[$y]);
+	$minwindYDa[$y] = min($wind2[$y]); $minwindYDdatea[$y] = nw3_array_search($minwindYDa[$y], $wind2[$y]);
 }
 
 $maxwindD = max($maxwindDa);
-$maxwindDdate = today(array_search($maxwindD, $maxwindDa));
+$maxwindDdate = today(nw3_array_search($maxwindD, $maxwindDa));
 $maxwindMD = max($maxwindMDa);
-$maxwindMDdate = today(array_search($maxwindMD, $maxwindMDa),null,$maxwindMDdatea[array_search($maxwindMD, $maxwindMDa)]);
+$maxwindMDdate = today(nw3_array_search($maxwindMD, $maxwindMDa),null,$maxwindMDdatea[nw3_array_search($maxwindMD, $maxwindMDa)]);
 $minwindD = min( array_filter($maxwindDa, 'clearblank') );
-$minwindDdate = today(array_search($minwindD, $maxwindDa));
+$minwindDdate = today(nw3_array_search($minwindD, $maxwindDa));
 $minwindMD = min($minwindMDa);
-$minwindMDdate = today(array_search($minwindMD, $minwindMDa),null,$minwindMDdatea[array_search($minwindMD, $minwindMDa)]);
+$minwindMDdate = today(nw3_array_search($minwindMD, $minwindMDa),null,$minwindMDdatea[nw3_array_search($minwindMD, $minwindMDa)]);
 
 $monthwd_max_curr = max($monthwd_max_curra);
-$monthwd_max_currdate = today(array_search($monthwd_max_curr, $monthwd_max_curra),null,null,true);
+$monthwd_max_currdate = today(nw3_array_search($monthwd_max_curr, $monthwd_max_curra),null,null,true);
 $monthwd_min_curr = min($monthwd_min_curra);
-$monthwd_min_currdate = today(array_search($monthwd_min_curr, $monthwd_min_curra),null,null,true);
+$monthwd_min_currdate = today(nw3_array_search($monthwd_min_curr, $monthwd_min_curra),null,null,true);
 
 $monthwd_min = min($monthwd_mina);
-$monthwd_mindate = today(array_search($monthwd_min, $monthwd_mina), $monthwd_mindatea[array_search($monthwd_min, $monthwd_mina)],null,true);
+$monthwd_mindate = today(nw3_array_search($monthwd_min, $monthwd_mina), $monthwd_mindatea[nw3_array_search($monthwd_min, $monthwd_mina)],null,true);
 $monthwd_max = max($monthwd_maxa);
-$monthwd_maxdate = today(array_search($monthwd_max, $monthwd_maxa), $monthwd_maxdatea[array_search($monthwd_max, $monthwd_maxa)],null,true);
+$monthwd_maxdate = today(nw3_array_search($monthwd_max, $monthwd_maxa), $monthwd_maxdatea[nw3_array_search($monthwd_max, $monthwd_maxa)],null,true);
 
 $yrmonthwd_max = $monthwd_maxa[$dyear];
 $yrmonthwd_maxdate = today(null,$monthwd_maxdatea[$dyear],null,true);
@@ -131,10 +131,10 @@ $yrmonthwd_min = $monthwd_mina[$dyear];
 $yrmonthwd_mindate = today(null,$monthwd_mindatea[$dyear],null,true);
 
 $maxwindYD = max($maxwindYDa);
-$tempyr = array_search($maxwindYD, $maxwindYDa);
+$tempyr = nw3_array_search($maxwindYD, $maxwindYDa);
 $maxwindYDdate = today($tempyr, true_z($maxwindYDdatea[$tempyr], $tempyr), true_z($maxwindYDdatea[$tempyr], $tempyr, 'j'));
 $minwindYD = min($minwindYDa);
-$tempyr = array_search($minwindYD, $minwindYDa);
+$tempyr = nw3_array_search($minwindYD, $minwindYDa);
 $minwindYDdate = today($tempyr, true_z($minwindYDdatea[$tempyr], $tempyr), true_z($minwindYDdatea[$tempyr], $tempyr, 'j'));
 
 $ymaxdailywind = $maxwindYDa[$dyear];
@@ -166,17 +166,17 @@ $maxgustweekdate = today(null,true,true,null,mkday($dday-$maxgustweekday+1));
 
 for($y = 2010; $y <= $dyear; $y++) {
 	$maxgustDa[$y] = $gusts[$y][$dmonth][$dday];
-	if(is_array($gusts[$y][$dmonth])) { $maxgustMDa[$y] = max($gusts[$y][$dmonth]); $maxgustMDdatea[$y] = array_search($maxgustMDa[$y], $gusts[$y][$dmonth]); }
-	$recorddailygusta[$y] = max($gust2[$y]); $recorddailygustdatea[$y] = array_search($recorddailygusta[$y], $gust2[$y]);
+	if(is_array($gusts[$y][$dmonth])) { $maxgustMDa[$y] = max($gusts[$y][$dmonth]); $maxgustMDdatea[$y] = nw3_array_search($maxgustMDa[$y], $gusts[$y][$dmonth]); }
+	$recorddailygusta[$y] = max($gust2[$y]); $recorddailygustdatea[$y] = nw3_array_search($recorddailygusta[$y], $gust2[$y]);
 }
 
 $maxgustD = max($maxgustDa);
-$maxgustDdate = today(array_search($maxgustD, $maxgustDa));
+$maxgustDdate = today(nw3_array_search($maxgustD, $maxgustDa));
 $maxgustMD = max($maxgustMDa);
-$maxgustMDdate = today(array_search($maxgustMD, $maxgustMDa),null,$maxgustMDdatea[array_search($maxgustMD, $maxgustMDa)]);
+$maxgustMDdate = today(nw3_array_search($maxgustMD, $maxgustMDa),null,$maxgustMDdatea[nw3_array_search($maxgustMD, $maxgustMDa)]);
 
 $recorddailygust = max($recorddailygusta);
-$tempyr = array_search($recorddailygust, $recorddailygusta);
+$tempyr = nw3_array_search($recorddailygust, $recorddailygusta);
 $recorddailygustdate = today($tempyr, true_z($recorddailygustdatea[$tempyr], $tempyr), true_z($recorddailygustdatea[$tempyr], $tempyr, 'j'));
 //$recorddailygustdate = $gustt[$tempyr][$recorddailygustdatea[$tempyr]] . ', ' . $recorddailygustdate;
 $yrecorddailygust = $recorddailygusta[$dyear];
@@ -206,17 +206,17 @@ $maxspeedweekdate = today(null,true,true,null,mkday($dday-$maxspeedweekday+1));
 
 for($y = 2010; $y <= $dyear; $y++) {
 	$maxspeedDa[$y] = $speed[$y][$dmonth][$dday];
-	if(is_array($speed[$y][$dmonth])) { $maxspeedMDa[$y] = max($speed[$y][$dmonth]); $maxspeedMDdatea[$y] = array_search($maxspeedMDa[$y], $speed[$y][$dmonth]); }
-	$recorddailyspeeda[$y] = max($speed2[$y]); $recorddailyspeeddatea[$y] = array_search($recorddailyspeeda[$y], $speed2[$y]);
+	if(is_array($speed[$y][$dmonth])) { $maxspeedMDa[$y] = max($speed[$y][$dmonth]); $maxspeedMDdatea[$y] = nw3_array_search($maxspeedMDa[$y], $speed[$y][$dmonth]); }
+	$recorddailyspeeda[$y] = max($speed2[$y]); $recorddailyspeeddatea[$y] = nw3_array_search($recorddailyspeeda[$y], $speed2[$y]);
 }
 
 $maxspeedD = max($maxspeedDa);
-$maxspeedDdate = today(array_search($maxspeedD, $maxspeedDa));
+$maxspeedDdate = today(nw3_array_search($maxspeedD, $maxspeedDa));
 $maxspeedMD = max($maxspeedMDa);
-$maxspeedMDdate = today(array_search($maxspeedMD, $maxspeedMDa),null,$maxspeedMDdatea[array_search($maxspeedMD, $maxspeedMDa)]);
+$maxspeedMDdate = today(nw3_array_search($maxspeedMD, $maxspeedMDa),null,$maxspeedMDdatea[nw3_array_search($maxspeedMD, $maxspeedMDa)]);
 
 $recorddailyspeed = max($recorddailyspeeda);
-$tempyr = array_search($recorddailyspeed, $recorddailyspeeda);
+$tempyr = nw3_array_search($recorddailyspeed, $recorddailyspeeda);
 $recorddailyspeeddate = today($tempyr, true_z($recorddailyspeeddatea[$tempyr], $tempyr), true_z($recorddailyspeeddatea[$tempyr], $tempyr, 'j'));
 //$recorddailyspeeddate = $speedt[$tempyr][$recorddailyspeeddatea[$tempyr]] . ', ' . $recorddailyspeeddate;
 $yrecorddailyspeed = $recorddailyspeeda[$dyear];
@@ -242,17 +242,17 @@ $maxwd10weekdate = today(null,true,true,null,mkday($dday-$maxwd10weekday+1));
 
 for($y = 2010; $y <= $dyear; $y++) {
 	$maxwd10Da[$y] = $wd10[$y][$dmonth][$dday];
-	if(is_array($wd10[$y][$dmonth])) { $maxwd10MDa[$y] = max($wd10[$y][$dmonth]); $maxwd10MDdatea[$y] = array_search($maxwd10MDa[$y], $wd10[$y][$dmonth]); }
-	if(is_array($wd102[$y])) { $recorddailywd10a[$y] = max($wd102[$y]); $recorddailywd10datea[$y] = array_search($recorddailywd10a[$y], $wd102[$y]); }
+	if(is_array($wd10[$y][$dmonth])) { $maxwd10MDa[$y] = max($wd10[$y][$dmonth]); $maxwd10MDdatea[$y] = nw3_array_search($maxwd10MDa[$y], $wd10[$y][$dmonth]); }
+	if(is_array($wd102[$y])) { $recorddailywd10a[$y] = max($wd102[$y]); $recorddailywd10datea[$y] = nw3_array_search($recorddailywd10a[$y], $wd102[$y]); }
 }
 
 $maxwd10D = max($maxwd10Da);
-$maxwd10Ddate = today(array_search($maxwd10D, $maxwd10Da));
+$maxwd10Ddate = today(nw3_array_search($maxwd10D, $maxwd10Da));
 $maxwd10MD = max($maxwd10MDa);
-$maxwd10MDdate = today(array_search($maxwd10MD, $maxwd10MDa),null,$maxwd10MDdatea[array_search($maxwd10MD, $maxwd10MDa)]);
+$maxwd10MDdate = today(nw3_array_search($maxwd10MD, $maxwd10MDa),null,$maxwd10MDdatea[nw3_array_search($maxwd10MD, $maxwd10MDa)]);
 
 $recorddailywd10 = max($recorddailywd10a);
-$tempyr = array_search($recorddailywd10, $recorddailywd10a);
+$tempyr = nw3_array_search($recorddailywd10, $recorddailywd10a);
 $recorddailywd10date = today($tempyr, true_z($recorddailywd10datea[$tempyr], $tempyr), true_z($recorddailywd10datea[$tempyr], $tempyr, 'j'));
 //$recorddailywd10date = $wd10t[$tempyr][$recorddailywd10datea[$tempyr]] . ', ' . $recorddailywd10date;
 $yrecorddailywd10 = $recorddailywd10a[$dyear];

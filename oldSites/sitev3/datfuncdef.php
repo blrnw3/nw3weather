@@ -171,7 +171,7 @@ function MDtoZ($arr) {
  */
 function MDtoMsummary($arr, $sum = false, $type = 2) {
 	//WARNING: DO NOT MODIFY!!!!! Direct casting to int results in very weird bug (3 -> 2)
-	$type = round($type);
+	$type = nw3_round($type);
 	$type = (int)$type;
 	for($mon = 1; $mon <= count($arr); $mon++) {
 		$div = (!$sum) ? count($arr[$mon]) : 1;
@@ -206,7 +206,7 @@ function datAnom($varName, $sourceData, $originalVarNum) {
 					$climVal = 24;
 				}
 				if($originalSummable) {
-					$val = $v / $climVal * 100;
+					$val = nw3_to_number($v) / $climVal * 100; // non-numeric entries count as 0, as on PHP 5
 				} else {
 					$val = $v - $climVal;
 				}
@@ -233,11 +233,11 @@ function datDerived($varName, $include_historic) {
 		foreach ($arr1 as $month => $arr2) {
 			foreach ($arr2 as $day => $val) {
 				if($varName === "ratemean") {
-					$res[$year][$month][$day] = ($var2[$year][$month][$day]  > 0.4 && $val > 0.3) ?
+					$res[$year][$month][$day] = (($var2[$year][$month][$day] ?? null) > 0.4 && $val > 0.3) ?
 						$val / $var2[$year][$month][$day] : null;
 				}
 				else {
-					$res[$year][$month][$day] = $var2[$year][$month][$day] - $val;
+					$res[$year][$month][$day] = ($var2[$year][$month][$day] ?? null) - $val;
 				}
 			}
 		}
@@ -353,7 +353,7 @@ function getDailyData($var, $start_year) {
  */
 function getDailyDataForYear($var, $year) {
 	$data = varNumToDatArray($GLOBALS["types_all"][$var], $year);
-	return $data[$year];
+	return $data[$year] ?? null;
 }
 /**
  * Returns array[year][month] = summary_val
@@ -400,8 +400,8 @@ function typeToConvType($type) {
 
 $daytypes = array('temp' => 6, 'hum' => 7, 'dew' => 9, 'rain' => 10, 'baro' => 8, 'wdir' => 11, 'gust' => 4, 'wind' => 3);
 $daycols = array('temp' => 'orange', 'hum' => 'darkgreen', 'dew' => 'chartreuse', 'rain' => 'blue', 'baro' => 'darkred', 'wdir' => 'red', 'gust' => 'palevioletred1', 'wind' => 'darkblue');
-$daynames = array('temp' => 'Temperature / '. $unitT, 'hum' => 'Humidity / %', 'dew' => 'Dew Point / '. $unitT, 'rain' => 'Rainfall / '.$unitR, 'baro' => 'Pressure / '.$unitP,
-	'wdir' => 'Wind Direction / deg', 'gust' => 'Gust / '.$unitW, 'wind' => 'Wind Speed /'.$unitW);
+$daynames = array('temp' => 'Temperature / '. ($unitT ?? ''), 'hum' => 'Humidity / %', 'dew' => 'Dew Point / '. ($unitT ?? ''), 'rain' => 'Rainfall / '.($unitR ?? ''), 'baro' => 'Pressure / '.($unitP ?? ''),
+	'wdir' => 'Wind Direction / deg', 'gust' => 'Gust / '.($unitW ?? ''), 'wind' => 'Wind Speed /'.($unitW ?? ''));
 $nums = array(1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 24, 30, 32, 45, 60, 72, 90); //excl: 9, 16, 18, 36, 40, 48, 82, 96, 120, 144, 180, 240, 360, 160, 288, 720, 1440
 $nums_poss = array(1,2,3,4,5,6,8,9,10,12,15,16,18,20,24,30,32);
 
@@ -424,14 +424,14 @@ function wdirMean($wdir, $speed) {
 
 	//get frequencies for each bitified angle
 	for($i = 0; $i < $end; $i++) {
-		if($speed[$i] > $calmThreshold) { // pivot not to be affected by calm times
-			$freqs[round($wdir[$i] / $bitifier)]++;
+		if(($speed[$i] ?? null) > $calmThreshold) { // pivot not to be affected by calm times
+			$freqs[nw3_round($wdir[$i] / $bitifier)]++;
 		}
 	}
 
 	//choose a pivot
 	$minfreq = min($freqs);
-	$pivot = array_search($minfreq, $freqs);
+	$pivot = nw3_array_search($minfreq, $freqs);
 	$pivot *= $bitifier;
 
 	//calculate the mean
@@ -439,7 +439,7 @@ function wdirMean($wdir, $speed) {
 	$count = 0;
 	for($i = 0; $i < $end; $i++) {
 		//values from calm times or near pivot are anomalous => ignore
-		if(abs($wdir[$i] - $pivot) >= $bitifier && $speed[$i] > $calmThreshold) {
+		if(abs(($wdir[$i] ?? 0) - $pivot) >= $bitifier && ($speed[$i] ?? null) > $calmThreshold) {
 			$sum += $wdir[$i];
 			$count++;
 			if($wdir[$i] > $pivot) {
@@ -566,7 +566,7 @@ function dailyData($procfil = 'today') {
 				$rnr[$i] = $dat[10][$i] - $dat[10][$i-$r];
 				if($rnr[$i] > $RATE_THRESH) {
 					if($r === 1) { $rr[$i] = 60*$rnr[$i]; }
-					else { $rr[$i] = round(60/($r-1)*$rntipmm, 1); }
+					else { $rr[$i] = nw3_round(60/($r-1)*$rntipmm, 1); }
 					break;
 				}
 			}
@@ -591,7 +591,8 @@ function dailyData($procfil = 'today') {
 
 		// Wdir
 		$dir_quantised = floor(($dat[5][$i] + 11.25) / 22.5) % 16;
-		$windDirs[$dir_quantised][floor($dat[3][$i])]++;
+		$speed_bucket = floor($dat[3][$i]);
+		$windDirs[$dir_quantised][$speed_bucket] = ($windDirs[$dir_quantised][$speed_bucket] ?? 0) + 1;
 	}
 
 	//Trends
@@ -626,8 +627,8 @@ function dailyData($procfil = 'today') {
 
 	$minFeel = min($feels); $timesMin['feel'] = timeFromMM($minFeel, $feels, $custhr, $custmin);
 	$maxFeel = max($feels); $timesMax['feel'] = timeFromMM($maxFeel, $feels, $custhr, $custmin);
-	$mins['feel'] = round($minFeel, 1);
-	$maxs['feel'] = round($maxFeel, 1);
+	$mins['feel'] = nw3_round($minFeel, 1);
+	$maxs['feel'] = nw3_round($maxFeel, 1);
 
 	if(is_array($rn60)) {
 		$maxs['rnhr'] = max($rn60); if($maxs['rnhr'] > 0.2) { $timesMax['rnhr'] = timeFromMM($maxs['rnhr'], $rn60, $custhr, $custmin); }
@@ -641,7 +642,7 @@ function dailyData($procfil = 'today') {
 	}
 	if(is_array($t10)) {
 		$w10max = max($wind10); $timesMax['w10m'] = timeFromMM($w10max, $wind10, $custhr, $custmin);
-		$maxs['w10m'] = round($w10max, 1);
+		$maxs['w10m'] = nw3_round($w10max, 1);
 		$maxs['rn10'] = max($rn10); if($maxs['rn10'] > 0.2) { $timesMax['rn10'] = timeFromMM($maxs['rn10'], $rn10, $custhr, $custmin); }
 		$t10min = min($t10); $timesMin['tchange10'] = timeFromMM($t10min, $t10, $custhr, $custmin);
 		$mins['tchange10'] = -1 * $t10min;
@@ -658,7 +659,7 @@ function dailyData($procfil = 'today') {
 		$timesMax[$daytypes[$t]] = date('H:i', midpoint_of_longest($datt[$t]['timesMax'], 120));
 		$mins[$daytypes[$t]] = $datt[$t]['min'];
 		$maxs[$daytypes[$t]] = $datt[$t]['max'];
-		$means[$daytypes[$t]] = round( mean($dat[$t]), $round_pt[$t] );
+		$means[$daytypes[$t]] = nw3_round( mean($dat[$t]), $round_pt[$t] );
 
 		if($end > 61) {
 			$hrChanges[$daytypes[$t]] = $dat[$t][$end-1] - $dat[$t][$end-61];
@@ -673,7 +674,7 @@ function dailyData($procfil = 'today') {
 	if($pm25Count > 0) {
 		$mins['pm25'] = $pm25Min;
 		$maxs['pm25'] = $pm25Max;
-		$means['pm25'] = round($pm25Sum / $pm25Count, 1);
+		$means['pm25'] = nw3_round($pm25Sum / $pm25Count, 1);
 		$timesMin['pm25'] = date('H:i', midpoint_of_longest($pm25MinTimes, 120));
 		$timesMax['pm25'] = date('H:i', midpoint_of_longest($pm25MaxTimes, 120));
 		if($end > 61 && isset($dat[11][$end-1]) && isset($dat[11][$end-61])) {
@@ -684,10 +685,10 @@ function dailyData($procfil = 'today') {
 		}
 	}
 
-	$means['wind'] = round(mean($dat[3]), 1);
-	$means['w10m'] = round(mean($wind10), 1);
+	$means['wind'] = nw3_round(mean($dat[3]), 1);
+	$means['w10m'] = nw3_round(mean($wind10), 1);
 	$means['wdir'] = wdirMean($dat[5], $dat[3]);
-	$means['feel'] = round(mean($feels), 1);
+	$means['feel'] = nw3_round(mean($feels), 1);
 	$means['rain'] = $rncum;
 	if($means['rain'] < 0.2) {
 		$maxs['rnhr'] = $maxs['rn10'] = null;
@@ -741,8 +742,8 @@ function dailyData($procfil = 'today') {
 				break;
 			}
 		}
-		$tipQuantity = ($last === 1) ? round(($rncum - $rncumArr[$end-2])/$rntipmm) : 1;
-		$currRateGuess = round(60/$last*$rntipmm*$tipQuantity, 1);
+		$tipQuantity = ($last === 1) ? nw3_round(($rncum - $rncumArr[$end-2])/$rntipmm) : 1;
+		$currRateGuess = nw3_round(60/$last*$rntipmm*$tipQuantity, 1);
 		$currRate = ($currRateGuess > $maxs['rate']) ? $maxs['rate'] : $currRateGuess;
 	} else {
 		$currRate = 0;
@@ -796,20 +797,20 @@ function dailyData($procfil = 'today') {
 	if($procfil === "today" || $procfil == date('Ymd')) {
 		$fildatm = file(ROOT."datm$yr_yest.csv");
 		$last_line_raw = $fildatm[count($fildatm) - 1];
-		$last_line = split(',', $last_line_raw);
+		$last_line = explode(',', $last_line_raw); // split() was removed in PHP 7
 		$pond_temp = $last_line[12];
 	} else {
 		$pond_temp = null;
 	}
 
-	$frosthrs = round($frostMins / 60, (int)($frostMins < 10) + 1);
-	$rnDuration = roundToDp($duration / 60, 1);
+	$frosthrs = nw3_round($frostMins / 60, (int)($frostMins < 10) + 1);
+	$rnDuration = roundToDp(($duration ?? 0) / 60, 1);
 
 	return array("min" => $mins, "max" => $maxs, "mean" => $means, "timeMin" => $timesMin, "timeMax" => $timesMax,
 				"trend" => $trends, "trendRn" => $rnCums, "changeHr" => $hrChanges, "changeDay" => $hr24Changes,
 				"misc" => array("frosthrs" => $frosthrs, "rnrate" => $currRate, "rnduration" => $rnDuration,
-								"rnlast" => $lastRnFull, "wethrs" => $wethrs, "maxhrgst" => $maxhrgst, "cnt" => $end,
-								"prevRn" => date('r', $prevRn), "prevRnOld" => date('r', $prevRnOld),
+								"rnlast" => $lastRnFull ?? null, "wethrs" => $wethrs, "maxhrgst" => $maxhrgst, "cnt" => $end,
+								"prevRn" => date('r', isset($prevRn) ? (int)$prevRn : 0), "prevRnOld" => date('r', isset($prevRnOld) ? (int)$prevRnOld : 0),
 								"pondTemp" => $pond_temp
 							),
 				"windDirs" => $windDirs
@@ -817,7 +818,7 @@ function dailyData($procfil = 'today') {
 }
 
 function timeFromMM($mm, $arr, $hrs, $mins) {
-	$line = array_search($mm, $arr);
+	$line = nw3_array_search($mm, $arr);
 	return zerolead($hrs[$line]).':'.zerolead($mins[$line]);
 }
 
@@ -864,7 +865,7 @@ function write_datm($sunhrs) {
 	$wethrs = file_get_contents(ROOT."wethrs.txt");
 	$listm = array($sunhrs,$wethrs,'u','','','','','','blr','','','1',$pond_temp,'\n');
 	$fildatm = fopen(ROOT."datm" . $GLOBALS['yr_yest'] . ".csv", "a");
-	fputcsv($fildatm, $listm);
+	nw3_fputcsv($fildatm, $listm);
 	return true;
 }
 

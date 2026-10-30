@@ -7,7 +7,7 @@ class CacheSerialiser {
 		$dyear = Date::$dyear;
 		$dmonth = Date::$dmonth;
 		$dday = Date::$dday;
-		$newNOW = isset($GLOBALS['newNOW']) ? $GLOBALS['newNOW'] : null;
+		$newNOW = isset($GLOBALS['newNOW']) ? Data::withOptionalKeys($GLOBALS['newNOW']) : null;
 
 		$data = array();
 		$dataNew = array();
@@ -25,7 +25,7 @@ class CacheSerialiser {
 					$cntRawa = count($rawa);
 					for($j = 0; $j < $cntRawa; $j++) {
 						$data[$j][$year][$month][$day] = $rawa[$j];
-						$dataNew[$header[$j]][$year][$month][$day] = $rawa[$j];
+						$dataNew[$header[$j] ?? ''][$year][$month][$day] = $rawa[$j];
 					}
 				}
 				if($year == $dyear && $today && $csv != 'datm' && is_array($newNOW)) {
@@ -113,7 +113,7 @@ class CacheSerialiser {
 							$rawa[$j] = '';
 						}
 						$data[$j][$year][$month][$day] = $rawa[$j];
-						$dataNew[$header[$j]][$year][$month][$day] = $rawa[$j];
+						$dataNew[$header[$j] ?? ''][$year][$month][$day] = $rawa[$j];
 					}
 				}
 			}

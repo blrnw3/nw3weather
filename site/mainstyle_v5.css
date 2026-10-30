@@ -1999,6 +1999,22 @@ select.timelapse {
 	color: #444;
 	padding-top: 2px;
 }
+.cam-grid-sep {
+	grid-column: 1 / -1;
+	display: flex;
+	align-items: center;
+	gap: 0.6em;
+	margin: 0.3rem 0 0.1rem;
+	color: #4a7c59;
+	font-size: 0.8rem;
+	font-weight: bold;
+}
+.cam-grid-sep::before,
+.cam-grid-sep::after {
+	content: '';
+	flex: 1;
+	border-top: 1px solid #cdd8ce;
+}
 .cam-grid-missing {
 	display: flex;
 	align-items: center;

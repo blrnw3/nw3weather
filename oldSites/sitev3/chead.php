@@ -5,6 +5,7 @@ require_once('functions.php');
 $browser = $_SERVER['HTTP_USER_AGENT'];
 $find_bot = array('bot', 'crawl', 'wise', 'search', 'validator', 'lipperhey', 'spider', 'http', 'java', 'www');
 
+$is_bot = false;
 for($i = 0; $i < count($find_bot); $i++) {
 	if( strpos( strtolower($browser), $find_bot[$i] ) !== false ) {
 		$is_bot = true;
@@ -15,8 +16,8 @@ $is_bot |= (strlen($browser) === 0);
 if(strpos($browser, 'Ezooms') !== false) die('bad bot');
 
 //Session track and update dealings
-$_SESSION['count'][$file]++;
-$metaRefreshable = in_array($file, array(3,4,10,12,13,14,15)) && !$subfile;
+$_SESSION['count'][$file] = ($_SESSION['count'][$file] ?? 0) + 1;
+$metaRefreshable = in_array($file, array(3,4,10,12,13,14,15)) && empty($subfile);
 
 if($auto && $metaRefreshable && !$is_bot) {
 	if($_SESSION['count'][$file] < 50) {
@@ -32,9 +33,9 @@ if($auto && $metaRefreshable && !$is_bot) {
 <meta name="keywords" content="weather, london, nw3, data, records, statistics, weather station" />
 <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
 <meta http-equiv="content-language" content="en-GB" />	<?php if(isset($_GET['mob'])) { echo '<!--'; $skip_css = true; }
-if($needValcolStyle) { echo '
+if(!empty($needValcolStyle)) { echo '
 					<link rel="stylesheet" type="text/css" href="'. ARCHIVE_WEB .'/valcolstyle.css" media="screen" title="screen" />'; } ?>
-<link rel="stylesheet" type="text/css" href="<?php echo ARCHIVE_WEB; ?>/<?php echo $STYLE_SHEET; ?>.css?updated2024mar8" media="screen" title="screen" /> <?php if($skip_css) { echo '-->'; } ?>
+<link rel="stylesheet" type="text/css" href="<?php echo ARCHIVE_WEB; ?>/<?php echo $STYLE_SHEET; ?>.css?updated2024mar8" media="screen" title="screen" /> <?php if(!empty($skip_css)) { echo '-->'; } ?>
 
 <script type="text/javascript">
 	//<![CDATA[
@@ -94,7 +95,7 @@ if($file <= 2) {
 }
 ?>
 
-<?php if($SHOW_TABS) { echo JQUERY; } ?>
+<?php if(!empty($SHOW_TABS)) { echo JQUERY; } ?>
 <script type="text/javascript">
 	//<![CDATA[
 	/**

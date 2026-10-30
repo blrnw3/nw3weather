@@ -140,8 +140,8 @@ for($o = 0; $o < count($fulldatNames); $o++) {
 	$windFix = ($o === 3); //fix for mean wind being in the 'min' array key
 	$values[$o][0] = $NOW['mean'][$mappingsToDailyDataKey[$fulldatNames[$o]]];
 	$values[$o][1] = ${$fulldatNames[$o] .'datYest'}[0][$windFix ? 'min' : 'mean'];
-	$anoms[$o][0] = ${$fulldatNames[$o] .'datToday'}[2]['mean'];
-	$anoms[$o][1] = ${$fulldatNames[$o] .'datYest'}[2]['mean'];
+	$anoms[$o][0] = ${$fulldatNames[$o] .'datToday'}[2]['mean'] ?? null;
+	$anoms[$o][1] = ${$fulldatNames[$o] .'datYest'}[2]['mean'] ?? null;
 	foreach($pOrder as $po) {
 		$values[$o][] = ($o <= 4) ? ${$fulldatNames[$o] .'dat'}[$windFix ? 'min' : 'mean'][2][$po] : ${$fulldatNames[$o] .'totals'}[0][$po];
 		$anoms[$o][] = ($o === 0) ? ${$fulldatNames[$o] .'dat'}['mean'][2][$po.'anom'] :
@@ -165,7 +165,7 @@ for($r = 0; $r < count($values); $r++) {
 	for($c = 0; $c < count($values[0]); $c++) {
 		$anomOrNo = isBlank($anoms[$r][$c]) ? '' : ( "<br />".
 			( ($r === 0) ? '('. conv($anoms[$r][$c], 1.1, false, true) .')' : $anoms[$r][$c] ) );
-		$daysofOrNo = isBlank($daysof[$r][$c-2]) ? '' : "<br />". $daysof[$r][$c-2] .' days';
+		$daysofOrNo = isBlank($daysof[$r][$c-2] ?? null) ? '' : "<br />". $daysof[$r][$c-2] .' days';
 		td( "<b>" . conv($values[$r][$c], $dataConv[$r]) ."</b>". $anomOrNo . $daysofOrNo, $tdClass );
 	}
 	tr_end();
@@ -224,7 +224,7 @@ for($r = 0; $r < count($dataCat); $r++) {
 	$li = $varPres[$pos];
 	$tdClass = 'td'. ($dataCat[$pos] + 10) .'C';
 	td("<b> $dataNames[$pos] </b>", $tdClass);
-	td( conv( $HR24['trend'][0][$li], round($convType[$pos]), false ), $tdClass );
+	td( conv( $HR24['trend'][0][$li], nw3_round($convType[$pos]), false ), $tdClass );
 	foreach($valuesDiff as $diff) {
 		//$tdClass2 = ($c == 4) ? $tdClass.'" style="border-left: solid 2px rgb(143,208,246);' : $tdClass;
 		td( conv( $HR24['trend'][0][$li] - $HR24['trend'][$diff][$li], $convType[$pos], false, true ), $tdClass );
@@ -275,7 +275,7 @@ for($r = 0; $r < count($dataCat)-1; $r++) {
 			$tdClass2 = ($d == 0 && $tstamp != $t) ? $tdClass.'" style="border-left: solid 2px rgb(143,208,246);' : $tdClass;
 			$type = strpos($dataNames[$pos],'ind') ? 11 - $d : $varBase[$pos] + $d;
 			$val = ($type == 11) ? '-' : $DATA[$type][date('Y', $tstamp)][date('n', $tstamp)][date('j', $tstamp)];
-			td( conv( $val, round($convType[$pos]), false ), $tdClass2 );
+			td( conv( $val, nw3_round($convType[$pos]), false ), $tdClass2 );
 		}
 	}
 	tr_end();
@@ -334,7 +334,9 @@ function getvalsDateAgo($dateStamp) {
 	$trendKeys = array('wind', 'gust', 'wdir', 'temp', 'humi', 'pres', 'dewp');
 	$f = file(ROOT.'logfiles/daily/'. $dateStamp .'log.txt');
 	$e = explode(',', $f[ 60 * (int)date('H') + (int)date('i') ]);
-	return array_combine( $trendKeys, array_slice($e, 3, 7) );
+	$vals = array_slice($e, 3, 7);
+	// 5.4's array_combine returned false on a length mismatch; 8.x throws a ValueError
+	return count($vals) == count($trendKeys) ? array_combine( $trendKeys, $vals ) : false;
 }
 ?>
 

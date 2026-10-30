@@ -82,15 +82,17 @@ if ($rainallCnt == 0) {
 $driest31 = 99;
 $driest365 = 999;
 $rndays_all = 0;
+$drylength = $wetlength = 0;
+$cumrn3 = $cumrn7 = $cumrn31 = $cumrn365 = 0;
 for ($i = 0; $i < $rainallCnt; $i++) {
 	if ($rainall[$i] < 0.2) {
 		$drylength += 1;
 	} else {
-		if ($drylength > $recdrylength) {
+		if ($drylength > ($recdrylength ?? 0)) {
 			$recdrylength = $drylength;
 			$recdrylengths_end = $i - 1;
 		}
-		if ($drylength > $recdrylength_curr && date('n', daytotime($i - 1 - floor($drylength / 2))) == $dmonth) {
+		if ($drylength > ($recdrylength_curr ?? 0) && date('n', daytotime($i - 1 - floor($drylength / 2))) == $dmonth) {
 			$recdrylength_curr = $drylength;
 			$recdrylengths_curr_end = $i - 1;
 		}
@@ -100,11 +102,11 @@ for ($i = 0; $i < $rainallCnt; $i++) {
 		$wetlength += 1;
 		$rndays_all++;
 	} else {
-		if ($wetlength > $recwetlength) {
+		if ($wetlength > ($recwetlength ?? 0)) {
 			$recwetlength = $wetlength;
 			$recwetlengths_end = $i - 1;
 		}
-		if ($wetlength > $recwetlength_curr && date('n', daytotime($i - 1 - floor($wetlength / 2))) == $dmonth) {
+		if ($wetlength > ($recwetlength_curr ?? 0) && date('n', daytotime($i - 1 - floor($wetlength / 2))) == $dmonth) {
 			$recwetlength_curr = $wetlength;
 			$recwetlengths_curr_end = $i - 1;
 		}
@@ -114,7 +116,7 @@ for ($i = 0; $i < $rainallCnt; $i++) {
 	if ($i > 30) {
 		$cumrn31 -= floatval($rainall[$i - 31]);
 	}
-	if ($cumrn31 > $wettest31) {
+	if ($cumrn31 > ($wettest31 ?? 0)) {
 		$wettest31 = $cumrn31;
 		$wettest31_end = $i;
 	}
@@ -126,7 +128,7 @@ for ($i = 0; $i < $rainallCnt; $i++) {
 	if ($i > 364) {
 		$cumrn365 -= floatval($rainall[$i - 365]);
 	}
-	if ($cumrn365 > $wettest365) {
+	if ($cumrn365 > ($wettest365 ?? 0)) {
 		$wettest365 = $cumrn365;
 		$wettest365_end = $i;
 	}
@@ -138,7 +140,7 @@ for ($i = 0; $i < $rainallCnt; $i++) {
 	if ($i >= 7) {
 		$cumrn7 -= floatval($rainall[$i - 7]);
 	}
-	if ($cumrn7 > $wettest7) {
+	if ($cumrn7 > ($wettest7 ?? 0)) {
 		$wettest7 = $cumrn7;
 		$wettest7_end = $i;
 	}
@@ -146,26 +148,26 @@ for ($i = 0; $i < $rainallCnt; $i++) {
 	if ($i >= 3) {
 		$cumrn3 -= floatval($rainall[$i - 3]);
 	}
-	if ($cumrn3 > $wettest3) {
+	if ($cumrn3 > ($wettest3 ?? 0)) {
 		$wettest3 = $cumrn3;
 		$wettest3_end = $i;
 	}
 }
 
 //deal with final day (today) being a record-breaker - loop to set record would not be entered so need the lines below
-if ($wetlength > $recwetlength) {
+if ($wetlength > ($recwetlength ?? 0)) {
 	$recwetlength = $wetlength;
 	$recwetlengths_end = $i - 1;
 }
-if ($wetlength > $recwetlength_curr && date('n', daytotime($i - 1 - floor($wetlength / 2))) == $dmonth) {
+if ($wetlength > ($recwetlength_curr ?? 0) && date('n', daytotime($i - 1 - floor($wetlength / 2))) == $dmonth) {
 	$recwetlength_curr = $wetlength;
 	$recwetlengths_curr_end = $i - 1;
 }
-if ($drylength > $recdrylength) {
+if ($drylength > ($recdrylength ?? 0)) {
 	$recdrylength = $drylength;
 	$recdrylengths_end = $i - 1;
 }
-if ($drylength > $recdrylength_curr && date('n', daytotime($i - 1 - floor($drylength / 2))) == $dmonth) {
+if ($drylength > ($recdrylength_curr ?? 0) && date('n', daytotime($i - 1 - floor($drylength / 2))) == $dmonth) {
 	$recdrylength_curr = $drylength;
 	$recdrylengths_curr_end = $i - 1;
 }
@@ -187,7 +189,7 @@ for ($i = $rainallCnt - 1; $i >= $endday - 50; $i--) {
 	if ($rainall[$i] < 0.2) {
 		$drylength += 1;
 	} else {
-		if ($drylength > $yrecdrylength && ($i + $drylength + 1) > $endday) {
+		if ($drylength > ($yrecdrylength ?? 0) && ($i + $drylength + 1) > $endday) {
 			$yrecdrylength = $drylength;
 			$yrecdrylengths_beg = $i + 1;
 		}
@@ -196,7 +198,7 @@ for ($i = $rainallCnt - 1; $i >= $endday - 50; $i--) {
 	if ($rainall[$i] >= 0.2) {
 		$wetlength += 1;
 	} else {
-		if ($wetlength > $yrecwetlength && ($i + $wetlength + 1) > $endday) {
+		if ($wetlength > ($yrecwetlength ?? 0) && ($i + $wetlength + 1) > $endday) {
 			$yrecwetlength = $wetlength;
 			$yrecwetlengths_beg = $i + 1;
 		}
@@ -214,7 +216,7 @@ for ($i = $rainallCnt - 1; $i >= $endday - 50; $i--) {
 	if ($rainall[$i] < 0.2) {
 		$drylength += 1;
 	} else {
-		if ($drylength > $mrecdrylength && ($i + $drylength + 1) > $endday) {
+		if ($drylength > ($mrecdrylength ?? 0) && ($i + $drylength + 1) > $endday) {
 			$mrecdrylength = $drylength;
 			$mrecdrylengths_beg = $i + 1;
 		}
@@ -229,7 +231,7 @@ for ($i = $rainallCnt - 1; $i >= $endday - 50; $i--) {
 			$dayswithrain = -1;
 		}
 	} else {
-		if ($wetlength > $mrecwetlength && ($i + $wetlength + 1) > $endday) {
+		if ($wetlength > ($mrecwetlength ?? 0) && ($i + $wetlength + 1) > $endday) {
 			$mrecwetlength = $wetlength;
 			$mrecwetlengths_beg = $i + 1;
 		}
@@ -251,13 +253,13 @@ if ($daysnorain > 0) {
 
 $rndays_all = acronym("Proportion of days: " . percent($rndays_all, $rainallCnt), $rndays_all, true);
 
-$allrn = array_sum($rainall);
+$allrn = nw3_array_sum($rainall);
 $rain365a = $rain2[$dyear] + $rain2[$dyear - 1];
 //print_r($rain365a);
 $raintots = array_merge($rain3[$dyear] + $rain3[$dyear - 1]);
 $day_rain_last_year = $rains[$dyear - 1][$dmonth][$dday];
-$monthrn = array_sum($rains[$dyear][$dmonth]);
-$yearrn = array_sum($rain2[$dyear]);
+$monthrn = nw3_array_sum($rains[$dyear][$dmonth]);
+$yearrn = nw3_array_sum($rain2[$dyear]);
 $yestrn = $ystdrain = $rain2[$yr_yest][$dz_yest];
 
 $rndays_week = 0;
@@ -268,14 +270,15 @@ for ($d = 1; $d <= 7; $d++) {
 	}
 }
 $rndays_week = acronym("Proportion of days: " . percent($rndays_week, 7), $rndays_week, true);
-$rainweek = array_sum($rainweekVals);
+$rainweek = nw3_array_sum($rainweekVals);
 $rainweekMax = max($rainweekVals);
-$rainweekDate = today(null, $display_mon, true, null, mkday($dday - array_search($rainweekMax, $rainweekVals) + 1));
+$rainweekDate = today(null, null, true, null, mkday($dday - nw3_array_search($rainweekMax, $rainweekVals) + 1));
 
+$rain31 = 0;
 for ($d = 1; $d <= 31; $d++) {
 	$rain31 += $rain365a[date('z', mkday($dday - $d)) + 1];
 }
-$rain365 = array_sum($rain365a);
+$rain365 = nw3_array_sum($rain365a);
 $raindays_month = $raindays_year = 0;
 $timeMonthago = mkdate($dmonth - 1, 1, $dyear);
 for ($d = 1; $d <= count($rains[$dyear][$dmonth]); $d++) {
@@ -288,6 +291,7 @@ for ($d = 0; $d < count($rain2[$dyear]); $d++) {
 		$raindays_year += 1;
 	}
 }
+$raintodmonthago = $raintodayearago = 0;
 for ($d = 1; $d <= count($rains[$dyear][$dmonth]); $d++) {
 	$raintodmonthago += $rains[date('Y', $timeMonthago)][date('n', $timeMonthago)][$d];
 }
@@ -297,6 +301,7 @@ for ($d = 0; $d < count($rain2[$dyear]); $d++) {
 
 $raintots[$dmonth - 1] = $monthrn;
 $s_offset = $season * 3 - 3;
+$total = $s_avg = $s_avg_r = 0;
 for ($e = 0; $e < $sc; $e++) {
 	$total += floatval($raintots[date('n', mkdate($e + $s_offset, 1)) - 1]);
 }
@@ -311,50 +316,51 @@ $lymrain = $rain3[$dyear - 1][$dmonth];
 $lymrain1 = $rain3[date('Y', mkdate($dmonth - 1, 1, $dyear - 1))][date('n', mkdate($dmonth - 1, 1, $dyear - 1))];
 $lymrain2 = $rain3[date('Y', mkdate($dmonth - 2, 1, $dyear - 1))][date('n', mkdate($dmonth - 2, 1, $dyear - 1))];
 //conv($monthrn, 2) . ' (' .
-$monthrnF = ' (' . acronym('Of final expected: ' . round(100 * $monthrn / $rainav_curr) . '%', round(100 * $monthrn / ($rainav_curr / $dt * $dday)) . '%', true) . ')';
+$monthrnF = ' (' . acronym('Of final expected: ' . nw3_round(100 * $monthrn / $rainav_curr) . '%', nw3_round(100 * $monthrn / ($rainav_curr / $dt * $dday)) . '%', true) . ')';
+$curryearrainav = 0;
 for ($m = 0; $m < $dmonth - 1; $m++) {
 	$curryearrainav += $rainav[$m];
 }//conv($yearrn, 2) . ' (' .
-$yearrnF = ' (' . acronym('Of final expected: ' . round(100 * $yearrn / array_sum($rainav)) . '%', round(100 * $yearrn / ($rainav_curr / $dt * $dday + $curryearrainav)) . '%', true) . ')';
-$seasonrnF = ' (' . acronym('Of final expected: ' . round(100 * $total / $s_avg) . '%', round(100 * $total / $s_avg_r) . '%', true) . ')'; //conv($total, 2) .
-$raindays_monthF = acronym('Proportion of days: ' . round(100 * $raindays_month / ($dday)) . '%', $raindays_month, true);
-$raindays_yearF = acronym('Proportion of days: ' . round(100 * $raindays_year / (date('z') + 1)) . '%', $raindays_year, true);
+$yearrnF = ' (' . acronym('Of final expected: ' . nw3_round(100 * $yearrn / nw3_array_sum($rainav)) . '%', nw3_round(100 * $yearrn / ($rainav_curr / $dt * $dday + $curryearrainav)) . '%', true) . ')';
+$seasonrnF = ' (' . acronym('Of final expected: ' . nw3_round(100 * $total / $s_avg) . '%', nw3_round(100 * $total / $s_avg_r) . '%', true) . ')'; //conv($total, 2) .
+$raindays_monthF = acronym('Proportion of days: ' . nw3_round(100 * $raindays_month / ($dday)) . '%', $raindays_month, true);
+$raindays_yearF = acronym('Proportion of days: ' . nw3_round(100 * $raindays_year / (date('z') + 1)) . '%', $raindays_year, true);
 
 for ($y = 2009; $y <= $dyear; $y++) {
 	if ($y != $dyear) {
-		$wettestyra[$y] = array_sum($rain2[$y]);
+		$wettestyra[$y] = nw3_array_sum($rain2[$y]);
 	}
 	$maxrainDa[$y] = $rains[$y][$dmonth][$dday];
 	if (is_array($rains[$y][$dmonth])) {
 		$maxrainMDa[$y] = max($rains[$y][$dmonth]);
-		$maxrainMDdatea[$y] = array_search($maxrainMDa[$y], $rains[$y][$dmonth]);
+		$maxrainMDdatea[$y] = nw3_array_search($maxrainMDa[$y], $rains[$y][$dmonth]);
 	}
 	$monthrn_max_curra[$y] = $rain3[$y][$dmonth];
 	if ($y < $dyear) {
 		$monthrn_min_curra[$y] = $rain3[$y][$dmonth];
 	}
 	$monthrn_mina[$y] = min($rain3[$y]);
-	$monthrn_mindatea[$y] = array_search($monthrn_mina[$y], $rain3[$y]);
+	$monthrn_mindatea[$y] = nw3_array_search($monthrn_mina[$y], $rain3[$y]);
 	$monthrn_maxa[$y] = max($rain3[$y]);
-	$monthrn_maxdatea[$y] = array_search($monthrn_maxa[$y], $rain3[$y]);
+	$monthrn_maxdatea[$y] = nw3_array_search($monthrn_maxa[$y], $rain3[$y]);
 	$recorddailyraina[$y] = max($rain2[$y]);
-	$recorddailyraindatea[$y] = array_search($recorddailyraina[$y], $rain2[$y]);
+	$recorddailyraindatea[$y] = nw3_array_search($recorddailyraina[$y], $rain2[$y]);
 	for ($m = 1; $m <= count($rains[$y]); $m++) {
 		for ($d = 1; $d <= count($rains[$y][$m]); $d++) {
 			if ($rains[$y][$m][$d] >= 0.2) {
-				$rndays[$y][$m] += 1;
-				$rndays2[$m][$y] += 1;
+				$rndays[$y][$m] = ($rndays[$y][$m] ?? 0) + 1;
+				$rndays2[$m][$y] = ($rndays2[$m][$y] ?? 0) + 1;
 			}
 		}
 	}
 	$rndays_maxa[$y] = max($rndays[$y]);
-	$rndays_maxdatea[$y] = array_search($rndays_maxa[$y], $rndays[$y]);
+	$rndays_maxdatea[$y] = nw3_array_search($rndays_maxa[$y], $rndays[$y]);
 	if (isset($rndays[$dyear][$dmonth])) {
 		unset($rndays[$dyear][$dmonth]);
 	} //ignore current month
 	if (!($dmonth == 1 && $y == $dyear)) {
 		$rndays_mina[$y] = min($rndays[$y]);
-		$rndays_mindatea[$y] = array_search($rndays_mina[$y], $rndays[$y]);
+		$rndays_mindatea[$y] = nw3_array_search($rndays_mina[$y], $rndays[$y]);
 	}
 }
 
@@ -363,15 +369,15 @@ if($yearrn > $wettestyr) {
 	$wettestyr = $yearrn;
 	$wettestyrdate = $dyear;
 } else {
-	$wettestyrdate = array_search($wettestyr, $wettestyra);
+	$wettestyrdate = nw3_array_search($wettestyr, $wettestyra);
 }
 $driestyr = min($wettestyra);
-$driestyrdate = array_search($driestyr, $wettestyra);
+$driestyrdate = nw3_array_search($driestyr, $wettestyra);
 
 $rndays_max = max($rndays_maxa);
-$rndays_maxdate = today(array_search($rndays_max, $rndays_maxa), $rndays_maxdatea[array_search($rndays_max, $rndays_maxa)], null, true);
+$rndays_maxdate = today(nw3_array_search($rndays_max, $rndays_maxa), $rndays_maxdatea[nw3_array_search($rndays_max, $rndays_maxa)], null, true);
 $rndays_min = min($rndays_mina);
-$rndays_mindate = today(array_search($rndays_min, $rndays_mina), $rndays_mindatea[array_search($rndays_min, $rndays_mina)], null, true);
+$rndays_mindate = today(nw3_array_search($rndays_min, $rndays_mina), $rndays_mindatea[nw3_array_search($rndays_min, $rndays_mina)], null, true);
 
 $yrndays_max = $rndays_maxa[$dyear];
 $yrndays_maxdate = today(null, $rndays_maxdatea[$dyear], null, true);
@@ -379,27 +385,27 @@ $yrndays_min = $rndays_mina[$dyear];
 $yrndays_mindate = today(null, $rndays_mindatea[$dyear], null, true);
 
 $rndays_max_curr = max($rndays2[$dmonth]);
-$rndays_max_currdate = today(array_search($rndays_max_curr, $rndays2[$dmonth]), null, null, true);
+$rndays_max_currdate = today(nw3_array_search($rndays_max_curr, $rndays2[$dmonth]), null, null, true);
 if ($too_early) {
 	unset($rndays2[$dmonth][$dyear]);
 }
 $rndays_min_curr = min($rndays2[$dmonth]);
-$rndays_min_currdate = today(array_search($rndays_min_curr, $rndays2[$dmonth]), null, null, true);
+$rndays_min_currdate = today(nw3_array_search($rndays_min_curr, $rndays2[$dmonth]), null, null, true);
 
 $maxrainD = max($maxrainDa);
-$maxrainDdate = today(array_search($maxrainD, $maxrainDa));
+$maxrainDdate = today(nw3_array_search($maxrainD, $maxrainDa));
 $maxrainMD = max($maxrainMDa);
-$maxrainMDdate = today(array_search($maxrainMD, $maxrainMDa), null, $maxrainMDdatea[array_search($maxrainMD, $maxrainMDa)]);
+$maxrainMDdate = today(nw3_array_search($maxrainMD, $maxrainMDa), null, $maxrainMDdatea[nw3_array_search($maxrainMD, $maxrainMDa)]);
 
 $monthrn_max_curr = max($monthrn_max_curra);
-$monthrn_max_currdate = today(array_search($monthrn_max_curr, $monthrn_max_curra), null, null, true);
+$monthrn_max_currdate = today(nw3_array_search($monthrn_max_curr, $monthrn_max_curra), null, null, true);
 $monthrn_min_curr = min($monthrn_min_curra);
-$monthrn_min_currdate = today(array_search($monthrn_min_curr, $monthrn_min_curra), null, null, true);
+$monthrn_min_currdate = today(nw3_array_search($monthrn_min_curr, $monthrn_min_curra), null, null, true);
 
 $monthrn_min = min($monthrn_mina);
-$monthrn_mindate = today(array_search($monthrn_min, $monthrn_mina), $monthrn_mindatea[array_search($monthrn_min, $monthrn_mina)], null, true);
+$monthrn_mindate = today(nw3_array_search($monthrn_min, $monthrn_mina), $monthrn_mindatea[nw3_array_search($monthrn_min, $monthrn_mina)], null, true);
 $monthrn_max = max($monthrn_maxa);
-$monthrn_maxdate = today(array_search($monthrn_max, $monthrn_maxa), $monthrn_maxdatea[array_search($monthrn_max, $monthrn_maxa)], null, true);
+$monthrn_maxdate = today(nw3_array_search($monthrn_max, $monthrn_maxa), $monthrn_maxdatea[nw3_array_search($monthrn_max, $monthrn_maxa)], null, true);
 
 $yrmonthrn_max = $monthrn_maxa[$dyear];
 $yrmonthrn_maxdate = today(null, $monthrn_maxdatea[$dyear], null, true);
@@ -407,7 +413,7 @@ $yrmonthrn_min = $monthrn_mina[$dyear];
 $yrmonthrn_mindate = today(null, $monthrn_mindatea[$dyear], null, true);
 
 $recorddailyrain = max($recorddailyraina);
-$tempyr = array_search($recorddailyrain, $recorddailyraina);
+$tempyr = nw3_array_search($recorddailyrain, $recorddailyraina);
 $tempz = $recorddailyraindatea[$tempyr];
 $recorddailyraindate = today($tempyr, true_z($tempz, $tempyr), true_z($tempz, $tempyr, 'j'));
 $yrecorddailyrain = $recorddailyraina[$dyear];
@@ -421,7 +427,7 @@ sort($rain_sort);
 $ranknum = 15;
 for ($i = 1; $i <= $ranknum; $i++) {
 	$wettest[$i] = $rain_sort[count($rain_sort) - $i];
-	$dayRec = array_search($wettest[$i], $rainall);
+	$dayRec = nw3_array_search($wettest[$i], $rainall);
 	$wettest_day[$i] = today(true, true, true, null, daytotime($dayRec));
 	$rainall[$dayRec] -= 0.01; //prevent duplicated dates
 }
@@ -431,10 +437,10 @@ sort($rain_sortM);
 $ranknumM = 10;
 for ($i = 1; $i <= $ranknumM; $i++) {
 	$wettestM[$i] = $rain_sortM[count($rain_sortM) - $i];
-	$wetMnum = array_search($wettestM[$i], $rainallM);
+	$wetMnum = nw3_array_search($wettestM[$i], $rainallM);
 	$wettest_dayM[$i] = today(date('Y', mkdate(1 + $wetMnum, 1, 2009)), date('n', mkdate(1 + $wetMnum, 1, 2009)), false, true);
 	$driestM[$i] = $rain_sortM[$i - 1];
-	$dryMnum = array_search($driestM[$i], $rainallM);
+	$dryMnum = nw3_array_search($driestM[$i], $rainallM);
 	$driest_dayM[$i] = today(date('Y', mkdate(1 + $dryMnum, 1, 2009)), date('n', mkdate(1 + $dryMnum, 1, 2009)), false, true);
 }
 
@@ -446,22 +452,22 @@ for ($y = 2009; $y <= $dyear; $y++) { //Rate tags
 	$maxrateDa[$y] = $rate[$y][$dmonth][$dday];
 	if (is_array($rate[$y][$dmonth])) {
 		$maxrateMDa[$y] = max($rate[$y][$dmonth]);
-		$maxrateMDdatea[$y] = array_search($maxrateMDa[$y], $rate[$y][$dmonth]);
+		$maxrateMDdatea[$y] = nw3_array_search($maxrateMDa[$y], $rate[$y][$dmonth]);
 	}
 	$recorddailyratea[$y] = max($rate2[$y]);
-	$recorddailyratedatea[$y] = array_search($recorddailyratea[$y], $rate2[$y]);
+	$recorddailyratedatea[$y] = nw3_array_search($recorddailyratea[$y], $rate2[$y]);
 }
 //if($me) { echo _LINE3_, ':  ', myround(microtime(get_as_float) - $scriptbeg,3), ' &nbsp; '; }
 
 $maxrateD = max($maxrateDa);
-$maxrateDdate = today(array_search($maxrateD, $maxrateDa));
+$maxrateDdate = today(nw3_array_search($maxrateD, $maxrateDa));
 $maxrateMD = max($maxrateMDa);
-$maxrateMDdate = today(array_search($maxrateMD, $maxrateMDa), null, $maxrateMDdatea[array_search($maxrateMD, $maxrateMDa)]);
+$maxrateMDdate = today(nw3_array_search($maxrateMD, $maxrateMDa), null, $maxrateMDdatea[nw3_array_search($maxrateMD, $maxrateMDa)]);
 
 $maxrainrateyest = rate_fix($rate2[$yr_yest][$dz_yest]);
 $maxrainrateyesttime = $DATT[16][$yr_yest][$mon_yest][$day_yest];
 $recorddailyrate = rate_fix(max($recorddailyratea));
-$tempyr = array_search($recorddailyrate, $recorddailyratea);
+$tempyr = nw3_array_search($recorddailyrate, $recorddailyratea);
 $recorddailyratedate = today($tempyr, true_z($recorddailyratedatea[$tempyr], $tempyr), true_z($recorddailyratedatea[$tempyr], $tempyr, 'j'));
 //$recorddailyratetime = $ratet[$tempyr][$recorddailyratedatea[$tempyr]];
 $yrecorddailyrate = rate_fix($recorddailyratea[$dyear]);
@@ -480,22 +486,22 @@ for ($y = 2009; $y <= $dyear; $y++) { //hrmax tags
 	$maxhrmaxDa[$y] = $hrmax[$y][$dmonth][$dday];
 	if (is_array($hrmax[$y][$dmonth])) {
 		$maxhrmaxMDa[$y] = max($hrmax[$y][$dmonth]);
-		$maxhrmaxMDdatea[$y] = array_search($maxhrmaxMDa[$y], $hrmax[$y][$dmonth]);
+		$maxhrmaxMDdatea[$y] = nw3_array_search($maxhrmaxMDa[$y], $hrmax[$y][$dmonth]);
 	}
 	$recorddailyhrmaxa[$y] = max($hrmax2[$y]);
-	$recorddailyhrmaxdatea[$y] = array_search($recorddailyhrmaxa[$y], $hrmax2[$y]);
+	$recorddailyhrmaxdatea[$y] = nw3_array_search($recorddailyhrmaxa[$y], $hrmax2[$y]);
 }
 //if($me) { echo _LINE5_, ':  ', myround(microtime(get_as_float) - $scriptbeg,3), ' &nbsp; '; }
 
 $maxhrmaxD = max($maxhrmaxDa);
-$maxhrmaxDdate = today(array_search($maxhrmaxD, $maxhrmaxDa));
+$maxhrmaxDdate = today(nw3_array_search($maxhrmaxD, $maxhrmaxDa));
 $maxhrmaxMD = max($maxhrmaxMDa);
-$maxhrmaxMDdate = today(array_search($maxhrmaxMD, $maxhrmaxMDa), null, $maxhrmaxMDdatea[array_search($maxhrmaxMD, $maxhrmaxMDa)]);
+$maxhrmaxMDdate = today(nw3_array_search($maxhrmaxMD, $maxhrmaxMDa), null, $maxhrmaxMDdatea[nw3_array_search($maxhrmaxMD, $maxhrmaxMDa)]);
 
 $maxhourrnyest = $hrmax2[$yr_yest][$dz_yest];
 $maxhourrnyesttime = $DATT[14][$yr_yest][$mon_yest][$day_yest];
 $recorddailyhrmax = max($recorddailyhrmaxa);
-$tempyr = array_search($recorddailyhrmax, $recorddailyhrmaxa);
+$tempyr = nw3_array_search($recorddailyhrmax, $recorddailyhrmaxa);
 $recorddailyhrmaxdate = today($tempyr, true_z($recorddailyhrmaxdatea[$tempyr], $tempyr), true_z($recorddailyhrmaxdatea[$tempyr], $tempyr, 'j'));
 //$recorddailyhrmaxtime = trim($hrmaxt[$tempyr][$recorddailyhrmaxdatea[$tempyr]]);
 $yrecorddailyhrmax = $recorddailyhrmaxa[$dyear];
@@ -524,10 +530,10 @@ for ($i = 0; $i < 7; $i++) {
 	}
 }
 
-$maxhourrn = $NOW['max']['rnhr'];
-$maxhourrnt = $NOW['timeMax']['rnhr'];
-$maxrainratehr = $NOW['max']['rate'];
-$maxrainratetime = $NOW['timeMax']['rate'];
+$maxhourrn = $NOW['max']['rnhr'] ?? null;
+$maxhourrnt = $NOW['timeMax']['rnhr'] ?? null;
+$maxrainratehr = $NOW['max']['rate'] ?? null;
+$maxrainratetime = $NOW['timeMax']['rate'] ?? null;
 
 $outputRn = '
 $rnallcount = \'' . $rainallCnt . '\';
@@ -552,7 +558,7 @@ $raintodmonthago = \'' . $raintodmonthago . '\';
 $raintodayearago = \'' . $raintodayearago . '\';
 $drywet = \'' . $drywet . '\';
 $rainweekMax = \'' . $rainweekMax . '\';
-$rainweekMaxDate = \'' . $rainweekMaxDate . '\';
+$rainweekMaxDate = \'\';
 $maxhourrn = \'' . $maxhourrn . '\';
 $maxrainratehr = \'' . $maxrainratehr . '\';
 $mrecorddailyrain = \'' . $mrecorddailyrain . '\';
@@ -639,7 +645,7 @@ $wettest31 = \'' . $wettest31 . '\';
 $driest31 = \'' . $driest31 . '\';
 $wettest365 = \'' . $wettest365 . '\';
 $driest365 = \'' . $driest365 . '\';
-$record24hrrain = \'' . $record24hrrain . '\';
+$record24hrrain = \'\';
 $wettestyrdate = \'' . $wettestyrdate . '\';
 $driestyrdate = \'' . $driestyrdate . '\';
 $wettest3date = \'' . $wettest3date . '\';
@@ -694,16 +700,19 @@ foreach ($DATA[20][$dyear] as $tminM) {
 
 function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 	global $fullpath, $NOW, $HR24, $types_original, $mappingsToDailyDataKey;
-	include $siteRoot . 'basics.php';
+	include __DIR__ . '/basics.php'; // date/season locals for this scope
 
 	$mapToDailyDataKey = $mappingsToDailyDataKey[substr($types_original[$varNum], 0, 1)];
 //	echo "key for $varNum is $mapToDailyDataKey <br />";
 	$avLast24 = $HR24['mean'][$mapToDailyDataKey];
 
+	$getExtra = false;
 	if ($varNum == 0 && $dataType == 'A') {
 		global $lta, $tdatday, $tdatav;
 		$getExtra = true;
 	}
+	// only set for some variables; returned as null otherwise
+	$tdatdayanom = $tdatyestanom = $tdatSSanom = $daysof = $totalsAnoms = null;
 
 	$c = 0;
 	$ranks = array();
@@ -712,10 +721,10 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 	for ($x = $varNum; $x < $varNum + 3; $x++) { //min/max/mean loop
 		$key = $dnm[$c];
 
-		$tdatday[$c] = $NOW[$key][$mapToDailyDataKey];
-		$tdatdaydate[$c] = $NOW['time'.$mmmr[$c]][$mapToDailyDataKey];
-		$tdatyest[$key] = $GLOBALS['DATA'][$x][$yr_yest][$mon_yest][$day_yest];
-		$tdatyestdate[$c] = $GLOBALS['DATT'][$x][$yr_yest][$mon_yest][$day_yest];
+		$tdatday[$c] = $NOW[$key][$mapToDailyDataKey] ?? null;
+		$tdatdaydate[$c] = $NOW['time'.$mmmr[$c]][$mapToDailyDataKey] ?? null;
+		$tdatyest[$key] = $GLOBALS['DATA'][$x][$yr_yest][$mon_yest][$day_yest] ?? null;
+		$tdatyestdate[$c] = $GLOBALS['DATT'][$x][$yr_yest][$mon_yest][$day_yest] ?? null;
 
 		$tdatall = $tdatallM = $tdatcurrMon = array();
 		for ($y = $temp_styr; $y <= $dyear; $y++) { //Collect data
@@ -744,11 +753,11 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 				$totType = ($x == 0) ? 'sun' : 'wet';
 				$daysGone = $dday - 1;
 			}
-			$totals[$c]['today'] = $tdat1[$dyear][$dmonth][$dday];
-			$totals[$c]['yest'] = $tdat2[$yr_yest][$dz_yest];
-			$totals[$c]['m'] = array_sum($tdat1[$dyear][$dmonth]);
-			$totals[$c]['y'] = array_sum($tdat2[$dyear]);
-			$totals[$c]['a'] = array_sum($tdatall);
+			$totals[$c]['today'] = $tdat1[$dyear][$dmonth][$dday] ?? null;
+			$totals[$c]['yest'] = $tdat2[$yr_yest][$dz_yest] ?? null;
+			$totals[$c]['m'] = nw3_array_sum($tdat1[$dyear][$dmonth]);
+			$totals[$c]['y'] = nw3_array_sum($tdat2[$dyear]);
+			$totals[$c]['a'] = nw3_array_sum($tdatall);
 
 			$daysof[$c]['m'] = sum_cond($tdat1[$dyear][$dmonth], true, 0.1);
 			$daysof[$c]['y'] = sum_cond($tdat2[$dyear], true, 0.1);
@@ -758,7 +767,7 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 			for ($m = 0; $m < $dmonth - 1; $m++) {
 				$curryrLTAtotal += $GLOBALS[$totType.'av'][$m];
 			}
-			$annualLTA = array_sum($GLOBALS[$totType.'av']);
+			$annualLTA = nw3_array_sum($GLOBALS[$totType.'av']);
 			$currMonAv = $GLOBALS[$totType.'av'][$dmonth-1] * $daysGone / $dt;
 
 			$totalsAnoms[$c]['m'] = percent($totals[$c]['m'], $currMonAv);
@@ -803,7 +812,7 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 
 		for ($y = $temp_styr; $y <= $dyear; $y++) {
 			if (is_array($tdat1[$y][$dmonth])) {
-				$tdatD[$y] = $tdat1[$y][$dmonth][$dday];
+				$tdatD[$y] = $tdat1[$y][$dmonth][$dday] ?? null;
 			}
 			$tdata[$y] = $tdat3[$y][$dmonth];
 			if ($y > 2008) {
@@ -841,7 +850,7 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 						$buff->add(floatval($tdatall[$k]));
 					}
 					if ($buff->isFull) {
-						$tdatcum = array_sum($buff->items);
+						$tdatcum = nw3_array_sum($buff->items);
 						if (opmom($tdatcum, $tdatcumfix, $i)) {
 							$tdatcumfix = $tdatcum;
 							$cumend = $k;
@@ -855,26 +864,26 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 
 			for ($y = $temp_styr; $y <= $dyear; $y++) {
 				$tdatMon[$y] = mom($tdat1[$y][$dmonth], $i);
-				$tdatMondate[$y] = array_search($tdatMon[$y], $tdat1[$y][$dmonth]);
+				$tdatMondate[$y] = nw3_array_search($tdatMon[$y], $tdat1[$y][$dmonth]);
 				$tdatYr[$y] = mom($tdat2[$y], $i);
-				$tdatYdatea[$y] = array_search($tdatYr[$y], $tdat2[$y]);
+				$tdatYdatea[$y] = nw3_array_search($tdatYr[$y], $tdat2[$y]);
 				$tdatMMon[$y] = mom($tdat3[$y], $i);
-				$tdatMMondate[$y] = array_search($tdatMMon[$y], $tdat3[$y]);
+				$tdatMMondate[$y] = nw3_array_search($tdatMMon[$y], $tdat3[$y]);
 			}
 			//Day records
 			$tdat[$key][$i]['m'] = ( abs($tdatMon[$dyear]) == PHP_INT_MAX ) ? '-' : $tdatMon[$dyear];
 			$tdat[$key][$i]['y'] = $tdatYr[$dyear];
 			$tdat[$key][$i]['a'] = mom($tdatYr, $i);
-			$tempyr1 = array_search($tdat[$key][$i]['a'], $tdatYr);
+			$tempyr1 = nw3_array_search($tdat[$key][$i]['a'], $tdatYr);
 			$tdat[$key][$i]['mr'] = mom($tdatMon, $i);
-			$tempyr2 = array_search($tdat[$key][$i]['mr'], $tdatMon);
+			$tempyr2 = nw3_array_search($tdat[$key][$i]['mr'], $tdatMon);
 			$tdat[$key][$i]['dr'] = mom($tdatD, $i);
 
 			$tdat[$key][$i]['mdate'] = today(null, null, $tdatMondate[$dyear]);
 			$tdat[$key][$i]['ydate'] = today(null, true, true, null, mkz($tdatYdatea[$dyear]));
 			$tdat[$key][$i]['adate'] = today(true, true, true, null, mkz($tdatYdatea[$tempyr1], $tempyr1));
 			$tdat[$key][$i]['mrdate'] = today($tempyr2, null, $tdatMondate[$tempyr2]);
-			$tdat[$key][$i]['drdate'] = today(array_search($tdat[$key][$i]['dr'], $tdatD));
+			$tdat[$key][$i]['drdate'] = today(nw3_array_search($tdat[$key][$i]['dr'], $tdatD));
 
 			if ($getExtra) {
 				$tdat[$key][$i]['manom'] = $tdat[$key][$i]['m'] - $lta[$x][date('z', mkday($tdatMondate[$dyear]))];
@@ -887,10 +896,10 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 			$tdat[$key][$i]['My'] = $tdatMMon[$dyear];
 			$tdat[$key][$i]['Mmr'] = mom($tdata, $i);
 			$tdat[$key][$i]['Ma'] = mom($tdatMMon, $i);
-			$tempyr = array_search($tdat[$key][$i]['Ma'], $tdatMMon);
+			$tempyr = nw3_array_search($tdat[$key][$i]['Ma'], $tdatMMon);
 
 			$tdat[$key][$i]['Mydate'] = today(null, $tdatMMondate[$dyear], null, true);
-			$tdat[$key][$i]['Mmrdate'] = today(array_search($tdat[$key][$i]['Mmr'], $tdata), null, null, true);
+			$tdat[$key][$i]['Mmrdate'] = today(nw3_array_search($tdat[$key][$i]['Mmr'], $tdata), null, null, true);
 			$tdat[$key][$i]['Madate'] = today($tempyr, $tdatMMondate[$tempyr], null, true);
 			if ($getExtra) {
 				$tdat[$key][$i]['Myanom'] = $tdat[$key][$i]['My'] - $tdatMondate[$dyear];
@@ -899,14 +908,14 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 			}
 			//Year records
 			$tdat[$key][$i]['Ya'] = mom($tdatYa, $i);
-			$tdat[$key][$i]['Yadate'] = array_search($tdat[$key][$i]['Ya'], $tdatYa);
+			$tdat[$key][$i]['Yadate'] = nw3_array_search($tdat[$key][$i]['Ya'], $tdatYa);
 			if ($getExtra) {
 				$tdat[$key][$i]['Yaanom'] = $tdat[$key][$i]['Ya'] - mean($tdatav[$key]);
 			}
 			//Past 12 months
 			for ($m = 0; $m < 12; $m++) {
 				$tdatMM[$key][$i][0][$m] = mom($tdatMMa[$m], $i);
-				$tdatMM[$key][$i][1][$m] = array_search($tdatMM[$key][$i][0][$m], $tdatMMa[$m]);
+				$tdatMM[$key][$i][1][$m] = nw3_array_search($tdatMM[$key][$i][0][$m], $tdatMMa[$m]);
 				if ($getExtra) {
 					$tdatMM[$key][$i][2][$m] = $tdatMM[$key][$i][0][$m] - $lta[$x][date('z', mkdate($m + 1, $tdatMM[$key][$i][1][$m]))];
 				}
@@ -918,10 +927,14 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 
 		//n-Day Averages
 		for ($p = 0; $p < count($pgather); $p++) {
+			$tdat[$key][2][$pgather[$p]] = 0;
+			if ($getExtra) {
+				$tdat[$key][2][$pgather[$p] . 'anom'] = 0;
+			}
 			for ($d = 1; $d <= $pgather[$p]; $d++) {
-				$tdat[$key][2][$pgather[$p]] += $tdatall[$datallCnt - $d] / $pgather[$p];
+				$tdat[$key][2][$pgather[$p]] += nw3_to_number($tdatall[$datallCnt - $d]) / $pgather[$p];
 				if ($getExtra) {
-					$tdat[$key][2][$pgather[$p] . 'anom'] += ($tdatall[$datallCnt - $d] / $pgather[$p] - $lta[$x][date('z', mkday($dday - $d + 1))] / $pgather[$p]);
+					$tdat[$key][2][$pgather[$p] . 'anom'] += (nw3_to_number($tdatall[$datallCnt - $d]) / $pgather[$p] - nw3_to_number($lta[$x][date('z', mkday($dday - $d + 1))]) / $pgather[$p]);
 				}
 			}
 		}
@@ -939,17 +952,21 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 		for ($m = 0; $m < 12; $m++) {
 			$tdatMM[$key][2][0][$m] = mean($tdatMMa[$m]);
 // 			$tdatMM[$key][2][1][$m] = '';
-			$tdatMM[$key][2][2][$m] = $tdatMM[$key][2][0][$m] - $tdatav[$key][$m];
+			$tdatMM[$key][2][2][$m] = nw3_to_number($tdatMM[$key][2][0][$m]) - nw3_to_number($tdatav[$key][$m] ?? null);
 			for ($j = 0; $j < 2; $j++) {
 				$tdatMM[$key][2]['extr'][$j] = mom($tdatMM[$key][2][0], $j);
 			}
 		}
 
 		for ($s = 0; $s < 4; $s++) {
+			$tdatSS[$key][$s] = 0;
+			if ($getExtra) {
+				$tdatSSanom[$key][$s] = 0;
+			}
 			for ($s2 = 0; $s2 < 3; $s2++) {
-				$tdatSS[$key][$s] += $tdatMM[$key][2][0][$snums[$s][$s2]] / 3;
+				$tdatSS[$key][$s] += nw3_to_number($tdatMM[$key][2][0][$snums[$s][$s2]]) / 3;
 				if ($getExtra) {
-					$tdatSSanom[$key][$s] += $tdatMM[$key][2][2][$snums[$s][$s2]] / 3;
+					$tdatSSanom[$key][$s] += nw3_to_number($tdatMM[$key][2][2][$snums[$s][$s2]]) / 3;
 				}
 			}
 		}
@@ -960,13 +977,13 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 		sort($data_sort, SORT_NUMERIC);
 		for ($i = 1; $i <= $GLOBALS['rankNum']; $i++) {
 			$highest[$i] = $data_sort[count($data_sort) - $i];
-			$dayRecH = array_search($highest[$i], $tdatGood);
+			$dayRecH = nw3_array_search($highest[$i], $tdatGood);
 			$highest_day[$i] = today(true, true, true, null, daytotime($dayRecH));
-			$tdatGood[$dayRecH] -= 0.01; //prevent duplicated dates
+			$tdatGood[$dayRecH] = nw3_to_number($tdatGood[$dayRecH]) - 0.01; //prevent duplicated dates
 			$lowest[$i] = $data_sort[$i - 1];
-			$dayRecL = array_search($lowest[$i], $tdatGood);
+			$dayRecL = nw3_array_search($lowest[$i], $tdatGood);
 			$lowest_day[$i] = today(true, true, true, null, daytotime($dayRecL));
-			$tdatGood[$dayRecL] -= 0.01; //prevent duplicated dates
+			$tdatGood[$dayRecL] = nw3_to_number($tdatGood[$dayRecL]) - 0.01; //prevent duplicated dates
 		}
 		//Extreme Monthly Ranked
 		$tdatallMGood = array_filter($tdatallM, 'isNotBlank');
@@ -979,11 +996,11 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 		}
 		for ($i = 1; $i <= $GLOBALS['rankNumM']; $i++) {
 			$highestM[$i] = $data_sortM[count($data_sortM) - $i];
-			$highMnum = array_search($highestM[$i], $tdatallMGood);
+			$highMnum = nw3_array_search($highestM[$i], $tdatallMGood);
 			$stampH = monthtotime($highMnum);
 			$highest_dayM[$i] = today(date('Y', $stampH), date('n', $stampH), false, true);
 			$lowestM[$i] = $data_sortM[$i - 1];
-			$lowMnum = array_search($lowestM[$i], $tdatallMGood);
+			$lowMnum = nw3_array_search($lowestM[$i], $tdatallMGood);
 			$stampL = monthtotime($lowMnum);
 			$lowest_dayM[$i] = today(date('Y', $stampL), date('n', $stampL), false, true);
 		}
@@ -993,11 +1010,11 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 		sort($data_sortCM, SORT_NUMERIC);
 		for ($i = 1; $i <= $GLOBALS['rankNumCM']; $i++) {
 			$highestCM[$i] = $data_sortCM[count($data_sortCM) - $i];
-			$dayRecHCM = array_search($highestCM[$i], $tdatcurrMonGood);
+			$dayRecHCM = nw3_array_search($highestCM[$i], $tdatcurrMonGood);
 			$highest_dayCM[$i] = today(true, null, true, null, daytotimeCM($dayRecHCM));
 			$tdatcurrMonGood[$dayRecHCM] = -999; //prevent duplicated dates
 			$lowestCM[$i] = $data_sortCM[$i - 1];
-			$dayRecLCM = array_search($lowestCM[$i], $tdatcurrMonGood);
+			$dayRecLCM = nw3_array_search($lowestCM[$i], $tdatcurrMonGood);
 			$lowest_dayCM[$i] = today(true, null, true, null, daytotimeCM($dayRecLCM));
 			$tdatcurrMonGood[$dayRecLCM] = -999; //prevent duplicated dates
 		}

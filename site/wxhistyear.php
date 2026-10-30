@@ -47,7 +47,7 @@ foreach (Report::$categories as $cat => $vars) {
 			'summary_type' => $summable ? Data::SUMMARY_SUM : Data::SUMMARY_MEAN,
 		];
 		if (!empty(Wx::$daily[$v]['anomaly'])) { $params['lta'] = 1; }
-		Charts::daily($params, ['height' => 300]);
+		Charts::daily($params, ['height' => 300, 'zeroMessage' => true]);
 	}
 }
 echo '</div>';

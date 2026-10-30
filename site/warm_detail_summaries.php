@@ -10,7 +10,12 @@
  *   php warm_detail_summaries.php datm      # only the datm-sourced vars
  *   php warm_detail_summaries.php hist      # pre-2009 windows (daily / hist.csv)
  */
-error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT);
+if (PHP_SAPI !== 'cli') {
+	http_response_code(403);
+	die("CLI only.\n");
+}
+
+error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~2048); // 2048 = E_STRICT (constant deprecated in PHP 8.4)
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 date_default_timezone_set('Europe/London');
@@ -37,7 +42,7 @@ if ($onlyHist) {
 } else {
 	DataSummarizer::warmDetailSummaries($start, $vars);
 }
-$ms = round((microtime(true) - $t0) * 1000);
+$ms = nw3_round((microtime(true) - $t0) * 1000);
 if ($onlyHist) {
 	$jobs = DataSummarizer::historicalWarmJobs($vars);
 	$label = 'hist=' . count($jobs) . ' jobs';

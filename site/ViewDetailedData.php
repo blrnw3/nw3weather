@@ -35,6 +35,8 @@ class ViewDetailedData {
 	private $datMMCurr; // current (incomplete) month summary, same shape as one month of datMM
 	private $datSS;
 	private $datSSanom;
+	// Current season to date (from curr_season), for the latest-data cards
+	private $datSScurr;
 	private $ranks;
 	private $datToday;
 	private $datYest;
@@ -97,6 +99,8 @@ class ViewDetailedData {
 				"measures" => ['Max Gust', 'Max Speed', 'Max 10-min Speed', 'Calmest Day', 'Windiest Day', 'Mean Speed'],
 				// var_min/max/mean are gust/speed/mean here, not a low-high pair.
 				"latestLabels" => ['min' => 'Max Gust', 'max' => 'Max Speed', 'mean' => 'Mean Speed'],
+				// Live (today) stat sources: [section, key] in Live::$NOW.
+				"liveStats" => ['min' => ['max', 'gust'], 'max' => ['max', 'wind'], 'mean' => ['mean', 'wind']],
 				"trendTypes" => ['wmean', 'gust', 'wmax', 'w10max'],
 				"seasonCols" => [
 					['label' => 'Mean Speed', 'stat' => 'mean'],
@@ -655,25 +659,20 @@ class ViewDetailedData {
 		$todMinTime = $this->sval($todMin, 'time');
 		$todMaxTime = $this->sval($todMax, 'time');
 
-		// Prefer live TODAY snapshot (matches legacy recentAvgsExtrms / $NOW)
+		// Prefer live TODAY snapshot (matches legacy recentAvgsExtrms / $NOW).
+		// Value and time come from the same live stat so a fresh value is never
+		// paired with a time from the once-a-day times cache.
 		$liveKey = isset(Wx::$mappingsToDailyDataKey[$this->letter])
 			? Wx::$mappingsToDailyDataKey[$this->letter] : null;
 		if ($liveKey && is_array(Live::$NOW)) {
-			if (isset(Live::$NOW['min'][$liveKey]) && Util::isNotBlank(Live::$NOW['min'][$liveKey])) {
-				$todMinVal = Live::$NOW['min'][$liveKey];
-			}
-			if (isset(Live::$NOW['max'][$liveKey]) && Util::isNotBlank(Live::$NOW['max'][$liveKey])) {
-				$todMaxVal = Live::$NOW['max'][$liveKey];
-			}
-			if (isset(Live::$NOW['mean'][$liveKey]) && Util::isNotBlank(Live::$NOW['mean'][$liveKey])) {
-				$todMeanVal = Live::$NOW['mean'][$liveKey];
-			}
-			if (!empty(Live::$NOW['timeMin'][$liveKey])) {
-				$todMinTime = Live::$NOW['timeMin'][$liveKey];
-			}
-			if (!empty(Live::$NOW['timeMax'][$liveKey])) {
-				$todMaxTime = Live::$NOW['timeMax'][$liveKey];
-			}
+			$liveStats = !empty($this->group['liveStats']) ? $this->group['liveStats']
+				: ['min' => ['min', $liveKey], 'max' => ['max', $liveKey], 'mean' => ['mean', $liveKey]];
+			$min = $this->liveStat($liveStats['min']);
+			if ($min !== null) { $todMinVal = $min[0]; $todMinTime = $min[1]; }
+			$max = $this->liveStat($liveStats['max']);
+			if ($max !== null) { $todMaxVal = $max[0]; $todMaxTime = $max[1]; }
+			$mean = $this->liveStat($liveStats['mean']);
+			if ($mean !== null) { $todMeanVal = $mean[0]; }
 		}
 
 		$this->datToday = [
@@ -825,6 +824,16 @@ class ViewDetailedData {
 		} elseif ($this->groupName === 'sun') {
 			$this->datSS['sdays'] = [];
 			$this->datSSanom['sdays'] = [];
+		}
+		// datSS holds the four most recently COMPLETED seasons (past-year table).
+		// The current, in-progress season comes from curr_season instead.
+		$this->datSScurr = ['val' => null, 'anom' => null];
+		$cps = isset($this->meanSum['period_summaries']['curr_season'])
+			? $this->meanSum['period_summaries']['curr_season'] : null;
+		if ($cps !== null) {
+			$aggKey = $this->isSummableVar($this->varMean) ? 'sum' : 'mean';
+			$this->datSScurr['val'] = $this->sval($cps, $aggKey);
+			$this->datSScurr['anom'] = $this->getAnom ? $this->periodAnom($cps) : null;
 		}
 		foreach ($statSums as $stat => $sum) {
 			$ss = $sum['season_summaries'];
@@ -1004,7 +1013,7 @@ class ViewDetailedData {
 
 	private function parseDateTs($raw) {
 		if ($raw === null || $raw === '') return null;
-		if (is_numeric($raw) && (int)$raw > 100000) {
+		if (nw3_is_numeric($raw) && (int)$raw > 100000) {
 			return (int)$raw; // unix timestamp
 		}
 		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw)) {
@@ -1031,7 +1040,7 @@ class ViewDetailedData {
 
 	/** Normalise complete dates while leaving period-relative labels unchanged. */
 	private function dateText($label) {
-		if (is_numeric($label) && (int)$label > 100000) {
+		if (nw3_is_numeric($label) && (int)$label > 100000) {
 			return date('d M Y', (int)$label);
 		}
 		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $label)
@@ -1060,14 +1069,14 @@ class ViewDetailedData {
 	/** Period-summary anomaly: percent when group requests it, else absolute. */
 	private function periodAnom($summary) {
 		if (!$this->getAnom || !is_array($summary)) return null;
-		if (!empty($this->group['anomPct']) && isset($summary['anom_pct']) && is_numeric($summary['anom_pct'])) {
+		if (!empty($this->group['anomPct']) && isset($summary['anom_pct']) && nw3_is_numeric($summary['anom_pct'])) {
 			return $summary['anom_pct'];
 		}
 		return isset($summary['anom']) ? $summary['anom'] : null;
 	}
 
 	private function anomFromNorm($val, $norm) {
-		if (!is_numeric($val) || !is_numeric($norm)) return null;
+		if (!nw3_is_numeric($val) || !nw3_is_numeric($norm)) return null;
 		if (!empty($this->group['anomPct'])) {
 			return ($norm != 0) ? (($val - $norm) / $norm * 100) : null;
 		}
@@ -1075,17 +1084,17 @@ class ViewDetailedData {
 	}
 
 	private function rainDaysMonthAnom($month, $count) {
-		if (!$this->getAnom || !is_numeric($count)) return null;
+		if (!$this->getAnom || !nw3_is_numeric($count)) return null;
 		$norm = LTA::getMonthlyAnom('rdays', $month);
 		return $this->anomFromNorm($count, $norm);
 	}
 
 	/** Rough rain-day anomaly for calendar periods that map to a month/year. */
 	private function rainDaysPeriodAnom($pk, $count) {
-		if (!$this->getAnom || !is_numeric($count)) return null;
+		if (!$this->getAnom || !nw3_is_numeric($count)) return null;
 		if ($pk === 'curr_month') {
 			$norm = LTA::getMonthlyAnom('rdays', (int)Date::$dmonth);
-			if (is_numeric($norm)) {
+			if (nw3_is_numeric($norm)) {
 				$dim = (int)date('t', Date::mkdate(Date::$dmonth, 15, Date::$dyear));
 				$norm = $norm * ((int)Date::$dday / max(1, $dim));
 			}
@@ -1093,7 +1102,7 @@ class ViewDetailedData {
 		}
 		if ($pk === 'curr_year') {
 			$yearNorm = LTA::getYearlyAnom('rdays');
-			if (!is_numeric($yearNorm)) return null;
+			if (!nw3_is_numeric($yearNorm)) return null;
 			$doy = (int)date('z', Date::mkdate(Date::$dmonth, Date::$dday, Date::$dyear)) + 1;
 			return $this->anomFromNorm($count, $yearNorm * ($doy / 365.0));
 		}
@@ -1102,16 +1111,16 @@ class ViewDetailedData {
 
 	/** % anomaly for a period mean of a summable var vs climate normal. */
 	private function summableMeanPeriodAnom($pk, $meanVal, $ltaVar) {
-		if (!$this->getAnom || !is_numeric($meanVal)) return null;
+		if (!$this->getAnom || !nw3_is_numeric($meanVal)) return null;
 		if ($pk === 'alltime' || $pk === 'curr_year' || $pk === 'latest_365d') {
 			$yearSum = LTA::getYearlyAnom($ltaVar);
-			if (!is_numeric($yearSum)) return null;
+			if (!nw3_is_numeric($yearSum)) return null;
 			return $this->anomFromNorm($meanVal, $yearSum / 365.0);
 		}
 		if ($pk === 'all_this_month' || $pk === 'curr_month' || $pk === 'latest_31d') {
 			$mon = LTA::getMonthlyAnom($ltaVar, (int)Date::$dmonth);
 			$dim = (int)date('t', Date::mkdate(Date::$dmonth, 15, Date::$dyear));
-			if (!is_numeric($mon)) return null;
+			if (!nw3_is_numeric($mon)) return null;
 			return $this->anomFromNorm($meanVal, $mon / max(1, $dim));
 		}
 		if ($pk === 'all_this_date') {
@@ -1120,7 +1129,7 @@ class ViewDetailedData {
 		}
 		if ($pk === 'latest_7d') {
 			$norm = LTA::getRecentPeriodMeanAnom($ltaVar, 7);
-			if (!is_numeric($norm)) return null;
+			if (!nw3_is_numeric($norm)) return null;
 			return $this->anomFromNorm($meanVal, $norm / 7.0);
 		}
 		return null;
@@ -1130,7 +1139,7 @@ class ViewDetailedData {
 	private function dayCountMeanForPeriod($pk, $summary) {
 		$count = $this->sval($summary, 'count');
 		$cnz = $this->sval($summary, 'count_nonzero');
-		if (!is_numeric($count) || $count <= 0 || !is_numeric($cnz)) { return null; }
+		if (!nw3_is_numeric($count) || $count <= 0 || !nw3_is_numeric($cnz)) { return null; }
 		return $cnz / $count * 100;
 	}
 
@@ -1146,22 +1155,22 @@ class ViewDetailedData {
 
 	/** % anomaly for mean wet hours vs climate normal. */
 	private function wetHoursMeanPeriodAnom($pk, $meanVal) {
-		if (!$this->getAnom || !is_numeric($meanVal)) return null;
+		if (!$this->getAnom || !nw3_is_numeric($meanVal)) return null;
 		if ($pk === 'alltime' || $pk === 'curr_year' || $pk === 'latest_365d') {
 			$yearSum = LTA::getYearlyAnom('wethr');
-			if (!is_numeric($yearSum)) return null;
+			if (!nw3_is_numeric($yearSum)) return null;
 			return $this->anomFromNorm($meanVal, $yearSum / 365.0);
 		}
 		if ($pk === 'all_this_month' || $pk === 'curr_month' || $pk === 'latest_31d') {
 			$mon = LTA::getMonthlyAnom('wethr', (int)Date::$dmonth);
 			$dim = (int)date('t', Date::mkdate(Date::$dmonth, 15, Date::$dyear));
-			if (!is_numeric($mon)) return null;
+			if (!nw3_is_numeric($mon)) return null;
 			return $this->anomFromNorm($meanVal, $mon / max(1, $dim));
 		}
 		if ($pk === 'all_this_date') {
 			$mon = LTA::getMonthlyAnom('wethr', (int)Date::$dmonth);
 			$dim = (int)date('t', Date::mkdate(Date::$dmonth, 15, Date::$dyear));
-			if (!is_numeric($mon)) return null;
+			if (!nw3_is_numeric($mon)) return null;
 			return $this->anomFromNorm($meanVal, $mon / max(1, $dim));
 		}
 		return null;
@@ -1169,7 +1178,7 @@ class ViewDetailedData {
 
 	/** % anomaly for mean rain-days vs climate normal. */
 	private function rainDaysMeanPeriodAnom($pk, $meanVal) {
-		if (!$this->getAnom || !is_numeric($meanVal)) return null;
+		if (!$this->getAnom || !nw3_is_numeric($meanVal)) return null;
 		if ($pk === 'alltime') {
 			$yearNorm = LTA::getYearlyAnom('rdays');
 			return $this->anomFromNorm($meanVal, $yearNorm);
@@ -1181,14 +1190,14 @@ class ViewDetailedData {
 		if ($pk === 'all_this_date') {
 			$norm = LTA::getMonthlyAnom('rdays', (int)Date::$dmonth);
 			$dim = (int)date('t', Date::mkdate(Date::$dmonth, 15, Date::$dyear));
-			if (!is_numeric($norm)) return null;
+			if (!nw3_is_numeric($norm)) return null;
 			return $this->anomFromNorm($meanVal, $norm / max(1, $dim));
 		}
 		return null;
 	}
 
 	private function dailyAnom($varName, $val, $yest) {
-		if (!$this->getAnom || $val === null || !is_numeric($val)) return null;
+		if (!$this->getAnom || $val === null || !nw3_is_numeric($val)) return null;
 		if (!in_array($varName, self::$ltaDailyTypes)) return null;
 		$m = $yest ? Date::$mon_yest : Date::$dmonth;
 		$d = $yest ? Date::$day_yest : Date::$dday;
@@ -1199,12 +1208,12 @@ class ViewDetailedData {
 
 	/** Anomaly of an extreme value vs daily LTA on the event date (Y-m-d or day-of-month). */
 	private function eventDayAnom($varName, $val, $dateRaw) {
-		if (!$this->getAnom || $val === null || !is_numeric($val) || !$dateRaw) return null;
+		if (!$this->getAnom || $val === null || !nw3_is_numeric($val) || !$dateRaw) return null;
 		if (!in_array($varName, self::$ltaDailyTypes)) return null;
 		$m = null; $d = null; $y = null;
 		if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $dateRaw, $mm)) {
 			$y = (int)$mm[1]; $m = (int)$mm[2]; $d = (int)$mm[3];
-		} elseif (is_numeric($dateRaw)) {
+		} elseif (nw3_is_numeric($dateRaw)) {
 			$m = (int)Date::$dmonth;
 			$d = (int)$dateRaw;
 			$y = (int)Date::$dyear;
@@ -1247,15 +1256,29 @@ class ViewDetailedData {
 
 	/** Render an anomaly hint like " (+1.2)" / " (+12%)" or '' when unavailable. */
 	private function anomHint($val) {
-		if (!$this->getAnom || $val === null || !is_numeric($val)) return '';
+		if (!$this->getAnom || $val === null || !nw3_is_numeric($val)) return '';
 		if (!empty($this->group['anomPct'])) {
 			$sign = ($val > 0) ? '+' : '';
-			return '<br />(' . $sign . round($val) . '%)';
+			return '<br />(' . $sign . nw3_round($val) . '%)';
 		}
 		return '<br />(' . Wx::conv($val, Wx::AbsTemp, 0, 1) . ')';
 	}
 
 	// ---- rendering ----
+
+	/**
+	 * Live::$NOW value and time for [section, key], or null if not available.
+	 * Time is from timeMin/timeMax matching the section (null for means).
+	 */
+	private function liveStat($src) {
+		list($section, $key) = $src;
+		if (!isset(Live::$NOW[$section][$key]) || !Util::isNotBlank(Live::$NOW[$section][$key])) {
+			return null;
+		}
+		$timeSection = ($section === 'min') ? 'timeMin' : (($section === 'max') ? 'timeMax' : null);
+		$time = ($timeSection && !empty(Live::$NOW[$timeSection][$key])) ? Live::$NOW[$timeSection][$key] : null;
+		return [Live::$NOW[$section][$key], $time];
+	}
 
 	/**
 	 * Makes a "current/latest" table
@@ -1349,10 +1372,10 @@ class ViewDetailedData {
 			$yestWet = Data::get('wethr', Date::$yr_yest, Date::$mon_yest, Date::$day_yest);
 			if (Util::isBlank($yestWet)) {
 				// Dry days are often untagged for wet hours — treat as 0 when rain was 0.
-				$yestWet = (is_numeric($yestRain) && (float)$yestRain == 0.0) ? 0 : null;
+				$yestWet = (nw3_is_numeric($yestRain) && (float)$yestRain == 0.0) ? 0 : null;
 			}
-			$seasTot = isset($this->datSS['mean'][$seasIdx]) ? $this->datSS['mean'][$seasIdx] : null;
-			$seasAnom = isset($this->datSSanom['mean'][$seasIdx]) ? $this->datSSanom['mean'][$seasIdx] : null;
+			$seasTot = $this->datSScurr['val'];
+			$seasAnom = $this->datSScurr['anom'];
 			$monthTot = isset($this->dat['mean'][2]['curr_month']) ? $this->dat['mean'][2]['curr_month'] : null;
 			$monthAnom = isset($this->dat['mean'][2]['curr_monthanom']) ? $this->dat['mean'][2]['curr_monthanom'] : null;
 			$yearTot = isset($this->dat['mean'][2]['curr_year']) ? $this->dat['mean'][2]['curr_year'] : null;
@@ -1400,8 +1423,8 @@ class ViewDetailedData {
 			$seasName = isset(Date::$snames[$seasIdx]) ? Date::$snames[$seasIdx] : 'Season';
 			$yestSun = isset($this->datYest[0]['mean']) ? $this->datYest[0]['mean'] : null;
 			$yestPct = Data::get('sunhrp', Date::$yr_yest, Date::$mon_yest, Date::$day_yest);
-			$seasTot = isset($this->datSS['mean'][$seasIdx]) ? $this->datSS['mean'][$seasIdx] : null;
-			$seasAnom = isset($this->datSSanom['mean'][$seasIdx]) ? $this->datSSanom['mean'][$seasIdx] : null;
+			$seasTot = $this->datSScurr['val'];
+			$seasAnom = $this->datSScurr['anom'];
 			$monthTot = isset($this->dat['mean'][2]['curr_month']) ? $this->dat['mean'][2]['curr_month'] : null;
 			$monthAnom = isset($this->dat['mean'][2]['curr_monthanom']) ? $this->dat['mean'][2]['curr_monthanom'] : null;
 			$yearTot = isset($this->dat['mean'][2]['curr_year']) ? $this->dat['mean'][2]['curr_year'] : null;
@@ -1448,10 +1471,10 @@ class ViewDetailedData {
 			if ($row['time']) {
 				$val .= ' @ ' . $row['time'];
 			}
-			if ($row['anomaly'] !== null && is_numeric($row['anomaly'])) {
+			if ($row['anomaly'] !== null && nw3_is_numeric($row['anomaly'])) {
 				if (!empty($this->group['anomPct'])) {
 					$av = $row['anomaly'];
-					$val .= '&nbsp; (' . (($av > 0) ? '+' : '') . round($av) . '%)';
+					$val .= '&nbsp; (' . (($av > 0) ? '+' : '') . nw3_round($av) . '%)';
 				} else {
 					$val .= '&nbsp; (' . Wx::conv($row['anomaly'], Wx::AbsTemp, 0, 1) . ')';
 				}
@@ -2008,7 +2031,8 @@ class ViewDetailedData {
 			$nwint = ($i + 1 < Date::$season || Date::$dmonth == 12) ? Date::$dyear : Date::$dyear - 1;
 			$wint = (Date::$dmonth > 2) ? $dfo1 . '/' . $dfo2 : $dfo3 . '/' . $dfo1;
 			$yr3 = array($wint, $nwint, $nwint, $nwint);
-			$hlite = ($i + 1 == Date::$season - 1) ? 'border-bottom:3px solid #8181F7' : '';
+			// Most recently completed season (Autumn while in Winter)
+			$hlite = ($i == ((int)Date::$season + 2) % 4) ? 'border-bottom:3px solid #8181F7' : '';
 
 			Html::tr(Html::colcol($i));
 			Html::td($this->dateToken(Date::$snames[$i] . ' ' . $yr3[$i]), $this->cssClass . '" style="' . $hlite);
@@ -2017,10 +2041,10 @@ class ViewDetailedData {
 				$sk = $col['stat'];
 				$unit = isset($col['unit']) ? $col['unit'] : $this->conv;
 				$anom = '';
-				if ($this->getAnom && isset($datAnom[$sk][$i]) && is_numeric($datAnom[$sk][$i])) {
+				if ($this->getAnom && isset($datAnom[$sk][$i]) && nw3_is_numeric($datAnom[$sk][$i])) {
 					if (!empty($this->group['anomPct'])) {
 						$av = $datAnom[$sk][$i];
-						$anom = ' (' . (($av > 0) ? '+' : '') . round($av) . '%)';
+						$anom = ' (' . (($av > 0) ? '+' : '') . nw3_round($av) . '%)';
 					} else {
 						$anom = ' (' . Wx::conv($datAnom[$sk][$i], Wx::AbsTemp, 1, 1) . ')';
 					}

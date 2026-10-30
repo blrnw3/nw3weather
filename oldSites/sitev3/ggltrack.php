@@ -8,8 +8,8 @@
 </script>
 
 <?php
-if( $me || $nw3 ||
-	($auto && $metaRefreshable && $_SESSION['count'][$file] > 2) ) {
+if( !empty($me) || !empty($nw3) ||
+	(!empty($auto) && !empty($metaRefreshable) && ($_SESSION['count'][$file] ?? 0) > 2) ) {
 		echo '<!--'; $skip = true;
 }
 ?>
@@ -27,4 +27,4 @@ if( $me || $nw3 ||
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
   })();
 </script>
-<?php if($skip) { echo '-->';} ?>
+<?php if(!empty($skip)) { echo '-->';} ?>

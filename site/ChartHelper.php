@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/wxcharts.js?20260819b"></script>' . "\n";
+		echo '<script src="/wxcharts.js?20261028a"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */
@@ -57,7 +57,7 @@ class Charts {
 		self::assets();
 		$id = self::container($opts);
 		$url = self::url('histdata.php', $params);
-		self::run('NW3.histChart(' . json_encode($id) . ',' . json_encode($url) . ',' . json_encode($opts) . ');');
+		self::run('NW3.histChart(' . nw3_json_encode($id) . ',' . nw3_json_encode($url) . ',' . nw3_json_encode($opts) . ');');
 	}
 
 	/** Alias for daily(). */
@@ -73,7 +73,7 @@ class Charts {
 		self::assets();
 		$id = self::container($opts);
 		$url = self::url('intradaydata.php', $params);
-		self::run('NW3.intradayChart(' . json_encode($id) . ',' . json_encode($url) . ',' . json_encode($var) . ');');
+		self::run('NW3.intradayChart(' . nw3_json_encode($id) . ',' . nw3_json_encode($url) . ',' . nw3_json_encode($var) . ');');
 	}
 
 	/**
@@ -107,8 +107,8 @@ class Charts {
 		$id = self::container($opts);
 		$url = self::url('intradaydata.php', $params);
 		$initial = isset($opts['initial']) ? $opts['initial'] : $first;
-		self::run('NW3.intradayPanel(' . json_encode($id) . ',' . json_encode($url) . ','
-			. json_encode($initial) . ',' . json_encode('#' . $panelId . '-vars button') . ');');
+		self::run('NW3.intradayPanel(' . nw3_json_encode($id) . ',' . nw3_json_encode($url) . ','
+			. nw3_json_encode($initial) . ',' . nw3_json_encode('#' . $panelId . '-vars button') . ');');
 	}
 
 	/**
@@ -162,7 +162,7 @@ class Charts {
 		if (!empty($opts['dateLabel'])) {
 			$cfg['dateLabel'] = $opts['dateLabel'];
 		}
-		self::run('NW3.intradayFixed(' . json_encode($cfg) . ');');
+		self::run('NW3.intradayFixed(' . nw3_json_encode($cfg) . ');');
 
 		echo '<h2>Wind rose</h2>' . "\n";
 		self::rose($roseParams, array('height' => $roseH));
@@ -174,7 +174,7 @@ class Charts {
 		$id = self::container($opts);
 		$url = self::url('rosedata.php', $params);
 		$jsOpts = array('legend' => !(isset($opts['legend']) && $opts['legend'] === false));
-		self::run('NW3.windRose(' . json_encode($id) . ',' . json_encode($url) . ',' . json_encode($jsOpts) . ');');
+		self::run('NW3.windRose(' . nw3_json_encode($id) . ',' . nw3_json_encode($url) . ',' . nw3_json_encode($jsOpts) . ');');
 	}
 
 	/**
@@ -187,7 +187,7 @@ class Charts {
 		if ($series === null) { $series = Forecast::meteogramSeries(); }
 		$height = isset($opts['height']) ? (int)$opts['height'] : 420;
 		$id = self::container(array_merge($opts, array('height' => $height, 'class' => 'wxchart fc-meteogram')));
-		self::run('NW3.meteogramChart(' . json_encode($id) . ',' . json_encode($series) . ');');
+		self::run('NW3.meteogramChart(' . nw3_json_encode($id) . ',' . nw3_json_encode($series) . ');');
 	}
 
 	/**
@@ -273,7 +273,7 @@ class Charts {
 				array('id' => 'wx3-multi-b', 'kind' => 'wgp'),
 			),
 		);
-		self::run('NW3.intradayPage(' . json_encode($cfg) . ');');
+		self::run('NW3.intradayPage(' . nw3_json_encode($cfg) . ');');
 	}
 
 	/**
@@ -394,7 +394,7 @@ class Charts {
 			'defaultMode' => $defaultMode,
 			'defaultNum' => $defaultNum,
 		);
-		self::run('NW3.graphViewer(' . json_encode($cfg) . ');');
+		self::run('NW3.graphViewer(' . nw3_json_encode($cfg) . ');');
 	}
 
 	/**
@@ -667,7 +667,7 @@ class Charts {
 			'defaultCume' => $defaultCume,
 			'varMeta' => $varMeta,
 		);
-		self::run('NW3.histSelectGrouped(' . json_encode($cfg) . ');');
+		self::run('NW3.histSelectGrouped(' . nw3_json_encode($cfg) . ');');
 	}
 
 	/**
@@ -761,7 +761,7 @@ class Charts {
 			'refreshOnFocus' => !empty($opts['refreshOnFocus']),
 			'prefetch' => !empty($opts['prefetch']),
 		);
-		self::run('NW3.histSelectGrouped(' . json_encode($cfg) . ');');
+		self::run('NW3.histSelectGrouped(' . nw3_json_encode($cfg) . ');');
 	}
 
 	/**
@@ -899,6 +899,6 @@ class Charts {
 			'varMeta' => $varMeta,
 			'aggLabels' => $aggLabels,
 		);
-		self::run('NW3.histViewer(' . json_encode($cfg) . ');');
+		self::run('NW3.histViewer(' . nw3_json_encode($cfg) . ');');
 	}
 }

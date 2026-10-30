@@ -87,8 +87,8 @@ foreach( $ranked as $rnk => $val ) {
 }
 
 $footCond = $month === 0 || $month == $dmonth;
-rankTable($highest, $highest_day, $typeconvNum, $typevalcolNum, $valcolAbsfix, $limit, "Highest", true, $hasToday, $footCond);
-rankTable($lowest, $lowest_day, $typeconvNum, $typevalcolNum, $valcolAbsfix, $limit, "Lowest", false, $hasToday, $footCond);
+rankTable($highest, $highest_day, $typeconvNum, $typevalcolNum, $valcolAbsfix ?? null, $limit, "Highest", true, $hasToday, $footCond);
+rankTable($lowest, $lowest_day, $typeconvNum, $typevalcolNum, $valcolAbsfix ?? null, $limit, "Lowest", false, $hasToday, $footCond);
 
 rankLimitForm();
 
@@ -96,6 +96,7 @@ if($month === 0) {
 } else {
 	$extraMon = ' in '. $months3[$month-1];
 }
+$extraCount = '';
 if($isSum) {
 	$c = 0;
 	foreach($ranked as $v) {
@@ -104,6 +105,7 @@ if($isSum) {
 	$extraCount = ", and $c values > 0";
 }
 
+$extraMon = $extraMon ?? ''; $extraCount = $extraCount ?? '';
 echo "<p>Ranked daily data from $startYrReport to present for London, nw3. For $description, there are<b> $sortLen </b>valid values$extraMon$extraCount</p>";
 
 historical_info($startYrReport);

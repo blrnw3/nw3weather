@@ -87,7 +87,7 @@ for($m = 0; $m < 12; $m++) {
 	$vars[12][$m] .= ' (' . acronym('Maximum Possible: ' . $maxsun[$m] . ' hrs',round(100*$vars[12][$m]/$maxsun[$m]),true) . ')';
 	$vars[11][$m] = acronym(roundi(100*$vars[11][$m]/get_days_in_month($m+1,2009)/24) . '% of a maximum possible: '. get_days_in_month($m+1,2009)*24 . ' hrs',$vars[11][$m]);
 	$style = ($m+1 == $dmonth) ? 'hlite' : ( ($m % 2 == 0) ? 'light' : 'dark' );
-	echo '<tr class="row', $style, '"', $currbig, '>
+	echo '<tr class="row', $style, '"', ($currbig ?? ''), '>
 		<td class="td4" style="font-weight:bold">',$months[$m],'</td>';
 	for($v = 0; $v < count($ctype); $v++) {
 		if($v == 4) { $dpa = -1; } else { $dpa = 0; }
@@ -142,7 +142,7 @@ echo '<tr class="rowdark">
 	<td class="td4" style="font-weight:bold">Annual</td>';
 for($v = 0; $v < count($ctype); $v++) {
 	if($v == 4) { $dpa = -1; } else { $dpa = 0; }
-	echo '<td class="td',$stype[$v]+$extra,'C">', conv($annualav[$v],$ctype[$v],0,0,$dpa), '</td>
+	echo '<td class="td',$stype[$v]+($extra ?? 0),'C">', conv($annualav[$v],$ctype[$v],0,0,$dpa), '</td>
 		';
 }
 echo '</tr>';

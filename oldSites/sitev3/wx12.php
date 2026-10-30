@@ -221,8 +221,8 @@ for($i = 0; $i < 12; $i++) {
 $style_end = 'border-top:4px solid #0431B4;border-bottom:4px solid #0431B4;font-size:110% '; ?>
 <tr class="rowlight">
 	<td style="<?php echo $style_end; ?>" class="td12">12-month Total</td>
-	<td style="<?php echo $style_end; ?>" class="td12"><?php echo conv(array_sum($raintots),2,1); ?></td>
-	<td style="<?php echo $style_end; ?>" class="td12"><?php echo round(array_sum($raintots)*100/array_sum($rainav)); ?>%</td>
+	<td style="<?php echo $style_end; ?>" class="td12"><?php echo conv(nw3_array_sum($raintots),2,1); ?></td>
+	<td style="<?php echo $style_end; ?>" class="td12"><?php echo nw3_round(nw3_array_sum($raintots)*100/nw3_array_sum($rainav)); ?>%</td>
 </tr>
 </table>
 

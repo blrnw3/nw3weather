@@ -48,7 +48,7 @@ $dpInt2 = (int)round($dpVal);
 $num = 2.3;
 $dpVal = ($num - 2) * 10;
 $dpInt = (int)$dpVal;
-$dpInt2 = (int)round($dpVal);
+$dpInt2 = (int)nw3_round($dpVal);
 
 echo '<pre>';
 var_dump($num);
@@ -148,13 +148,13 @@ for ($y = 2009; $y <= $dyear; $y++) { //Rain tags
 }
 $rainallCnt = count($rainall);
 
-$allrn = array_sum($rainall);
+$allrn = nw3_array_sum($rainall);
 $rain365a = $rain2[$dyear] + $rain2[$dyear - 1];
 var_dump($rain365a);
 $raintots = array_merge($rain3[$dyear] + $rain3[$dyear - 1]);
 $day_rain_last_year = $rains[$dyear - 1][$dmonth][$dday];
-$monthrn = array_sum($rains[$dyear][$dmonth]);
-$yearrn = array_sum($rain2[$dyear]);
+$monthrn = nw3_array_sum($rains[$dyear][$dmonth]);
+$yearrn = nw3_array_sum($rain2[$dyear]);
 $yestrn = $ystdrain = $rain2[$yr_yest][$dz_yest];
 
 for ($d = 1; $d <= 31; $d++) {
@@ -362,12 +362,12 @@ function monthlyReport($repMonth, $repYear) {
 	$bigGusts = sum_cond($DATA[11][$repYear][$repMonth], true, 30);
 	$maxDepth = $manualRawM[4]['max'];
 	$fallSnow = pluralFix($manualRawM[3]['cnt'], true);
-	$fallSnowAnomI = round($manualRawM[3]['cnt'] - $GLOBALS['FSav'][$repMonth-1]);
+	$fallSnowAnomI = nw3_round($manualRawM[3]['cnt'] - $GLOBALS['FSav'][$repMonth-1]);
 	$fallSnowAnom = abs($fallSnowAnomI);
 	$fallSnowAnom2 = ($fallSnowAnomI < 0) ? 'below' : 'above';
 	$lySnow = pluralFix($manualRawM[4]['cnt']);
 	$AFavr = signify($AFs - $GLOBALS['AFav'][$repMonth-1]);
-	$LSavr = signify(round($manualRawM[4]['cnt'] - $GLOBALS['LSav'][$repMonth-1]));
+	$LSavr = signify(nw3_round($manualRawM[4]['cnt'] - $GLOBALS['LSav'][$repMonth-1]));
 	$hail  = pluralFix($manualRawM[5]['cnt'], true);
 	$mm10 = 10; //, 2, true, false, -1);
 	$mph30 = 30; //, 4, true, false, -1);
@@ -463,12 +463,12 @@ if(isset($_GET['mdattest'])) {
 		$bigGusts = sum_cond($DATA[11][$repYear][$repMonth], true, 30);
 		$maxDepth = conv($manualRawM[4]['max'], 6);
 		$fallSnow = pluralFix($manualRawM[3]['cnt'], true);
-		$fallSnowAnomI = round($manualRawM[3]['cnt'] - $FSav[$repMonth-1]);
+		$fallSnowAnomI = nw3_round($manualRawM[3]['cnt'] - $FSav[$repMonth-1]);
 		$fallSnowAnom = abs($fallSnowAnomI);
 		$fallSnowAnom2 = ($fallSnowAnomI < 0) ? 'below' : 'above';
 		$lySnow = pluralFix($manualRawM[4]['cnt']);
 		$AFavr = signify($AFs - $AFav[$repMonth-1]);
-		$LSavr = signify(round($manualRawM[4]['cnt'] - $LSav[$repMonth-1]));
+		$LSavr = signify(nw3_round($manualRawM[4]['cnt'] - $LSav[$repMonth-1]));
 		$hail  = pluralFix($manualRawM[5]['cnt'], true);
 		$mm10 = conv(10, 2, true, false, -1);
 		$mph30 = conv(30, 4, true, false, -1);

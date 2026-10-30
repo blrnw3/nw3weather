@@ -146,12 +146,12 @@ public static function generate($repMonth, $repYear) {
 	$bigGusts = Util::cond_count($DATA[11][$repYear][$repMonth], true, 30);
 	$maxDepth = $manualRawM[4]['max'];
 	$fallSnow = self::pluralFix($manualRawM[3]['cnt'], true);
-	$fallSnowAnomI = round($manualRawM[3]['cnt'] - LTA::$vars['fsdays']['monthly'][$repMonth-1]);
+	$fallSnowAnomI = nw3_round($manualRawM[3]['cnt'] - LTA::$vars['fsdays']['monthly'][$repMonth-1]);
 	$fallSnowAnom = abs($fallSnowAnomI);
 	$fallSnowAnom2 = ($fallSnowAnomI < 0) ? 'below' : 'above';
 	$lySnow = self::pluralFix($manualRawM[4]['cnt']);
 	$AFavr = self::signify($AFs - LTA::$vars['afdays']['monthly'][$repMonth-1]);
-	$LSavr = self::signify(round($manualRawM[4]['cnt'] - LTA::$vars['lsdays']['monthly'][$repMonth-1]));
+	$LSavr = self::signify(nw3_round($manualRawM[4]['cnt'] - LTA::$vars['lsdays']['monthly'][$repMonth-1]));
 	$hail  = self::pluralFix($manualRawM[5]['cnt'], true);
 	$mm10 = 10; //, 2, true, false, -1);
 	$mph30 = 30; //, 4, true, false, -1);

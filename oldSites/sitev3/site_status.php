@@ -179,7 +179,7 @@ if(false && !$planned && $diff > 900) { // 15mins downtime before alert message 
 	showStatusDiv( $message .' &nbsp;
 	   System time: '. date('d/m/y, H:i T', $timestampWD) .
 	   '; &nbsp; Server time: '. date('d/m/y, H:i T') .
-	   '<br />Problem Age: '. round($diff/3600). ' hours'
+	   '<br />Problem Age: '. nw3_round($diff/3600). ' hours'
 	);
 	$mail5 = true;
 }

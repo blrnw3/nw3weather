@@ -1,7 +1,9 @@
 <?php
-const ROOT = '/var/www/html/';
+if(!defined('ROOT')) {
+	define('ROOT', '/var/www/html/'); // cron/bootstrap.php may have defined it already
+}
 require_once(ROOT . 'config/paths.php');
-const PHP_INT_MIN = -9223564353720;
+require_once(ROOT . 'compat.php'); // PHP 5.4/8.x shims (nw3_round etc.), PHP_INT_MIN polyfill
 
 const UNIT_UK = 0;
 const UNIT_US = 1;
@@ -9,8 +11,8 @@ const UNIT_EU = 2;
 
 class Site {
 	const MAIN_ROOT = ROOT;
-	const VID_ROOT = '/mnt/nw3-vol1/html/';
-	const CAM_ROOT = '/mnt/webcam/html/';
+	const VID_ROOT = '/srv/nw3weather/cam/video/';
+	const CAM_ROOT = '/srv/nw3weather/cam/stills/';
 	const IMG_ROOT = '/static-images/';
 
 	const EXEC_PATH = '/usr/bin/php -q /var/www/html/';
@@ -86,8 +88,8 @@ class Date {
 		self::$dt = date('t');
 		self::$dtstamp = mktime(0, 0, 0);
 		self::$da = ['j' => self::$dday, 'n' => self::$dmonth, 'Y' => self::$dyear];
-		self::$sunrise = date_sunrise(time(), SUNFUNCS_RET_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I'));
-		self::$sunset = date_sunset(time(), SUNFUNCS_RET_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I'));
+		self::$sunrise = nw3_sunrise(time(), NW3_SUN_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I'));
+		self::$sunset = nw3_sunset(time(), NW3_SUN_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I'));
 		self::$dtstamp_yest = mktime(0, 0, 0, self::$dmonth, self::$dday-1, self::$dyear);
 		self::$yr_yest = date('Y',self::$dtstamp_yest);
 		self::$mon_yest = date('n',self::$dtstamp_yest);
@@ -253,7 +255,7 @@ class Date {
 	}
 	public static function decimal_timefix($dec) {
 		$hr = floor($dec*24);
-		return Util::zerolead($hr) . ':' . round(($dec*24-$hr)*60);
+		return Util::zerolead($hr) . ':' . nw3_round(($dec*24-$hr)*60);
 	}
 	public static function timeformat($time) {
 		if(strpos($time, ':')) { return date('H:i', strtotime($time)); }
@@ -267,6 +269,22 @@ class Date {
 		$days = 0;
 		for($s2 = 0; $s2 < 3; $s2++) { $days += self::get_days_in_month(self::$snums[$sea][$s2]+1,$year); }
 		return $days;
+	}
+	/**
+	 * Midnight on the first day of the current meteorological season
+	 * (Dec 1 of the previous year during Jan/Feb). mktime normalises month 0 to Dec.
+	 * @return int timestamp
+	 */
+	public static function seasonStart() {
+		$m = (int)self::$dmonth;
+		return mktime(0, 0, 0, $m - ($m % 3), 1, (int)self::$dyear);
+	}
+	/** Days elapsed in the current season, including today (1 on the season's first day). */
+	public static function seasonDaysElapsed() {
+		$start = self::seasonStart();
+		$noonToday = mktime(12, 0, 0, (int)self::$dmonth, (int)self::$dday, (int)self::$dyear);
+		$noonStart = mktime(12, 0, 0, (int)date('n', $start), 1, (int)date('Y', $start));
+		return (int)nw3_round(($noonToday - $noonStart) / 86400) + 1;
 	}
 	public static function get_days_in_year($year) {
 		return date("z", Date::mkdate(12,31,$year)) + 1;
@@ -291,11 +309,11 @@ class Date {
 	   }
 
 	   if($diff < 100) {
-		   $ago = round($diff) .' mins';
+		   $ago = nw3_round($diff) .' mins';
 	   } elseif($diff < 3000) {
-		   $ago = round($diff / 60) .' hours';
+		   $ago = nw3_round($diff / 60) .' hours';
 	   } else {
-		   $ago = round($diff / 60 / 24) .' days';
+		   $ago = nw3_round($diff / 60 / 24) .' days';
 	   }
 
 	   return $ago;
@@ -488,7 +506,7 @@ class Util {
 	   if(!is_array($array)) {
 		   return null;
 	   }
-	   return array_sum($array) / Util::mycount($array);
+	   return nw3_array_sum($array) / Util::mycount($array);
    }
 
    public static function extremeValAndKey($arr, $type) {
@@ -569,7 +587,8 @@ class Util {
 		if($isGreater) {
 			foreach($arr as $val) {
 				if( !Util::isBlank($val) ) {
-					if($val > $limit) {
+					// nw3_to_number: on 8.x a non-numeric string (e.g. 'c:b/o') compares to a number as a string
+					if(nw3_to_number($val) > $limit) {
 						$cnt++;
 					}
 				} else {
@@ -579,7 +598,7 @@ class Util {
 		} else {
 			foreach($arr as $val) {
 				if( !Util::isBlank($val) ) {
-					if($val < $limit) {
+					if(nw3_to_number($val) < $limit) {
 						$cnt++;
 					}
 				} else {
@@ -633,7 +652,7 @@ class Util {
 	}
 	public static function roundi($val) {
 		$dp = ($val < 10) ? 1 : 0;
-		return round($val, $dp);
+		return nw3_round($val, $dp);
 	}
 	/**
 	 * Converts a boolean into a true/false string (good for JS)
@@ -654,7 +673,7 @@ class Util {
 		$size = ($size < 1) ? 1 : $size;
 		if($dir === 0) { $new = floor($val / $size); }
 		elseif($dir === 1) { $new = ceil($val / $size); }
-		else { $new = round($val / $size); }
+		else { $new = nw3_round($val / $size); }
 		return $new * $size;
 	}
 	/**
@@ -678,8 +697,8 @@ class Util {
 			if($up) { if($near[$i] > 0) { $near[$i] = -99; } }
 			else { $near[$i] = abs($near[$i]); }
 		}
-		if($up) { $nearest = array_search( max($near), $near ); }
-		else { $nearest = array_search( min($near), $near ); }
+		if($up) { $nearest = nw3_array_search( max($near), $near ); }
+		else { $nearest = nw3_array_search( min($near), $near ); }
 		return $arr[$nearest];
 	}
 	public static function array_dswap($arr) {
@@ -708,7 +727,7 @@ class Util {
 		if(is_array($val)) {
 			debug_print_backtrace();
 		}
-		return (strlen($val) === 0 || $val === '-');
+		return (strlen((string)$val) === 0 || $val === '-');
 	}
 	/**
 	 * Tests for a blank string/value. NB: '-' also counts as empty.
@@ -777,7 +796,12 @@ class Util {
 	}
 
 	public static function listdir($dir) {
-		return array_diff(scandir($dir), array('.', '..'));
+		$list = @scandir($dir);
+		if($list === false) {
+			trigger_error("listdir: cannot read $dir", E_USER_WARNING);
+			return array(); // 5.4's array_diff(false, ...) also gave nothing; 8.x throws TypeError
+		}
+		return array_diff($list, array('.', '..'));
 	}
 
 	public static function array_filter_keys($array, $callback) {
@@ -803,7 +827,7 @@ class Util {
 		if (!is_array($array)) { return $result; }
 		foreach ($array as $k => $val) {
 			if ($val === null || is_array($val)) { continue; }
-			if (Util::isBlank($val) || !is_numeric($val)) { continue; }
+			if (Util::isBlank($val) || !nw3_is_numeric($val)) { continue; }
 			$result[$k] = floatval($val);
 		}
 		return $result;
@@ -821,43 +845,141 @@ class Util {
 
 class Misc {
 
+	// Yearly timelapses sample every 3 h in daylight (and midday). tl_src/<cam>/Y/m/d/ keeps just those frames
+	// (same layout as camchive/) so a yearly build never needs the full year of frames on disk.
+	const TL_SRC_FREQ = 180;
+
+	public static function tl_src_root() {
+		return Site::CAM_ROOT . 'tl_src';
+	}
+
+	/** Daylight window for a day as minutes of the day: array(sunrise - $twiset, sunset + $twiset). */
+	public static function timelapse_window($day_ts, $twiset) {
+		$rise = nw3_sunrise($day_ts, NW3_SUN_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $day_ts));
+		$set = nw3_sunset($day_ts, NW3_SUN_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $day_ts));
+		return array(intval($rise * 60 - $twiset), intval($set * 60 + $twiset));
+	}
+
+	/** Whether a frame (minute of the day $num, on the day starting $day_ts) belongs in tl_src. */
+	public static function tl_src_wants($day_ts, $num) {
+		if($num % self::TL_SRC_FREQ !== 0) { return false; }
+		list($rise, $set) = self::timelapse_window($day_ts, 0); // superset of every yearly build's window
+		return $num > $rise && $num < $set;
+	}
+
+	/**
+	 * Copy one camchive frame into tl_src if it is a sampled frame and not there yet.
+	 * @param string $ymd 'Y/m/d'  @param string $file e.g. '1200hik.jpg'
+	 * @return bool true if a frame was added
+	 */
+	public static function tl_src_add($cam, $ymd, $file, $src_path) {
+		if(!preg_match('/^(\d{2})(\d{2})' . preg_quote($cam, '/') . '\.jpg$/', $file, $mt)) { return false; }
+		$num = intval($mt[1]) * 60 + intval($mt[2]);
+		if($num % self::TL_SRC_FREQ !== 0) { return false; }
+		$p = explode('/', $ymd);
+		if(count($p) !== 3 || !self::tl_src_wants(mktime(0, 0, 0, intval($p[1]), intval($p[2]), intval($p[0])), $num)) {
+			return false;
+		}
+		$dir = self::tl_src_root() . "/$cam/$ymd";
+		$dst = "$dir/$file";
+		if(file_exists($dst) || !is_file($src_path) || filesize($src_path) <= 1024) { return false; }
+		if(!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) { return false; }
+		$tmp = "$dst.part";
+		if(!@copy($src_path, $tmp)) { @unlink($tmp); return false; }
+		return rename($tmp, $dst);
+	}
+
+	/** Fill tl_src from camchive for the last $days days (today included). Self-heals missed minutes. @return int added */
+	public static function tl_src_sync($cam, $days = 7) {
+		$added = 0;
+		for($i = $days - 1; $i >= 0; $i--) {
+			$ymd = date('Y/m/d', mktime(0, 0, 0, date('n'), date('j') - $i, date('Y')));
+			for($num = 0; $num < 1440; $num += self::TL_SRC_FREQ) {
+				$file = sprintf('%02d%02d%s.jpg', floor($num / 60), $num % 60, $cam);
+				if(self::tl_src_add($cam, $ymd, $file, Site::CAM_ROOT . "camchive/$cam/$ymd/$file")) { $added++; }
+			}
+		}
+		return $added;
+	}
+
+	/** First and last day ('Y/m/d') held in tl_src for a year, or false if none. */
+	public static function tl_src_span($cam, $year) {
+		$first = $last = false;
+		$ybase = self::tl_src_root() . "/$cam/$year";
+		if(!is_dir($ybase)) { return false; }
+		foreach(self::sorted_dir($ybase) as $m) {
+			foreach(self::sorted_dir("$ybase/$m") as $d) {
+				if(!glob("$ybase/$m/$d/*.jpg")) { continue; }
+				if($first === false) { $first = "$year/$m/$d"; }
+				$last = "$year/$m/$d";
+			}
+		}
+		return $first === false ? false : array($first, $last);
+	}
+
+	private static function sorted_dir($dir) {
+		if(!is_dir($dir)) { return array(); }
+		$list = array_values(array_filter(Util::listdir($dir), function($n) { return ctype_digit($n); }));
+		sort($list);
+		return $list;
+	}
+
+	/**
+	 * Build a timelapse mp4 from archived frames.
+	 * @param string $src_root frames root laid out <cam>/Y/m/d/HHMM<cam>.jpg (default: the full camchive)
+	 * @return string|false the output file, or false if nothing was built (the existing file is left untouched)
+	 */
 	public static function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset = null, $cam = "sky",
-		$frame_rate = 24, $crf = 25, $name = null, $scale = "1080x720") {
+		$frame_rate = 24, $crf = 25, $name = null, $scale = "1080x720", $src_root = null) {
 
 		$months = $month ? array($month) : range(1, 12);
-		$src = Site::CAM_ROOT."camchive/$cam";
+		$src = ($src_root === null ? Site::CAM_ROOT . "camchive" : rtrim($src_root, '/')) . "/$cam";
 		if(is_null($name)) {
 			$period = is_null($twiset) ? "all" : "sun$twiset";
-			$name = "${cam}cam_test_${year}_m${month}_d${day}_f${freq}_p-${period}_r${frame_rate}";
+			$name = "{$cam}cam_test_{$year}_m{$month}_d{$day}_f{$freq}_p-{$period}_r{$frame_rate}";
 		}
-		$tmpdir = Site::VID_ROOT."tmpdir/$name";
-		$outfile = Site::VID_ROOT."timelapse/${name}.mp4";
+		if(!preg_match('/^[A-Za-z0-9_.-]+$/', $name) || !preg_match('/^\d+[x*:]\d+$/', $scale)) {
+			echo "extract_for_timelapse: bad name or scale\n";
+			return false;
+		}
+		$year = intval($year);
+		$freq = max(1, intval($freq));
+		$tmpdir = Site::VID_ROOT . "tmpdir/$name";
+		$tmpout = Site::VID_ROOT . "tmpdir/$name.mp4";
+		$outfile = Site::VID_ROOT . "timelapse/{$name}.mp4";
 
-		echo shell_exec("mkdir $tmpdir");
+		self::rm_frames_dir($tmpdir); // leftovers of an interrupted run
+		if(!is_dir($tmpdir) && !mkdir($tmpdir, 0775, true)) {
+			echo "cannot create $tmpdir\n";
+			return false;
+		}
 
+		$count = 0;
 		foreach($months as $mi) {
 			$m = Util::zerolead($mi);
 			$mbase = "$src/$year/$m/";
+			if(!is_dir($mbase)) { continue; }
 			$days = ($day == 0) ? Util::listdir($mbase) : array(Util::zerolead($day));
 			foreach($days as $d) {
 				$dbase = $mbase . $d . "/";
+				if(!is_dir($dbase)) { continue; }
 				$sproc = Date::mkdate($mi, intval($d), $year);
 				if(is_null($twiset)) {
 					$sunrise = -1;
 					$sunset = 9999;
 				} else {
-					$sunrise = intval(date_sunrise($sproc, SUNFUNCS_RET_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) * 60 - $twiset);
-					$sunset = intval(date_sunset($sproc, SUNFUNCS_RET_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) * 60 + $twiset);
+					list($sunrise, $sunset) = self::timelapse_window($sproc, $twiset);
 				}
 				echo "Processing $dbase: sunrise: $sunrise, sunset: $sunset\n";
 				foreach(Util::listdir($dbase) as $c){
+					if(!preg_match('/^\d{4}[a-z]+\.jpg$/', $c)) { continue; }
 					$hr = substr($c, 0, 2);
 					$min = substr($c, 2, 2);
 					$num = intval($hr) * 60 + intval($min);
 					if($num % $freq == 0 && $num > $sunrise && $num < $sunset) {
-						$trgt = "$tmpdir/$year$m${d}_$c";
+						$trgt = "$tmpdir/$year$m{$d}_$c";
 						if(file_exists($dbase . $c) && filesize($dbase . $c) > 1024) {
-							copy($dbase . $c, $trgt);
+							if(copy($dbase . $c, $trgt)) { $count++; }
 						} else {
 							echo "$c missing or empty \n";
 						}
@@ -865,17 +987,43 @@ class Misc {
 				}
 			}
 		}
-		$cmd = "/usr/bin/ffmpeg -r $frame_rate -pattern_type glob -y -i \"$tmpdir/*.jpg\" -crf $crf -vf scale=$scale $outfile";
+		echo "$count frames\n";
+		if($count === 0) {
+			self::rm_frames_dir($tmpdir);
+			echo "no frames: $outfile not rebuilt\n";
+			return false;
+		}
+
+		@unlink($tmpout);
+		$cmd = "/usr/bin/ffmpeg -nostdin -loglevel error -r " . intval($frame_rate) . " -pattern_type glob -y -i "
+			. escapeshellarg("$tmpdir/*.jpg") . " -crf " . intval($crf) . " -vf " . escapeshellarg("scale=$scale")
+			. " " . escapeshellarg($tmpout);
 		echo $cmd . "\n";
+		$out = array();
+		exec($cmd . ' 2>&1', $out, $rc);
+		echo implode("\n", $out) . "\n";
+		self::rm_frames_dir($tmpdir);
 
-		echo shell_exec("ls $tmpdir");
-
-		$ffmpeg_res = shell_exec($cmd);
-		echo $ffmpeg_res . "\n";
-
-		$res = shell_exec("rm -rf $tmpdir");
-		echo $res . "\n";
+		if($rc !== 0 || !is_file($tmpout) || filesize($tmpout) === 0) {
+			@unlink($tmpout);
+			echo "ffmpeg failed (exit $rc): $outfile not rebuilt\n";
+			return false;
+		}
+		if(!@rename($tmpout, $outfile)) { // e.g. the published file is locked
+			@unlink($tmpout);
+			echo "cannot replace $outfile\n";
+			return false;
+		}
 		return $outfile;
+	}
+
+	/** Remove a timelapse scratch dir (flat, files only). */
+	private static function rm_frames_dir($dir) {
+		if(!is_dir($dir) || is_link($dir)) { return; }
+		foreach(Util::listdir($dir) as $f) {
+			if(is_file("$dir/$f") || is_link("$dir/$f")) { unlink("$dir/$f"); }
+		}
+		@rmdir($dir);
 	}
 
 }

@@ -102,7 +102,7 @@ function getSunnyRangesFromJson($jsonPath, $returnAsString = false) {
 		$start = $r[0];
 		$end = $r[1];
 		$length_mins = $end - $start;
-		$length_hrs = round($length_mins / 60, 1);
+		$length_hrs = nw3_round($length_mins / 60, 1);
 		return $toHHMM($start) . '-' . $toHHMM($end) . ' (' . $length_hrs . 'h)';
 	}, $ranges);
 
@@ -115,8 +115,8 @@ function getSunnyRangesFromJson($jsonPath, $returnAsString = false) {
 if(isset($_GET['dtm'])) { $dtm = $_GET['dtm']; } else { $dtm = 1; }
 $mod_timestamp = mkdate(date('n'),date('j')-$dtm, date('Y'));
 
-$sunrise_time = date_sunrise($mod_timestamp, SUNFUNCS_RET_STRING, $lat, $lng, $zenith, date('I'));
-$sunset_time = date_sunset($mod_timestamp, SUNFUNCS_RET_STRING, $lat, $lng, $zenith, date('I'));
+$sunrise_time = nw3_sunrise($mod_timestamp, NW3_SUN_STRING, $lat, $lng, $zenith, date('I'));
+$sunset_time = nw3_sunset($mod_timestamp, NW3_SUN_STRING, $lat, $lng, $zenith, date('I'));
 
 echo "Sunrise: $sunrise_time. Sunset: $sunset_time.<br />";
 echo "Camlink: <a href='/oldSites/sitev3/highreswebcam.php?camtype=sky&light=day&width=6&freq=10'>Highres cam for today</a>";
@@ -176,7 +176,7 @@ if(isset($_POST['pwd'])) {
 			$newline[$i] = explode(',', $moddata[$i]);
 			$newline[$i][count($newline[$i])-1] = intval($newline[$i][count($newline[$i])-1]);
 			//array_splice($newline[$i],-1);
-			fputcsv($fildat, $newline[$i]);
+			nw3_fputcsv($fildat, $newline[$i]);
 		}
 		fclose($fildat);
 
@@ -185,7 +185,7 @@ if(isset($_POST['pwd'])) {
 		for($i = 0; $i < count($moddatat); $i++) {
 			$newlinet[$i] = explode(',', $moddatat[$i]);
 			$newlinet[$i][count($newlinet[$i])-1] = intval($newlinet[$i][count($newlinet[$i])-1]);
-			fputcsv($fildatt, $newlinet[$i]);
+			nw3_fputcsv($fildatt, $newlinet[$i]);
 		}
 		fclose($fildatt);
 
@@ -199,14 +199,14 @@ if(isset($_POST['pwd'])) {
 		for($i = 0; $i < count($moddatam); $i++) {
 			$newlinem[$i] = str_ireplace('"','',explode(',', $moddatam[$i]));
 			$newlinem[$i][count($newlinem[$i])-1] = intval($newlinem[$i][count($newlinem[$i])-1]);
-			fputcsv($fildatm, $newlinem[$i]);
+			nw3_fputcsv($fildatm, $newlinem[$i]);
 		}
 		fclose($fildatm);
 		echo "<p>Saved!</p>";
 		// Echo the new size of the saved file
 		$datfile = $fullpath."dat" . date('Y',mktime(1,1,1,date('n'),date('j')-$dtm,date('Y'))) . ".csv";
 		$filesize = filesize($datfile);
-		echo "<p>New file size: " . number_format($filesize) . " bytes</p>";
+		echo "<p>New file size: " . nw3_number_format($filesize) . " bytes</p>";
 //		serialiseCSVm();
 
 //		exec('/usr/local/bin/php -q /var/www/html/cron_tags.php blr ftw > /dev/null &');

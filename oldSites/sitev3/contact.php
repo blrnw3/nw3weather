@@ -70,7 +70,7 @@
 </form>-->
 
 <?php
-$saved = $_REQUEST['saved'];
+$saved = $_REQUEST['saved'] ?? null;
 if (false && $saved == 1) {
 
 	$email_to = "blr@nw3weather.co.uk";

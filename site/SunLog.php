@@ -119,9 +119,9 @@ class SunLog {
 				$i = $j;
 			}
 		}
-		return array('hours' => round(($sun + $fill) / 60, 2), 'measured' => round($sun / 60, 2),
-			'filled' => round($fill / 60, 2), 'unknown' => round($unknown / 60, 2), 'possible' => round($possible / 60, 2),
-			'coverage' => round($cov, 3), 'scaled' => $fill > 0, 'partial' => $unknown > 0);
+		return array('hours' => nw3_round(($sun + $fill) / 60, 2), 'measured' => nw3_round($sun / 60, 2),
+			'filled' => nw3_round($fill / 60, 2), 'unknown' => nw3_round($unknown / 60, 2), 'possible' => nw3_round($possible / 60, 2),
+			'coverage' => nw3_round($cov, 3), 'scaled' => $fill > 0, 'partial' => $unknown > 0);
 	}
 
 	/** Spells for the ribbon: list of array(start, end (unix, exclusive), state sun|nosun|unknown). */
@@ -183,7 +183,7 @@ class SunLog {
 			'scaled' => $tot ? $tot['scaled'] : false,
 			'partial' => $tot ? $tot['partial'] : false,
 			'unknown_h' => $tot ? $tot['unknown'] : null,
-			'pct_of_max' => ($hrs !== null && $max) ? (int)round(100 * min($hrs, $max) / $max) : null,
+			'pct_of_max' => ($hrs !== null && $max) ? (int)nw3_round(100 * min($hrs, $max) / $max) : null,
 			'sunmax' => $max,
 			'state' => $state,
 			'state_time' => $stateTime,
@@ -220,11 +220,11 @@ function nw3_render_sun_card($now = null) {
 		foreach ($segs as $g) {
 			$w = 100 * ($g['end'] - $g['start']) / $span;
 			$title = date('H:i', $g['start']) . '-' . date('H:i', $g['end']) . ' ' . ($g['state'] === 'sun' ? 'sunny' : ($g['state'] === 'nosun' ? 'not sunny' : 'no data'));
-			echo '<span class="seg seg-' . $g['state'] . '" style="width:' . round($w, 3) . '%" title="' . $title . '"></span>';
+			echo '<span class="seg seg-' . $g['state'] . '" style="width:' . nw3_round($w, 3) . '%" title="' . $title . '"></span>';
 			$doneEnd = $g['end'];
 		}
 		if ($doneEnd < $t1) {
-			echo '<span class="seg seg-future" style="width:' . round(100 * ($t1 - $doneEnd) / $span, 3) . '%"></span>';
+			echo '<span class="seg seg-future" style="width:' . nw3_round(100 * ($t1 - $doneEnd) / $span, 3) . '%"></span>';
 		}
 		echo '</div>';
 		echo '<div class="sun-ribbon-axis"><span>' . date('H:i', $t0) . '</span><span>' . date('H:i', $t1) . '</span></div>';

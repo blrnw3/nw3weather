@@ -16,7 +16,7 @@ $ajax = true;
 <?php
 $liveData = array((float)$temp, (int)$humi, (float)$dewp, (int)$pres, (float)$wind, (float)$rain);
 //for flash function in js
-echo '<input id="newData" type="hidden" value="'. json_encode($liveData) .'" />';
+echo '<input id="newData" type="hidden" value="'. nw3_json_encode($liveData) .'" />';
 
 $headings = array('', 'Measure', 'Current<span id="elapsedTime"> - ? s ago</span>', 'Max/Min', 'Rate', '24hr mean');
 $widths = array(0,  6, 15, 24, 21, 20, 14);
@@ -43,9 +43,9 @@ $vars2a = $var1Names; $vars2a[5] = 'rate';
 
 $vars2b = $vars3a = $vars3b = $vars4 = array();
 foreach($var1Names as $var) {
-	 $vars2b[] = $NOW['min'][$var];
-	 $vars3a[] = $HR24['changeHr'][$var];
-	 $vars3b[] = $HR24['changeDay'][$var];
+	 $vars2b[] = $NOW['min'][$var] ?? null;
+	 $vars3a[] = $HR24['changeHr'][$var] ?? null;
+	 $vars3b[] = $HR24['changeDay'][$var] ?? null;
 	 $vars4[] = $HR24['mean'][$var];
 }
 $vars2b[4] = $NOW['max']['gust']; $vars2b[5] = $NOW['max']['rnhr'];
@@ -80,7 +80,7 @@ for($i = 0; $i < count($measures); $i++) {
 	td( '<img src="/static-images/'. $images[$i] .'_small.png" alt="icon'.$var1Names[$i].'" width="40" height="40" />', 'tdmain' );
 	td( '<b><a class="hidden-link" href="/wx'. $wx[$i] .'.php" title="View detailed '. $measures[$i] .' data">'. $measures[$i] .'</a></b>', 'tdmain' );
 	td( '<b><span id="var'.$i.'" style="">'. conv($liveData[$i], $convs[$i]) ."</span></b>  &nbsp; ". $arrow . $extra1, 'tdmain' );
-	td( $extra2a . conv($NOW['max'][$vars2a[$i]], $convs[$i] + (($i === 5) ? 0.1 : 0)) . $t1 .'<br />'. $extra2b . conv($vars2b[$i], $convs[$i]) . $t2, 'tdmain' );
+	td( $extra2a . conv($NOW['max'][$vars2a[$i]] ?? null, $convs[$i] + (($i === 5) ? 0.1 : 0)) . $t1 .'<br />'. $extra2b . conv($vars2b[$i], $convs[$i]) . $t2, 'tdmain' );
 	td( $extra3a . conv($vars3a[$i], $convs[$i] + 0.1, true, $cond) . $ratehr .'<br />'.
 		$extra3b . ( ($i !== 4) ? conv($vars3b[$i], $convs[$i] + (($i < 5) ? 0.1 : 0), true, $cond) : $vars3b[$i] ) . $rate24, 'tdmain' );
 	td( conv($vars4[$i], $convs[$i]) . $extra4, 'tdmain' );

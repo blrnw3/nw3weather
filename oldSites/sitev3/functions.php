@@ -28,14 +28,14 @@ function conv($tag, $type, $unit = true, $sign = false, $dpa = 0, $abs = false, 
 	if( is_null($tag) ) { return 'null'; } //null takes grater precedence than blank
 	if( isBlank($tag) ) { if($debug) { echo 'Bad tag<br />'; } return ''; }
 
-	if($unit) { $uarr = $conv_units; }
+	$uarr = $unit ? $conv_units : array();
 
 	if($type == 4.5) { return $noText ? $dat : degname($dat); }
 	elseif($type == 0.1) { return $noText ? $dat : hailname($dat); }
 	elseif($type == 0.2) { return $noText ? $dat : thundername($dat); }
 
 	elseif($type == 2.1) { if($unit) { $uarr[2] .= '/h'; } if($dat > 5) { $dpa = -1; } }
-	elseif($type == 8 && $dat > 1) { $uarr[8] .= 's'; }
+	elseif($type == 8 && $dat > 1) { $uarr[8] = (isset($uarr[8]) ? $uarr[8] : '') . 's'; }
 
 	if($sign) { $pom = '+'; } else { $pom = ''; }
 
@@ -51,22 +51,22 @@ function conv($tag, $type, $unit = true, $sign = false, $dpa = 0, $abs = false, 
 	if(($type == 9 || $type == 6) && $dat < 1 && $dat > 0) { $dpa++; }
 	if($abs) { $dat = abs($dat); }
 
-	$dpf = round($dp[intval($type)]+$dpa);
+	$dpf = nw3_round($dp[intval($type)]+$dpa);
 	$strret = $pom.'.'. $dpf.'f';
-	return sprintf("%$strret", $dat).$uarr[intval($type)];
+	return sprintf("%$strret", $dat).(isset($uarr[intval($type)]) ? $uarr[intval($type)] : '');
 }
 
 function hailname($val) {
 	$types = array('No', 'Small', 'Med', 'Large');
-	return $types[$val];
+	return $types[(int)$val] ?? null;
 }
 function thundername($val) {
 	$types = array('N', 'Y', 'Light', 'Mod', 'Sevr');
-	return $types[$val];
+	return $types[(int)$val] ?? null;
 }
 function degname($winddegree) {
 	$windlabels = array ("N","NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW","SW", "WSW", "W", "WNW", "NW", "NNW","N");
-	return $windlabels[ round($winddegree / 22.5, 0) ];
+	return $windlabels[ nw3_round($winddegree / 22.5, 0) ];
 }
 
 /**
@@ -94,8 +94,8 @@ function zerolead($tag) {
 	return $tag;
 }
 function roundi($val) {
-	if($val < 10) { $dp = 1; }
-	return round($val,$dp);
+	$dp = ($val < 10) ? 1 : 0;
+	return nw3_round($val,$dp);
 }
 
 /**
@@ -118,7 +118,7 @@ function roundbig($val, $size = 5, $dir = false) {
 	$size = ($size < 1) ? 1 : $size;
 	if($dir === 0) { $new = floor($val / $size); }
 	elseif($dir === 1) { $new = ceil($val / $size); }
-	else { $new = round($val / $size); }
+	else { $new = nw3_round($val / $size); }
 	return $new * $size;
 }
 
@@ -132,7 +132,8 @@ function roundbig($val, $size = 5, $dir = false) {
  * @return string
  */
 function percent($val, $div, $dp = 0, $showp = true, $brackets = true) {
-	$dat = sprintf('%.'.$dp.'f',$val/$div*100);
+	$div = nw3_to_number($div); // blank inputs fatal on PHP 8
+	$dat = sprintf('%.'.$dp.'f', $div ? nw3_to_number($val)/$div*100 : 0);
 	if($showp) { $dat .= '%'; }
 	if($brackets) { $dat = '(' . $dat . ')'; }
 	return $dat;
@@ -143,16 +144,18 @@ function find_nearest($val, $arr, $up = false) {
 		if($up) { if($near[$i] > 0) { $near[$i] = -99; } }
 		else { $near[$i] = abs($near[$i]); }
 	}
-	if($up) { $nearest = array_search( max($near), $near ); }
-	else { $nearest = array_search( min($near), $near ); }
+	if($up) { $nearest = nw3_array_search( max($near), $near ); }
+	else { $nearest = nw3_array_search( min($near), $near ); }
 	return $arr[$nearest];
 }
 
 function time_av($times) {
-	for($i = 0; $i < count($times); $i++) {
+	$mktimes = array();
+	$n = is_array($times) ? count($times) : 0; // no times for the period: 'n/a', as on PHP 5
+	for($i = 0; $i < $n; $i++) {
 		if(!strpos($times[$i], '*')) {
 			if(strpos($times[$i], ':') > 0) { $mktimes[$i] = strtotime($times[$i]); }
-			elseif($times[$i] < 1 && $times[$i] > 0) { $mktimes[$i] = decimal_timefix($times[$i]); }
+			elseif(nw3_to_number($times[$i]) < 1 && nw3_to_number($times[$i]) > 0) { $mktimes[$i] = decimal_timefix($times[$i]); }
 		}
 	}
 	$meanTime = mean($mktimes);
@@ -160,7 +163,7 @@ function time_av($times) {
 }
 function decimal_timefix($dec) {
 	$hr = floor($dec*24);
-	return zerolead($hr) . ':' . round(($dec*24-$hr)*60);
+	return zerolead($hr) . ':' . nw3_round(($dec*24-$hr)*60);
 }
 function timeformat($time) {
 	if(strpos($time, ':')) { return date('H:i', strtotime($time)); }
@@ -328,7 +331,7 @@ function daytotimeCM($days) {
 }
 
 function rate_fix($rate) {
-	if(round($rate) > 5) { return round($rate); } else { return $rate; }
+	if(nw3_round($rate) > 5) { return nw3_round($rate); } else { return $rate; }
 }
 
 /**
@@ -363,7 +366,7 @@ function mean($array, $cnt = false) {
 
 	$finalCnt = $cnt ? $cnt : $validCnt;
 
-	return ($validCnt > 0) ? array_sum($array)/$finalCnt : '';
+	return ($validCnt > 0) ? nw3_array_sum($array)/$finalCnt : '';
 }
 
 /**
@@ -422,6 +425,7 @@ function get_days_in_month($month, $year = 2009) {
 }
 function get_seasondays($sea, $year = 2009) {
 	$days = 0;
+	global $snums; // was missing: every season counted as 3 x 31 days
 	for($s2 = 0; $s2 < 3; $s2++) { $days += get_days_in_month($snums[$sea][$s2]+1,$year); }
 	return $days;
 }
@@ -635,6 +639,7 @@ function tr_end() {
  */
 function td($value, $class = null, $width = false, $colspan = false, $rowspan = false) {
 	if(is_null($class)) { $class = 'td4'; }
+	$wid = $csp = $rsp = '';
 	if($width) { $wid = ' width="'.$width.'%"'; }
 	if($colspan) { $csp = ' colspan="'.$colspan.'"'; }
 	if($rowspan) { $rsp = ' rowspan="'.$rowspan.'"'; }
@@ -751,11 +756,11 @@ function secsToReadable($secs) {
 	}
 
 	if($diff < 100) {
-		$ago = round($diff) .' mins';
+		$ago = nw3_round($diff) .' mins';
 	} elseif($diff < 3000) {
-		$ago = round($diff / 60) .' hours';
+		$ago = nw3_round($diff / 60) .' hours';
 	} else {
-		$ago = round($diff / 60 / 24) .' days';
+		$ago = nw3_round($diff / 60 / 24) .' days';
 	}
 
 	return $ago;
@@ -873,10 +878,10 @@ function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset =
 	$src = CAM_ROOT."camchive/$cam";
 	if(is_null($name)) {
 		$period = is_null($twiset) ? "all" : "sun$twiset";
-		$name = "${cam}cam_test_${year}_m${month}_d${day}_f${freq}_p-${period}_r${frame_rate}";
+		$name = "{$cam}cam_test_{$year}_m{$month}_d{$day}_f{$freq}_p-{$period}_r{$frame_rate}";
 	}
 	$tmpdir = VID_ROOT."tmpdir/$name";
-	$outfile = VID_ROOT."timelapse/${name}.mp4";
+	$outfile = VID_ROOT."timelapse/{$name}.mp4";
 
 	echo shell_exec("mkdir $tmpdir");
 
@@ -891,8 +896,8 @@ function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset =
 				$sunrise = -1;
 				$sunset = 9999;
 			} else {
-				$sunrise = intval(date_sunrise($sproc, SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) * 60 - $twiset);
-				$sunset = intval(date_sunset($sproc, SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) * 60 + $twiset);
+				$sunrise = intval(nw3_sunrise($sproc, NW3_SUN_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) * 60 - $twiset);
+				$sunset = intval(nw3_sunset($sproc, NW3_SUN_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) * 60 + $twiset);
 			}
 			echo "Processing $dbase: sunrise: $sunrise, sunset: $sunset\n";
 			foreach(listdir($dbase) as $c){
@@ -900,7 +905,7 @@ function extract_for_timelapse($year, $month = 0, $day = 0, $freq = 1, $twiset =
 				$min = substr($c, 2, 2);
 				$num = intval($hr) * 60 + intval($min);
 				if($num % $freq == 0 && $num > $sunrise && $num < $sunset) {
-					$trgt = "$tmpdir/$year$m${d}_$c";
+					$trgt = "$tmpdir/$year$m{$d}_$c";
 					if(file_exists($dbase . $c) && filesize($dbase . $c) > 1024) {
 						copy($dbase . $c, $trgt);
 					} else {

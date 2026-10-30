@@ -1,5 +1,6 @@
 <?php
 require 'Page.php';
+require_once ROOT . 'cron/DatmWriter.php';
 
 Page::init(array(
 	'fileNum' => 0,
@@ -7,6 +8,11 @@ Page::init(array(
 	'description' => 'Weather data input and modification.'
 ));
 Page::Start();
+
+require_once ROOT . 'AdminAuth.php';
+if (!AdminAuth::configured('ADMIN_DATAMOD_PASSWORD')) {
+	echo Page::getStatusDiv('Editing is disabled: the admin password is not configured on this server.', true);
+}
 
 function dataModEscape($value) {
 	return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
@@ -53,27 +59,40 @@ function dataModSunnyRanges($jsonPath, $returnAsString) {
 	foreach ($ranges as $range) {
 		$start = sprintf('%02d:%02d', floor($range[0] / 60), $range[0] % 60);
 		$end = sprintf('%02d:%02d', floor($range[1] / 60), $range[1] % 60);
-		$formatted[] = $start . '-' . $end . ' (' . round(($range[1] - $range[0]) / 60, 1) . 'h)';
+		$formatted[] = $start . '-' . $end . ' (' . nw3_round(($range[1] - $range[0]) / 60, 1) . 'h)';
 	}
 	return $returnAsString ? implode(', ', $formatted) : $formatted;
 }
 
-function dataModWriteCsv($path, $lines, $stripQuotes) {
+function dataModWriteCsv($path, $lines) {
 	$file = fopen($path, 'w');
 	if ($file === false) {
 		return false;
 	}
 	foreach ($lines as $line) {
 		$row = explode(',', $line);
-		if ($stripQuotes) {
-			$row = str_ireplace('"', '', $row);
-		}
 		$last = count($row) - 1;
 		$row[$last] = intval($row[$last]);
-		fputcsv($file, $row);
+		nw3_fputcsv($file, $row);
 	}
 	fclose($file);
 	return true;
+}
+
+/** datm: header kept as is, rows unquoted so repeated saves stay the same size. */
+function dataModWriteDatm($path, $lines) {
+	$out = array();
+	foreach ($lines as $i => $line) {
+		if ($i === 0) {
+			$out[] = $line;
+			continue;
+		}
+		$row = DatmWriter::parseLine($line);
+		$last = count($row) - 1;
+		$row[$last] = intval($row[$last]);
+		$out[] = DatmWriter::formatLine($row);
+	}
+	return DatmWriter::writeLines($path, $out);
 }
 
 if (!Page::$me && !Page::$nw3) {
@@ -114,8 +133,8 @@ $datPath = ROOT . 'dat' . $year . '.csv';
 $dattPath = ROOT . 'datt' . $year . '.csv';
 $datmPath = ROOT . 'datm' . $year . '.csv';
 
-$sunriseTime = date_sunrise($modTimestamp, SUNFUNCS_RET_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $modTimestamp));
-$sunsetTime = date_sunset($modTimestamp, SUNFUNCS_RET_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $modTimestamp));
+$sunriseTime = nw3_sunrise($modTimestamp, NW3_SUN_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $modTimestamp));
+$sunsetTime = nw3_sunset($modTimestamp, NW3_SUN_STRING, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $modTimestamp));
 ?>
 
 <div class="admin-page">
@@ -167,7 +186,7 @@ if ($lineIndex < 0 || $lineIndexT < 0 || $lineIndexM < 0
 
 $modLine = explode(',', $modData[$lineIndex]);
 $modLineT = explode(',', $modDataT[$lineIndexT]);
-$modLineM = str_ireplace('?', ',', explode(',', $modDataM[$lineIndexM]));
+$modLineM = str_ireplace('?', ',', DatmWriter::parseLine($modDataM[$lineIndexM]));
 
 $missing = array();
 for ($i = count($modDataM) - 1; $i >= 0; $i--) {
@@ -182,7 +201,7 @@ foreach ($missing as $missingDay) {
 echo '</p>';
 
 if (isset($_POST['pwd'])) {
-	if ($_POST['pwd'] == 'datachanges') {
+	if (AdminAuth::check('ADMIN_DATAMOD_PASSWORD', $_POST['pwd'])) {
 		$dailyLimit = min(count($modLine) - 2, count($types_original));
 		for ($i = 0; $i < $dailyLimit; $i++) {
 			$name = $types_original[$i];
@@ -202,17 +221,20 @@ if (isset($_POST['pwd'])) {
 				$modLineM[$i] = str_ireplace(',', '?', $_POST[$name]);
 			}
 		}
-		$modDataM[$lineIndexM] = implode(',', $modLineM);
+		// formatLine turns the display commas back into '?' so no field is split
+		$modDataM[$lineIndexM] = DatmWriter::formatLine($modLineM);
 
-		$saved = dataModWriteCsv($datPath, $modData, false)
-			&& dataModWriteCsv($dattPath, $modDataT, false)
-			&& dataModWriteCsv($datmPath, $modDataM, true);
+		$saved = dataModWriteCsv($datPath, $modData)
+			&& dataModWriteCsv($dattPath, $modDataT)
+			&& dataModWriteDatm($datmPath, $modDataM);
 		if ($saved) {
 			clearstatcache(true, $datPath);
-			echo '<p>Saved!</p><p>New file size: ' . dataModEscape(number_format(filesize($datPath))) . ' bytes</p>';
+			echo '<p>Saved!</p><p>New file size: ' . dataModEscape(nw3_number_format(filesize($datPath))) . ' bytes</p>';
 		} else {
 			echo Page::getStatusDiv('Server error while saving data.', true);
 		}
+	} elseif (!AdminAuth::configured('ADMIN_DATAMOD_PASSWORD')) {
+		echo Page::getStatusDiv(AdminAuth::notConfiguredMessage(), true);
 	} else {
 		echo '<p>Password fail.</p>';
 	}

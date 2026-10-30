@@ -5,8 +5,8 @@ require_once ($root.'jpgraph/src/jpgraph.php');
 require_once ($root.'jpgraph/src/jpgraph_bar.php');
 include('functions.php');
 
-$dtype = $_GET['type'];
-$test_type = $types_all[$dtype];
+$dtype = $_GET['type'] ?? null;
+$test_type = $types_all[$dtype] ?? null;
 if($test_type === null) {
 	$dtype = 'rain';
 }

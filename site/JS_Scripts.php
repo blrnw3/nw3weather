@@ -75,10 +75,17 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		else if(currsec % 16 < 8) { data = "<?php echo 'Wind Speed: ', Wx::conv(Live::$wind,Wx::Wind,1); ?>"; }
 		else if(currsec % 16 < 12) { data = "<?php echo 'Daily Rain: ', Wx::conv(Live::$rain,Wx::Rain,1); ?>"; }
 		else { data = "<?php echo 'Pressure: ', Wx::conv(Live::$pres,Wx::Pressure,1); ?>"; }
-		document.getElementById('live-wx').innerHTML = data;
+		var el = document.getElementById('live-wx');
+		if(!el) { return; } // page without the header ticker
+		el.innerHTML = data;
 		setTimeout('shownewhead()',2000);
 	}
-	shownewhead();
+	// This script is printed in <head>, before #live-wx exists, so start the ticker once the DOM is parsed
+	if(document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', shownewhead, false);
+	} else {
+		shownewhead();
+	}
 	//]]>
 </script>
 

@@ -79,7 +79,7 @@ $lineVars = array($wind, $gust, $wdir, $temp, $humi, $pres, $dewp, $rain, $pm25)
 $isBadLineData = ($pres == 0);
 $newLine = date('H,i,d,');
 foreach ($lineVars as $value) {
-	$newLine .= (($value === '') ? '' : round( trim($value), 1)) . ',';
+	$newLine .= (($value === '') ? '' : nw3_round( trim($value), 1)) . ',';
 }
 $newLine = substr($newLine, 0, strlen($newLine)-1) . "\r\n";
 ########################################################
@@ -129,7 +129,7 @@ if($tstamp == $datmCheckTime) {
 		$sunYest = SunLog::dayTotal(date('Ymd', Date::$dtstamp_yest));
 		// partial days (a long start/end block of missing webcam data) are a lower bound: leave datm for hand entry
 		if($sunYest !== null && !$sunYest['partial']) {
-			DatmWriter::write(strval(round($sunYest['hours'], 1)));
+			DatmWriter::write(strval(nw3_round($sunYest['hours'], 1)));
 		}
 	}
 	DatmWriter::checkWritten();
@@ -277,9 +277,9 @@ if(date('i') % 30 == 12) {
 				'icon' => $fcIcon,
 				'desc' => $fcDesc,
 				'symbol' => $sym,
-				'tmax' => isset($day['temperature']['max']) ? round((float)$day['temperature']['max'], 1) : null,
-				'tmin' => isset($day['temperature']['min']) ? round((float)$day['temperature']['min'], 1) : null,
-				'precip' => isset($day['precipitation']['value']) ? round((float)$day['precipitation']['value'], 1) : null,
+				'tmax' => isset($day['temperature']['max']) ? nw3_round((float)$day['temperature']['max'], 1) : null,
+				'tmin' => isset($day['temperature']['min']) ? nw3_round((float)$day['temperature']['min'], 1) : null,
+				'precip' => isset($day['precipitation']['value']) ? nw3_round((float)$day['precipitation']['value'], 1) : null,
 				'windMin' => isset($day['wind']['min']) ? yrMsToMph($day['wind']['min']) : null,
 				'windMax' => isset($day['wind']['max']) ? yrMsToMph($day['wind']['max']) : null,
 			);
@@ -293,11 +293,11 @@ if(date('i') % 30 == 12) {
 				list($fcIcon, $fcDesc) = yrForecastIcon($sym);
 				$fcHourly[] = array(
 					't' => isset($iv['start']) ? (strtotime($iv['start']) * 1000) : null,
-					'temp' => isset($iv['temperature']['value']) ? round((float)$iv['temperature']['value'], 1) : null,
-					'precip' => isset($iv['precipitation']['value']) ? round((float)$iv['precipitation']['value'], 2) : null,
+					'temp' => isset($iv['temperature']['value']) ? nw3_round((float)$iv['temperature']['value'], 1) : null,
+					'precip' => isset($iv['precipitation']['value']) ? nw3_round((float)$iv['precipitation']['value'], 2) : null,
 					'wind' => isset($iv['wind']['speed']) ? yrMsToMph($iv['wind']['speed']) : null,
-					'windDir' => isset($iv['wind']['direction']) ? (int)round((float)$iv['wind']['direction']) : null,
-					'pressure' => isset($iv['pressure']['value']) ? round((float)$iv['pressure']['value'], 1) : null,
+					'windDir' => isset($iv['wind']['direction']) ? (int)nw3_round((float)$iv['wind']['direction']) : null,
+					'pressure' => isset($iv['pressure']['value']) ? nw3_round((float)$iv['pressure']['value'], 1) : null,
 					'icon' => $fcIcon,
 					'desc' => $fcDesc,
 					'symbol' => $sym,
@@ -316,12 +316,12 @@ if(date('i') % 30 == 12) {
 					't' => $startTs ? ($startTs * 1000) : null,
 					'end' => isset($iv['end']) ? (strtotime($iv['end']) * 1000) : null,
 					'label' => $startTs ? date('D H:i', $startTs) : '',
-					'temp' => isset($iv['temperature']['value']) ? round((float)$iv['temperature']['value'], 1) : null,
-					'tmax' => isset($iv['temperature']['max']) ? round((float)$iv['temperature']['max'], 1) : null,
-					'tmin' => isset($iv['temperature']['min']) ? round((float)$iv['temperature']['min'], 1) : null,
-					'precip' => isset($iv['precipitation']['value']) ? round((float)$iv['precipitation']['value'], 2) : null,
+					'temp' => isset($iv['temperature']['value']) ? nw3_round((float)$iv['temperature']['value'], 1) : null,
+					'tmax' => isset($iv['temperature']['max']) ? nw3_round((float)$iv['temperature']['max'], 1) : null,
+					'tmin' => isset($iv['temperature']['min']) ? nw3_round((float)$iv['temperature']['min'], 1) : null,
+					'precip' => isset($iv['precipitation']['value']) ? nw3_round((float)$iv['precipitation']['value'], 2) : null,
 					'wind' => isset($iv['wind']['speed']) ? yrMsToMph($iv['wind']['speed']) : null,
-					'windDir' => isset($iv['wind']['direction']) ? (int)round((float)$iv['wind']['direction']) : null,
+					'windDir' => isset($iv['wind']['direction']) ? (int)nw3_round((float)$iv['wind']['direction']) : null,
 					'icon' => $fcIcon,
 					'desc' => $fcDesc,
 					'symbol' => $sym,
@@ -330,7 +330,7 @@ if(date('i') % 30 == 12) {
 		}
 
 		if(count($fcDays)) {
-			nw3_atomic_write(V5_CACHE_ROOT.'forecast_v5.json', json_encode(array(
+			nw3_atomic_write(V5_CACHE_ROOT.'forecast_v5.json', nw3_json_encode(array(
 				'updated' => time(),
 				'source' => 'yr',
 				'location' => '2-2647553',
@@ -361,8 +361,8 @@ if(PURPLEAIR_SENSOR && (date('i') % 5 == 2) && defined('PURPLEAIR_KEY') && PURPL
 	} elseif(isset($paJson['sensor']['stats']['pm2.5_10minute'])) {
 		$pm25Now = $paJson['sensor']['stats']['pm2.5_10minute'];
 	}
-	if($pm25Now !== null && is_numeric($pm25Now)) {
-		nw3_atomic_write(V5_CACHE_ROOT.'pm25_latest.txt', (string)round((float)$pm25Now, 1));
+	if($pm25Now !== null && nw3_is_numeric($pm25Now)) {
+		nw3_atomic_write(V5_CACHE_ROOT.'pm25_latest.txt', (string)nw3_round((float)$pm25Now, 1));
 	} else {
 		Page::quick_log('purpleair_bad.txt', substr((string)$paRaw, 0, 200));
 	}
@@ -425,7 +425,6 @@ if(true && (date('i') % 5 == 4)) {
 if(date('i') % 5 == 1) {
 	$repStamp = mktime(0,0,0,$dmonth,$dday-1);
 	$report = date("FY", $repStamp).'.htm';
-	$graphDaily = date("Ymd", $repStamp).'.gif';
 	$repStamp2 = mktime(0,0,0,$dmonth-1,$dday);
 	$report2 = 'dailynoaareport'. date("n", $repStamp2).date("Y", $repStamp2).'.htm';
 	$oldWDfiles = array("wx18.html", "wx19.html", "dailydatalog.txt", "dailyreport.htm", "dailynoaareport.htm",
@@ -444,7 +443,6 @@ if(date('i') % 5 == 1) {
 }
 if($tstamp == '0721') {
 	//Some files are not here because they are frequently uploaded, so it is best to use 0444 perms to block them instead
-	copy(ROOT. $graphDaily, ROOT.date("Y", $repStamp).'/'.$graphDaily);
 	$daystamp = date("Ymd", $repStamp);
 	$WDfilesToDelete_daily = array($daystamp.'.gif', 'windtempraintrend'.$dmonth.'.gif', 'windtempraintrend3d'.$dmonth.'.gif',
 		'yesterdaygraph.gif', date("Ymd", $repStamp).'dailywebcam.gif', date("Ymd", $repStamp).'dailywebcam2.gif',
@@ -552,7 +550,7 @@ function yrForecastIcon($symbol) {
 /** Yr wind is m/s; site UK base unit for Wind is mph. */
 function yrMsToMph($ms) {
 	if($ms === null || $ms === '') { return null; }
-	return round((float)$ms * 2.236936, 1);
+	return nw3_round((float)$ms * 2.236936, 1);
 }
 
 /**

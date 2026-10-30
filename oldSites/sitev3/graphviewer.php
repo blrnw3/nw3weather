@@ -81,6 +81,7 @@ if($gtype == 'yA') {
 <table width="850" cellpadding="5"><tr><td>
 	<b>Graph Type: </b>
 	<?php $daytypes = array_merge(array_flip($daytypes));
+	$chosen = $chosen1 = $chosen2 = '';
 	if($gtype == 'y') { $chosen = ' checked="checked"'; } elseif($gtype == 'y2') { $chosen2 = ' checked="checked"'; } else { $chosen1 = ' checked="checked"'; }
 	echo '
 		<label onclick="autoscale(false);"><input type="radio" name="altg" value="y"', $chosen, ' /> Temp/Hum/Dew/Rain &nbsp; </label>
@@ -90,7 +91,7 @@ if($gtype == 'yA') {
 	for($t = 1; $t <= count($daytypes); $t++) {
 		$find = array(' (10-min)', 'Direction', 'Wind Speed'); $repl = array('','Drctn','Speed');
 		$tvargv = explode('/',$daynames[$daytypes[$t-1]]); $datnam = str_replace($find,$repl,$tvargv[0]);
-		if(($daytypes[$t-1] == $type[$t] || (!$more && $t == 1)) && $gtype == 'yA') { $checked = 'checked="checked" '; } else { $checked = ''; }
+		if(($daytypes[$t-1] == ($type[$t] ?? null) || (empty($more) && $t == 1)) && $gtype == 'yA') { $checked = 'checked="checked" '; } else { $checked = ''; }
 		echo '<label><input type="checkbox" name="type',$t,'" value="', $daytypes[$t-1], '" ', $checked, '/> ', $datnam, ' &nbsp;</label>
 			';
 	}
@@ -135,10 +136,10 @@ if($gtype == 'yA') {
 <?php
 echo '<img alt="Advanced graph: ', $qstring, '" src="./graphda',$gtype,'.php?',$qstring,'" /> <br /> ';
 //if($num > 40) { echo '<p>Please note that long-period graphs may take up to 30s to generate, and will occasionally fail to load.</p>'; }
-if($more > 6) { echo '<b>Only six variables can be shown at one time (too messy).</b>'; }
-if($furure) { echo '<br /><b>Selecting a future date forces a default back to the present day.</b>'; }
-if($past) { echo '<br /><b>WARNING: Selected date range overlaps with non-extant period (data collection began on 1st Feb 2009). Period has been set to 1.</b>'; }
-if($past2) { echo '<br /><b>Data collection began on 1st Feb 2009. Graph defaulted to first available.</b>'; }
+if(($more ?? 0) > 6) { echo '<b>Only six variables can be shown at one time (too messy).</b>'; }
+if(!empty($furure)) { echo '<br /><b>Selecting a future date forces a default back to the present day.</b>'; }
+if(!empty($past)) { echo '<br /><b>WARNING: Selected date range overlaps with non-extant period (data collection began on 1st Feb 2009). Period has been set to 1.</b>'; }
+if(!empty($past2)) { echo '<br /><b>Data collection began on 1st Feb 2009. Graph defaulted to first available.</b>'; }
 ?>
 </div>
 <!-- ##### Footer ##### -->

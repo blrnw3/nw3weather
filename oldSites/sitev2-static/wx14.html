@@ -1,0 +1,570 @@
+ 
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta name="robots" content="noindex, follow" />
+	<title>NW3 Weather - Temperature Detail</title>
+
+	<meta name="description" content="Detailed latest/current temperature data and records from NW3 weather station.
+	Find warmest and coldest, view wind chill, humidex etc." />
+	
+	<!-- Session count: 1 -->
+
+
+
+
+<!--
+-->
+<meta http-equiv="refresh" content="284" />
+<meta name="keywords" content="weather, london, nw3, data, records, statistics, weather station" />
+<meta http-equiv="content-type" content="application/xhtml+xml; charset=ISO-8859-1" />
+<meta http-equiv="content-language" content="en-GB" />	 
+<link rel="stylesheet" type="text/css" href="weather-screen2.css" media="screen" title="screen" />
+<link rel="stylesheet" type="text/css" href="weather-print.css" media="print" />		
+ 
+</head>
+
+<body><div style="background:#fff3cd;color:#333;border-bottom:2px solid #c9a227;padding:6px 10px;font:13px/1.4 Arial,sans-serif;text-align:center">Archived copy of <b>nw3weather site version 2</b> (10 Sep 2011 &ndash; 20 May 2013), as captured by the Internet Archive on 27 Jan 2012. Static snapshot: live data, forms and settings are disabled. <a href="/">Go to the current site</a> &middot; <a href="/wx8.php">About</a></div>
+	<!-- For non-visual user agents: -->
+	<div id="top"><a href="#main-copy" class="doNotDisplay doNotPrint">Skip to main content.</a></div>
+
+	<!-- ##### Header ##### -->
+	
+
+
+
+<div id="header">
+	<h1 class="headerTitle"><a href="index.html" title="Browse to homepage">NW3 Weather</a>	</h1>
+	<div class="headerTemp"><span id="lolo"> </span></div>
+	<div class="subHeader">	Hampstead, London, England; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<span id="elapsedTime"></span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+	<div class="subHeaderRight">Last Updated: 27/01/12 04:40 GMT  </div>
+</div>	
+	<!-- ##### Left Sidebar ##### -->
+		<div id="side-bar">
+<div class="leftSideBar">
+  <p class="sideBarTitle">Navigation</p>
+  <ul>    <li><a href="index.html" title="Return to main page">Home</a></li>  
+  <li><a href="wx2.html" title="Live Webcam and Timelapses">Webcam</a></li>  
+  <li><a href="wx3.html" title="Latest Daily and Monthly Graphs &amp; Charts">Graphs</a></li> 
+		<li><a href="wx4.html" title="Extremes and Trends">Data</a></li> 
+		<li><a href="wx5.html" title="Full Local Forecasts and Latest Maps">Forecast</a></li> 
+		<li><a href="wx6.html" title="Sun and Moon Data">Astronomy</a></li>   
+		<li><a href="wx7.html" title="My Weather Photography">Photos</a></li>  
+  <li><a href="wx8.html" title="About this Weather Station and Website">About</a></li>  
+  <li><a href="wx9.html" title="Useful Links">Links</a></li>
+		<li><hr /></li>	 
+		<li><span style="color:#38610B"><b>Detailed Data:</b></span></li>
+		<li><a href="wx12.html" title="Detailed Rain Data">Rain</a></li>	
+		<li><a href="wx13.html" title="Detailed Wind Data">Wind</a></li>	
+		<li><b>Temperature</b></li>
+		<li><a href="wx10.html" title="Detailed Humidity Data">Humidity</a></li>  
+		<li><a href="wxaverages.html" title="Long-term climate averages">Climate</a></li>   
+	  <li><a href="wx15.html" title="System Status and Miscellaneous"><font color="#C8C8C8">System</font></a></li> 
+		<li><hr /></li>
+	<li><span style="color:#0B614B"><b>Historical:</b></span></li>
+	<li><a href="wxhist12.html" title="Detailed Historical Annual Breakdowns">Annual Tables</a></li>	
+	<li><a href="wxsumhist12.html" title="Detailed Historical Summary Data">Summary Tables</a></li>
+	<!--<li></li> -->
+	<li><a href="wxhistyear.html" title="Detailed Historical Annual Reports">Annual Reports</a></li>
+	<li><a href="wxhistmonth.html" title="Detailed Historical Monthly Reports">Monthly Reports</a></li>
+	<li><a href="wxhistday.html" title="Detailed Historical Daily Reports">Daily Reports</a></li>
+	<li><a href="Historical.html" title="Historical data about page and other links">Other</a></li>
+	<li><br /></li>
+	<li><a href="news.html" title="Website and weather station blog and news">Blog</a>		</li>
+	<li><a href="sitemap.html" title="Full website map/directory">Site map</a></li>
+	</ul>
+		<p class="sideBarTitle">Site Options</p><table align="center">
+	<tr><td><b>Units</b></td></tr><tr><td></td></tr>	<tr><td align="center"><br /><b>Auto-update</b><span style="font-size:80%">	<sup><acronym title="Automatically refreshes the page when new data is available">[?]</acronym></sup></span></td></tr>
+	<tr><td></td></tr>    </table>
+   </div>
+ </div>
+	<!-- ##### Main Copy ##### -->
+
+	<div id="main-copy">
+ 
+<br />
+<h1>Detailed Temperature Data</h1>
+
+<table class="table1" width="40%" align="left" cellpadding="5" cellspacing="0">
+<tr><td class="td14" colspan="2" align="center"><h3>Current/Latest</h3></td></tr>
+<tr class="table-top">
+<td class="td14" colspan="1">Measure</td><td class="td14" colspan="1">Value</td>
+</tr>
+
+<tr class="column-light">
+<td class="td14" width="57%">Temperature</td>
+<td class="td14" width="43%">3.3 &deg;C</td></tr>
+<tr class="column-dark">
+<td class="td14" width="57%">Temperature Trend</td>
+<td class="td14" width="43%">+0.2 &deg;C /h</td> </tr>
+<tr class="column-light">
+<td class="td14" width="57%">Feels-like</td>
+<td class="td14" width="43%">1.3 &deg;C</td></tr>
+<tr class="row-dark8">
+<td class="td14" width="57%">Windchill</td>
+<td class="td14" width="43%">1.9 &deg;C</td></tr>
+<tr class="row-light9">
+<td class="td14" width="57%">Heat Index</td>
+<td class="td14" width="43%">n/a</td></tr>
+<tr class="column-dark">
+<td class="td14" width="57%">Humidex</td>
+<td class="td14" width="43%">n/a</td></tr>
+<tr class="column-light">
+<td class="td14" width="57%">---</td>
+<td class="td14" width="43%">---</td></tr>
+<tr class="column-dark">
+<td class="td14" width="57%">Day Average</td>
+<td class="td14" width="43%">2.9 &deg;C</td></tr>
+<tr class="column-light">
+<td class="td14" width="57%">24hr Average</td>
+<td class="td14" width="43%">5.9 &deg;C</td></tr>
+<tr class="column-dark">
+<td class="td14" width="57%">Yesterday Average</td>
+<td class="td14" width="43%">7.1 &deg;C</td></tr>
+<tr class="column-light">
+<td class="td14" width="57%">Week Average</td>
+<td class="td14" width="43%">7.7 &deg;C</td></tr>
+<tr class="column-dark">
+<td class="td14" width="57%">Month Average</td>
+<td class="td14" width="43%">&nbsp; &nbsp; 7.1 &deg;C (+2.4 &deg;C)</td></tr>
+<tr class="column-light">
+<td class="td14" width="57%">31-Day Average</td>
+<td class="td14" width="43%">7.5 &deg;C</td></tr>
+<tr class="column-dark">
+<td class="td14" width="57%">Month Average Daily Min</td>
+<td class="td14" width="43%">&nbsp; &nbsp; 4.5 &deg;C (+2.1 &deg;C)</td></tr>
+<tr class="column-light">
+<td class="td14" width="57%">Month Average Daily Max</td>
+<td class="td14" width="43%">&nbsp; &nbsp; 9.7 &deg;C (+2.7 &deg;C)</td></tr>
+<tr class="column-dark">
+<td class="td14" width="57%">---</td>
+<td class="td14" width="43%">---</td></tr>
+<tr class="column-light">
+<td class="td14" width="57%">Air Frost Hours Today</td>
+<td class="td14" width="43%">00:00</td></tr>
+<tr class="column-dark">
+<td class="td14" width="57%">Monthly Air Frosts</td>
+<td class="td14" width="43%">3</td></tr>
+<tr class="column-light">
+<td class="td14" width="57%">Monthly Ice Days</td>
+<td class="td14" width="43%">0</td></tr>
+<tr class="column-dark">
+<td class="td14" width="57%">Annual Air Frosts</td>
+<td class="td14" width="43%">3</td></tr>
+<tr class="column-light">
+<td class="td14" width="57%">Annual Ice Days</td>
+<td class="td14" width="43%">0</td>
+</tr>
+</table>
+
+<table class="table1" width="56%" align="center" cellpadding="5" cellspacing="0">
+<tr><td class="td14" colspan="3" align="center"><h3>Current Day/Month/Year Records</h3></td></tr>
+<tr class="table-top">
+<td class="td14" colspan="1">Measure</td><td class="td14" colspan="1">Value</td><td class="td14" colspan="1">Time/Date</td>
+</tr>
+<tr class="row-light1">
+<td class="td14" width="40%">Min Temp Today</td>
+<td class="td14" width="27%">2.8 &deg;C</td>
+<td class="td14" width="33%">00:21</td> </tr>
+<tr class="row-dark2">
+<td class="td14" width="40%">Max Temp Today</td>
+<td class="td14" width="27%">3.3 &deg;C</td>
+<td class="td14" width="33%">04:35</td> </tr>
+<tr class="row-light">
+<td class="td14" width="40%">Night Min (9pm-9am)</td>
+<td class="td14" width="27%">2.8 &deg;C</td>
+<td class="td14" width="33%">-</td> </tr>
+<tr class="row-dark">
+<td class="td14" width="40%">Day Max (6am-6pm)</td>
+<td class="td14" width="27%">8.5 &deg;C</td>
+<td class="td14" width="33%">-</td> </tr>
+<tr class="row-light8">
+<td class="td14" width="40%">Min Windchill Today</td>
+<td class="td14" width="27%">-1.6 &deg;C</td>
+<td class="td14" width="33%">00:35</td> </tr>
+<tr class="column-dark">
+<td class="td14" width="40%">---</td>
+<td class="td14" width="27%">---</td>
+<td class="td14" width="33%">---</td> </tr>
+<tr class="row-light1">
+<td class="td14" width="40%">Min Temp Yesterday</td>
+<td class="td14" width="27%">3.0 &deg;C</td>
+<td class="td14" width="33%">23:32</td> </tr>
+<tr class="row-dark2">
+<td class="td14" width="40%">Max Temp Yesterday</td>
+<td class="td14" width="27%">9.6 &deg;C</td>
+<td class="td14" width="33%">04:44</td> </tr>
+<tr class="row-light8">
+<td class="td14" width="40%">Min Windchill Yesterday</td>
+<td class="td14" width="27%">-0.9 &deg;C</td>
+<td class="td14" width="33%">23:40</td> </tr>
+<tr class="column-dark">
+<td class="td14" width="40%">---</td>
+<td class="td14" width="27%">---</td>
+<td class="td14" width="33%">---</td> </tr>
+<tr class="row-light1">
+<td class="td14" width="40%">Min Temp Last 7 Days</td>
+<td class="td14" width="27%">2.2 &deg;C</td>
+<td class="td14" width="33%">Tue</td> </tr>
+<tr class="row-dark2">
+<td class="td14" width="40%">Max Temp Last 7 Days</td>
+<td class="td14" width="27%">12.3 &deg;C</td>
+<td class="td14" width="33%">Sat</td> </tr>
+<tr class="row-light8">
+<td class="td14" width="40%">Min Windchill Last 7 Days</td>
+<td class="td14" width="27%">-1.5 &deg;C</td>
+<td class="td14" width="33%">Sun</td> </tr>
+<tr class="column-dark">
+<td class="td14" width="40%">---</td>
+<td class="td14" width="27%">---</td>
+<td class="td14" width="33%">---</td> </tr>
+<tr class="row-light1">
+<td class="td14" width="40%">Min Temp This Month</td>
+<td class="td14" width="27%">-2.9 &deg;C</td>
+<td class="td14" width="33%">Day 14</td> </tr>
+<tr class="row-dark2">
+<td class="td14" width="40%">Max Temp This Month</td>
+<td class="td14" width="27%">12.5 &deg;C</td>
+<td class="td14" width="33%">Day 1</td> </tr>
+<tr class="row-light8">
+<td class="td14" width="40%">Min Windchill This Month</td>
+<td class="td14" width="27%">-3.5 &deg;C</td>
+<td class="td14" width="33%">Day 14</td> </tr>
+<tr class="column-dark">
+<td class="td14" width="40%">---</td>
+<td class="td14" width="27%">---</td>
+<td class="td14" width="33%">---</td> </tr>
+<tr class="row-light1">
+<td class="td14" width="40%">Min Temp This year</td>
+<td class="td14" width="27%">-2.9 &deg;C</td>
+<td class="td14" width="33%">14<sup>th</sup> Jan</td> </tr>
+<tr class="row-dark2">
+<td class="td14" width="40%">Max Temp This Year</td>
+<td class="td14" width="27%">12.5 &deg;C</td>
+<td class="td14" width="33%">1<sup>st</sup> Jan</td> </tr>
+<tr class="row-light8">
+<td class="td14" width="40%">Min Windchill This Year</td>
+<td class="td14" width="27%">-3.5 &deg;C</td>
+<td class="td14" width="33%">14<sup>th</sup> Jan</td> </tr>
+</table>
+
+<br />
+
+<table class="table1" width="70%" align="center" cellpadding="5" cellspacing="0">
+<tr><td class="td14" colspan="3" align="center"><h3>All-time Records</h3></td></tr>
+<tr class="table-top">
+<td class="td14" colspan="1">Measure</td><td class="td14" colspan="1">Value</td><td class="td14" colspan="1">Date</td></tr>
+<tr class="row-light1">
+<td class="td14" width="35%">Lowest Temperature</td>
+<td class="td14" width="30%">-7.2 &deg;C</td>
+<td class="td14" width="35%">20<sup>th</sup> Dec 2010</td> </tr>
+<tr class="row-dark2">
+<td class="td14" width="35%">Highest Temperature</td>
+<td class="td14" width="30%">31.9 &deg;C</td>
+<td class="td14" width="35%">27<sup>th</sup> June 2011</td> </tr>
+<tr class="row-light8">
+<td class="td14" width="35%">Lowest Windchill</td>
+<td class="td14" width="30%">-12.0 &deg;C</td>
+<td class="td14" width="35%">7<sup>th</sup> Jan 2010</td> </tr>
+<tr class="column-dark">
+<td class="td14" width="35%">Lowest Day Max</td>
+<td class="td14" width="30%">-2.0 &deg;C</td>
+<td class="td14" width="35%">10<sup>th</sup> Jan 2009</td> </tr>
+<tr class="row-light">
+<td class="td14" width="35%">Highest Night Min</td>
+<td class="td14" width="30%">19.3 &deg;C</td>
+<td class="td14" width="35%">2<sup>nd</sup> July 2010</td> </tr>
+<tr class="row-dark1">
+<td class="td14" width="35%">Coldest Day (by mean)</td>
+<td class="td14" width="30%">-3.2 &deg;C</td>
+<td class="td14" width="35%">20<sup>th</sup> Dec 2010</td> </tr>
+<tr class="row-light2">
+<td class="td14" width="35%">Warmest Day (by mean)</td>
+<td class="td14" width="30%">25.4 &deg;C</td>
+<td class="td14" width="35%">27<sup>th</sup> June 2011 </td> </tr>
+<tr class="row-dark1">
+<td class="td14" width="35%">Coldest Month</td>
+<td class="td14" width="30%">1.3 &deg;C</td>
+<td class="td14" width="35%">Dec 2010</td> </tr>
+<tr class="row-light2">
+<td class="td14" width="35%">Warmest Month</td>
+<td class="td14" width="30%">19.6 &deg;C</td>
+<td class="td14" width="35%">July 2010</td> </tr>
+<tr class="column-dark">
+<td class="td14" width="35%">---</td>
+<td class="td14" width="30%">---</td>
+<td class="td14" width="35%">---</td> </tr>
+<tr class="row-light1">
+<td class="td14" width="35%">Lowest January Temperature</td>
+<td class="td14" width="30%">-5.3 &deg;C</td>
+<td class="td14" width="35%">Day 7, 2010</td> </tr>
+<tr class="row-dark2">
+<td class="td14" width="35%">Highest January Temperature</td>
+<td class="td14" width="30%">13.3 &deg;C</td>
+<td class="td14" width="35%">Day 13, 2011</td> </tr>
+<tr class="row-light1">
+<td class="td14" width="35%">Coldest January</td>
+<td class="td14" width="30%">1.8 &deg;C</td>
+<td class="td14" width="35%">2010</td> </tr>
+<tr class="row-dark2">
+<td class="td14" width="35%">Warmest January</td>
+<td class="td14" width="30%">7.1 &deg;C</td>
+<td class="td14" width="35%">2012</td> </tr>
+<tr class="row-light1">
+<td class="td14" width="35%">Coldest January Day</td>
+<td class="td14" width="30%">-2.6 &deg;C</td>
+<td class="td14" width="35%">Day 7, 2010</td> </tr>
+<tr class="row-dark2">
+<td class="td14" width="35%">Warmest January Day</td>
+<td class="td14" width="30%">12.1 &deg;C</td>
+<td class="td14" width="35%">Day 13, 2011</td> </tr>
+<tr class="column-light">
+<td class="td14" width="35%">---</td>
+<td class="td14" width="30%">---</td>
+<td class="td14" width="35%">---</td> </tr>
+<tr class="row-dark1">
+<td class="td14" width="35%">Lowest 27<sup>th</sup> Jan Temperature</td>
+<td class="td14" width="30%">-2.7 &deg;C</td>
+<td class="td14" width="35%">2010</td> </tr>
+<tr class="row-light2">
+<td class="td14" width="35%">Highest 27<sup>th</sup> Jan Temperature</td>
+<td class="td14" width="30%">7.9 &deg;C</td>
+<td class="td14" width="35%">2009</td> </tr>
+<tr class="row-dark1">
+<td class="td14" width="35%">Coldest 27<sup>th</sup> Jan</td>
+<td class="td14" width="30%">1.5 &deg;C</td>
+<td class="td14" width="35%">2010</td> </tr>
+<tr class="row-light2">
+<td class="td14" width="35%">Warmest 27<sup>th</sup> Jan</td>
+<td class="td14" width="30%">3.8 &deg;C</td>
+<td class="td14" width="35%">2009</td> </tr>
+</table>
+
+<br />
+<p align="center"><b>NB:</b> Daily temperature records began in March 2008; monthly extremes go back to November 2007.<br />
+Figures in brackets refer to departure from <a href="wxaverages.html" title="Long-term NW3 climate averages">average conditions</a>.</p>
+
+<br />
+
+<p><b>A note on Heat Index/Windchill/Humidex:</b> These are all technically-defined measures of what the air actually feels like on one's skin - 
+The Heat and Humi indices are useful for factoring in the extra "warming effect" of high relative humidity in warm air, whilst
+Windchill obviously factors in the effect of the wind. By definition, they are only valid within certain temperature and humidity ranges; 
+in the table 'n/a' is displayed when outside this range,
+and the 'Feels-like' value displays the most useful of the three at any given moment.
+</p>
+
+<table class="table1" align="center" width="65%" cellpadding="5" cellspacing="0">
+<tr><td class="td14" colspan="4" ><h3>Past Year Monthly Averages</h3></td></tr>
+<tr class="table-top"><td class="td14">Month</td><td class="td14">Mean</td><td class="td14">Daily Min</td><td class="td14">Daily Max</td></tr>
+<tr class="column-light"><td style="" class="td14">January 2011</td>
+		<td style="" class="td14">5.1 &deg;C (+0.4)</td>
+		<td style="" class="td14">2.8 &deg;C (+0.4)</td>
+		<td style="" class="td14">6.9 &deg;C (-0.1)</td></tr><tr class="column-dark"><td style="" class="td14">February </td>
+		<td style="" class="td14">7.4 &deg;C (+2.5)</td>
+		<td style="" class="td14">5.2 &deg;C (+3.0)</td>
+		<td style="" class="td14">9.5 &deg;C (+1.9)</td></tr><tr class="column-light"><td style="" class="td14">March </td>
+		<td style="" class="td14">7.4 &deg;C (+0.4)</td>
+		<td style="" class="td14">3.4 &deg;C (-0.2)</td>
+		<td style="" class="td14">11.4 &deg;C (+1.0)</td></tr><tr class="column-dark"><td style="" class="td14">April </td>
+		<td style="" class="td14">13.6 &deg;C (+4.7)</td>
+		<td style="" class="td14">8.6 &deg;C (+3.6)</td>
+		<td style="" class="td14">18.8 &deg;C (+6.0)</td></tr><tr class="column-light"><td style="" class="td14">May </td>
+		<td style="" class="td14">14.2 &deg;C (+1.7)</td>
+		<td style="" class="td14">9.5 &deg;C (+1.2)</td>
+		<td style="" class="td14">18.5 &deg;C (+1.8)</td></tr><tr class="column-dark"><td style="" class="td14">June </td>
+		<td style="" class="td14">15.9 &deg;C (+0.2)</td>
+		<td style="" class="td14">11.3 &deg;C (+0.2)</td>
+		<td style="" class="td14">20.3 &deg;C (+0.1)</td></tr><tr class="column-light"><td style="" class="td14">July </td>
+		<td style="" class="td14">16.8 &deg;C (-1.1)</td>
+		<td style="" class="td14">12.5 &deg;C (-0.9)</td>
+		<td style="" class="td14">21.1 &deg;C (-1.3)</td></tr><tr class="column-dark"><td style="" class="td14">August </td>
+		<td style="" class="td14">17.0 &deg;C (-0.7)</td>
+		<td style="" class="td14">13.2 &deg;C (+0.0)</td>
+		<td style="" class="td14">21.1 &deg;C (-1.1)</td></tr><tr class="column-light"><td style="" class="td14">September </td>
+		<td style="" class="td14">16.2 &deg;C (+1.3)</td>
+		<td style="" class="td14">12.4 &deg;C (+1.3)</td>
+		<td style="" class="td14">20.4 &deg;C (+1.7)</td></tr><tr class="column-dark"><td style="" class="td14">October </td>
+		<td style="" class="td14">13.6 &deg;C (+1.9)</td>
+		<td style="" class="td14">10.5 &deg;C (+1.7)</td>
+		<td style="" class="td14">17.0 &deg;C (+2.4)</td></tr><tr class="column-light"><td style="" class="td14">November </td>
+		<td style="" class="td14">10.4 &deg;C (+2.8)</td>
+		<td style="" class="td14">7.6 &deg;C (+2.6)</td>
+		<td style="" class="td14">12.8 &deg;C (+2.6)</td></tr><tr class="column-dark"><td style="" class="td14">December </td>
+		<td style="" class="td14">6.8 &deg;C (+1.3)</td>
+		<td style="" class="td14">4.3 &deg;C (+1.1)</td>
+		<td style="" class="td14">9.1 &deg;C (+1.3)</td></tr></table>
+
+<br />
+
+<table class="table1" align="center" width="65%" cellpadding="5" cellspacing="0">
+<tr><td class="td14" colspan="4" ><h3>Past Year Seasonal Averages</h3></td></tr>
+<tr class="table-top"><td class="td14">Season</td><td class="td14">Mean</td><td class="td14">Daily Min</td><td class="td14">Daily Max</td></tr>
+<tr class="column-light"><td style="" class="td14">Winter 10/11</td>
+		<td style="" class="td14">6.4 &deg;C (+1.4)</td>
+		<td style="" class="td14">4.1 &deg;C (+1.5)</td>
+		<td style="" class="td14">8.5 &deg;C (+1.0)</td></tr><tr class="column-dark"><td style="" class="td14">Spring 2011</td>
+		<td style="" class="td14">11.7 &deg;C (+2.3)</td>
+		<td style="" class="td14">7.2 &deg;C (+1.5)</td>
+		<td style="" class="td14">16.2 &deg;C (+2.9)</td></tr><tr class="column-light"><td style="" class="td14">Summer 2011</td>
+		<td style="" class="td14">16.6 &deg;C (-0.5)</td>
+		<td style="" class="td14">12.3 &deg;C (-0.2)</td>
+		<td style="" class="td14">20.8 &deg;C (-0.8)</td></tr><tr class="column-dark"><td style="" class="td14">Autumn 2011</td>
+		<td style="" class="td14">13.4 &deg;C (+2.0)</td>
+		<td style="" class="td14">10.2 &deg;C (+1.9)</td>
+		<td style="" class="td14">16.7 &deg;C (+2.2)</td></tr></table>
+
+<p align="center"><a href="wxhist14.html" title="2012 min/max temperatures"><b>View daily min/max data for the past year</b></a><br />
+<a href="wxsumhist14.html" title="All-time monthly temperature records"><b>View monthly averages/extremes for all years on record</b></a></p>
+
+<br />
+<hr />
+
+<h4>More Info</h4>
+
+<table class="table1" width="40%" align="left" cellpadding="4" cellspacing="0">
+<tr><td class="td14" colspan="3" align="center"><h3>This Month</h3></td></tr>
+<tr class="table-top">
+<td class="td14" colspan="1">Days When...</td><td class="td14" colspan="1">Value</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Min Temp Was &lt; 25 &deg;C</td>
+<td class="td14" width="45%">27</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">Min Temp Was &lt; 20 &deg;C</td>
+<td class="td14" width="45%">27</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Min Temp Was &lt; 15 &deg;C</td>
+<td class="td14" width="45%">27</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">Min Temp Was &lt; 10 &deg;C</td>
+<td class="td14" width="45%">27</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Min Temp Was &lt; 5 &deg;C</td>
+<td class="td14" width="45%">14</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">Min Temp Was &lt; 0 &deg;C</td>
+<td class="td14" width="45%">3</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Min Temp Was &lt; -5 &deg;C</td>
+<td class="td14" width="45%">0</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">---</td>
+<td class="td14" width="45%">---</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Max Temp Was &gt; -5 &deg;C</td>
+<td class="td14" width="45%">27</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">Max Temp Was &gt; 0 &deg;C</td>
+<td class="td14" width="45%">27</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Max Temp Was &gt; 5 &deg;C</td>
+<td class="td14" width="45%">25</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">Max Temp Was &gt; 10 &deg;C</td>
+<td class="td14" width="45%">12</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Max Temp Was &gt; 15 &deg;C</td>
+<td class="td14" width="45%">0</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">Max Temp Was &gt; 20 &deg;C</td>
+<td class="td14" width="45%">0</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Max Temp Was &gt; 25 &deg;C</td>
+<td class="td14" width="45%">0</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">Max Temp Was &gt; 30 &deg;C</td>
+<td class="td14" width="45%">0</td></tr>
+</table>
+
+<table class="table1" width="40%" align="center" cellpadding="4" cellspacing="0">
+<tr><td class="td14" colspan="3" align="center"><h3>This Year</h3></td></tr>
+<tr class="table-top">
+<td class="td14" colspan="1">Days When...</td><td class="td14" colspan="1">Value</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Min Temp Was &lt; 25 &deg;C</td>
+<td class="td14" width="45%">27</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">Min Temp Was &lt; 20 &deg;C</td>
+<td class="td14" width="45%">27</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Min Temp Was &lt; 15 &deg;C</td>
+<td class="td14" width="45%">27</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">Min Temp Was &lt; 10 &deg;C</td>
+<td class="td14" width="45%">27</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Min Temp Was &lt; 5 &deg;C</td>
+<td class="td14" width="45%">14</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">Min Temp Was &lt; 0 &deg;C</td>
+<td class="td14" width="45%">3</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Min Temp Was &lt; -5 &deg;C</td>
+<td class="td14" width="45%">0</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">---</td>
+<td class="td14" width="45%">---</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Max Temp Was &gt; -5 &deg;C</td>
+<td class="td14" width="45%">27</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">Max Temp Was &gt; 0 &deg;C</td>
+<td class="td14" width="45%">27</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Max Temp Was &gt; 5 &deg;C</td>
+<td class="td14" width="45%">25</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">Max Temp Was &gt; 10 &deg;C</td>
+<td class="td14" width="45%">12</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Max Temp Was &gt; 15 &deg;C</td>
+<td class="td14" width="45%">0</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">Max Temp Was &gt; 20 &deg;C</td>
+<td class="td14" width="45%">0</td></tr>
+<tr class="column-light">
+<td class="td14" width="55%">Max Temp Was &gt; 25 &deg;C</td>
+<td class="td14" width="45%">0</td></tr>
+<tr class="column-dark">
+<td class="td14" width="55%">Max Temp Was &gt; 30 &deg;C</td>
+<td class="td14" width="45%">0</td></tr>
+</table>
+
+</div>
+
+	<!-- ##### Footer ##### -->
+
+<div id="footer">
+	<div class="doNotPrint">
+		<a href="#header">Top</a> |
+		<a href="contact.html" title="E-mail me">Contact</a> |
+		<a href="index.html" title="Browse to homepage">Home</a> |
+		<a href="not-archived.html" title="Mobile-optimised site version">Mobile</a>
+	</div>
+	<div>
+		&copy; 2010-2012, B. Lee-Rodgers<span class="doNotPrint"> |
+		<a href="http://www.weather-display.com" title="Powered by Weather Display">Weather Display v10.37Q Build 78</a></span>
+	</div>
+	<div>
+		Caution: This data is recorded by an amateur-run personal weather station - its accuracy and reliability cannot be guaranteed.	</div>
+	<div>
+		<a href="http://www.getfirefox.net/" title="Download now">nw3weather recommends Firefox</a><br />
+		<span style="font-size:85%"><a href="http://validator.w3.org/check?uri=referer" title="check the W3C validity of this page">XHTML and CSS valid</a> |
+		PHP executed <acronym title="Session count: 1">in</acronym> 0.158s</span>
+			</div>
+	<span style="display:none">
+		<a href="http://www.martynhicks.co.uk/weather/topsites/index.php?a=in&amp;u=Timmead">
+		<img src="http://www.martynhicks.co.uk/weather/topsites/button.php?u=Timmead" alt="UK - WEATHER STATION TOPSITES - UK" border="0" /></a>
+		<a href="http://www.paulen.no/topsites/"><img src="http://www.paulen.no/topsites/button.php?u=Timmead" alt="Paulen Top 100 Weatherstation List" border="0" /></a>
+		<a href="http://www.axelvold.net/weather_topsites/"><img src="http://www.axelvold.net/weather_topsites/button.php?u=Timmead" alt="Weather Topsites" border="0" /></a>
+	</span>
+</div>
+
+    
+
+ </body>
+</html>
+

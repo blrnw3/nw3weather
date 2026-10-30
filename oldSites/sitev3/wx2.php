@@ -3,7 +3,7 @@ require('functions.php');
 
 	$file = 2;
 
-	$risetime = (date_sunrise(time(), SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I')) - 1);
+	$risetime = (nw3_sunrise(time(), NW3_SUN_DOUBLE, $lat, $lng, $zenith, date('I')) - 1);
 	$risesecs = 2.5 * $risetime;  // 2.5s per hour timelapse
 	$mon_yest_zero = zerolead($mon_yest);
 	$lastmonth = date("Y_m", mkdate($dmonth - 1, 1, $dyear));

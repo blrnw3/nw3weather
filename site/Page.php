@@ -5,7 +5,7 @@ if (PHP_SAPI !== 'cli' && empty($GLOBALS['_nw3_ob_timing'])) {
 	ob_start();
 }
 // Match /etc/php.ini: keep real problems, skip noisy notices from legacy data paths.
-error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT);
+error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~2048); // 2048 = E_STRICT (constant deprecated in PHP 8.4)
 $host = isset($_SERVER['HTTP_HOST']) ? strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'])) : '';
 // Web-only locality check. CLI (cron) must not enable display_errors or notices
 // flood crontab / php_errors.log stdout captures.
@@ -66,10 +66,10 @@ class Page {
 			self::${$k} = $v;
 		}
 
-		self::$ip = filter_input(INPUT_SERVER, "REMOTE_ADDR", FILTER_SANITIZE_STRING);
-		self::$browser = filter_input(INPUT_SERVER, "HTTP_USER_AGENT", FILTER_SANITIZE_STRING);
+		self::$ip = nw3_server_str("REMOTE_ADDR");
+		self::$browser = nw3_server_str("HTTP_USER_AGENT");
 		self::$nw3 = (self::$ip === '217.155.197.157');
-		$cf = explode('/', filter_input(INPUT_SERVER, "PHP_SELF", FILTER_SANITIZE_STRING));
+		$cf = explode('/', nw3_server_str("PHP_SELF"));
 		self::$pageName = $cf[count($cf)-1];
 
 		self::start_session();
@@ -133,9 +133,10 @@ class Page {
 		<meta name="author" content="Ben Masschelein Rodgers" />
 		<meta name="description" content="$description" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
-		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20260801h" media="screen" title="screen" />
+		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20261021a" media="screen" title="screen" />
 		$colorCss
 		$scripts
 	</head>
@@ -188,7 +189,7 @@ END;
 
 	public static function End() {
 		$year = date("Y");
-		$phpload = round(microtime(true) - self::$start, 3);
+		$phpload = nw3_round(microtime(true) - self::$start, 3);
 		$sessCount = isset($_SESSION['count'][self::$fileNum]) ? $_SESSION['count'][self::$fileNum] : 0;
 		$pageLoad = HTML::acronym('Session count: ' . $sessCount, 'page load: ' . $phpload . ' s');
 		if (!self::$me && !self::$isBot) {
@@ -207,8 +208,8 @@ END;
 			self::log_events('external_refer_v5.txt', $ref);
 		}
 		if (self::$me) {
-			$memUsage = round(memory_get_usage() / 1024 / 1024, 1);
-			$memPeak = round(memory_get_peak_usage() / 1024 / 1024, 1);
+			$memUsage = nw3_round(memory_get_usage() / 1024 / 1024, 1);
+			$memPeak = nw3_round(memory_get_peak_usage() / 1024 / 1024, 1);
 			$pageLoad .= "; Mem: $memUsage, Peak: $memPeak";
 		}
 		echo <<<END
@@ -309,7 +310,7 @@ END;
 		}
 		if(Live::$outage) {
 			$extraMessage = "";
-			$html .= self::getStatusDiv("<b>". date('H:m d M: ', time() - Live::$diff) . "Weather server outage detected automatically</b>."
+			$html .= self::getStatusDiv("<b>". date('H:i d M: ', time() - Live::$diff) . "Weather server outage detected automatically</b>."
 				. "<br /> Data is being served from nearby stations. Site admin has been notified. Problem age: "
 				. intval(Live::$diff / 3600) . " hours<br />$extraMessage", true);
 		}
@@ -638,6 +639,9 @@ END;
 	   }
 
 	   $fil = fopen(ROOT.'Logs/'.$txtname, "a");
+	   if($fil === false) {
+		   return; // log not writable: skip rather than fail the page
+	   }
 	   fwrite( $fil, date("H:i:s d/m/Y") . "\t" . $content .
 		   Util::str_subpad( filter_input(INPUT_SERVER, "REQUEST_URI", FILTER_SANITIZE_URL), 100 ) .
 		   Util::str_subpad(filter_input(INPUT_SERVER, "HTTP_REFERER", FILTER_SANITIZE_URL), 120) .
@@ -727,7 +731,7 @@ END;
 		// new choice has to be read from the query string to apply on this request.
 		$unitPref = isset($_COOKIE['SetUnits']) ? $_COOKIE['SetUnits'] : '';
 		if (isset($_GET['unit'])) {
-			$unitPref = filter_input(INPUT_GET, "unit", FILTER_SANITIZE_STRING);
+			$unitPref = nw3_sanitize_string(isset($_GET["unit"]) ? $_GET["unit"] : null);
 			setcookie("SetUnits", $unitPref, time() + self::$cookieLifeSecs);
 		}
 		if ($unitPref == 'US') {

@@ -34,8 +34,8 @@ $typeconv = $typeconv2 = $typeconv;
 if(isset($_GET['month'])) { $mproc = intval($_GET['month']); } else { $mproc = $mon_yest; }
 if(isset($_GET['year'])) { $yproc = $_GET['year']; } else { $yproc = $yr_yest; }
 $sproc1 = mkdate($mproc,1,$yproc); $dim = date('t',$sproc1); $sproc = mkdate($mproc,$dim,$yproc);
-if($sproc >= mktime(0,0,0)) { $sproc = mktime()-3600*24; $dim = $day_yest; $num_adv = 31-$dim; }
-if($sproc < mkdate(2,1,2009) || $sproc - mktime() > 3700*$dim) { $toofar = true; $yproc = $dyear; }
+if($sproc >= mktime(0,0,0)) { $sproc = time()-3600*24; $dim = $day_yest; $num_adv = 31-$dim; }
+if($sproc < mkdate(2,1,2009) || $sproc - time() > 3700*$dim) { $toofar = true; $yproc = $dyear; }
 $dzed = date('z',$sproc)+1;
 $fdat = $fullpath."dat".$yproc.".csv";
 $fdatt = $fullpath."datt".$yproc.".csv";
@@ -51,7 +51,7 @@ if(true) {
 	$avtmint = $custom[21]['temp'];	$avtmaxt = $custom[22]['temp'];	$avhmint = $custom[21]['hum']; $avhmaxt = $custom[22]['hum'];
 	$mdat[$dday-1] = array($custom[23]['temp'], $custom[24]['temp'], $custom[25]['temp'],
 				$custom[23]['hum'], $custom[24]['hum'], $custom[25]['hum'],
-				round($custom[23]['baro']), round($custom[24]['baro']), round($custom[25]['baro']),
+				nw3_round($custom[23]['baro']), nw3_round($custom[24]['baro']), nw3_round($custom[25]['baro']),
 				$custom[25]['wind'], $maxavgspd, $custom[29], $custom[25]['wdir'],
 				$custom[26], $custom[1], $custom[0], $custom[32],
 				$custom[23]['dew'], $custom[24]['dew'], $custom[25]['dew'],

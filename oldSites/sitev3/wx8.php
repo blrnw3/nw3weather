@@ -179,7 +179,7 @@ class Traffic {
 		foreach ($this->annual as $yr => $data) {
 			if($yr > 2012) {
 				$last = $this->annual[$yr - 1]['sum'];
-				$this->annual[$yr]['yoy'] = "+ ". round(($data['sum'] - $last) / $last * 100) ."%";
+				$this->annual[$yr]['yoy'] = "+ ". nw3_round(($data['sum'] - $last) / $last * 100) ."%";
 			}
 			$this->annual_summary['sum'] += $data['sum'];
 			$this->annual_summary['mean'] += $data['mean'];
@@ -400,20 +400,20 @@ $traffic->prepare_annual_data_table();
 		<tfoot> <!-- Yes, it is meant to go here! -->
 			<tr>
 				<td>Total</td>
-				<td><?php echo number_format($traffic->annual_summary['sum']) ?></td>
-				<td><?php echo $traffic->annual_summary['yoy'] ?></td>
-				<td><?php echo $traffic->annual_summary['mean'] ?></td>
-				<td><?php echo $traffic->annual_summary['median'] ?></td>
-				<td><?php echo $traffic->annual_summary['max'] ?></td>
-				<td><?php echo $traffic->annual_summary['min'] ?></td>
+				<td><?php echo nw3_number_format($traffic->annual_summary['sum']) ?></td>
+				<td><?php echo $traffic->annual_summary['yoy'] ?? '' ?></td>
+				<td><?php echo $traffic->annual_summary['mean'] ?? '' ?></td>
+				<td><?php echo $traffic->annual_summary['median'] ?? '' ?></td>
+				<td><?php echo $traffic->annual_summary['max'] ?? '' ?></td>
+				<td><?php echo $traffic->annual_summary['min'] ?? '' ?></td>
 			</tr>
 		</tfoot>
 		<tbody>
 			<?php foreach ($traffic->annual as $year => $data): ?>
 			<tr>
 				<td><?php echo $year ?></td>
-				<td><?php echo number_format($data['sum']); if($year == $dyear) echo "+ (to ${data['TO']})"; ?></td>
-				<td><?php echo $data['yoy'] ?></td>
+				<td><?php echo nw3_number_format($data['sum']); if($year == $dyear) echo "+ (to ${data['TO']})"; ?></td>
+				<td><?php echo $data['yoy'] ?? '' ?></td>
 				<td><?php echo $data['mean'] ?></td>
 				<td><?php echo $data['median'] ?></td>
 				<td><?php echo $data['max'] ?> (<?php echo $data['max_date'] ?>)</td>

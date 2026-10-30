@@ -1,5 +1,6 @@
 <?php
 require 'Page.php';
+require_once ROOT . 'cron/DatmWriter.php';
 
 Page::init(array(
 	'fileNum' => 0,
@@ -7,6 +8,11 @@ Page::init(array(
 	'description' => 'Pond data input and modification.'
 ));
 Page::Start();
+
+require_once ROOT . 'AdminAuth.php';
+if (!AdminAuth::configured('ADMIN_POND_PASSWORD')) {
+	echo Page::getStatusDiv('Editing is disabled: the admin password is not configured on this server.', true);
+}
 
 function pondAdminEscape($value) {
 	return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
@@ -42,29 +48,30 @@ if (!is_readable($filePath)) {
 	$dayCount = count($datmLines);
 
 	if (isset($_POST['pwd'])) {
-		if ($_POST['pwd'] === 'cold') {
-			$file = fopen($filePath, 'w');
-			if ($file === false) {
+		if (AdminAuth::check('ADMIN_POND_PASSWORD', $_POST['pwd'])) {
+			$newLines = array($datmLines[0]);
+			for ($i = 1; $i < $dayCount; $i++) {
+				$oldLine = DatmWriter::parseLine($datmLines[$i]);
+				$newValue = isset($_POST['day-' . $i]) ? $_POST['day-' . $i] : '';
+				if (nw3_is_numeric($newValue)) {
+					$oldLine[12] = $newValue;
+				} elseif ($newValue !== '') {
+					$dateText = date('d M', Date::mkdate(1, $i, $year));
+					echo '<p>Ignored non-numeric value ' . pondAdminEscape($newValue)
+						. ' for ' . pondAdminEscape($dateText) . '</p>';
+				}
+				$lastColumn = count($oldLine) - 1;
+				$oldLine[$lastColumn] = 0;
+				$newLines[] = DatmWriter::formatLine($oldLine);
+			}
+			if (!DatmWriter::writeLines($filePath, $newLines)) {
 				echo Page::getStatusDiv('Server error. Contact Ben.', true);
 			} else {
-				for ($i = 0; $i < $dayCount; $i++) {
-					$oldLine = explode(',', $datmLines[$i]);
-					$newValue = isset($_POST['day-' . $i]) ? $_POST['day-' . $i] : '';
-					if (is_numeric($newValue)) {
-						$oldLine[12] = $newValue;
-					} elseif ($i > 0 && $newValue !== '') {
-						$dateText = date('d M', Date::mkdate(1, $i, $year));
-						echo '<p>Ignored non-numeric value ' . pondAdminEscape($newValue)
-							. ' for ' . pondAdminEscape($dateText) . '</p>';
-					}
-					$lastColumn = count($oldLine) - 1;
-					$oldLine[$lastColumn] = 0;
-					fputcsv($file, $oldLine);
-				}
-				fclose($file);
 				echo '<p>Saved! <a href="/wxdataday.php?vartype=pond">View updated temperatures</a>'
 					. ' (takes up to 1 minute to update).</p>';
 			}
+		} elseif (!AdminAuth::configured('ADMIN_POND_PASSWORD')) {
+			echo Page::getStatusDiv(AdminAuth::notConfiguredMessage(), true);
 		} else {
 			echo '<p>Password fail. Try again.</p>';
 		}
@@ -82,7 +89,7 @@ if (!is_readable($filePath)) {
 				<tbody>
 				<?php
 				for ($i = $dayCount - 1; $i > 0; $i--) {
-					$line = explode(',', $datmLines[$i]);
+					$line = DatmWriter::parseLine($datmLines[$i]);
 					$value = isset($line[12]) ? $line[12] : '';
 					$rowClass = ($i % 2 === 0) ? 'rowlight' : 'rowdark';
 					echo '<tr class="' . $rowClass . '"><td class="td10C">'

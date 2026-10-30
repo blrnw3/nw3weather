@@ -32,7 +32,7 @@ $ret = array(
 		'pressure' => (float)Live::$pres,
 		'feels_like' => (float)Live::$feel,
 		'wind_speed' => (float)Live::$wind,
-		'wind_gust' => (float)Live::$gustRaw,
+		'wind_gust' => Live::gustNow(),
 		'wind_10min' => (float)Live::$w10m,
 		'wind_gust_1min' => (float)Live::$gust,
 		'wind_degree' => (float)Live::$wdir,
@@ -44,4 +44,4 @@ $ret = array(
 	'24hr' => $HR24,
 );
 
-echo json_encode($ret);
+echo nw3_json_encode($ret);

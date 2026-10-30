@@ -3,7 +3,7 @@ require_once(__DIR__ . '/basics.php');
 
 // Block excessive curler
 $curlers = array("35.176.125.39", "92.237.11.251", "71.187.230.231");
-if(in_array($_SERVER['REMOTE_ADDR'], $curlers) && strpos($_SERVER['HTTP_USER_AGENT'], "urllib") !== false) {
+if(isset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']) && in_array($_SERVER['REMOTE_ADDR'], $curlers) && strpos($_SERVER['HTTP_USER_AGENT'], "urllib") !== false) {
 	http_response_code(429);
 	die("Too many requests. IP temporarily blocked. Please reduce the request rate to under 6 per hour. Email blr@nw3weather.co.uk to appeal. Thank you");
 }
@@ -19,7 +19,7 @@ class GenConsts {
 
 if (!isset($_SESSION)) {
 	session_start();
-	if (count($_SESSION['count']) == 0) {
+	if (!isset($_SESSION['count']) || count((array)$_SESSION['count']) == 0) {
 		$_SESSION['count'] = array();
 	}
 }
@@ -27,7 +27,7 @@ if (!isset($_SESSION)) {
 //Make data available
 $NOW = unserialize(file_get_contents(LEGACY_CACHE_ROOT . 'serialised_datNow.txt'));
 $HR24 = unserialize(file_get_contents(LEGACY_CACHE_ROOT . 'serialised_datHr24.txt'));
-if ($allDataNeeded) {
+if (!empty($allDataNeeded)) {
 	$DATA = unserialize(file_get_contents(LEGACY_CACHE_ROOT . 'serialised_dat.txt'));
 	$DATM = unserialize(file_get_contents(LEGACY_CACHE_ROOT . 'serialised_datm.txt'));
 }
@@ -44,7 +44,9 @@ if (isset($_GET['css'])) {
 	$STYLE_SHEET = 'mainstyle';
 }
 
-//Unit setting getter/saver
+//Unit setting getter/saver (UK units unless a US/EU choice below sets one of these)
+$imperial = false;
+$metric = false;
 if (isset($_GET['unit'])) {
 	if ($_GET['unit'] == 'US') {
 		$unitT = 'F';		$unitR = 'in';		$unitW = 'mph';		$unitP = 'inHg';
@@ -109,6 +111,7 @@ if (isset($_GET['update'])) {
 }
 
 //Me setting getter/saver (stops analytics and provides more debugging)
+$me = false;
 if (isset($_GET['blr'])) {
 	$me = true;
 	setcookie("me", true, time() + $expTime * 10);
@@ -120,7 +123,7 @@ if (isset($_GET['noblr'])) {
 	setcookie("me", false, time() + $expTime);
 }
 
-$nw3 = ($_SERVER['REMOTE_ADDR'] == '217.155.197.157');
+$nw3 = (isset($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'] == '217.155.197.157');
 
 //if(!$nw3 && $_SERVER['REMOTE_ADDR'] != '77.72.205.160' && strlen($_SERVER['REMOTE_ADDR']) > 4) {
 //	error_log('Died here'. $_SERVER['REMOTE_ADDR']);

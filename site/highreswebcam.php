@@ -17,8 +17,8 @@ $yproc = isset($_GET['year']) ? intval($_GET['year']) : Date::$dyear;
 $sproc = Date::mkdate($mproc, $dproc, $yproc);
 $datedescrip = date('jS F Y', $sproc);
 
-$riseproc = date_sunrise($sproc, SUNFUNCS_RET_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) - 1.5;
-$setproc = date_sunset($sproc, SUNFUNCS_RET_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) + 1.5;
+$riseproc = nw3_sunrise($sproc, NW3_SUN_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) - 1.5;
+$setproc = nw3_sunset($sproc, NW3_SUN_DOUBLE, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $sproc)) + 1.5;
 
 $archive_start = Date::mkdate(8, 1, 2010);
 $cond1 = $sproc > $archive_start;
@@ -190,39 +190,52 @@ foreach (range(0, $num_imgs - 1) as $n) {
 }
 
 /**
- * Collect existing frame URLs for a list of Hi stamps.
- * @return array list of array(stamp, src, label, day)
+ * Whether the long-term archive keeps this Hi stamp for a day of the given age
+ * (5-min frames, thinned to 8/hour after a year and 4/hour after three).
+ */
+function hrw_archive_keeps($img, $age_days) {
+	$mm = (int) substr($img, 2, 2);
+	if ($mm % 5 !== 0) { return false; }
+	if ($age_days > 1095) { return $mm % 15 === 0; }
+	if ($age_days > 365) { return !in_array($mm, array(5, 25, 35, 55)); }
+	return true;
+}
+
+/**
+ * Collect frame URLs for a list of Hi stamps.
+ * Days held locally are checked file by file. Older days live in the long-term archive (their /camchive/ URLs
+ * redirect there); their exact contents aren't known here, so frames are listed by the archive's thinning rules
+ * and any that turn out to be missing are hidden in the browser.
+ * @return array list of array(stamp, src, label, day, archived)
  */
 function hrw_existing_frames($imgs, $day_offset) {
 	global $sproc, $cam_type;
 	$day_ts = $sproc + 24 * 3600 * $day_offset;
 	$dir = date('Y/m/d', $day_ts);
 	$day = date('Y-m-d', $day_ts);
+	$today = Date::mkdate();
+	$archived = $day_ts < $today && !is_dir(Site::CAM_ROOT . "camchive/$cam_type/$dir");
+	$age_days = (int) round(($today - $day_ts) / 86400);
 	$frames = array();
 	foreach ($imgs as $img) {
 		$rel = "camchive/$cam_type/$dir/$img$cam_type.jpg";
-		if (file_exists(Site::CAM_ROOT . $rel)) {
+		$have = $archived ? hrw_archive_keeps($img, $age_days) : file_exists(Site::CAM_ROOT . $rel);
+		if ($have) {
 			$frames[] = array(
 				'stamp' => $img,
 				'src' => '/' . $rel,
 				'label' => substr($img, 0, 2) . ':' . substr($img, 2, 2),
 				'day' => $day,
+				'archived' => $archived,
 			);
 		}
 	}
 	return $frames;
 }
 
-$pre_frames = $pre_imgs ? hrw_existing_frames($pre_imgs, -1) : array();
-$post_frames = hrw_existing_frames($post_imgs, 0);
-$all_frames = array_merge($pre_frames, $post_frames);
-$modal_frames = $all_frames;
-
-if (!$all_frames) {
-	// No individual frames — fall back to datestamped daily summary (legacy archive)
-	$summaries = hrw_daily_summary($sproc);
-	echo '<div class="hrw-summary">';
-	echo '<h2>', htmlspecialchars($is_today ? 'Today' : $datedescrip), '</h2>';
+function hrw_render_summary($summaries, $heading, $datedescrip, $qrand, $hidden) {
+	echo '<div class="hrw-summary"', $hidden ? ' id="hrw-fallback" hidden' : '', '>';
+	echo '<h2>', htmlspecialchars($heading), '</h2>';
 	if ($summaries) {
 		foreach ($summaries as $sum) {
 			echo '<img class="hrw-summary-img" src="', htmlspecialchars($sum['url']), '?', $qrand,
@@ -233,11 +246,63 @@ if (!$all_frames) {
 		echo '<p>No images available for this day.</p>';
 	}
 	echo '</div>';
+}
+
+$pre_frames = $pre_imgs ? hrw_existing_frames($pre_imgs, -1) : array();
+$post_frames = hrw_existing_frames($post_imgs, 0);
+$all_frames = array_merge($pre_frames, $post_frames);
+$modal_frames = $all_frames;
+
+$any_archived = false;
+foreach ($all_frames as $f) { if ($f['archived']) { $any_archived = true; break; } }
+
+if (!$all_frames) {
+	// No individual frames — fall back to datestamped daily summary (legacy archive)
+	hrw_render_summary(hrw_daily_summary($sproc), $is_today ? 'Today' : $datedescrip, $datedescrip, $qrand, false);
 } else {
+	if ($any_archived) {
+		// Archived frames that don't exist are removed as they fail to load; if none are left, show the summary.
+		?>
+<script type="text/javascript">
+//<![CDATA[
+var hrwGone = {};
+function hrwMissing(img) {
+	var fig = img.parentNode.parentNode;
+	var grid = fig.parentNode;
+	hrwGone[img.parentNode.getAttribute('data-src')] = true;
+	grid.removeChild(fig);
+	if (!grid.getElementsByTagName('figure').length) {
+		var h = grid.previousSibling;
+		while (h && h.nodeType !== 1) { h = h.previousSibling; }
+		if (h && h.className === 'hrw-heading') { h.parentNode.removeChild(h); }
+		grid.parentNode.removeChild(grid);
+	}
+	var grids = document.getElementsByClassName('hrw-grid');
+	var left = 0;
+	for (var i = 0; i < grids.length; i++) { left += grids[i].getElementsByTagName('figure').length; }
+	var fb = document.getElementById('hrw-fallback');
+	if (!left && fb) { fb.removeAttribute('hidden'); }
+}
+//]]>
+</script>
+<?php
+	}
 	if ($pre_frames) {
 		hrw_render_grid($pre_frames, 'Yesterday', $width_opt);
 	}
 	hrw_render_grid($post_frames, $is_today ? 'Today' : $datedescrip, $width_opt);
+	$summaries = ($freq > 30 || $any_archived) ? hrw_daily_summary($sproc) : null;
+	if ($freq > 30 && $summaries) {
+		// coarse intervals: show the daily summary after the frames (it also covers frames that fail to load)
+		echo '<div class="hrw-summary"><h2>Daily summary</h2>';
+		foreach ($summaries as $sum) {
+			echo '<img class="hrw-summary-img" src="', htmlspecialchars($sum['url']), '?', $qrand,
+				'" alt="Webcam summary for ', htmlspecialchars($datedescrip), '" />';
+		}
+		echo '</div>';
+	} elseif ($any_archived) {
+		hrw_render_summary($summaries, $is_today ? 'Today' : $datedescrip, $datedescrip, $qrand, true);
+	}
 }
 
 function hrw_render_grid($frames, $heading, $cols) {
@@ -245,12 +310,15 @@ function hrw_render_grid($frames, $heading, $cols) {
 	echo '<h2 class="hrw-heading">', htmlspecialchars($heading), '</h2>';
 	echo '<div class="hrw-grid" style="--hrw-cols:', (int)$cols, '">';
 	foreach ($frames as $f) {
+		// archived frames never change, so no cache-busting query (it would also split the archive's cache)
+		$img_src = $f['archived'] ? $f['src'] : $f['src'] . '?' . date('dmYH');
+		$onerror = $f['archived'] ? ' onerror="hrwMissing(this)"' : '';
 		echo '<figure>';
 		echo '<button type="button" class="hrw-thumb" data-src="', htmlspecialchars($f['src']), '"'
 			. ' data-label="', htmlspecialchars($f['label']), '"'
 			. ' data-day="', htmlspecialchars($f['day']), '"'
 			. ' title="View ', htmlspecialchars($f['label']), ' frame">'
-			. '<img src="', htmlspecialchars($f['src']), '?', date('dmYH'), '" loading="lazy"'
+			. '<img src="', htmlspecialchars($img_src), '" loading="lazy"', $onerror
 			. ' alt="Skycam ', htmlspecialchars($f['label']), '" /></button>';
 		echo '<figcaption>', htmlspecialchars($f['label']), '</figcaption></figure>';
 	}
@@ -275,7 +343,7 @@ if ($all_frames) {
 <script type="text/javascript">
 //<![CDATA[
 $(function() {
-	var frames = <?php echo json_encode($modal_frames); ?>;
+	var frames = <?php echo nw3_json_encode($modal_frames); ?>;
 	var $modal = $('#cam-modal');
 	var $img = $('#cam-modal-img');
 	var $label = $('#cam-modal-label');
@@ -294,6 +362,9 @@ $(function() {
 	}
 
 	function openModal(src) {
+		if (window.hrwGone) {
+			frames = $.grep(frames, function(f) { return !hrwGone[f.src]; });
+		}
 		index = 0;
 		for (var i = 0; i < frames.length; i++) {
 			if (frames[i].src === src) { index = i; break; }

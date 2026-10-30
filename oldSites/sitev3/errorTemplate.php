@@ -28,7 +28,7 @@
 <?php
 $errorType = (int) $argv[1];
 $codes = array(400, 401, 403, 404, 412, 500);
-$errorIndex = array_search($errorType, $codes);
+$errorIndex = nw3_array_search($errorType, $codes);
 
 $codeNames = array('Bad Request',
 	'Access Unauthorised',

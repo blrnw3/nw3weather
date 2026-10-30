@@ -44,7 +44,7 @@ if(isset($_GET['multiyr'])) {
 	$botMargin = 55;
 }
 elseif(isset($_GET['year'])) {
-	$mon = (int)$_GET['month'];
+	$mon = (int)($_GET['month'] ?? 0);
 	$yr = (int)$_GET['year'];
 	if($yr > $dyear || ($yr == $dyear && $mon > $dmonth)) {
 		die('Invalid Month');
@@ -139,5 +139,5 @@ if($needLegend) {
 }
 
 // Display the graph
-$graph->Stroke($fileName);
+$graph->Stroke($fileName ?? '');
 ?>

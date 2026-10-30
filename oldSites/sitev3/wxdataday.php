@@ -39,7 +39,7 @@ require('wxdatagen.php');
 
 $en_mon = isset($_GET['endmon']) ? $_GET['endmon'] : 12;
 $endyr = $year;
-$num = isset($_GET['num']) ? $_GET['num'] - 1 : 11;
+$num = (isset($_GET['num']) && is_numeric($_GET['num'])) ? $_GET['num'] - 1 : 11;
 $st_mon = 1; //date('n', mkdate($en_mon - $num, 1, $endyr));
 $styr = $endyr;
 
@@ -48,15 +48,16 @@ $key = $types_all[$type];
 $_GET['vartype'.$key] = $types_alltogether[$key];
 //echo 'Key: '. $key;
 $data = array();
+$extra = $catcher = 0;
 while($valid) {
 	for($i = 0; $i < count($types_all); $i++) {
-		if(isset($_GET['vartype'.$i])) {
+		if(isset($_GET['vartype'.$i]) && is_string($_GET['vartype'.$i]) && isset($types_all[$_GET['vartype'.$i]])) { // ignore unknown variables
 			$dextra[$i] = $_GET['vartype'.$i];
 			$arrnum[$i] = $types_all[$dextra[$i]];
 
 			//Collect data
 			$allDat = getDailyDataForYear($dextra[$i], $year);
-			$data[$i] = array_merge($allDat);
+			$data[$i] = array_merge((array)$allDat); // null: no data for this year
 			if( $dextra[$i] == 'rain') {
 				$lhm[2] = 'Total';
 			}
@@ -130,7 +131,7 @@ for($day = 1; $day <= 31; $day++) {
 				$finalVal = '&nbsp;';
 			} elseif( $endyr == $dyear && mkdate($m_true, $day, $styr) > mkdate($dmonth,$dday, $dyear) ) {
 				//default for day not arrived (e.g. 7th April 2045)
-			} elseif( isBlank($data[ $arrnum[$i] ][$m][$day]) ) {
+			} elseif( isBlank($data[ $arrnum[$i] ][$m][$day] ?? '') ) { // missing month/day = blank
 //				echo $data[ $arrnum[$i] ][$m][$day], ',';
 				$class = 'invalid';
 				$finalVal = '&nbsp;';
@@ -140,8 +141,8 @@ for($day = 1; $day <= 31; $day++) {
 				$rconv = $typeconvs_all[$arrnum[$i]];
 				$put = $data[ $arrnum[$i] ][$m][$day];
 
-				$cumuls[$m] += $put;
-				$cumcnts[$m]++;
+				$cumuls[$m] = ($cumuls[$m] ?? 0) + nw3_to_number($put); // as on PHP 5
+				$cumcnts[$m] = ($cumcnts[$m] ?? 0) + 1;
 
 				$finalVal = conv( $put, $rconv, false );
 				$valcolval = $valcolConvert ? $finalVal : $put;
@@ -170,28 +171,30 @@ for($mm = (int)$isSum; $mm < $limitForSummaryLoop; $mm++) {
 
 	for($m = $st_mon - 1; $m <= $st_mon - 1 + $num; $m++) {
 		for($i = 0; $i < $varNum; $i++) {
-			if($mm == 0 && is_array($data[ $arrnum[$i] ][$m])) {
+			if($mm == 0 && isset($data[ $arrnum[$i] ][$m]) && is_array($data[ $arrnum[$i] ][$m])) {
 				$data[ $arrnum[$i] ][$m] = array_filter($data[ $arrnum[$i] ][$m], 'clearblank');
 			}
-			if(count($data[ $arrnum[$i] ][$m]) == 0) {
+			$put = (count((array)($data[ $arrnum[$i] ][$m] ?? null)) == 0) ? null : // (array): count(null) is a TypeError on 8.x
+				mom($data[ $arrnum[$i] ][$m], $mm);
+			if($put === null || $put === '') { // no (valid) data
 				$putConv = '---';
 				$rconv = false;
 				$class = 'reportday';
 				$anom = '-';
 			}
 			else {
-				$put = mom($data[ $arrnum[$i] ][$m], $mm);
 				$rconv = $typeconvs_all[$arrnum[$i]];
 
 				if($sumq_all[$arrnum[$i]] && $mm == 2) { //convert mean to sum and amend valuecolour setting
-					$put *= count($data[ $arrnum[$i] ][$m]);
+					$put *= count((array)$data[ $arrnum[$i] ][$m]);
 					$sumfix = $valcolSumOffset;
 				} else {
 					$sumfix = 1;
 				}
 
 				$putConv = conv($put, $rconv, false );
-				$class = valcolr( $putConv / $sumfix, $wxtablecols_all[$arrnum[$i]] );
+				// textual types (hail, thunder) are coloured by raw value, as in the day cells
+				$class = valcolr( nw3_to_number($valcolConvert ? $putConv : $put) / $sumfix, $wxtablecols_all[$arrnum[$i]] );
 
 				$anom = ($anomq_all[$arrnum[$i]] && $mm == 2) ?
 					'<br />' . '('. anomMonth($put, $arrnum[$i], $m) .')' : "";
@@ -207,7 +210,7 @@ if($isSum) { //show count of values above zero
 	td( 'Count', 'reportttl" style="padding:4px' );
 	for($m = $st_mon - 1; $m <= $st_mon - 1 + $num; $m++) {
 		for($i = 0; $i < $varNum; $i++) {
-			if(count($data[ $arrnum[$i] ][$m]) === 0) {
+			if(count((array)($data[ $arrnum[$i] ][$m] ?? null)) === 0) {
 				$put = '---';
 				$class = 'reportday';
 			}
@@ -230,7 +233,7 @@ if(!$isNotSummarisable) {
 	td( 'Cumu'.$cumExt, 'reportttl" style="padding:4px' );
 	for($m = $st_mon - 1; $m <= $st_mon - 1 + $num; $m++) {
 		for($i = 0; $i < $varNum; $i++) {
-			if($cumcnts[$m] == 0) {
+			if(($cumcnts[$m] ?? 0) == 0) {
 				$putConv = '---';
 				$rconv = false;
 				$class = 'reportday';
@@ -239,8 +242,8 @@ if(!$isNotSummarisable) {
 			else {
 				$put = $putCnt = 0;
 				for ($c = 0; $c <= $m; $c++) {
-					$put += $cumuls[$c];
-					$putCnt += $cumcnts[$c];
+					$put += $cumuls[$c] ?? 0;
+					$putCnt += $cumcnts[$c] ?? 0;
 				}
 				if(!$isSum) {
 					$put /= $putCnt;
@@ -250,7 +253,7 @@ if(!$isNotSummarisable) {
 				}
 				$rconv = $typeconvs_all[$arrnum[$i]];
 				$putConv = conv($put, $rconv, false );
-				$class = valcolr( $putConv / $sumfix, $wxtablecols_all[$arrnum[$i]] );
+				$class = valcolr( nw3_to_number($valcolConvert ? $putConv : $put) / $sumfix, $wxtablecols_all[$arrnum[$i]] );
 				$anom = ($isAnom) ? '<br />('. anomMonthCum($put, $arrnum[$i], $m) .')' : '';
 			}
 

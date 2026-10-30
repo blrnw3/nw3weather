@@ -6,7 +6,7 @@ class MidnightData {
 	public static function run() {
 		$t_start = microtime(true);
 		$stamp = date('Ymd', time() - 22 * 3600);
-		$yestNow = Data::dailyData($stamp);
+		$yestNow = Data::withOptionalKeys(Data::dailyData($stamp));
 		$yr_yest = Date::$yr_yest;
 		$day_yest = Date::$day_yest;
 		$root = ROOT;
@@ -60,11 +60,11 @@ class MidnightData {
 		file_put_contents(ROOT . 'wethrs.txt', $yestNow['misc']['wethrs']);
 
 		$fildat = fopen(ROOT . 'dat' . $yr_yest . '.csv', 'a');
-		fputcsv($fildat, $list);
+		nw3_fputcsv($fildat, $list);
 		fclose($fildat);
 
 		$fildatt = fopen(ROOT . 'datt' . $yr_yest . '.csv', 'a');
-		fputcsv($fildatt, $listt);
+		nw3_fputcsv($fildatt, $listt);
 		fclose($fildatt);
 
 		$yestNow['windDirs']['dt'] = $stamp;
@@ -72,13 +72,13 @@ class MidnightData {
 
 		if(date('n') == 1 && date('j') == 1) {
 			$fildat = fopen(ROOT . 'dat' . date('Y') . '.csv', 'w');
-			fputcsv($fildat, DatmWriter::datHeaders());
+			nw3_fputcsv($fildat, DatmWriter::datHeaders());
 			fclose($fildat);
 			$fildatt = fopen(ROOT . 'datt' . date('Y') . '.csv', 'w');
-			fputcsv($fildatt, DatmWriter::datHeaders());
+			nw3_fputcsv($fildatt, DatmWriter::datHeaders());
 			fclose($fildatt);
 			$fildatm = fopen(ROOT . 'datm' . date('Y') . '.csv', 'w');
-			fputcsv($fildatm, DatmWriter::datmHeaders());
+			nw3_fputcsv($fildatm, DatmWriter::datmHeaders());
 			fclose($fildatm);
 		}
 

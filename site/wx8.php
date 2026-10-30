@@ -158,7 +158,7 @@ class Traffic {
 			if($yr > 2012) {
 				$last = $this->annual[$yr - 1]['sum'];
 				$diff = $data['sum'] - $last;
-				$this->annual[$yr]['yoy'] = (($diff > 0) ? "+ " : "") . round($diff/ $last * 100) ."%";
+				$this->annual[$yr]['yoy'] = (($diff > 0) ? "+ " : "") . nw3_round($diff/ $last * 100) ."%";
 			} else {
 				$this->annual[$yr]['yoy'] = "";
 			}
@@ -333,8 +333,6 @@ class Traffic {
 	</p>
 	<ul>
 		<li><a href='/dat2012.csv' title='Daily data from 2012'>Sample csv</a></li>
-		<li><a href='/sample.xhtml' title='Source-code for monthly data tables webpage'>Sample script</a></li>
-		<li><a href='/test.php?var=tmin' title='Cached temperature summary'>Sample serialised summary</a></li>
 	</ul>
 
 	<h3>History</h3>
@@ -357,7 +355,7 @@ class Traffic {
 	</p>
 
 	<p>
-		<b><a href="/oldSites/sitev2">Site version 2</a></b> (10th Sep 2011 - 20th May 2013). <br />
+		<b><a href="/oldSites/sitev2-static/">Site version 2</a> (archived copy)</b> (10th Sep 2011 - 20th May 2013). <br />
 		This involved a change in the procedure for getting data, using
 		<abbr title="PHP: Hypertext Preprocessor (processed by the server into HTML before the page loads)">PHP</abbr>, which
 		was also used extensively across the site to enable most of the new features and site-areas: obtaining all the historical data, displaying when
@@ -405,7 +403,7 @@ $traffic->prepare_annual_data_table();
 		<tfoot> <!-- Yes, it is meant to go here! -->
 			<tr>
 				<td>Total</td>
-				<td><?php echo number_format($traffic->annual_summary['sum']) ?></td>
+				<td><?php echo nw3_number_format($traffic->annual_summary['sum']) ?></td>
 				<td><?php echo $traffic->annual_summary['yoy'] ?></td>
 				<td><?php echo $traffic->annual_summary['mean'] ?></td>
 				<td class="hide-small"><?php echo $traffic->annual_summary['median'] ?></td>
@@ -417,7 +415,7 @@ $traffic->prepare_annual_data_table();
 			<?php foreach ($traffic->annual as $year => $data): ?>
 			<tr>
 				<td><?php echo $year ?></td>
-				<td><?php echo number_format($data['sum']); if($year == Date::$dyear) { echo "+ (to ${data['TO']})"; } ?></td>
+				<td><?php echo nw3_number_format($data['sum']); if($year == Date::$dyear) { echo "+ (to ${data['TO']})"; } ?></td>
 				<td><?php echo $data['yoy'] ?></td>
 				<td><?php echo $data['mean'] ?></td>
 				<td class="hide-small"><?php echo $data['median'] ?></td>

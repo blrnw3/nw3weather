@@ -80,7 +80,7 @@ class DetailedDataModule {
 		for ($r = 0; $r < $cnt; $r++) {
 			tr(self::rowColour($r));
 			td($measures[$r], $this->cssClass);
-			td(conv($values[$r], $convs[$r]), $this->cssClass);
+			td(conv($values[$r] ?? null, $convs[$r]), $this->cssClass);
 			tr_end();
 		}
 
@@ -88,7 +88,8 @@ class DetailedDataModule {
 	}
 
 	function recentAvgsExtrms($wid = 56) {
-		global $dnm, $mmmr, $NOW, $mappingsToDailyDataKey, $lta, $dz, ${$this->letter.'datYest'}, ${$this->letter.'datToday'};
+		global $dnm, $mmmr, $NOW, $mappingsToDailyDataKey, $lta, $dz; // `global ${$this->...}` is a compile error since PHP 7.1
+		$datYest = $GLOBALS[$this->letter.'datYest'];
 
 		$key = $mappingsToDailyDataKey[$this->letter];
 
@@ -104,13 +105,13 @@ class DetailedDataModule {
 		for ($r = 0; $r < 3; $r++) {
 			$currVal = $NOW[$dnm[$r]][$key];
 
-			$anom = $this->letter == 't' ? ' (' . conv($tdatToday[2][$dnm[$r]], 1.1,1,1) . ')' : '';
-			$anomY = $this->letter == 't' ? ' (' . conv($tdatYest[2][$dnm[$r]], 1.1,1,1) . ')' : '';
+			$anom = $this->letter == 't' ? ' (' . conv($GLOBALS['tdatToday'][2][$dnm[$r]], 1.1,1,1) . ')' : '';
+			$anomY = $this->letter == 't' ? ' (' . conv($GLOBALS['tdatYest'][2][$dnm[$r]], 1.1,1,1) . ')' : '';
 
 			tr(self::rowColour($r));
 			td($GLOBALS['mmmFull'][$r], $this->cssClass);
-			td( '<b>'. conv($currVal, $this->conv) .'</b>'. $anom .'<br />'. $NOW['time'.$mmmr[$r]][$key], $this->cssClass );
-			td( '<b>'. conv(${$this->letter.'datYest'}[0][$dnm[$r]], $this->conv) .'</b>'. $anomY .'<br />'. ${$this->letter.'datYest'}[1][$r], $this->cssClass );
+			td( '<b>'. conv($currVal, $this->conv) .'</b>'. $anom .'<br />'. ($NOW['time'.$mmmr[$r]][$key] ?? ''), $this->cssClass );
+			td( '<b>'. conv($datYest[0][$dnm[$r]], $this->conv) .'</b>'. $anomY .'<br />'. $datYest[1][$r], $this->cssClass );
 			tr_end();
 		}
 
@@ -146,7 +147,7 @@ class DetailedDataModule {
 			for($c = 0; $c < self::$periodCnt; $c++) {
 				if($r != 6) {
 					$anom = $this->letter == 't' ? '<br />(' . conv($values[$r][self::$periods[$c].'anom'], 1.1,0,1) . ')' : '';
-					$date = ($values[$r][self::$periods[$c].'date'] != '') ? '<br />'. $values[$r][self::$periods[$c].'date'] : '';
+					$date = (($values[$r][self::$periods[$c].'date'] ?? '') != '') ? '<br />'. $values[$r][self::$periods[$c].'date'] : '';
 					td( '<b>'. conv($values[$r][self::$periods[$c]], $this->conv) .'</b>'. $anom . $date, $this->cssClass );
 				} else {
 					td('&nbsp;', $this->cssClass);
@@ -194,7 +195,7 @@ class DetailedDataModule {
 					else { $colour = ''; }
 
 					$anom = $this->letter == 't' ? '<br />(' . conv($values[$r][2][$mt], 1.1,0,1) . ')' : '';
-					$date = ($values[$r][1][$mt] != '') ? '<br />'. datefull($values[$r][1][$mt]) : '';
+					$date = (($values[$r][1][$mt] ?? '') != '') ? '<br />'. datefull($values[$r][1][$mt]) : '';
 					td( '<b>'. conv($values[$r][0][$mt], $this->conv) .'</b>'. $anom . $date, $this->cssClass . $colour );
 				} else {
 					td($months3[$mt], $this->cssClass);
@@ -210,7 +211,7 @@ class DetailedDataModule {
 		global $dnm, $season, $dmonth, $dyear, $snames;
 
 		$dat = $GLOBALS[$this->letter.'datSS'];
-		$datAnom = $GLOBALS[$this->letter.'datSSanom'];
+		$datAnom = $GLOBALS[$this->letter.'datSSanom'] ?? null;
 
 		table(null, $wid . '%" align="center', 6, true);
 		tableHead("Past Year Seasonal Averages", 4);

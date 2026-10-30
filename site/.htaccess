@@ -47,10 +47,20 @@ RewriteRule ^(skycam_(?:small|sunset|small_small)\.jpg)$ generated/legacy/$1 [L]
 RewriteRule ^((?:stitchedmaingraph(?:_small)?|mainGraph[1-4]|rose_(?:24hrs|month|year|all))\.png)$ generated/legacy/$1 [L]
 RewriteRule ^((?:dailywebcam|todaywebcam)\.jpg)$ generated/legacy/$1 [L]
 
-# Block fake Chrome versions
-#RewriteCond %{HTTP_USER_AGENT} "Chrome/[0-9]+\.0\.0\.0" [NC]
-#RewriteRule .* - [F,L]
-SetEnvIfNoCase User-Agent "Chrome/133\.0\.0\.0" bad_bot
+# Old /v5/ preview URLs (still crawled): same page at the root if it exists, else home.
+RewriteRule ^v5/?$ / [R=301,L]
+RewriteCond %{DOCUMENT_ROOT}/$1 -f
+RewriteRule ^v5/(.+)$ /$1 [R=301,L]
+RewriteRule ^v5/ / [R=301,L,QSD]
+
+# Apple touch icon size/precomposed variants all get the one 180x180 icon.
+RewriteRule ^apple-touch-icon-(?:[0-9]+x[0-9]+(?:-precomposed)?|precomposed)\.png$ apple-touch-icon.png [L]
+
+# Notes, shell and Python scripts are not site content.
+<FilesMatch "(?i)\.(md|sh|py|sql)$">
+order allow,deny
+deny from all
+</FilesMatch>
 
 <FilesMatch "^(400|401|403|404|500)\.html$">
 RewriteEngine Off
@@ -59,7 +69,6 @@ allow from all
 require all granted
 </FilesMatch>
 
-deny from env=bad_bot
 # Spammers and Hackers
 deny from 168.62.221.51
 deny from 91.200.12.9
@@ -452,8 +461,9 @@ redirect 301 /wxtempltas.html /wxtempltas.php
 redirect 301 /contact.html /contact.php
 redirect 301 /curr24hourgraph.gif /stitchedmaingraph_small.png
 redirect 301 /jpgwebcam.jpg /currcam.jpg
+redirect 301 /webcamimage.gif /currcam.jpg
 
-redirect 301 /Historical.php /oldSites/sitev2/Historical.php
+redirect 301 /Historical.php /oldSites/sitev2-static/Historical.html
 redirect 301 /sitemap.php /
 redirect 301 /sitev3 /
 redirect 301 /wx100.php /wx10.php?humtype=dew
@@ -488,3 +498,10 @@ RewriteRule ^IMG_0417e?.JPG$ /photos/IMG_0417.JPG [R=301,L]
 RewriteCond %{HTTP_HOST} ^nw3weather\.co\.uk$ [OR]
 RewriteCond %{HTTP_HOST} ^www\.nw3weather\.co\.uk$
 RewriteRule ^index\.php$ "https\:\/\/nw3weather\.co\.uk\/" [R=301,L]
+
+# Legacy v3 pages ask for their own favicon.
+redirect 301 /oldSites/sitev3/favicon.ico /favicon.ico
+
+# Two album-1 photos are stored with a lower-case extension.
+RewriteRule ^photos/italy20103\.JPG$ photos/italy20103.jpg [L]
+RewriteRule ^photos/italy20109s\.JPG$ photos/italy20109s.jpg [L]

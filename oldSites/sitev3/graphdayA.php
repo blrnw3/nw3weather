@@ -16,12 +16,14 @@ if(false && $me) {
 }
 
 $graph = new Graph($dimx,$dimy); $marg2 = 10;
+$wdirSet = false;
+$extra = '';
 if($dtype == 'rain') { $graph->SetScale('text'.$rnlin,0,$rnmaxScale); $marg3 = 28; }
 elseif($dtype == 'wdir') { $graph->SetScale('textlin',0,360); $wdirSet = true; $marg3 = 22; }
 else { $graph->SetScale('textint'); }
 
 for($i = 0; $i < 5; $i++) {
-	if($dble[$i]) {
+	if(!empty($dble[$i])) {
 		if($dextra[$i] == 'rain') { $graph->SetYScale($i,$rnlin,0,$rnmaxScale); $marg3 = 28; }
 		else { $graph->SetYScale($i,'int'); }
 	$extra .= ' & '.$daynames[$dextra[$i]]; $marg2 +=45; }
@@ -31,7 +33,7 @@ $graph->SetShadow();
 
 if($argc > 3) { //main-page mini-graphs margin override
 	$marg2 = 40;
-	$marg3 = $argv[5];
+	$marg3 = isset($argv[5]) ? $argv[5] : null;
 }
 $graph->SetMargin(30+$marg3,$marg2,20,$fmarge); //left,right,top,bottom
 
@@ -51,7 +53,7 @@ $graph->Add($bplot);
 $bplot->SetColor($daycols[$dtype]);
 
 for($i = 0; $i < 5; $i++) {
-	if($dble[$i]) { ###
+	if(!empty($dble[$i])) { ###
 		$bplot2[$i] = new LinePlot($data[$daytypes[$dextra[$i]]]);
 		$graph->AddY($i,$bplot2[$i]);
 		$bplot2[$i]->SetColor($daycols[$dextra[$i]]);
@@ -86,7 +88,7 @@ $graph->yaxis->SetTitleMargin(15+$marg3);
 $graph->yaxis->title->SetColor($daycols[$dtype]);
 
 for($i = 0; $i < 5; $i++) {
-	if($dble[$i]) { ###
+	if(!empty($dble[$i])) { ###
 		$graph->ynaxis[$i]->SetTitle($daynames[$dextra[$i]]);
 		$graph->ynaxis[$i]->SetTitleMargin(35);
 		$graph->ynaxis[$i]->SetColor($daycols[$dextra[$i]]);
@@ -101,7 +103,7 @@ for($i = 0; $i < 5; $i++) {
 // 	$footerstring .= '; Final Load time: ' . round($phpload, 2) . ' s';
 // }
 
-if(!$nofooter) { $graph->footer->center->Set($footerstring); }
+if(empty($nofooter)) { $graph->footer->center->Set($footerstring); }
 
 $graph->title->SetFont(FF_FONT1,FS_BOLD);
 $graph->xaxis->title->SetFont(FF_FONT1,FS_BOLD);

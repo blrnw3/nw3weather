@@ -55,8 +55,8 @@ $sproc = mkdate($mproc,$dproc,$yproc);
 $datetag = date('Ymd',$sproc) . 'daily';
 $datedescrip = date('jS F Y',$sproc);
 
-$riseproc = date_sunrise($sproc, SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) - 1.5;
-$setproc = date_sunset($sproc, SUNFUNCS_RET_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) + 1.5;
+$riseproc = nw3_sunrise($sproc, NW3_SUN_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) - 1.5;
+$setproc = nw3_sunset($sproc, NW3_SUN_DOUBLE, $lat, $lng, $zenith, date('I', $sproc)) + 1.5;
 
 if($me) { echo " Sunrise: $riseproc; &nbsp; Sunset: $setproc <br />"; }
 
@@ -66,15 +66,16 @@ if(!$cond1) { echo '<b>Archive begins on 20th March 2012 (patchy until 27 Jun 20
 $is_today = (mkdate() === $sproc);
 
 $height_mult = 0.75;
+$choseng = $chosens = $chosenh = $chosend = $chosena = '';
 if(isset($_GET['camtype']) && $_GET['camtype'] == "gnd") {
 	$cam_type = "gnd"; $choseng = checkHTML;
-} else if($_GET['camtype'] == "sky") {
+} else if(isset($_GET['camtype']) && $_GET['camtype'] == "sky") {
 	$cam_type = "sky"; $chosens = checkHTML;
 } else {
 	$cam_type = "hik"; $chosenh = checkHTML; $height_mult = 0.666;
 }
 if(isset($_GET['light']) && $_GET['light'] == "day") { $light = "day"; $chosend = checkHTML; } else { $light = "all"; $chosena = checkHTML; }
-if(isset($_GET['width']) && $widths[(int)$_GET['width']] ) { $width_opt = (int)$_GET['width']; } else { $width_opt = 3; }
+if(isset($_GET['width']) && !empty($widths[(int)$_GET['width']]) ) { $width_opt = (int)$_GET['width']; } else { $width_opt = 3; }
 if(isset($_GET['freq']) && in_array((int)$_GET['freq'], $freqs) ) { $freq = (int)$_GET['freq']; } else { $freq = $freqs[2]; }
 if(isset($_GET['frame']) && (int)$_GET['frame'] < 24) { $frame = intval($_GET['frame']); } else { $frame = $is_today ? (int)date("H") : 12; }
 
@@ -220,9 +221,15 @@ function cam_table($imgs, $heading, $day_offset) {
 	foreach($img_rows as $null => $img_row) {
 		echo "<tr>";
 		foreach($img_row as $img) {
-			$dir = date('Y/m/d', $sproc + 24 * 3600 * $day_offset);
+			$day_ts = $sproc + 24 * 3600 * $day_offset;
+			$dir = date('Y/m/d', $day_ts);
 			$src = "camchive/$cam_type/$dir/$img$cam_type.jpg";
-			if(file_exists(CAM_ROOT.$src)) {
+			// days no longer held locally are served from the long-term archive via the same URL
+			$archived = $day_ts < mkdate() && !is_dir(CAM_ROOT."camchive/$cam_type/$dir");
+			if($archived) {
+				echo '<td align="center"><img src="/', $src, '" alt="webcam" width="', $width, '" height="', $height,
+					'" onerror="this.parentNode.innerHTML=\'No image\'" /></td>';
+			} elseif(file_exists(CAM_ROOT.$src)) {
 				echo '<td align="center"><img src="/', $src, '?', $qrand ,'" alt="webcam" width="', $width, '" height="', $height, '" /></td>';
 			} else {
 				echo '<td align="center">No image</td>';
@@ -239,6 +246,14 @@ function cam_table($imgs, $heading, $day_offset) {
 }
 ?>
 </table>
+<?php
+// coarse intervals: show the daily summary after the frames
+$summary_rel = date('Y/Ymd', $sproc) . 'dailywebcam.jpg';
+if($freq > 30 && file_exists(ROOT . $summary_rel)) {
+	echo '<h2 style="text-align:center">Daily summary</h2><p style="text-align:center"><img src="/', $summary_rel, '?', $qrand,
+		'" alt="Webcam summary for ', $datedescrip, '" style="max-width:100%" /></p>';
+}
+?>
 
 </div>
 

@@ -55,7 +55,7 @@
 		td(date($format, $timestamps[$r]));
 		$ago = $timestamps[0] - $timestamps[$r];
 		td(secsToReadable($ago));
-		$ledColour = ($ago <= $freqs[$r]) ? 'Green' : ( ($ago < $limit[$r]) ? 'Amber' : 'Red' );
+		$ledColour = (isset($freqs[$r]) && $ago <= $freqs[$r]) ? 'Green' : ( (isset($limit[$r]) && $ago < $limit[$r]) ? 'Amber' : 'Red' );
 		$led = (isset($freqs[$r])) ? '<img src="'. IMG_ROOT .'LED_'. $ledColour
 			.'.png" alt="health" title="Expected Frequency: '. secsToReadable($freqs[$r]) .'" />' : '';
 		td($led);
