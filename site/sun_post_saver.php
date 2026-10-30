@@ -1,6 +1,8 @@
 <?php
 /**
- * External sun-hours webhook. Writes yesterday's sun JSON and appends datm.
+ * External sun-hours webhook (the old classifier's nightly POST). Always saves yesterday's sun JSON.
+ * With NW3_SUN_AUTO_DATM on (default) the webcam model owns datm sunhr, so the posted value is only recorded in
+ * NW3_SUN_COMPARE_CSV next to the model's; with it off, the posted value appends the datm row as before.
  */
 $GLOBALS['NW3_ALLOW_WEB_BOOTSTRAP'] = true;
 require_once('/var/www/html/cron/bootstrap.php');
@@ -35,6 +37,10 @@ function save_sun() {
 	} else {
 		http_response_code(500);
 		echo "Failed to write data.";
+	}
+	if(NW3_SUN_AUTO_DATM) {
+		SunLog::recordCompare($dtStr, ['old_h' => $sunhrs, 'old_received' => date('c')]);
+		return;
 	}
 	if(!DatmWriter::write($sunhrs)) {
 		mail('alerts@nw3weather.co.uk', 'Failed to write sunhrs!', 'Data already written for this day apparently');

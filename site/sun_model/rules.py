@@ -1,4 +1,4 @@
-"""Per-minute sunshine rules for nw3 (port of rwcweather rwcwx/sun/rules.py, py3.6, no dataclasses).
+"""Per-minute sunshine rules for nw3 (port of rwcweather rwcwx/sun/rules.py).
 
 nw3 differences (see NW3_NOTES.md): London latitude (winter noon sun only ~15 deg, so LOW_EL / OBSTRUCT_EL must be
 re-tuned on labelled nw3 days; values below are rwc's starting points), camera faces ~NNE so the sun is only in frame

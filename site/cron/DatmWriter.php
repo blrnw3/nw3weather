@@ -101,11 +101,17 @@ class DatmWriter {
 			}
 		}
 		$wethrs = file_exists(ROOT . 'wethrs.txt') ? file_get_contents(ROOT . 'wethrs.txt') : '0';
-		$listm = array($sunhrs, $wethrs, 'u', '', '', '', '', '', 'blr', '', '', '1', $pond_temp, '\n');
+		// 'blr' in comms marks the row as not yet reviewed (datamod lists these as missing days); spare is 0
+		$listm = array($sunhrs, trim($wethrs), 'u', '', '', '', '', '', 'blr', '', '', '1', trim((string)$pond_temp), '0');
 		$fildatm = fopen($path, 'a');
-		nw3_fputcsv($fildatm, $listm);
+		if ($fildatm === false) {
+			return false;
+		}
+		flock($fildatm, LOCK_EX);
+		$ok = fwrite($fildatm, self::formatLine($listm)) !== false;
+		flock($fildatm, LOCK_UN);
 		fclose($fildatm);
-		return true;
+		return $ok;
 	}
 
 	/** Ensure datm was written; mail if sunhrs never arrived. */

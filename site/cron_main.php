@@ -122,16 +122,13 @@ copy($goodlog, $stamplog);
 file_put_contents(ROOT.'api_latest.txt', $newLine);
 
 //datm append
+// Webcam sunshine (sun_model) is the source of yesterday's sunhr: written at 00:40 (after the classifier finishes
+// yesterday at 00:00-00:30) and retried at the datm check. DatmWriter::write only appends a missing row, so an
+// existing row (hand-entered, datamod-edited or already written) is never changed.
+if(NW3_SUN_AUTO_DATM && ($tstamp === '0040' || $tstamp == $datmCheckTime)) {
+	SunLog::writeDatm(Date::$dtstamp_yest);
+}
 if($tstamp == $datmCheckTime) {
-	// Webcam sunshine rollup (sun_model): only when enabled, and only ever appends yesterday's new datm row
-	// (DatmWriter::write refuses if the row already exists), so hand-reviewed history is never overwritten.
-	if(defined('NW3_SUN_AUTO_DATM') && NW3_SUN_AUTO_DATM) {
-		$sunYest = SunLog::dayTotal(date('Ymd', Date::$dtstamp_yest));
-		// partial days (a long start/end block of missing webcam data) are a lower bound: leave datm for hand entry
-		if($sunYest !== null && !$sunYest['partial']) {
-			DatmWriter::write(strval(nw3_round($sunYest['hours'], 1)));
-		}
-	}
 	DatmWriter::checkWritten();
 }
 

@@ -68,8 +68,12 @@ function nw3_atomic_write($path, $contents) {
 if(!defined('NW3_SUNLOG_DIR')) {
 	define('NW3_SUNLOG_DIR', ROOT . 'sunlog/');
 }
-// Off by default: when true, the 06:03 datm check appends yesterday's sunhr from the webcam log
-// (only if the row is not already written; existing / hand-reviewed rows are never changed).
+// On: the webcam model writes yesterday's datm sunhr (cron_main 00:40, retried at the 06:03 check; only appends a
+// missing row, so existing / hand-edited rows are never changed). sun_post_saver.php then only records the old
+// classifier's value in NW3_SUN_COMPARE_CSV. Set false to return datm sunhr to the old classifier's nightly post.
 if(!defined('NW3_SUN_AUTO_DATM')) {
-	define('NW3_SUN_AUTO_DATM', false);
+	define('NW3_SUN_AUTO_DATM', true);
+}
+if(!defined('NW3_SUN_COMPARE_CSV')) {
+	define('NW3_SUN_COMPARE_CSV', ROOT . 'sun/sun_old_posts.csv');
 }

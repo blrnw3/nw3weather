@@ -117,3 +117,35 @@ rows are the nightly auto-posted values from the older classifier, not yet hand-
   new - datm: 10-18 -0.2, 10-19 -1.0, 10-20 0.0, 10-21 0.0, 10-22 +0.8, 10-23 0.0, 10-24 -0.1, 10-25 +0.4,
   10-26 0.0, 10-27 +0.2, 10-28 -0.5, 10-29 -3.3. 10-29 frames are overcast all morning (old classifier: sunny
   09:25-12:20), so that gap is the old value. Excluding 10-29: MAE 0.27 h, bias -0.04 h (n=11); with it 0.53 / -0.31 (n=12).
+
+## Rollout: model owns datm sunhr (2026-10-30)
+- Homepage unchanged for now (no sunshine card). Intraday charts and api_v1 carry the live series.
+- `cron_main` writes yesterday's sunhr from `sunlog/` at 00:40 London (the classifier finishes yesterday at 00:00-00:30)
+  and retries at the 06:03 datm check (`SunLog::writeDatm`, `NW3_SUN_AUTO_DATM`, default on). Under 50% coverage
+  writes nothing (the usual 06:03 fallback then applies); a partial day writes its lower bound and mails for review.
+- Manual edits are never clobbered: the nightly path only appends the missing row for yesterday (`DatmWriter::write`
+  refuses if it exists). New rows keep comms `blr`, which datamod lists as not yet reviewed; any datamod save of the
+  day sets comms to the editor's value (default `-` / `rn`), so `blr` = never reviewed.
+- `sun_post_saver.php` (old classifier) still saves `sun/YYYYMMDD.json` but no longer writes datm; it records its value
+  in `sun/sun_old_posts.csv` (date, old_h, old_received, new_h, new_coverage, new_partial, new_recorded,
+  datm_written), where the nightly write records the model's value for the same day.
+- `DatmWriter::write` now writes the spare field as 0 (was a quoted literal `\n`); `scripts/fix_datm_spare.php` fixes
+  rows already written that way (dry run by default).
+
+## Why a separate per-minute sunlog (not a column in logfiles/daily)
+The weather log lines are written once per minute by cron_main and `{Ymd}log.txt` is frozen at midnight, while the
+classifier runs every 5 min, lags a few minutes and revises recent minutes (median filter, gap fill, low-sun carry)
+until 00:30 the next day, and backfills rewrite whole past days. Rolling it in would mean rewriting goodlog, todaylog
+and frozen daily files under cron_main's per-minute writes, and the daily total also needs p / w / pw / flags that do
+not belong in the weather log. Readers of the weather log are unaffected either way (they accept extra columns).
+
+## Backfill (scripts/sun_backfill.py, dry run by default)
+Automated = comms `blr` and sunhr equal to the old classifier's posted value (sun/*.json sun_mins), or comms `blr`,
+no post and sunhr 0 (the 06:03 default). Reviewed-but-unchanged days (comms changed in datamod, sunhr = posted value)
+only with --include-reviewed. Frames every 5 min exist from 2026-04-05 (Spaces cam archive; local camchive from
+2026-07-22); a day needs >= 90% possible-sun coverage. Dry run 2026-04-05..10-29: 120 automated days (116 auto,
+4 default-0), 119 eligible (109 change, 10 same): MAE 0.73 h vs the current value, bias -0.35 h; 54 reviewed-unchanged days MAE 0.54.
+
+## Follow-up (not done)
+LLM visual check of a sample of past days (largest model vs datm gaps first, e.g. 2026-07-10, 2026-08-26) for bad
+readings, at full resolution, before trusting older totals.

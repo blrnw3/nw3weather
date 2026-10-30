@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Cron wrapper for site/sun_model/classify.py (webcam sunshine). NOT INSTALLED - suggested crontab (user ben):
 #   */5 * * * * /srv/nw3weather/repo/scripts/run_sun_classify.sh   (the deploy checkout; site code runs from the docroot)
+# cron_main writes the nightly datm sunhr from its output at 00:40, so this must be installed when NW3_SUN_AUTO_DATM is on.
 # Single instance (flock), low priority (nice/ionice), capped memory; uses the per-user venv ~/sunenv
 # (python3 -m venv ~/sunenv && ~/sunenv/bin/pip install -r scripts/sun_requirements.txt).
 # Frames: the 1-min local camchive under CAM_ROOT (cron_cam.php). Output: docroot sunlog/ (group nw3web, setgid).

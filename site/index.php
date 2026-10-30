@@ -122,7 +122,6 @@ $moonName = isset($moonphasename) ? trim($moonphasename) : 'Moon phase';
 			<div><span class="k">Illumination</span><span class="v"><?php echo isset($moonphase) ? $moonphase : '-'; ?></span></div>
 		</div>
 	</div>
-	<?php nw3_render_sun_card(); ?>
 </div>
 <noscript><p><b>Note:</b> Javascript must be enabled for live updates to function</p></noscript>
 

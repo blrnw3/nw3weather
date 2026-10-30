@@ -1,4 +1,4 @@
-"""UK local <-> naive UTC without zoneinfo (py3.6): uses the system tz database via TZ=Europe/London."""
+"""UK local <-> naive UTC via the system tz database (TZ=Europe/London)."""
 import os
 import time
 from datetime import datetime, timedelta

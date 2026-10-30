@@ -1018,7 +1018,7 @@ class Wx {
 			'ratemean' => 'Mean rain rate during periods of rain, i.e. rain over wet hours, for the day (midnight to midnight, local time).',
 			'sunhrp' => 'Sunshine as a percentage of the maximum possible for that day (nw3 sunmax, allowing for the local horizon).',
 			'wethrp' => 'Percentage of the day (midnight to midnight, local time) that recorded measurable rain.',
-			'sunhr' => 'Hours of bright sunshine during the day, classified minute by minute from the webcam (a lightweight on-server model). Today\'s running total updates live; daily values are hand-reviewed.',
+			'sunhr' => 'Hours of bright sunshine during the day, classified minute by minute from the webcam (a lightweight on-server model). Daily totals are written each night and may be corrected by hand.',
 			'wethr' => 'Hours with measurable rainfall during the day (midnight to midnight, local time). Estimated heuristically from rain observations.',
 			'rdays' => 'Count of days (midnight to midnight) with more than 0.2 mm of rain.',
 			'maxsun' => 'Maximum possible sunshine hours for the day (sunrise to sunset).',
