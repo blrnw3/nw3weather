@@ -34,3 +34,9 @@ lastrn
 /logfiles/
 /log/
 /Logs/
+
+# Sun model artifacts are source, not generated data: keep them tracked despite the *.json / *.png rules above
+!/sun_model/models/*.json
+!/sun_model/models/*.png
+__pycache__/
+*.pyc

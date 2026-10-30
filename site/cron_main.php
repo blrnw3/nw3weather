@@ -122,6 +122,12 @@ copy($goodlog, $stamplog);
 file_put_contents(ROOT.'api_latest.txt', $newLine);
 
 //datm append
+// Webcam sunshine (sun_model) is the source of yesterday's sunhr: written at 00:40 (after the classifier finishes
+// yesterday at 00:00-00:30) and retried at the datm check. DatmWriter::write only appends a missing row, so an
+// existing row (hand-entered, datamod-edited or already written) is never changed.
+if(NW3_SUN_AUTO_DATM && ($tstamp === '0040' || $tstamp == $datmCheckTime)) {
+	SunLog::writeDatm(Date::$dtstamp_yest);
+}
 if($tstamp == $datmCheckTime) {
 	DatmWriter::checkWritten();
 }
@@ -129,6 +135,8 @@ if($tstamp == $datmCheckTime) {
 // v5 live and rolling caches.
 nw3_ensure_runtime_dirs();
 $newNOW = Data::dailyData();
+// Webcam sunshine so far today (sun_model/classify.py -> sunlog/), as a first-class live value.
+$newNOW['sun'] = SunLog::live();
 $GLOBALS['newNOW'] = $newNOW;
 nw3_atomic_write(V5_CACHE_ROOT . 'serialised_datNow.txt', serialize($newNOW));
 nw3_atomic_write(V5_CACHE_ROOT . 'serialised_datHr24.txt', serialize(Data::dailyData(date('Ymd'))));
