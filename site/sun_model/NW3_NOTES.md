@@ -15,7 +15,11 @@ Differences from rwc
 - Output is a logfile per day (`sunlog/YYYYMMDD.csv`) + `sunlog/latest.json`; no DB. datm/sunhr history untouched.
 - Possible sunshine for % keeps the nw3 `sunmax` precedent (display side), not astronomical daylight.
 
-Server: py3.6.8, `~/sunenv` (pip 21.3.1, numpy 1.19.5, Pillow 8.4.0); ~105 ms/frame, ~50 MB peak RSS.
+Server (old, until 2026-10): py3.6.8, `~/sunenv` (numpy 1.19.5, Pillow 8.4.0); ~105 ms/frame, ~50 MB peak RSS.
+Server (current): Ubuntu 24.04, py3.12, `~/sunenv` from scripts/sun_requirements.txt (numpy 2.5.4, Pillow 11.3.0,
+~100 MB on disk). Frames from the local 1-min camchive (`Site::CAM_ROOT` camchive/hik). ~55 ms CPU per frame
+(~85 ms wall under nice), ~60 MB peak RSS; a cold full day (1440 frames) ~2 min, a 5-min incremental run < 1 s.
+Features are bit-identical to the research features on a sample of archived frames.
 
 ## M2 results (2026-10-16)
 - Labels: 919 frames 2021-09+ (348 sunny / 386 not / 185 unsure), agent-labelled per rwc guide; Ben rule: clear sky with
@@ -106,3 +110,10 @@ Effect (v4, 541 eval days): 11 totals change. 2022-06-11 11.30 -> 8.63 (+2.9 h u
 14.65 -> 7.55 (+7.0 unknown). Clean 349 days: MAE 0.53 +0.05 -> 0.54 +0.03 (n 348; one all-dull day drops under 50%).
 Partial days are now lower bounds, so their error vs datm is negative by design (16 days: old MAE 0.77 bias +0.57,
 new lower-bound MAE 1.34 bias -1.19); none is over-stated any more. Parity test: scripts/sun_research/partial.
+
+## Current server check (2026-10-30)
+v4 over 2026-10-18..30 from the local camchive (1-min days 19, 27-30; 5-min otherwise) vs datm sunhr. Recent datm
+rows are the nightly auto-posted values from the older classifier, not yet hand-reviewed:
+  new - datm: 10-18 -0.2, 10-19 -1.0, 10-20 0.0, 10-21 0.0, 10-22 +0.8, 10-23 0.0, 10-24 -0.1, 10-25 +0.4,
+  10-26 0.0, 10-27 +0.2, 10-28 -0.5, 10-29 -3.3. 10-29 frames are overcast all morning (old classifier: sunny
+  09:25-12:20), so that gap is the old value. Excluding 10-29: MAE 0.27 h, bias -0.04 h (n=11); with it 0.53 / -0.31 (n=12).

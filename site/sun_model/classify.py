@@ -3,7 +3,7 @@
   ~/sunenv/bin/python -m sun_model.classify                      # today (UK local)
   ~/sunenv/bin/python -m sun_model.classify -d 2026-10-15 --out /tmp/sunlog --dry-run
 
-Inputs : <frames>/YYYY/MM/DD/HHMMhik.jpg  (UK local time, as written by cron_cam.php)
+Inputs : <frames>/YYYY/MM/DD/HHMMhik.jpg  (UK local time, as written by cron_cam.php under CAM_ROOT)
 Outputs: <out>/YYYYMMDD.csv   one row per daylight minute: hhmm_local,value,p,ps,w,flags  (value 1/0/blank)
          <out>/latest.json    today's running total, coverage and the current state, for cron_main/live pages
          <out>/cache/YYYYMMDD.json  per-frame probabilities, so each run only classifies new frames
@@ -16,7 +16,7 @@ import json
 import math
 import os
 import sys
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
@@ -27,7 +27,7 @@ from sun_model.model import LrModel                                    # noqa: E
 from sun_model.rules import GLITCH_PINK, Frame, classify_day, partial_total, summary # noqa: E402
 from sun_model.solar import solar_pos, sun_times_utc                              # noqa: E402
 
-FRAMES_DIR = "/mnt/webcam/html/camchive/hik"
+FRAMES_DIR = os.environ.get("NW3_SUN_FRAMES", "/srv/nw3weather/cam/stills/camchive/hik")  # Site::CAM_ROOT
 OUT_DIR = "/var/www/html/sunlog"
 CACHE_SCHEMA = 2
 FULL_COV, MIN_COV = 0.9, 0.5
@@ -191,7 +191,7 @@ def main():
     ap.add_argument("--out", default=OUT_DIR)
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     d = datetime.strptime(a.date, "%Y-%m-%d").date() if a.date else utc_to_local(now).date()
     is_today = d == utc_to_local(now).date()
     info, _ = run(d, a.frames, a.out, a.dry_run, now if is_today else None)

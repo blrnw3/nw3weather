@@ -23,7 +23,7 @@ def _with_tz(fn):
 def local_to_utc(dt):
     """Naive UK local -> naive UTC. Ambiguous autumn hour resolves to the first (BST) instance."""
     ts = _with_tz(lambda: time.mktime(dt.timetuple()[:8] + (-1,)))
-    return datetime.utcfromtimestamp(ts)
+    return datetime(1970, 1, 1) + timedelta(seconds=ts)
 
 
 def utc_to_local(dt):
