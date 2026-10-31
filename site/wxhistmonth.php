@@ -185,6 +185,7 @@ for ($i = 0; $i < $NCOL; $i++) {
 	HTML::td($DESC[$i], $c);
 	foreach ($order as $idx) {
 		$disp = ($i == 12) ? $msdat[12][$idx] : $fmt($msdat[$i][$idx], $UNIT[$i]);
+		if ($UNIT[$i] === Wx::Pm25) { $disp = Wx::aqSpan($msdat[$i][$idx], $disp, ['min', 'max', 'mean'][$i - 33] ?? 'mean', true); }
 		$cell = ($mtdat[$i][$idx] !== '') ? HTML::acronym($mtdat[$i][$idx], $disp) : $disp;
 		HTML::td($cell . $manom[$i][$idx], $c);
 	}
@@ -382,6 +383,10 @@ foreach ($breakGroups as $breakGroup) {
 				$disp = Wx::conv($raw, $unit, false);
 				$num = Wx::convNum($raw, $unit);
 				$class = Report::valcolForType($type, ($num === null ? (float)$raw : $num));
+			}
+			if ($unit === Wx::Pm25) {
+				$disp = Wx::aqSpan($raw, $disp, Wx::aqAvg($type));
+				$class .= ' aqc';
 			}
 			echo '<td class="' . htmlspecialchars($class) . '">' . $disp . '</td>';
 		}

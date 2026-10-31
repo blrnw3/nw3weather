@@ -116,6 +116,11 @@ class Page {
 			ob_end_clean();
 		}
 		$scripts .= self::JQUERY;
+		// Shared DAQI / AQI scale (single source: Wx::aqScale) for charts, the home card and report toggles.
+		$aq = Wx::aqScale();
+		$aq['unit'] = Wx::getUnitsText(Wx::Pm25);
+		$scripts .= '<script type="text/javascript">window.NW3_AQ=' . nw3_json_encode($aq) . ';</script>'
+			. '<script type="text/javascript" src="/aq.js?20261031c"></script>';
 
 		$title = self::$title;
 		$description = self::$description;
@@ -136,7 +141,7 @@ class Page {
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
-		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20261031b" media="screen" title="screen" />
+		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20261031c" media="screen" title="screen" />
 		$colorCss
 		$scripts
 	</head>

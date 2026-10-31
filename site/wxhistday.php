@@ -309,13 +309,16 @@ $renderRow = function ($i) use ($wdirRaw, $DESC, $UNIT, $CNUM, $ddat, $ddatt, $d
 	$c = 'td' . ($CNUM[$i] + 10) . 'C';
 	$style = ($i % 2 == 0) ? 'light' : 'dark';
 	$valDisp = ($i == 12) ? ($blank($wdirRaw) ? 'n/a' : $ddat[12]) : $fmt($ddat[$i] ?? null, $UNIT[$i]); // older rows have fewer columns
+	$aq = ($UNIT[$i] === Wx::Pm25) ? (['min', 'max', 'mean'][$i - 33] ?? 'mean') : null;
+	$w = function ($raw, $html) use ($aq) { return $aq === null ? $html : Wx::aqSpan($raw, $html, $aq, true); };
+	$valDisp = $w($ddat[$i] ?? null, $valDisp);
 	echo '<tr class="row' . $style . '">'
 		. '<td width="22%" class="' . $c . '">' . $DESC[$i] . '</td>'
 		. '<td width="23%" class="' . $c . '" style="font-size:105%">' . $valDisp . $ddanom[$i] . '</td>'
 		. '<td width="8%" class="' . $c . '">' . $timeCell(isset($ddatt[$i]) ? $ddatt[$i] : '') . '</td>'
-		. '<td width="17%" class="' . $c . '">' . $fmt($mcdat[$i], $UNIT[$i]) . $mcanom[$i] . '</td>'
-		. '<td width="15%" class="' . $c . '" style="font-size:85%">' . $fmt($hi[$i], $UNIT[$i]) . $hianom[$i] . $hiY[$i] . '</td>'
-		. '<td width="15%" class="' . $c . '" style="font-size:85%">' . $fmt($lo[$i], $UNIT[$i]) . $loanom[$i] . $loY[$i] . '</td>'
+		. '<td width="17%" class="' . $c . '">' . $w($mcdat[$i], $fmt($mcdat[$i], $UNIT[$i])) . $mcanom[$i] . '</td>'
+		. '<td width="15%" class="' . $c . '" style="font-size:85%">' . $w($hi[$i], $fmt($hi[$i], $UNIT[$i])) . $hianom[$i] . $hiY[$i] . '</td>'
+		. '<td width="15%" class="' . $c . '" style="font-size:85%">' . $w($lo[$i], $fmt($lo[$i], $UNIT[$i])) . $loanom[$i] . $loY[$i] . '</td>'
 		. '</tr>';
 };
 for ($i = 0; $i < 20; $i++) { $renderRow($i); }
