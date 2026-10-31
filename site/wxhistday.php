@@ -1,5 +1,6 @@
 <?php
 require "Page.php";
+require_once "SunTracker.php";
 Page::init([
 	"fileNum" => 85,
 	"title" => "Daily Reports",
@@ -362,6 +363,9 @@ echo '<dl><dt>Notes</dt><dd>Detailed daily weather report for Hampstead, NW3, Lo
 	. 'Sun and wet hours are derived from webcam/rainfall analysis and may be adjusted. Data should be viewed with appropriate caution.</dd></dl>';
 
 echo '<p><a href="wxhistmonth.php?month=' . $mproc . '&amp;year=' . $yproc . '" title="Monthly report for ' . Date::monthfull($mproc) . ' ' . $yproc . '">View monthly summary</a></p>';
+
+// ---- Webcam sunshine tracker (days with a sunlog only) ----
+SunTracker::renderReport($stamp, $isToday, $sunVal);
 
 // ---- Charts (fixed multi-var + direction + AQ + rose; no toggles) ----
 echo '<h2>Daily Graph of Conditions</h2>';

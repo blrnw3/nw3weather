@@ -136,7 +136,7 @@ class Page {
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
-		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20261021a" media="screen" title="screen" />
+		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20261031a" media="screen" title="screen" />
 		$colorCss
 		$scripts
 	</head>
