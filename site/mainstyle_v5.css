@@ -1893,6 +1893,50 @@ select.timelapse {
 .wx-card-pm25 .wx-card-now { font-size: 1.5rem; }
 .wx-card-head .wx-card-label { color: inherit; }
 
+/* Webcam sunshine: sun card badge and the sunrise-to-sunset strip (home card + daily report) */
+.sun-badge {
+	display: inline-block;
+	vertical-align: 0.25em;
+	margin-left: 0.3rem;
+	padding: 0.1rem 0.5rem;
+	border-radius: 8px;
+	font-size: 0.8rem;
+	font-weight: 700;
+	white-space: nowrap;
+}
+.sun-badge-sun { background: #f6e05e; color: #3b3000; }
+.sun-badge-nosun { background: #cbd5e0; color: #2d3748; }
+.sun-badge-twilight { background: #d6bcfa; color: #322659; }
+.sun-badge-dark { background: #2a4365; color: #ebf8ff; }
+.sun-stale { color: #a05a00; font-size: 0.85rem; }
+.sun-card-ribbon { margin: 0.2rem 0 0.1rem; }
+.sun-ribbon-bar {
+	display: flex;
+	overflow: hidden;
+	border: 1px solid #cbd5e0;
+	border-radius: 4px;
+	background: #edf2f7;
+}
+.sun-ribbon-bar .sun-seg { flex-shrink: 0; flex-basis: 0; }
+.sun-seg { display: inline-block; }
+.sun-seg-sun { background: #f6c445; }
+.sun-seg-nosun { background: #9aa3ad; }
+.sun-seg-unknown { background: repeating-linear-gradient(45deg, #e2e8f0, #e2e8f0 4px, #cbd5e0 4px, #cbd5e0 8px); }
+.sun-seg-future { background: #edf2f7; }
+.sun-ribbon-lab {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.78rem;
+	color: #667;
+}
+.sun-ribbon-lab-only { border-top: 1px dashed #dde8df; padding-top: 0.2rem; }
+.sun-report { max-width: 900px; margin: 0 0.6em 1em; }
+.sun-report .sun-ribbon { margin: 0.4rem 0 0.3rem; }
+.sun-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; font-size: 0.82rem; color: #556; }
+.sun-legend > span { display: inline-flex; align-items: center; gap: 0.3rem; }
+.sun-legend .sun-seg { width: 12px; height: 12px; border: 1px solid #cbd5e0; }
+.sun-report-note { font-size: 0.82rem; color: #667; margin-top: 0.3rem; }
+
 /* Air-pollution DAQI status: small green/yellow/red indicator dot + label */
 .daqi-status {
 	display: inline-flex;

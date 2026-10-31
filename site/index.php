@@ -73,23 +73,6 @@ foreach ($METARcloudTypes as $i => $cloudSrch) {
 // ----- 2-day forecast (Yr.no / same source as wx5, refreshed by cron into forecast_v5.json) -----
 require_once __DIR__ . '/Forecast.php';
 $forecast = Forecast::days(2);
-
-// ----- Current moon-phase icon (age-based, mirrors wx6.php) -----
-// $moonage comes from rareTags and looks like "Moon Age: 12.34 days...", so the
-// age in days is the 3rd space-separated token.
-$moonImg = null;
-if (isset($moonage)) {
-	$moonAgeDays = (float) explode(' ', $moonage)[2];
-	$moonSteps = array(2, 4, 6, 9, 11, 13, 16, 18, 21, 23, 26, 28);
-	$moonImg = 'moon13.jpg';
-	foreach ($moonSteps as $i => $threshold) {
-		if ($moonAgeDays < $threshold) {
-			$moonImg = 'moon' . ($i + 1) . '.jpg';
-			break;
-		}
-	}
-}
-$moonName = isset($moonphasename) ? trim($moonphasename) : 'Moon phase';
 ?>
 
 <div class="home-head">
@@ -110,17 +93,6 @@ $moonName = isset($moonphasename) ? trim($moonphasename) : 'Moon phase';
 <div class="wx-cards">
 	<div id="live-wx-body" class="wx-live-cards">
 		<?php nw3_render_cards(); ?>
-	</div>
-	<div class="wx-card wx-card-sun">
-		<div class="wx-card-head"><img class="wx-card-icon" src="<?php echo Site::IMG_ROOT; ?>clear.png" alt="" width="36" height="36" /><?php if ($moonImg !== null): ?><img class="wx-card-icon wx-card-moon" src="<?php echo Site::IMG_ROOT . $moonImg; ?>" alt="<?php echo htmlspecialchars($moonName); ?>" title="<?php echo htmlspecialchars($moonName); ?>" width="36" height="36" /><?php endif; ?><a class="hidden-link" href="wx6.php" title="Sun, moon and astronomy detail">Sun &amp; Moon</a></div>
-		<div class="wx-card-rows">
-			<div><span class="k">Sunrise</span><span class="v"><b><?php echo Date::$sunrise; ?></b></span></div>
-			<div><span class="k">Sunset</span><span class="v"><b><?php echo Date::$sunset; ?></b></span></div>
-			<div><span class="k">Daylight</span><span class="v"><?php echo isset($hoursofpossibledaylight) ? $hoursofpossibledaylight : '-'; ?></span></div>
-			<div><span class="k">Moonrise</span><span class="v"><?php echo isset($moonrise) ? $moonrise : '-'; ?></span></div>
-			<div><span class="k">Moonset</span><span class="v"><?php echo isset($moonset) ? $moonset : '-'; ?></span></div>
-			<div><span class="k">Illumination</span><span class="v"><?php echo isset($moonphase) ? $moonphase : '-'; ?></span></div>
-		</div>
 	</div>
 </div>
 <noscript><p><b>Note:</b> Javascript must be enabled for live updates to function</p></noscript>
