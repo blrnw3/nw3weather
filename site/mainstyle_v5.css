@@ -1865,6 +1865,13 @@ select.timelapse {
 	text-align: right;
 	flex: 0 0 auto;
 }
+#sun-card .wx-card-rows > div {
+	flex-wrap: nowrap;
+	white-space: nowrap;
+}
+#sun-card .wx-card-rows .k {
+	text-overflow: ellipsis;
+}
 .wx-card-rows .wx-when {
 	color: #889;
 	font-weight: 400;
