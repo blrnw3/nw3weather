@@ -242,7 +242,7 @@ class SunTracker {
 			. ($yTot !== null && $yTot['pct'] !== null ? ' <span class="wx-when">(' . $yTot['pct'] . '%)</span>' : '')];
 		$rows[] = ['<span title="' . htmlspecialchars($moonName) . '">Moon</span>', '<b>' . ($moonphase ?? '&ndash;') . '</b> lit'
 			. (($wax = self::moonWaxing($moonage ?? null)) !== null ? ', ' . ($wax ? 'waxing' : 'waning') : '')];
-		$rows[] = ['Moonrise / set', '<b>' . ($moonrise ?? '&ndash;') . '</b> / <b>' . ($moonset ?? '&ndash;') . '</b>'];
+		$rows[] = ['Moonrise/set', '<b>' . ($moonrise ?? '&ndash;') . '</b> / <b>' . ($moonset ?? '&ndash;') . '</b>'];
 		echo '<div class="wx-card-rows">';
 		foreach ($rows as $r) { echo '<div><span class="k">' . $r[0] . '</span><span class="v">' . $r[1] . '</span></div>'; }
 		echo '</div></div>';
