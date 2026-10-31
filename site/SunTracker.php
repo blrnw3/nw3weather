@@ -120,7 +120,8 @@ class SunTracker {
 	/** The strip itself, with sunrise / sunset labels underneath. */
 	public static function ribbon(array $day, string $height = '16px', bool $labels = true): string {
 		$span = max(1, $day['sunset'] - $day['sunrise']);
-		$h = '<div class="sun-ribbon"><div class="sun-ribbon-bar" style="height:' . htmlspecialchars($height) . '">';
+		$h = self::tapScript() . '<div class="sun-ribbon"><div class="sun-ribbon-bar" tabindex="0" role="group"'
+			. ' aria-label="Sunshine by time of day, tap or use arrow keys for times" style="height:' . htmlspecialchars($height) . '">';
 		foreach ($day['spells'] as [$a, $b, $state]) {
 			$h .= '<span class="sun-seg sun-seg-' . $state . '" style="flex-grow:' . round(($b - $a) / $span, 5) . '"'
 				. ' title="' . self::LABELS[$state] . ': ' . date('H:i', $a) . ' &ndash; ' . date('H:i', $b) . '"></span>';
@@ -131,6 +132,37 @@ class SunTracker {
 				. '<span title="Sunset">' . date('H:i', $day['sunset']) . ' &darr;</span></div>';
 		}
 		return $h . '</div>';
+	}
+
+	/**
+	 * Tap / click / keyboard popup for the strip's segments (touch has no hover). One delegated document handler,
+	 * so it survives the home page's live refresh; guarded so re-inserted copies do nothing.
+	 */
+	private static function tapScript(): string {
+		static $done = false;
+		if ($done) { return ''; }
+		$done = true;
+		return <<<'JS'
+<script>(function(){if(window.nw3SunTap)return;window.nw3SunTap=1;var tip=null,cur=null;
+function hide(){if(tip)tip.style.display='none';if(cur)cur.classList.remove('sun-seg-on');cur=null;}
+function show(seg){var t=seg.getAttribute('title')||seg.getAttribute('data-tip');if(!t)return;
+if(!seg.getAttribute('data-tip'))seg.setAttribute('data-tip',t);
+if(!tip){tip=document.createElement('div');tip.className='sun-tip';tip.setAttribute('role','status');document.body.appendChild(tip);}
+hide();cur=seg;seg.classList.add('sun-seg-on');tip.textContent=seg.getAttribute('data-tip');tip.style.display='block';
+var r=seg.getBoundingClientRect(),w=tip.offsetWidth,x=r.left+r.width/2-w/2;
+x=Math.max(4,Math.min(x,document.documentElement.clientWidth-w-4));
+tip.style.left=(x+window.pageXOffset)+'px';tip.style.top=(r.top+window.pageYOffset-tip.offsetHeight-6)+'px';}
+document.addEventListener('click',function(e){var seg=e.target.closest&&e.target.closest('.sun-ribbon-bar .sun-seg');
+if(seg&&seg!==cur){show(seg);}else{hide();}});
+document.addEventListener('keydown',function(e){var bar=e.target.closest&&e.target.closest('.sun-ribbon-bar');
+if(e.key==='Escape'){hide();return;}if(!bar)return;var segs=bar.querySelectorAll('.sun-seg');if(!segs.length)return;
+var i=Array.prototype.indexOf.call(segs,cur);
+if(e.key==='ArrowRight'){i=i<0?0:Math.min(i+1,segs.length-1);}else if(e.key==='ArrowLeft'){i=i<0?segs.length-1:Math.max(i-1,0);}
+else if(e.key==='Enter'||e.key===' '){if(i>=0){hide();e.preventDefault();return;}i=0;}else return;
+e.preventDefault();show(segs[i]);});
+var vw=window.innerWidth;window.addEventListener('resize',function(){if(window.innerWidth!==vw){vw=window.innerWidth;hide();}});document.addEventListener('focusout',function(e){if(e.target.closest&&e.target.closest('.sun-ribbon-bar'))hide();});
+})();</script>
+JS;
 	}
 
 	public static function legend(): string {
@@ -293,7 +325,7 @@ class SunTracker {
 		echo '</p>';
 		echo self::ribbon($day, '22px');
 		echo self::legend();
-		echo '<p class="sun-report-note">Classified minute by minute from the webcam, sunrise to sunset. Hover for times.</p>';
+		echo '<p class="sun-report-note">Classified minute by minute from the webcam, sunrise to sunset. Hover or tap for times.</p>';
 		echo '</div>';
 	}
 }
