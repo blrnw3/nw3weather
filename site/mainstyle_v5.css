@@ -1943,6 +1943,21 @@ select.timelapse {
 .sun-legend > span { display: inline-flex; align-items: center; gap: 0.3rem; }
 .sun-legend .sun-seg { width: 12px; height: 12px; border: 1px solid #cbd5e0; }
 .sun-report-note { font-size: 0.82rem; color: #667; margin-top: 0.3rem; }
+.sun-ribbon-bar { cursor: pointer; }
+.sun-ribbon-bar:focus-visible { outline: 2px solid #2b6cb0; outline-offset: 1px; }
+.sun-seg-on { box-shadow: inset 0 0 0 2px #2d3748; }
+.sun-tip {
+	display: none;
+	position: absolute;
+	z-index: 50;
+	padding: 0.2rem 0.5rem;
+	border-radius: 4px;
+	background: #2d3748;
+	color: #fff;
+	font-size: 0.8rem;
+	white-space: nowrap;
+	pointer-events: none;
+}
 
 /* Air-pollution DAQI status: small green/yellow/red indicator dot + label */
 .daqi-status {
