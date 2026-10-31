@@ -3190,3 +3190,42 @@ body.cam-modal-open {
 		display: none;
 	}
 }
+
+/* DAQI status button (home card) + scale popover (aq.js) */
+.daqi-btn {
+	font: inherit; font-size: 1.4rem; background: none; border: 0; padding: 0.05rem 0.25rem; margin: 0 -0.25rem;
+	border-radius: 6px; cursor: pointer; color: #1a1a1a; text-align: left; white-space: nowrap; max-width: 100%;
+}
+.wx-card-pm25 .daqi-btn { font-size: inherit; gap: 0.3rem; }
+.daqi-btn:hover { background: #f1f4f2; }
+.daqi-btn:focus-visible { outline: 2px solid #5B8A72; outline-offset: 1px; }
+.daqi-info {
+	display: inline-flex; align-items: center; justify-content: center; width: 1.05em; height: 1.05em;
+	margin-left: 0.05rem; border: 1px solid #8aa596; border-radius: 50%; font-size: 0.55em; font-weight: bold;
+	font-style: italic; color: #5B8A72; line-height: 1;
+}
+.daqi-pop {
+	position: absolute; z-index: 1000; width: 330px; max-width: calc(100vw - 16px); box-sizing: border-box;
+	background: #fff; border: 1px solid #cbd5e0; border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+	padding: 0.55rem 0.7rem 0.5rem; font-size: 0.85rem; color: #222;
+}
+.daqi-pop[hidden] { display: none; }
+.daqi-pop.daqi-pop-sheet { position: fixed; left: 8px; right: 8px; bottom: 8px; top: auto; width: auto; max-width: none; }
+.daqi-pop-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
+.daqi-pop-close { border: 0; background: none; font-size: 1.3rem; line-height: 1; cursor: pointer; color: #555; padding: 0 0.2rem; }
+.daqi-pop table { width: 100%; border-collapse: collapse; }
+.daqi-pop th { text-align: left; font-weight: normal; color: #667; font-size: 0.78rem; border-bottom: 1px solid #e2e8f0; padding: 0.15rem 0.3rem; }
+.daqi-pop td { padding: 0.12rem 0.3rem; white-space: nowrap; }
+.daqi-pop tr.daqi-cur td { background: #eef3ff; font-weight: bold; }
+.daqi-pop tr.daqi-cur td:first-child { box-shadow: inset 3px 0 0 #2b4c9a; }
+.daqi-sw { display: inline-block; width: 0.85em; height: 0.85em; border-radius: 2px; margin-right: 0.35rem; vertical-align: -0.1em; border: 1px solid rgba(0,0,0,0.15); }
+.daqi-pop-note { margin: 0.35rem 0 0; font-size: 0.74rem; color: #667; }
+
+/* PM2.5 | AQI | DAQI toggle on report pages (aq.js) */
+.aq-toggle { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; margin: 0.4rem 0; font-size: 0.85rem; color: #445; }
+.aq-toggle-btns { display: inline-flex; border: 1px solid #b8c4ce; border-radius: 6px; overflow: hidden; }
+.aq-toggle-btns button { font: inherit; border: 0; background: #fff; padding: 0.15rem 0.6rem; cursor: pointer; color: #334; }
+.aq-toggle-btns button + button { border-left: 1px solid #b8c4ce; }
+.aq-toggle-btns button.active { background: #5B8A72; color: #fff; }
+.aq-toggle-note { font-size: 0.75rem; color: #778; cursor: help; }
+.aq-ind { font-size: 0.7em; }

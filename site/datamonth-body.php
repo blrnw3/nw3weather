@@ -10,7 +10,7 @@ function dm_lab($html, $extraClass = '') {
 
 /** Emit a value cell (keeps valcol colour classes). */
 function dm_cell($html, $class = 'reportday', $extraClass = '') {
-	$cls = trim($class . ($extraClass ? ' ' . $extraClass : ''));
+	$cls = trim($class . ($extraClass ? ' ' . $extraClass : '') . (strpos($html, 'class="aqv"') !== false ? ' aqc' : ''));
 	echo '<div class="dm-cell ' . $cls . '">' . $html . '</div>';
 }
 
@@ -25,7 +25,12 @@ function dm_fmt($report, $val, $st) {
 	if (Data::isCountSummary($st)) {
 		return (string)nw3_round($val, 1);
 	}
-	return Wx::conv($val, $report->summaryDisplayUnit($st), false);
+	$unit = $report->summaryDisplayUnit($st);
+	$out = Wx::conv($val, $unit, false);
+	if ($unit === Wx::Pm25 && in_array($st, [Data::SUMMARY_MEAN, Data::SUMMARY_MIN, Data::SUMMARY_MAX], true)) {
+		$out = Wx::aqSpan($val, $out, Wx::aqAvg($report->type));
+	}
+	return $out;
 }
 
 /**

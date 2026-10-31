@@ -385,7 +385,7 @@ class Report {
 			12 => [-10, -5, -2, 0, 2, 5, 10, 15, 20],
 			13 => [25, 50, 75, 90, 100, 110, 125, 150, 175, 200, 250],
 			// US values have already been converted to AQI; others remain raw PM2.5.
-			14 => $us ? [25, 50, 75, 100, 125, 150, 200, 300, 500] : [11, 23, 35, 41, 47, 53, 58, 64, 70],
+			14 => $us ? [25, 50, 75, 100, 125, 150, 200, 300, 500] : Wx::DAQI_PM25,
 		];
 		self::$thresholdsReady = true;
 	}
