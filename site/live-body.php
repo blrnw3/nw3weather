@@ -42,11 +42,11 @@ function nw3_card($mod, $icon, $label, $href, $title, $nowHtml, $subHtml, $rows)
 }
 
 /** Format a current value with its 24hr-trend (per hour). */
-function nw3_trend($change, $unit) {
+function nw3_trend($change, $unit, $showUnit = true) {
 	if ($change === null) {
 		return '';
 	}
-	return '<span class="wx-rate">' . Wx::conv($change, $unit, true, true) . ' /hr</span>';
+	return '<span class="wx-rate">' . Wx::conv($change, $unit, $showUnit, true) . ' /hr</span>';
 }
 
 /**
@@ -218,6 +218,9 @@ function nw3_render_cards() {
 			array('Yesterday avg', nw3_yest_val('mean', 'wind', Wx::Wind)),
 		));
 
+	// Sun & moon: webcam sunshine today, sunrise-to-sunset strip, day length, moon (refreshed with the cards)
+	SunTracker::renderCard();
+
 	// Humidity
 	$nowHtml = '<span id="var1">' . Wx::conv(Live::$humi, Wx::Humidity) . '</span> '
 		. nw3_trend(nw3_live_get($HR, 'changeHr', 'humi'), Wx::Humidity) . ' '
@@ -248,7 +251,7 @@ function nw3_render_cards() {
 
 	// Pressure
 	$nowHtml = '<span id="var3">' . Wx::conv(Live::$pres, Wx::Pressure) . '</span> '
-		. nw3_trend(nw3_live_get($HR, 'changeHr', 'pres'), Wx::Pressure) . ' '
+		. nw3_trend(nw3_live_get($HR, 'changeHr', 'pres'), Wx::Pressure, false) . ' '
 		. nw3_arrow('pres', 60, 120, 1, 2);
 	nw3_card('pres', 'pressure2', 'Pressure', 'wx16.php', 'Detailed pressure data',
 		$nowHtml, '',
@@ -288,8 +291,5 @@ function nw3_render_cards() {
 			array('24hr avg', nw3_at(nw3_live_get($HR, 'mean', 'pm25'), Wx::Pm25, null, $pmDpa)),
 			array('Yesterday avg', nw3_yest_val('mean', 'pm25', Wx::Pm25, $pmDpa)),
 		));
-
-	// Sun & moon: webcam sunshine today, sunrise-to-sunset strip, day length, moon (refreshed with the cards)
-	SunTracker::renderCard();
 }
 ?>

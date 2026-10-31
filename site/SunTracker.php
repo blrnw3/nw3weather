@@ -141,8 +141,8 @@ class SunTracker {
 		return $h . '</div>';
 	}
 
-	public static function fmtHours(?float $h, bool $lowerBound = false): string {
-		return $h === null ? '&ndash;' : number_format($h, 1) . ($lowerBound ? '+' : '') . ' hrs';
+	public static function fmtHours(?float $h, bool $lowerBound = false, string $unit = 'hrs'): string {
+		return $h === null ? '&ndash;' : number_format($h, 1) . ($lowerBound ? '+' : '') . ' ' . $unit;
 	}
 
 	/** Day length as "9h 46m". */
@@ -176,38 +176,38 @@ class SunTracker {
 		$beforeRise = $rs !== null && $now < $rs[0];
 		$afterSet = $rs !== null && $now >= $rs[1];
 
-		// Before sunrise there is nothing for today yet: show yesterday's day instead.
-		$ymd = $beforeRise ? date('Ymd', mktime(12, 0, 0, (int)date('n', $now), (int)date('j', $now) - 1, (int)date('Y', $now))) : $today;
-		$isYest = $ymd !== $today;
-		$tot = self::total($ymd, $isYest ? null : $now);
-		$day = self::spells($ymd, $isYest ? null : $now);
+		// Main value is always today's total; before sunrise there is none yet (null)
+		$ymd = $today;
+		$tot = $beforeRise ? null : self::total($ymd, $now);
+		$day = $beforeRise ? null : self::spells($ymd, $now);
+		$yYmd = date('Ymd', mktime(12, 0, 0, (int)date('n', $now), (int)date('j', $now) - 1, (int)date('Y', $now)));
+		$yTot = self::total($yYmd, null);
 
 		// "Sunny now" only from a classified minute at most SunLog::MAX_AGE_S old
 		$fresh = $day !== null && $day['last'] !== null && $now - $day['last'] <= SunLog::MAX_AGE_S;
 		$badge = '';
 		if ($night !== null) {
 			$badge = $night === 'twilight' ? ['twilight', 'Twilight'] : ['dark', 'Dark'];
-		} elseif (!$isYest && $fresh) {
+		} elseif ($fresh) {
 			$badge = $day['last_v'] === 1 ? ['sun', 'Sunny now'] : ['nosun', 'Not sunny'];
 		}
-		$hoursTitle = 'Sunshine from the webcam' . ($isYest ? ', yesterday' : ($afterSet ? ', today' : ', today so far'));
+		$hoursTitle = 'Sunshine from the webcam' . ($beforeRise ? ', none yet today' : ($afterSet ? ', today' : ', today so far'));
 		if ($tot !== null && $tot['partial']) { $hoursTitle .= '. Webcam data missing for part of the day, so this is a lower bound'; }
 		elseif ($tot !== null && $tot['scaled']) { $hoursTitle .= '. Includes estimates for short webcam gaps'; }
 
 		$sub = '';
-		$when = $isYest ? 'Yesterday' : ($afterSet ? 'Today' : 'Today so far');
 		if ($tot !== null) {
-			$sub = $when . ': <b>' . ($tot['pct'] !== null ? $tot['pct'] . '%' : '&ndash;') . '</b> of '
-				. self::fmtHours($tot['possible']) . ' possible';
+			$sub = '<b>' . ($tot['pct'] !== null ? $tot['pct'] . '%' : '&ndash;') . '</b> of '
+				. self::fmtHours($tot['possible'], false, 'h') . ' possible';
+		} elseif ($beforeRise) {
+			$sub = 'Sunrise ' . date('H:i', $rs[0]);
 		} elseif ($day !== null) {
-			$sub = $when . ': not enough webcam data';
-		} elseif (!$isYest && $rs !== null && $now >= $rs[0]) {
-			$sub = 'No webcam sunshine data yet today';
+			$sub = 'Not enough webcam data';
 		} else {
-			$sub = 'No webcam sunshine data';
+			$sub = 'No webcam data yet';
 		}
 		// The newest classified minute is too old for a "now" (classifier or camera behind)
-		if (!$isYest && $night === null && $day !== null && !$fresh) {
+		if ($night === null && $day !== null && !$fresh) {
 			$sub .= '<br /><span class="sun-stale">Webcam data delayed' . ($day['last'] !== null
 				? ' (last ' . date('H:i', $day['last']) . ')' : '') . '</span>';
 		}
@@ -225,7 +225,7 @@ class SunTracker {
 			. self::fmtHours($tot['hours'] ?? null, (bool)($tot['partial'] ?? false)) . '</span>'
 			. ($badge ? ' <span class="sun-badge sun-badge-' . $badge[0] . '">' . $badge[1] . '</span>' : '') . '</div>';
 		echo '<div class="wx-card-sub">' . $sub . '</div>';
-		if ($day !== null) {
+		if ($day !== null && !$beforeRise) {
 			echo '<div class="sun-card-ribbon">' . self::ribbon($day) . '</div>';
 		} elseif ($rs !== null) {
 			echo '<div class="sun-card-ribbon"><div class="sun-ribbon-lab sun-ribbon-lab-only"><span title="Sunrise">&uarr; '
@@ -238,11 +238,21 @@ class SunTracker {
 				. self::fmtDelta(($rs[1] - $rs[0]) - ($y[1] - $y[0])) . ')</span>' : '';
 			$rows[] = ['Daylight', '<b>' . self::fmtLength($rs[1] - $rs[0]) . '</b>' . $delta];
 		}
-		$rows[] = ['<span title="' . htmlspecialchars($moonName) . '">Moon</span>', '<b>' . ($moonphase ?? '&ndash;') . '</b> lit'];
+		$rows[] = ['<span title="Sunshine from the webcam, yesterday">Yesterday</span>', '<b>' . self::fmtHours($yTot['hours'] ?? null, (bool)($yTot['partial'] ?? false)) . '</b>'
+			. ($yTot !== null && $yTot['pct'] !== null ? ' <span class="wx-when">(' . $yTot['pct'] . '%)</span>' : '')];
+		$rows[] = ['<span title="' . htmlspecialchars($moonName) . '">Moon</span>', '<b>' . ($moonphase ?? '&ndash;') . '</b> lit'
+			. (($wax = self::moonWaxing($moonage ?? null)) !== null ? ', ' . ($wax ? 'waxing' : 'waning') : '')];
 		$rows[] = ['Moonrise / set', '<b>' . ($moonrise ?? '&ndash;') . '</b> / <b>' . ($moonset ?? '&ndash;') . '</b>'];
 		echo '<div class="wx-card-rows">';
 		foreach ($rows as $r) { echo '<div><span class="k">' . $r[0] . '</span><span class="v">' . $r[1] . '</span></div>'; }
 		echo '</div></div>';
+	}
+
+	/** Waxing (true) or waning (false) from rareTags' moon age (synodic month 29.53 days); null if unknown. */
+	public static function moonWaxing(?string $moonage): ?bool {
+		if ($moonage === null || !preg_match('/(\d+(?:\.\d+)?)\s*day/', $moonage, $m)) { return null; }
+		$age = (float)$m[1] + (preg_match('/(\d+)\s*hour/', $moonage, $h) ? (int)$h[1] / 24 : 0);
+		return $age < 29.53 / 2;
 	}
 
 	/** Moon-phase icon from rareTags' "Moon age: 12 days,..." (age-based, as wx6.php). */
