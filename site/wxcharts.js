@@ -25,6 +25,24 @@
 		return { linearGradient: { x1: 0, x2: 0, y1: 0, y2: 1 }, stops: [[0, light], [1, dark]] };
 	}
 
+	// DAQI background bands (aq.js) for a PM2.5 / AQI axis; mutates yAxis, returns a subtitle or null.
+	function addAqBands(yAxis, unit, values) {
+		if (!window.NW3AQ || !yAxis) { return null; }
+		var mx = null;
+		(values || []).forEach(function (v) {
+			var y = (v !== null && typeof v === 'object') ? (Array.isArray(v) ? v[v.length - 1] : v.y) : v;
+			if (y != null && !isNaN(y) && (mx === null || y > mx)) { mx = Number(y); }
+		});
+		var b = window.NW3AQ.chartBands(unit, mx);
+		yAxis.plotBands = b.plotBands;
+		if (yAxis.min == null) { yAxis.min = 0; }
+		return b.note;
+	}
+	function aqSubtitle(note) {
+		return note ? { text: note, style: { color: '#888', fontSize: '10px' } } : undefined;
+	}
+	function isAqUnit(u) { return u === 'AQI' || /g\/m(3|\u00B3|<sup>3<\/sup>)/.test(u || ''); }
+
 	function setLoading(ids, on) {
 		if (!ids) { return; }
 		(Array.isArray(ids) ? ids : [ids]).forEach(function (id) {
@@ -85,6 +103,12 @@
 			labels: { style: { color: TEXT } }
 		};
 		if (autoscale) { yAxis.min = null; }
+		var aqNote = null;
+		if (isAqUnit(json.unit) && !opts.noAqBands) {
+			var allY = [];
+			json.series.forEach(function (s) { allY = allY.concat(s.data || []); });
+			aqNote = addAqBands(yAxis, json.unit, allY);
+		}
 		var tips = json.categoryTips || null;
 		var unitSuffix = json.unit ? (' ' + json.unit) : '';
 		var decimals = (json.precision != null ? json.precision : undefined);
@@ -121,6 +145,7 @@
 			chart: { backgroundColor: '#ffffff', spacing: [12, 12, 8, 6], style: { color: TEXT } },
 			title: { text: opts.title || json.title, style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
 			credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
+			subtitle: aqSubtitle(aqNote),
 			legend: { enabled: series.length > 1, itemStyle: { color: TEXT } },
 			xAxis: xAxis,
 			yAxis: yAxis,
@@ -240,20 +265,24 @@
 				});
 			});
 
-			Highcharts.chart(containerId, {
-				chart: { backgroundColor: '#ffffff', spacing: [12, 12, 10, 10], style: { color: TEXT } },
-				title: { text: chartTitle, style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
-				credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
-				legend: { enabled: keys.length > 1, itemStyle: { color: TEXT } },
-				xAxis: { type: 'datetime', crosshair: true, gridLineWidth: 1, gridLineColor: '#ddd',
-					dateTimeLabelFormats: { minute: '%H:%M', hour: '%H:%M', day: '%e %b' }, labels: { style: { color: TEXT } } },
-				yAxis: isDir
+			var yAx = isDir
 					? { title: { text: 'Wind direction', style: { color: TEXT } }, min: 0, max: 360, tickInterval: 45,
 						labels: { formatter: function () { return compass(this.value); }, style: { color: TEXT } }, gridLineColor: '#ddd' }
 					: { title: { text: displayName + (unit ? ' / ' + unit : ''), style: { color: TEXT } },
 						min: (cfg.min != null ? cfg.min : (cfg.area ? areaFloor : null)),
 						max: (cfg.max != null ? cfg.max : undefined), gridLineColor: '#ddd',
-						labels: { style: { color: TEXT }, formatter: cfg.area ? function () { return this.value < 0 ? '' : this.value; } : undefined } },
+						labels: { style: { color: TEXT }, formatter: cfg.area ? function () { return this.value < 0 ? '' : this.value; } : undefined } };
+			var aqNote = (variable === 'pm25') ? addAqBands(yAx, unit, json.pm25) : null;
+
+			Highcharts.chart(containerId, {
+				chart: { backgroundColor: '#ffffff', spacing: [12, 12, 10, 10], style: { color: TEXT } },
+				title: { text: chartTitle, style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
+				subtitle: aqSubtitle(aqNote),
+				credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
+				legend: { enabled: keys.length > 1, itemStyle: { color: TEXT } },
+				xAxis: { type: 'datetime', crosshair: true, gridLineWidth: 1, gridLineColor: '#ddd',
+					dateTimeLabelFormats: { minute: '%H:%M', hour: '%H:%M', day: '%e %b' }, labels: { style: { color: TEXT } } },
+				yAxis: yAx,
 				tooltip: isDir
 					? { formatter: function () { return Highcharts.dateFormat('%a %H:%M', this.x) + '<br/><b>' + Math.round(this.y) + '\u00B0 (' + compass(this.y) + ')</b>'; } }
 					: { shared: true, xDateFormat: '%a %H:%M', valueSuffix: unit ? (' ' + unit) : '', valueDecimals: displayDp },

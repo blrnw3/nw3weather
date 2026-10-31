@@ -50,6 +50,16 @@ class Wx {
 	const DirectionRaw = 'dir_raw';
 	const Pm25 = 'pm25'; // Air pollution (raw PM2.5); banded to UK DAQI for display
 
+	/** UK DAQI PM2.5 upper bounds (ug/m3, 24h mean) for bands 1-9; band 10 is above. */
+	const DAQI_PM25 = [11, 23, 35, 41, 47, 53, 58, 64, 70];
+	/** Official DEFRA DAQI colours, bands 1-10. */
+	const DAQI_COLOURS = ['9cff9c', '31ff00', '31cf00', 'ffff00', 'ffcf00', 'ff9a00', 'ff6464', 'ff0000', '990000', 'ce30ff'];
+	/** US EPA PM2.5 AQI breakpoints (2024 revision): [conc lo, conc hi, AQI lo, AQI hi]. */
+	const AQI_PM25_BP = [
+		[0.0, 9.0, 0, 50], [9.1, 35.4, 51, 100], [35.5, 55.4, 101, 150],
+		[55.5, 125.4, 151, 200], [125.5, 225.4, 201, 300], [225.5, 325.4, 301, 500],
+	];
+
 	public static $windlabels = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
 		'S', 'SSW','SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
 
@@ -252,8 +262,8 @@ class Wx {
 			'summable' => false,
 			'minmax' => true,
 			'round_size' => 10,
-			'thresholds_day' => [11,23,35, 41,47,53, 58,64,70],
-			'threshold_colours' => ['9cff9c','31ff00','31cf00', 'ffff00','ffcf00','ff9a00', 'ff6464','ff0000','990000', '7d0023'],
+			'thresholds_day' => self::DAQI_PM25,
+			'threshold_colours' => self::DAQI_COLOURS,
 			'threshold_txtcolours' => [false,false,false, false,false,false, 'fff','fff','fff', 'fff'],
 			UNIT_US => [
 				'unit' => 'AQI',
@@ -472,7 +482,7 @@ class Wx {
 			return array(0, 'Unknown', 'daqi-unknown');
 		}
 		$pm = (float)$pm25;
-		$bands = array(11, 23, 35, 41, 47, 53, 58, 64, 70); // upper bound of bands 1-9
+		$bands = self::DAQI_PM25; // upper bound of bands 1-9
 		$band = 10;
 		foreach($bands as $i => $hi) {
 			if($pm <= $hi) { $band = $i + 1; break; }
@@ -493,20 +503,57 @@ class Wx {
 			return null;
 		}
 		$c = floor((float)$pm25 * 10) / 10; // truncate to 1 dp
-		$bp = array(
-			array(0.0,   9.0,   0,   50),
-			array(9.1,   35.4,  51,  100),
-			array(35.5,  55.4,  101, 150),
-			array(55.5,  125.4, 151, 200),
-			array(125.5, 225.4, 201, 300),
-			array(225.5, 325.4, 301, 500),
-		);
-		foreach($bp as $b) {
+		foreach(self::AQI_PM25_BP as $b) {
 			if($c <= $b[1]) {
 				return (int)nw3_round(($b[3] - $b[2]) / ($b[1] - $b[0]) * ($c - $b[0]) + $b[2]);
 			}
 		}
 		return 500;
+	}
+	/**
+	 * Wrap a displayed PM2.5 value so the report toggle (aq.js) can switch it to AQI / DAQI.
+	 * @param mixed $raw raw PM2.5 (ug/m3)
+	 * @param string $html the value as normally displayed
+	 * @param string $avg 'mean', 'max' or 'min': what the value is (AQI/DAQI are 24h-mean scales)
+	 */
+	public static function aqSpan($raw, $html, $avg = 'mean', $withUnit = false) {
+		if($raw === null || $raw === '' || !nw3_is_numeric($raw)) { return $html; }
+		return '<span class="aqv" data-pm="' . nw3_round((float)$raw, 1) . '" data-avg="' . htmlspecialchars($avg) . '"'
+			. ($withUnit ? ' data-u="1"' : '') . '>' . $html . '</span>';
+	}
+	/** 'min' / 'max' / 'mean' for a daily PM2.5 variable key (aqmin, aqmax, aqmean). */
+	public static function aqAvg($type) {
+		return ($type === 'aqmin') ? 'min' : (($type === 'aqmax') ? 'max' : 'mean');
+	}
+	/** DAQI band name for a 1-10 index. */
+	public static function daqiName($band) {
+		if($band <= 3) { return 'Low'; }
+		if($band <= 6) { return 'Moderate'; }
+		if($band <= 9) { return 'High'; }
+		return 'Very High';
+	}
+	/**
+	 * The DAQI scale for display: one row per index with the PM2.5 range and the
+	 * equivalent US AQI range, plus the raw breakpoints for client-side use.
+	 * @return array
+	 */
+	public static function aqScale() {
+		$rows = [];
+		$lo = 0;
+		foreach(self::DAQI_COLOURS as $i => $col) {
+			$hi = isset(self::DAQI_PM25[$i]) ? self::DAQI_PM25[$i] : null;
+			$rows[] = [
+				'band' => $i + 1,
+				'name' => self::daqiName($i + 1),
+				'colour' => '#' . $col,
+				'pmLo' => $lo,
+				'pmHi' => $hi,
+				'aqiLo' => self::usAqi($lo),
+				'aqiHi' => ($hi === null) ? null : self::usAqi($hi),
+			];
+			if($hi !== null) { $lo = $hi + 1; }
+		}
+		return ['daqi' => $rows, 'daqiPm' => self::DAQI_PM25, 'aqiBp' => self::AQI_PM25_BP];
 	}
 	public static function rate_fix($rate) {
 		if(nw3_round($rate) > 5) { return nw3_round($rate); } else { return $rate; }

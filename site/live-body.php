@@ -268,18 +268,26 @@ function nw3_render_cards() {
 	$usAqi = Wx::usAqi(Live::$pm25);
 	// Per-band class graduates the dot colour within each band group (1-10).
 	$daqiBandClass = ($daqiBand > 0) ? ' daqi-b' . $daqiBand : '';
+	// Clickable status: opens the DAQI scale popover (aq.js, delegated so it survives the live refresh).
+	$daqiBtn = function ($text) use ($daqiClass, $daqiBandClass, $daqiBand) {
+		return '<button type="button" id="var6" class="daqi-status daqi-btn ' . $daqiClass . $daqiBandClass . '"'
+			. ' data-pm="' . htmlspecialchars((string)Live::$pm25) . '" data-band="' . (int)$daqiBand . '"'
+			. ' aria-haspopup="dialog" aria-expanded="false" aria-controls="daqi-pop"'
+			. ' title="Show the DAQI scale"><span class="daqi-dot"></span>' . $text
+			. '<span class="daqi-info" aria-hidden="true">i</span></button>';
+	};
 	if (Page::$units === UNIT_US) {
 		$pmDpa = 0;
 		$pm25Now = (Live::$pm25 === null)
 			? '<span id="var6" class="daqi-status daqi-unknown"><span class="daqi-dot"></span>No data</span>'
-			: '<span id="var6" class="daqi-status ' . $daqiClass . $daqiBandClass . '"><span class="daqi-dot"></span>AQI ' . $usAqi . '</span>';
+			: $daqiBtn('AQI ' . $usAqi);
 		$pm25Sub = (Live::$pm25 === null) ? ''
 			: 'PM2.5 source <b>' . nw3_number_format((float)Live::$pm25, 1) . ' &micro;g/m&sup3;</b>';
 	} else {
 		$pmDpa = -1;
 		$pm25Now = (Live::$pm25 === null)
 			? '<span id="var6" class="daqi-status daqi-unknown"><span class="daqi-dot"></span>No data</span>'
-			: '<span id="var6" class="daqi-status ' . $daqiClass . $daqiBandClass . '"><span class="daqi-dot"></span>DAQI ' . $daqiBand . ' &middot; ' . $daqiName . '</span>';
+			: $daqiBtn('DAQI ' . $daqiBand . ' &middot; ' . $daqiName);
 		$pm25Sub = (Live::$pm25 === null) ? ''
 			: 'AQI <b>' . $usAqi . '</b> &middot; PM2.5 <b>' . Wx::conv(Live::$pm25, Wx::Pm25, true, false, -1) . '</b>';
 	}

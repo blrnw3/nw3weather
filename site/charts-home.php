@@ -76,6 +76,16 @@
 			min: cfg.area ? 0 : null,
 			labels: { style: { color: AXES, fontSize: "11px"} }
 		};
+		// Faint UK DAQI bands behind the air-pollution line (aq.js).
+		var aqNote = null;
+		if (key === 'pm25' && window.NW3AQ && cache && cache.pm25) {
+			var mx = null;
+			cache.pm25.forEach(function (v) { if (v !== null && (mx === null || v > mx)) { mx = v; } });
+			var bands = window.NW3AQ.chartBands(cfg.unit, mx);
+			yAxis.plotBands = bands.plotBands;
+			yAxis.min = 0;
+			aqNote = bands.note;
+		}
 
 		var tooltip = isDir ? {
 			formatter: function () {
@@ -114,6 +124,7 @@
 		return {
 			chart: { backgroundColor: '#ffffff', spacing: [12, 12, 10, 10], style: { color: TEXT } },
 			title: { text: titleFor(key), style: { color: TEXT, fontSize: '1rem', fontWeight: 'normal' } },
+			subtitle: aqNote ? { text: aqNote, style: { color: '#888', fontSize: '10px' } } : undefined,
 			credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999999', fontSize: '9px' } },
 			legend: { enabled: cfg.series.length > 1, itemStyle: { color: TEXT } },
 			xAxis: {

@@ -88,6 +88,7 @@ function nw3_dataday_payload(Report $report) {
 				$num = $report->valcolConvert ? Wx::convNum($val, $unit) : (float)$val;
 				$cells[] = array(
 					't' => Wx::conv($val, $unit, false),
+					'pm' => ($unit === Wx::Pm25) ? $val : null, 'avg' => Wx::aqAvg($report->type),
 					'c' => $report->valcolr($num),
 				);
 			}
@@ -120,6 +121,7 @@ function nw3_dataday_payload(Report $report) {
 				$num = $report->valcolConvert ? Wx::convNum($put, $unit) : (float)$put;
 				$cell = array(
 					't' => Wx::conv($put, $unit, false),
+					'pm' => ($unit === Wx::Pm25) ? $put : null, 'avg' => Wx::aqAvg($report->type),
 					'c' => $report->valcolr($num / $sumfix),
 				);
 				if (!$isAgg && $report->isAnom && $mm == 2) {
@@ -170,6 +172,7 @@ function nw3_dataday_payload(Report $report) {
 			$num = $report->valcolConvert ? Wx::convNum($put, $unit) : (float)$put;
 			$cell = array(
 				't' => Wx::conv($put, $unit, false),
+					'pm' => ($unit === Wx::Pm25) ? $put : null, 'avg' => Wx::aqAvg($report->type),
 				'c' => $report->valcolr($num / $sumfix),
 			);
 			if (!$isAgg && $report->isAnom) {
@@ -254,6 +257,10 @@ function nw3_dataday_echo_cell($cell, $year, $day, $month, $dayLinks, $extraClas
 	$class = isset($cell['c']) ? $cell['c'] : 'reportday';
 	$text = isset($cell['t']) ? $cell['t'] : '';
 	$linkable = $dayLinks && $class !== 'noday' && $class !== 'dd-future';
+	if (isset($cell['pm']) && $cell['pm'] !== null) {
+		$text = Wx::aqSpan($cell['pm'], $text, isset($cell['avg']) ? $cell['avg'] : 'mean');
+		$class .= ' aqc';
+	}
 	$html = $text;
 	if ($linkable) {
 		$lnk = "/wxhistday.php?year=$year&month=$month&day=$day";
