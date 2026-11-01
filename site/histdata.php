@@ -31,6 +31,7 @@ ini_set('display_errors', '0');
 // Resolve display units from the same cookie Page uses, without a full page init.
 $unitPref = isset($_GET['unit']) ? $_GET['unit'] : (isset($_COOKIE['SetUnits']) ? $_COOKIE['SetUnits'] : 'UK');
 Page::$units = ($unitPref === 'US') ? UNIT_US : (($unitPref === 'EU') ? UNIT_EU : UNIT_UK);
+Page::resolveAqUnits();
 LTA::init();
 
 header('Content-Type: application/json; charset=utf-8');

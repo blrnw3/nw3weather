@@ -41,7 +41,7 @@
 	function aqSubtitle(note) {
 		return note ? { text: note, style: { color: '#888', fontSize: '10px' } } : undefined;
 	}
-	function isAqUnit(u) { return u === 'AQI' || /g\/m(3|\u00B3|<sup>3<\/sup>)/.test(u || ''); }
+	function isAqUnit(u) { return u === 'AQI' || u === 'DAQI' || /g\/m(3|\u00B3|<sup>3<\/sup>)/.test(u || ''); }
 
 	function setLoading(ids, on) {
 		if (!ids) { return; }
@@ -235,11 +235,12 @@
 			var cfg = INTRA_TABS[variable] || INTRA_TABS.temp;
 			var unit = (json.units && json.units[variable]) ? json.units[variable] : '';
 			var isDir = !!cfg.dir;
-			var displayName = (variable === 'pm25' && unit === 'AQI') ? 'Air quality index' : cfg.name;
-			var displayDp = (variable === 'pm25' && unit === 'AQI') ? 0 : cfg.dp;
+			var aqIdx = (variable === 'pm25' && (unit === 'AQI' || unit === 'DAQI'));
+			var displayName = aqIdx ? (unit === 'DAQI' ? 'UK DAQI' : 'Air quality index') : cfg.name;
+			var displayDp = aqIdx ? 0 : cfg.dp;
 			var chartTitle = intraTitle(json, variable, opts);
-			if (variable === 'pm25' && unit === 'AQI' && !opts.title) {
-				chartTitle = chartTitle.replace('Air pollution (PM2.5)', 'air quality index');
+			if (aqIdx && !opts.title) {
+				chartTitle = chartTitle.replace('Air pollution (PM2.5)', unit === 'DAQI' ? 'UK DAQI' : 'air quality index');
 			}
 
 			var rainUnit = (unit === 'in' || unit === 'in/h');
