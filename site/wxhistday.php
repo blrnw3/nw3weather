@@ -385,10 +385,15 @@ Charts::reportIntraday(
 
 // ---- Webcam / timelapse (best-effort, files live on mounted volumes) ----
 echo '<h2>Webcam Summary of Cloud Conditions</h2>';
-$camStamp = date('Y/Ymd', $sproc) . 'daily';
-$endtag = ($sproc < Date::mkdate(6, 27, 2012)) ? 'gif' : 'jpg';
-if (is_file(ROOT . $camStamp . 'webcam.' . $endtag)) {
-	echo '<img src="/' . $camStamp . 'webcam.' . $endtag . '" alt="daycamsum" />';
+$camSummaries = Misc::daily_cam_summaries($sproc);
+foreach ($camSummaries as $i => $camRel) {
+	echo '<img src="/' . $camRel . '" alt="Webcam summary' . (count($camSummaries) > 1 ? ' part ' . ($i + 1) : '') . '" />';
+}
+if ($camSummaries) {
+	$camLarge = Misc::daily_cam_summary_large($sproc);
+	if ($camLarge !== null) {
+		echo '<p><a href="/' . $camLarge . '">Large resolution version</a></p>';
+	}
 } elseif ($isToday) {
 	echo '<p>Webcam summary for today will be available after midnight.</p>';
 } else {

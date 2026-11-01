@@ -1017,6 +1017,25 @@ class Misc {
 		return $outfile;
 	}
 
+	/**
+	 * Daily webcam summary images archived for a day, in display order, as paths relative to ROOT.
+	 * Aug 2010 - Jun 2012 has two GIF strips per day (dailywebcam.gif, dailywebcam2.gif); later days have one JPG.
+	 */
+	public static function daily_cam_summaries($day_ts) {
+		$base = date('Y/Ymd', $day_ts) . 'dailywebcam';
+		$out = array();
+		foreach(array('.gif', '2.gif', '.jpg') as $suffix) {
+			if(is_file(ROOT . $base . $suffix)) { $out[] = $base . $suffix; }
+		}
+		return $out;
+	}
+
+	/** Larger copy of the daily webcam summary (kept 2013 - early 2019), relative to ROOT, or null. */
+	public static function daily_cam_summary_large($day_ts) {
+		$rel = date('Y/Ymd', $day_ts) . 'dailywebcam_large.jpg';
+		return is_file(ROOT . $rel) ? $rel : null;
+	}
+
 	/** Remove a timelapse scratch dir (flat, files only). */
 	private static function rm_frames_dir($dir) {
 		if(!is_dir($dir) || is_link($dir)) { return; }
