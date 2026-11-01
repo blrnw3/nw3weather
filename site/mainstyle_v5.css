@@ -3233,3 +3233,80 @@ body.cam-modal-open {
 
 /* '*' marker: index converted from a min/max reading (Wx::aqSpan) */
 .aq-ind { font-size: 0.7em; }
+
+/* Home climate & extremes card: spans the whole card grid */
+.wx-card-clim { grid-column: 1 / -1; min-width: 0; border-top-color: #9C5B1F; }
+.wx-card-clim .wx-card-head { color: #9C5B1F; flex-wrap: wrap; }
+.wx-card-clim .wx-card-icon { width: 30px; height: 30px; }
+.clim-table-wrap { overflow-x: auto; }
+.clim-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.92rem;
+	white-space: nowrap;
+}
+.clim-table th, .clim-table td {
+	padding: 0.28rem 0.45rem;
+	text-align: right;
+	border-bottom: 1px dashed #eef3ef;
+}
+.clim-table thead th { color: #567; font-weight: 600; font-size: 0.85rem; border-bottom: 1px dashed #dde8df; }
+.clim-table thead th.clim-grp { text-align: center; border-bottom: 1px solid #e3d5c6; }
+.clim-table tbody th { text-align: left; color: #567; font-weight: 400; }
+.clim-table tbody tr:last-child th, .clim-table tbody tr:last-child td { border-bottom: none; }
+.clim-table .clim-gs { border-left: 1px solid #efe6dc; }
+.clim-today { background: #faf6f1; }
+.clim-anom { color: #889; font-size: 0.85em; }
+.clim-yr { color: #889; font-size: 0.85em; }
+.clim-dot {
+	display: inline-block;
+	width: 0.55em;
+	height: 0.55em;
+	border-radius: 50%;
+	margin-left: 0.3em;
+	vertical-align: 0.08em;
+	background: #3182ce;
+}
+.clim-dot-record { background: #e02b1d; }
+.clim-dot-tie { background: #f08c00; }
+.clim-dot-sofar { background: #3182ce; }
+.clim-notes { list-style: none; margin: 0 0 0.4rem; padding: 0; font-size: 0.92rem; }
+.clim-note { padding: 0.12rem 0; }
+.clim-note .clim-dot { margin: 0 0.4em 0 0; }
+.clim-foot { margin-top: 0.4rem; font-size: 0.8rem; color: #778; }
+.clim-scopes { display: none; margin-left: auto; font-weight: 400; font-size: 0.85rem; }
+.clim-scopes button {
+	border: 1px solid #d8c8b8;
+	background: #fff;
+	color: #6b4a2b;
+	padding: 0.15rem 0.5rem;
+	cursor: pointer;
+	font: inherit;
+}
+.clim-scopes button:first-child { border-radius: 4px 0 0 4px; }
+.clim-scopes button:last-child { border-radius: 0 4px 4px 0; }
+.clim-scopes button + button { border-left: none; }
+/* Narrow screens: one set of records at a time, picked with the buttons */
+@media only screen and (max-width: 1000px) {
+	.clim-scopes { display: inline-flex; }
+	.wx-cards .clim-table .clim-s-month, .wx-cards .clim-table .clim-s-all { display: none; }
+	.wx-cards[data-clim-scope="month"] .clim-table .clim-s-day,
+	.wx-cards[data-clim-scope="all"] .clim-table .clim-s-day { display: none; }
+	.wx-cards[data-clim-scope="month"] .clim-table .clim-s-month,
+	.wx-cards[data-clim-scope="all"] .clim-table .clim-s-all { display: table-cell; }
+	.wx-cards:not([data-clim-scope]) .clim-scopes button[data-clim-scope="day"],
+	.wx-cards[data-clim-scope="day"] .clim-scopes button[data-clim-scope="day"],
+	.wx-cards[data-clim-scope="month"] .clim-scopes button[data-clim-scope="month"],
+	.wx-cards[data-clim-scope="all"] .clim-scopes button[data-clim-scope="all"] { background: #9C5B1F; border-color: #9C5B1F; color: #fff; }
+}
+@media only screen and (max-width: 820px) {
+	.clim-table th, .clim-table td { padding: 0.28rem 0.32rem; }
+}
+@media only screen and (max-width: 520px) {
+	.wx-card-clim { padding: 0.6rem 0.5rem; }
+	.clim-table { font-size: 0.8rem; }
+	.clim-table th, .clim-table td { padding: 0.25rem 0.18rem; }
+	.clim-table tbody th { white-space: normal; }
+	.clim-yr, .clim-anom { display: block; line-height: 1.1; font-size: 0.78em; }
+	.clim-notes { font-size: 0.86rem; }
+}

@@ -228,6 +228,16 @@ $forecast = Forecast::days(2);
 			});
 		}
 
+		// Climate card: on narrow screens, pick which records to show. Kept on the
+		// outer grid so the choice survives the live refresh.
+		var cards = document.querySelector('.wx-cards');
+		if (cards) {
+			cards.addEventListener('click', function (e) {
+				var b = e.target.closest ? e.target.closest('[data-clim-scope]') : null;
+				if (b && b.tagName === 'BUTTON') { cards.setAttribute('data-clim-scope', b.getAttribute('data-clim-scope')); }
+			});
+		}
+
 		tick();
 		setInterval(tick, 1000);
 		scheduleRefresh();

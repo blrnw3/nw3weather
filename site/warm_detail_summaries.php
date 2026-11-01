@@ -24,6 +24,7 @@ require __DIR__ . '/UtilsAndConsts.php';
 require __DIR__ . '/WxDefinition.php';
 require __DIR__ . '/WxFn.php';
 require __DIR__ . '/Spells.php';
+require __DIR__ . '/ClimateCard.php';
 
 // Climate normals drive both the anomaly figures and the sunhrp values
 // (sun hours / max possible). Without this the warmed caches would be written
@@ -41,6 +42,8 @@ if ($onlyHist) {
 	DataSummarizer::warmHistoricalDetailSummaries($vars);
 } else {
 	DataSummarizer::warmDetailSummaries($start, $vars);
+	// Home climate card record tables (all days before today) follow the same data refresh.
+	ClimateCard::warm();
 }
 $ms = nw3_round((microtime(true) - $t0) * 1000);
 if ($onlyHist) {
