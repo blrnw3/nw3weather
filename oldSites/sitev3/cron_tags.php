@@ -69,8 +69,8 @@ for ($y = 2009; $y <= $dyear; $y++) { //Rain tags
 	$rains[$y] = $DATA[13][$y];
 	$rain2[$y] = MDtoZ($rains[$y]);
 	$rain3[$y] = MDtoMsummary($rains[$y], true);
-	$rainall = array_merge($rainall, $rain2[$y]);
-	$rainallM = array_merge($rainallM, $rain3[$y]);
+	$rainall = array_merge($rainall, $rain2[$y] ?? []);
+	$rainallM = array_merge($rainallM, $rain3[$y] ?? []);
 }
 $rainallCnt = count($rainall);
 if ($rainallCnt == 0) {
@@ -212,6 +212,8 @@ $yrecdrylengthdate = ($yrecdrylength < 1) ? 'n/a' : date('jS M', daytotime($yrec
 $endday = $rainallCnt - $dday;
 $drylength = $wetlength = 0;
 $daysnorain = $dayswithrain = -1;
+$mrecwetlength = $mrecdrylength = 0;
+$mrecwetlengths_beg = $mrecdrylengths_beg = 0;
 for ($i = $rainallCnt - 1; $i >= $endday - 50; $i--) {
 	if ($rainall[$i] < 0.2) {
 		$drylength += 1;
@@ -293,10 +295,10 @@ for ($d = 0; $d < count($rain2[$dyear]); $d++) {
 }
 $raintodmonthago = $raintodayearago = 0;
 for ($d = 1; $d <= count($rains[$dyear][$dmonth]); $d++) {
-	$raintodmonthago += $rains[date('Y', $timeMonthago)][date('n', $timeMonthago)][$d];
+	$raintodmonthago += $rains[date('Y', $timeMonthago)][date('n', $timeMonthago)][$d] ?? 0;
 }
 for ($d = 0; $d < count($rain2[$dyear]); $d++) {
-	$raintodayearago += $rain2[$dyear - 1][$d];
+	$raintodayearago += $rain2[$dyear - 1][$d] ?? 0;
 }
 
 $raintots[$dmonth - 1] = $monthrn;
@@ -731,17 +733,17 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 			$tdat1[$y] = $GLOBALS['DAT' . $dataType][$x][$y];
 			$tdat2[$y] = MDtoZ($tdat1[$y]);
 			$tdat3[$y] = MDtoMsummary($tdat1[$y]);
-			$tdatall = array_merge($tdatall, $tdat2[$y]);
-			$tdatallM = array_merge($tdatallM, $tdat3[$y]);
-			$tdatcurrMon = array_merge($tdatcurrMon, $tdat1[$y][$dmonth]);
+			$tdatall = array_merge($tdatall, $tdat2[$y] ?? []);
+			$tdatallM = array_merge($tdatallM, $tdat3[$y] ?? []);
+			$tdatcurrMon = array_merge($tdatcurrMon, $tdat1[$y][$dmonth] ?? []);
 		}
 		$datallCnt = count($tdatall);
 
 		$tdatMMa = array_merge($tdat1[$dyear] + $tdat1[$dyear - 1]);
-		$tdatMMa[$dmonth - 1] = $tdat1[$dyear - 1][$dmonth];
+		$tdatMMa[$dmonth - 1] = $tdat1[$dyear - 1][$dmonth] ?? [];
 
 		//Start variable assignment
-		$tdat[$key][2]['m'] = $tdat3[$dyear][$dmonth];
+		$tdat[$key][2]['m'] = $tdat3[$dyear][$dmonth] ?? null;
 		$tdat[$key][2]['y'] = mean($tdat2[$dyear]);
 
 		//### TOTALS ###// //sun, wet, rain only
@@ -755,11 +757,11 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 			}
 			$totals[$c]['today'] = $tdat1[$dyear][$dmonth][$dday] ?? null;
 			$totals[$c]['yest'] = $tdat2[$yr_yest][$dz_yest] ?? null;
-			$totals[$c]['m'] = nw3_array_sum($tdat1[$dyear][$dmonth]);
+			$totals[$c]['m'] = nw3_array_sum($tdat1[$dyear][$dmonth] ?? []);
 			$totals[$c]['y'] = nw3_array_sum($tdat2[$dyear]);
 			$totals[$c]['a'] = nw3_array_sum($tdatall);
 
-			$daysof[$c]['m'] = sum_cond($tdat1[$dyear][$dmonth], true, 0.1);
+			$daysof[$c]['m'] = sum_cond($tdat1[$dyear][$dmonth] ?? [], true, 0.1);
 			$daysof[$c]['y'] = sum_cond($tdat2[$dyear], true, 0.1);
 			$daysof[$c]['a'] = sum_cond($tdatall, true, 0.1);
 
@@ -811,10 +813,10 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 		}
 
 		for ($y = $temp_styr; $y <= $dyear; $y++) {
-			if (is_array($tdat1[$y][$dmonth])) {
+			if (is_array($tdat1[$y][$dmonth] ?? null)) {
 				$tdatD[$y] = $tdat1[$y][$dmonth][$dday] ?? null;
 			}
-			$tdata[$y] = $tdat3[$y][$dmonth];
+			$tdata[$y] = $tdat3[$y][$dmonth] ?? null;
 			if ($y > 2008) {
 				$tdatYa[$y] = mean($tdat2[$y]);
 			}
@@ -863,8 +865,8 @@ function getDetailedData($varNum, $dataType = 'A', $debug = false) {
 			}
 
 			for ($y = $temp_styr; $y <= $dyear; $y++) {
-				$tdatMon[$y] = mom($tdat1[$y][$dmonth], $i);
-				$tdatMondate[$y] = nw3_array_search($tdatMon[$y], $tdat1[$y][$dmonth]);
+				$tdatMon[$y] = mom($tdat1[$y][$dmonth] ?? [], $i);
+				$tdatMondate[$y] = nw3_array_search($tdatMon[$y], $tdat1[$y][$dmonth] ?? []);
 				$tdatYr[$y] = mom($tdat2[$y], $i);
 				$tdatYdatea[$y] = nw3_array_search($tdatYr[$y], $tdat2[$y]);
 				$tdatMMon[$y] = mom($tdat3[$y], $i);
