@@ -433,7 +433,7 @@ if(date('i') % 5 == 1) {
 		if(file_exists(ROOT.$oldFile)) {
 			copy(ROOT. $oldFile, $sitev2.$oldFile);
 			unlink(ROOT.$oldFile);
-			if($tstamp == '0016') log_events("WDfilesMoved.txt", $oldFile);
+			if($tstamp == '0016') Page::log_events("WDfilesMoved.txt", $oldFile);
 		}
 	}
 
@@ -449,7 +449,7 @@ if($tstamp == '0721') {
 		if(file_exists(ROOT.$fileToDelete)) {
 			copy(ROOT.$fileToDelete, ROOT.'oldSites/'.$fileToDelete); // rather than delete, move here
 			unlink(ROOT.$fileToDelete);
-			log_events("WDfilesDeleted.txt", $fileToDelete);
+			Page::log_events("WDfilesDeleted.txt", $fileToDelete);
 		}
 	}
 }
@@ -462,7 +462,7 @@ if($tstamp == '0621' && $dday == 1) {
 		if(file_exists(ROOT.$fileToDelete)) {
 			copy(ROOT.$fileToDelete, ROOT.'oldSites/'.$fileToDelete); // rather than delete, move here
 			unlink(ROOT.$fileToDelete);
-			log_events("WDfilesDeleted.txt", $fileToDelete);
+			Page::log_events("WDfilesDeleted.txt", $fileToDelete);
 		}
 	}
 }
