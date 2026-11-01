@@ -48,6 +48,8 @@ class Page {
 	public static $isBot = false;
 	public static $pageName = "";
 	public static $units = UNIT_UK;
+	/** Air-quality display: 'pm' (PM2.5 ug/m3), 'aqi' (US EPA) or 'daqi' (UK); null = follow the site units. */
+	public static $aqUnits = null;
 
 	private static $start;
 	private static $timings = [];
@@ -100,6 +102,7 @@ class Page {
 		$updatedAt = self::getLastUpdateText();
 		$navBar = self::navBar();
 		$navSettings = self::getUnitsNav();
+		$navAqSettings = self::getAqUnitsNav();
 		$status = self::getStatus();
 
 		$buffered = ob_start("ob_gzhandler");
@@ -119,8 +122,9 @@ class Page {
 		// Shared DAQI / AQI scale (single source: Wx::aqScale) for charts, the home card and report toggles.
 		$aq = Wx::aqScale();
 		$aq['unit'] = Wx::getUnitsText(Wx::Pm25);
+		$aq['mode'] = self::aqUnits();
 		$scripts .= '<script type="text/javascript">window.NW3_AQ=' . nw3_json_encode($aq) . ';</script>'
-			. '<script type="text/javascript" src="/aq.js?20261031c"></script>';
+			. '<script type="text/javascript" src="/aq.js?20261101a"></script>';
 
 		$title = self::$title;
 		$description = self::$description;
@@ -141,7 +145,7 @@ class Page {
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
-		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20261031d" media="screen" title="screen" />
+		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20261101a" media="screen" title="screen" />
 		$colorCss
 		$scripts
 	</head>
@@ -181,6 +185,10 @@ class Page {
 						<div>
 							<form method="get" name="SetUnits" action="">
 								$navSettings
+							</form>
+							<p class="unit-sub">Air quality</p>
+							<form method="get" name="SetAqUnits" action="" class="aq-units">
+								$navAqSettings
 							</form>
 						</div>
 					</div>
@@ -600,7 +608,7 @@ END;
 		// A GET form replaces the query string, so carry the current page's
 		// parameters through and stay on the same view after switching units.
 		foreach ($_GET as $k => $v) {
-			if ($k === 'unit' || is_array($v)) { continue; }
+			if ($k === 'unit' || $k === 'aqunit' || is_array($v)) { continue; }
 			$html .= '<input type="hidden" name="' . htmlspecialchars($k, ENT_QUOTES)
 				. '" value="' . htmlspecialchars($v, ENT_QUOTES) . '" />';
 		}
@@ -621,6 +629,46 @@ END;
 		$html .= ' />Metric</label>
 			<noscript><input type="submit" value="Go" /></noscript>';
 		return $html;
+	}
+
+	/** Effective air-quality display mode ('pm', 'aqi' or 'daqi'). */
+	public static function aqUnits() {
+		if (in_array(self::$aqUnits, array('pm', 'aqi', 'daqi'), true)) { return self::$aqUnits; }
+		return (self::$units === UNIT_US) ? 'aqi' : 'pm';
+	}
+
+	/**
+	 * Reads the air-quality choice from ?aqunit= or the SetAqUnits cookie.
+	 * @param bool $save persist a ?aqunit= choice in the cookie
+	 */
+	public static function resolveAqUnits($save = false) {
+		$pref = isset($_COOKIE['SetAqUnits']) ? (string)$_COOKIE['SetAqUnits'] : '';
+		if (isset($_GET['aqunit']) && is_string($_GET['aqunit'])) {
+			$pref = $_GET['aqunit'];
+			if ($save && in_array($pref, array('pm', 'aqi', 'daqi'), true)) {
+				setcookie('SetAqUnits', $pref, time() + self::$cookieLifeSecs);
+			}
+		}
+		self::$aqUnits = in_array($pref, array('pm', 'aqi', 'daqi'), true) ? $pref : null;
+	}
+
+	private static function getAqUnitsNav() {
+		$html = '';
+		foreach ($_GET as $k => $v) {
+			if ($k === 'unit' || $k === 'aqunit' || is_array($v)) { continue; }
+			$html .= '<input type="hidden" name="' . htmlspecialchars($k, ENT_QUOTES)
+				. '" value="' . htmlspecialchars($v, ENT_QUOTES) . '" />';
+		}
+		$cur = self::aqUnits();
+		$opts = array('pm' => array('PM2.5', 'PM2.5 concentration (&micro;g/m&sup3;)'),
+			'aqi' => array('AQI', 'US EPA Air Quality Index'), 'daqi' => array('DAQI', 'UK Daily Air Quality Index (1-10)'));
+		foreach ($opts as $val => $o) {
+			$on = ($val === $cur);
+			$html .= '<label class="unit-option' . ($on ? ' active' : '') . '" title="' . $o[1] . '">'
+				. '<input name="aqunit" type="radio" value="' . $val . '" onclick="this.form.submit();"'
+				. ($on ? ' checked="checked"' : '') . ' />' . $o[0] . '</label>';
+		}
+		return $html . '<noscript><input type="submit" value="Go" /></noscript>';
 	}
 
 	/**
@@ -746,6 +794,7 @@ END;
 		} elseif ($unitPref == 'EU') {
 			self::$units = UNIT_EU;
 		}
+		self::resolveAqUnits(true);
 		//Auto-update setting getter/saver
 		$updatePref = isset($_COOKIE['SetUpdate']) ? $_COOKIE['SetUpdate'] : '';
 		if (isset($_GET['update'])) {

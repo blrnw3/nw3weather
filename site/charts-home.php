@@ -160,10 +160,10 @@
 			if (json.dp && json.dp[key] != null) { TABS[key].dp = json.dp[key]; }
 		}
 		// PM2.5 becomes an index rather than a concentration under US units.
-		var aqi = (json.units.pm25 === 'AQI');
-		TABS.pm25.title = aqi ? 'air quality index' : 'air pollution';
-		TABS.pm25.yTitle = aqi ? 'Air quality index' : 'PM2.5';
-		TABS.pm25.series[0].name = aqi ? 'Air quality index' : 'Air pollution (PM2.5)';
+		var aqi = (json.units.pm25 === 'AQI'), daqi = (json.units.pm25 === 'DAQI');
+		TABS.pm25.title = aqi ? 'air quality index' : (daqi ? 'UK DAQI' : 'air pollution');
+		TABS.pm25.yTitle = aqi ? 'Air quality index' : (daqi ? 'DAQI' : 'PM2.5');
+		TABS.pm25.series[0].name = aqi ? 'Air quality index' : (daqi ? 'UK DAQI' : 'Air pollution (PM2.5)');
 	}
 
 	function loadData(range) {

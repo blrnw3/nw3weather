@@ -384,8 +384,9 @@ class Report {
 			11 => [0, 10, 20, 25, 35, 50, 65, 75, 85, 90, 95],
 			12 => [-10, -5, -2, 0, 2, 5, 10, 15, 20],
 			13 => [25, 50, 75, 90, 100, 110, 125, 150, 175, 200, 250],
-			// US values have already been converted to AQI; others remain raw PM2.5.
-			14 => $us ? [25, 50, 75, 100, 125, 150, 200, 300, 500] : Wx::DAQI_PM25,
+			// Shaded on the converted value: AQI, DAQI index (band n -> level n-1) or raw PM2.5.
+			14 => (Page::aqUnits() === 'aqi') ? [25, 50, 75, 100, 125, 150, 200, 300, 500]
+				: ((Page::aqUnits() === 'daqi') ? [1, 2, 3, 4, 5, 6, 7, 8, 9] : Wx::DAQI_PM25),
 		];
 		self::$thresholdsReady = true;
 	}
@@ -1156,6 +1157,7 @@ class Report {
 	private function rankVal($v, $isCount, $unit = null) {
 		if ($isCount) { return $v; }
 		$u = ($unit !== null) ? $unit : $this->unit;
+		if ($u === Wx::Pm25) { return Wx::aqSpan($v, Wx::conv($v, $u, false), Wx::aqAvg($this->type)); }
 		return Wx::conv($v, $u, false);
 	}
 

@@ -5,7 +5,9 @@
  *   NW3AQ.usAqi(pm)           US EPA AQI from PM2.5
  *   NW3AQ.chartBands(unit, max) Highcharts yAxis plotBands for DAQI (in the chart's unit)
  *   home card popover         click/tap/Enter on .daqi-btn shows the DAQI scale
- *   report toggle             any .aqv value (data-pm) gets a PM2.5 | AQI | DAQI switch
+ *
+ * Air-quality values elsewhere are rendered server-side in the visitor's chosen
+ * units (sidebar 'Air quality': PM2.5 | AQI | DAQI), so there is no client toggle.
  *
  * The scale itself comes from window.NW3_AQ (Wx::aqScale(), emitted by Page.php),
  * so the thresholds are defined once, server-side.
@@ -15,6 +17,7 @@
 	var S = window.NW3_AQ;
 	if (!S || !S.daqi) { return; }
 	var IS_US = (S.unit === 'AQI');
+	var MODE = S.mode || (IS_US ? 'aqi' : 'pm');
 	var GROUPS = { Low: 'Low', Moderate: 'Moderate', High: 'High', 'Very High': 'Very High' };
 	// US EPA AQI category colours, for colouring cells in AQI mode.
 	var AQI_CATS = [[50, '#00e400', 'Good'], [100, '#ffff00', 'Moderate'], [150, '#ff7e00', 'Unhealthy (sensitive)'],
@@ -54,8 +57,20 @@
 	 * Returns { plotBands: [...], note: '...' }.
 	 */
 	function chartBands(unit, dataMax) {
-		var aqi = (unit === 'AQI');
+		var aqi = (unit === 'AQI'), isDaqi = (unit === 'DAQI');
 		var conv = aqi ? usAqi : function (v) { return v; };
+		if (isDaqi) {
+			// Index axis: band n spans n-0.5 .. n+0.5.
+			var topD = (dataMax == null || isNaN(dataMax)) ? 3 : dataMax + 1;
+			var outD = [];
+			for (var k = 0; k < S.daqi.length && k + 0.5 <= topD; k++) {
+				var bd = S.daqi[k];
+				outD.push({ from: k === 0 ? 0 : k + 0.5, to: k + 1.5, color: rgba(bd.colour, 0.16), zIndex: 0,
+					label: (k === 0 || S.daqi[k - 1].name !== bd.name) ? { text: bd.name, align: 'right', verticalAlign: 'bottom', x: -4, y: -3,
+						style: { color: '#777', fontSize: '9px' } } : undefined });
+			}
+			return { plotBands: outD, note: 'Shading: UK DAQI bands (DAQI is defined on the 24h mean)' };
+		}
 		var top = (dataMax == null || isNaN(dataMax)) ? conv(S.daqiPm[2]) : dataMax * 1.15;
 		var out = [], from = 0;
 		for (var i = 0; i < S.daqi.length; i++) {
@@ -150,111 +165,5 @@
 		}).observe(document.documentElement, { childList: true, subtree: true });
 	}
 
-	// ---- Report toggle: PM2.5 | AQI | DAQI ----
-	var MODE_KEY = 'nw3.aqMode';
-	var LEVEL_RE = /\blevelaqi_\d+\b/g;
-	function getMode() {
-		var m = null; try { m = window.localStorage.getItem(MODE_KEY); } catch (e) {}
-		return (m === 'pm' || m === 'aqi' || m === 'daqi') ? m : 'native';
-	}
-	function setMode(m) { try { window.localStorage.setItem(MODE_KEY, m); } catch (e) {} }
-	var AVG_NOTE = { max: 'from the max reading', min: 'from the min reading', mean: 'from the mean' };
-
-	function applyOne(el, mode) {
-		var pm = num(el.getAttribute('data-pm'));
-		if (pm === null) { return; }
-		if (el.getAttribute('data-orig') === null) { el.setAttribute('data-orig', el.innerHTML); }
-		var cell = el.closest('.aqc');
-		if (cell && cell.getAttribute('data-origc') === null) { cell.setAttribute('data-origc', cell.className); }
-		var avg = el.getAttribute('data-avg') || 'mean';
-		var eff = mode;
-		if (mode === 'native') { eff = IS_US ? 'aqi' : 'pm'; }
-		var txt, col = null, tip;
-		if (mode === 'native') {
-			el.innerHTML = el.getAttribute('data-orig');
-			if (cell) { cell.className = cell.getAttribute('data-origc'); cell.style.backgroundColor = cell.style.color = ''; }
-			el.removeAttribute('title');
-			return;
-		}
-		if (eff === 'pm') {
-			txt = pm.toFixed(1); tip = 'PM2.5 ' + txt + ' \u00B5g/m\u00B3';
-			var bp = band(daqi(pm)); col = bp.colour;
-		} else if (eff === 'aqi') {
-			var a = usAqi(pm); var cat = aqiCat(a);
-			txt = String(a); col = cat[1]; tip = 'US AQI ' + a + ' (' + cat[2] + '), ' + AVG_NOTE[avg] + ' PM2.5 ' + pm.toFixed(1);
-		} else {
-			var d = daqi(pm); var b = band(d);
-			txt = String(d); col = b.colour; tip = 'DAQI ' + d + ' (' + b.name + '), ' + AVG_NOTE[avg] + ' PM2.5 ' + pm.toFixed(1)
-				+ (avg === 'mean' ? '' : ' (DAQI is defined on the 24h mean)');
-		}
-		if (el.getAttribute('data-u')) {
-			txt = (eff === 'pm') ? txt + ' \u00B5g/m\u00B3' : (eff === 'aqi' ? 'AQI ' + txt : 'DAQI ' + txt);
-		}
-		if (avg !== 'mean' && eff !== 'pm') { txt += '<sup class="aq-ind">*</sup>'; }
-		el.innerHTML = txt;
-		el.title = tip;
-		if (cell) {
-			cell.className = cell.getAttribute('data-origc').replace(LEVEL_RE, '').trim() + ' aq-coloured';
-			cell.style.backgroundColor = col; cell.style.color = textOn(col);
-		}
-	}
-	function applyAll(mode) {
-		Array.prototype.forEach.call(document.querySelectorAll('.aqv'), function (el) { applyOne(el, mode); });
-		Array.prototype.forEach.call(document.querySelectorAll('.aq-toggle button'), function (b) {
-			var on = (b.getAttribute('data-mode') === (mode === 'native' ? (IS_US ? 'aqi' : 'pm') : mode));
-			b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
-		});
-	}
-	function toggleHtml() {
-		return '<span class="aq-toggle-lab">Air pollution as</span>'
-			+ '<span class="aq-toggle-btns" role="group" aria-label="Air pollution units">'
-			+ '<button type="button" data-mode="pm">PM2.5</button><button type="button" data-mode="aqi">AQI</button>'
-			+ '<button type="button" data-mode="daqi">DAQI</button></span>'
-			+ '<span class="aq-toggle-note" title="AQI and DAQI are defined on 24h means. Values marked * are converted from a min or max reading, so are indicative only.">'
-			+ '* from min/max: indicative</span>';
-	}
-	function initToggles() {
-		var vals = document.querySelectorAll('.aqv');
-		if (!vals.length) { return; }
-		Array.prototype.forEach.call(vals, function (el) {
-			if (el.getAttribute('data-aqinit')) { return; }
-			el.setAttribute('data-aqinit', '1');
-			var host = el.closest('.aq-host') || el.closest('table, .dm-grid, .dd-grid, .report-table-scroll, .dm-scroll');
-			if (!host) { return; }
-			var outer = host.closest('.report-table-scroll, .dm-scroll') || host;
-			var prev = outer.previousElementSibling;
-			if (prev && prev.classList.contains('aq-toggle')) { return; }
-			var t = document.createElement('div');
-			t.className = 'aq-toggle';
-			t.innerHTML = toggleHtml();
-			outer.parentNode.insertBefore(t, outer);
-		});
-		applyAll(getMode());
-	}
-	document.addEventListener('click', function (e) {
-		var b = e.target.closest ? e.target.closest('.aq-toggle button') : null;
-		if (!b) { return; }
-		var m = b.getAttribute('data-mode');
-		setMode(m); applyAll(m);
-	});
-	var pending = false;
-	function schedule() {
-		if (pending) { return; }
-		pending = true;
-		setTimeout(function () { pending = false; initToggles(); }, 50);
-	}
-	if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initToggles); } else { initToggles(); }
-	if (window.MutationObserver) {
-		// Data tables swap in over AJAX; pick up new values.
-		new MutationObserver(function (muts) {
-			for (var i = 0; i < muts.length; i++) {
-				for (var j = 0; j < muts[i].addedNodes.length; j++) {
-					var n = muts[i].addedNodes[j];
-					if (n.nodeType === 1 && (n.classList.contains('aqv') || n.querySelector('.aqv'))) { schedule(); return; }
-				}
-			}
-		}).observe(document.documentElement, { childList: true, subtree: true });
-	}
-
-	window.NW3AQ = { daqi: daqi, usAqi: usAqi, band: band, chartBands: chartBands, isUs: IS_US, groups: GROUPS };
+	window.NW3AQ = { daqi: daqi, usAqi: usAqi, band: band, chartBands: chartBands, isUs: IS_US, mode: MODE, groups: GROUPS };
 })(window, document);

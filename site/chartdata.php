@@ -17,6 +17,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 $unitPref = isset($_GET['unit']) ? $_GET['unit'] : (isset($_COOKIE['SetUnits']) ? $_COOKIE['SetUnits'] : 'UK');
 Page::$units = ($unitPref === 'US') ? UNIT_US : (($unitPref === 'EU') ? UNIT_EU : UNIT_UK);
+Page::resolveAqUnits();
 
 $range = isset($_GET['range']) ? (int)$_GET['range'] : 6;
 if (!in_array($range, array(6, 12, 24), true)) {

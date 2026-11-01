@@ -279,6 +279,16 @@ body {
 	grid-template-columns: 1fr;
 	gap: 0.2rem;
 }
+#nav-settings p.unit-sub {
+	font-size: 0.68rem;
+	font-weight: 600;
+	color: #60776a;
+	margin: 0.45rem 0 0.2rem;
+	padding: 0;
+}
+#nav-settings form.aq-units {
+	grid-template-columns: repeat(3, 1fr);
+}
 #nav-settings label.unit-option {
 	display: flex;
 	align-items: center;
@@ -3221,11 +3231,5 @@ body.cam-modal-open {
 .daqi-sw { display: inline-block; width: 0.85em; height: 0.85em; border-radius: 2px; margin-right: 0.35rem; vertical-align: -0.1em; border: 1px solid rgba(0,0,0,0.15); }
 .daqi-pop-note { margin: 0.35rem 0 0; font-size: 0.74rem; color: #667; }
 
-/* PM2.5 | AQI | DAQI toggle on report pages (aq.js) */
-.aq-toggle { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; margin: 0.4rem 0; font-size: 0.85rem; color: #445; }
-.aq-toggle-btns { display: inline-flex; border: 1px solid #b8c4ce; border-radius: 6px; overflow: hidden; }
-.aq-toggle-btns button { font: inherit; border: 0; background: #fff; padding: 0.15rem 0.6rem; cursor: pointer; color: #334; }
-.aq-toggle-btns button + button { border-left: 1px solid #b8c4ce; }
-.aq-toggle-btns button.active { background: #5B8A72; color: #fff; }
-.aq-toggle-note { font-size: 0.75rem; color: #778; cursor: help; }
+/* '*' marker: index converted from a min/max reading (Wx::aqSpan) */
 .aq-ind { font-size: 0.7em; }

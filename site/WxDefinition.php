@@ -27,6 +27,7 @@ class Wx {
 	static function _conv_density($val) { return $val / 1.262; }
 	static function _conv_dist($val) { return $val / 0.3048; }
 	static function _conv_pm25($val) { return self::usAqi($val); }
+	static function _conv_daqi($val) { $d = self::daqi($val); return $d[0]; }
 
 	// Units Enum
 	const None = 0;
@@ -265,20 +266,36 @@ class Wx {
 			'thresholds_day' => self::DAQI_PM25,
 			'threshold_colours' => self::DAQI_COLOURS,
 			'threshold_txtcolours' => [false,false,false, false,false,false, 'fff','fff','fff', 'fff'],
-			UNIT_US => [
+			// Keyed by Page::aqUnits() rather than the site units (see unitCfg()).
+			'aqi' => [
 				'unit' => 'AQI',
 				'precision' => 0,
 				'conversion' => true,
+				'unit_prefix' => true,
+			],
+			'daqi' => [
+				'unit' => 'DAQI',
+				'precision' => 0,
+				'conversion' => true,
+				'conv_fn' => 'daqi',
+				'unit_prefix' => true,
 			],
 		]
 	];
 
+	/** Unit config for a type, merged with the visitor's unit overrides (air quality has its own choice). */
+	private static function unitCfg($type) {
+		$var = self::$UNITS[$type];
+		$key = ($type === self::Pm25) ? Page::aqUnits() : Page::$units;
+		if(key_exists($key, $var) && is_array($var[$key])) {
+			$var = array_merge($var, $var[$key]);
+		}
+		return $var;
+	}
+
 	public static function getUnits($type) {
 		if(key_exists($type, self::$UNITS)) {
-			$var = self::$UNITS[$type];
-			if(key_exists(Page::$units, $var)) {
-				$var = array_merge($var, $var[Page::$units]);
-			}
+			$var = self::unitCfg($type);
 			return $var["unit"];
 		}
 		return null;
@@ -293,10 +310,7 @@ class Wx {
 	 */
 	public static function precision($type, $default = 1) {
 		if(!key_exists($type, self::$UNITS)) { return $default; }
-		$var = self::$UNITS[$type];
-		if(key_exists(Page::$units, $var)) {
-			$var = array_merge($var, $var[Page::$units]);
-		}
+		$var = self::unitCfg($type);
 		return isset($var['precision']) ? $var['precision'] : $default;
 	}
 
@@ -332,12 +346,9 @@ class Wx {
 		}
 		$value = (float)$val;
 		if(key_exists($type, self::$UNITS)) {
-			$var = self::$UNITS[$type];
-			if(key_exists(Page::$units, $var)) {
-				$var = array_merge($var, $var[Page::$units]);
-			}
+			$var = self::unitCfg($type);
 			if(key_exists('conversion', $var)) {
-				$value = call_user_func('Wx::_conv_'. $var['name'], $value);
+				$value = call_user_func('Wx::_conv_'. (isset($var['conv_fn']) ? $var['conv_fn'] : $var['name']), $value);
 			}
 		}
 		return ($dp === null) ? $value : nw3_round($value, $dp);
@@ -404,10 +415,7 @@ class Wx {
 		}
 
 		if(key_exists($type, self::$UNITS)) {
-			$var = self::$UNITS[$type];
-			if(key_exists(Page::$units, $var)) {
-				$var = array_merge($var, $var[Page::$units]);
-			}
+			$var = self::unitCfg($type);
 		}
 		else {
 			return "WARNING! '$type' is not a valid type";
@@ -432,11 +440,14 @@ class Wx {
 
 		//Actual conversion
 		if(key_exists('conversion', $var)) {
-			$value = call_user_func('Wx::_conv_'. $var['name'], $value);
+			$value = call_user_func('Wx::_conv_'. (isset($var['conv_fn']) ? $var['conv_fn'] : $var['name']), $value);
 		}
 
 		//Format
 		$strret = $sign.'.'. $precision.'f';
+		if($show_unit && !empty($var['unit_prefix'])) { // index scales read 'AQI 42', 'DAQI 3'
+			return $var['unit'] . ' ' . sprintf("%$strret", $value);
+		}
 		return sprintf("%$strret", $value).$unit;
 	}
 
@@ -511,15 +522,23 @@ class Wx {
 		return 500;
 	}
 	/**
-	 * Wrap a displayed PM2.5 value so the report toggle (aq.js) can switch it to AQI / DAQI.
+	 * Mark up a displayed PM2.5 value: a tooltip with the source PM2.5, and a *
+	 * when an index (AQI / DAQI, defined on 24h means) comes from a min or max.
 	 * @param mixed $raw raw PM2.5 (ug/m3)
-	 * @param string $html the value as normally displayed
-	 * @param string $avg 'mean', 'max' or 'min': what the value is (AQI/DAQI are 24h-mean scales)
+	 * @param string $html the value as displayed (already in the visitor's air-quality units)
+	 * @param string $avg 'mean', 'max' or 'min'
 	 */
 	public static function aqSpan($raw, $html, $avg = 'mean', $withUnit = false) {
 		if($raw === null || $raw === '' || !nw3_is_numeric($raw)) { return $html; }
+		$mode = Page::aqUnits();
+		$pm = nw3_number_format((float)$raw, 1);
+		$from = ['max' => 'from the max reading', 'min' => 'from the min reading', 'mean' => 'from the mean'];
+		$tip = ($mode === 'pm') ? 'PM2.5 ' . $pm . ' µg/m³'
+			: (($mode === 'aqi') ? 'US AQI' : 'DAQI') . ', ' . ($from[$avg] ?? $from['mean']) . ' PM2.5 ' . $pm
+				. (($mode === 'daqi' && $avg !== 'mean') ? ' (DAQI is defined on the 24h mean)' : '');
+		$mark = ($mode !== 'pm' && $avg !== 'mean') ? '<sup class="aq-ind" title="Indicative: converted from a ' . $avg . ' reading">*</sup>' : '';
 		return '<span class="aqv" data-pm="' . nw3_round((float)$raw, 1) . '" data-avg="' . htmlspecialchars($avg) . '"'
-			. ($withUnit ? ' data-u="1"' : '') . '>' . $html . '</span>';
+			. ' title="' . htmlspecialchars($tip) . '">' . $html . $mark . '</span>';
 	}
 	/** 'min' / 'max' / 'mean' for a daily PM2.5 variable key (aqmin, aqmax, aqmean). */
 	public static function aqAvg($type) {
@@ -1105,7 +1124,7 @@ class Wx {
 		}
 		if ($unit === self::AbsTemp) { return 0; }
 		if ($unit === self::Temperature) { return 20; }
-		if ($unit === self::Pm25) { return 10; }
+		if ($unit === self::Pm25) { return (Page::aqUnits() === 'daqi') ? self::DAQI_PM25[0] : 10; }
 		if (in_array($varName, array('rain', 'hrmax', '10max', 'ratemax', 'ratemean'), true)) { return 0.2; }
 		if (in_array($varName, array('sunhr', 'wethr'), true)) { return 0.1; }
 		if (in_array($varName, array('gust', 'wmax', 'wmean', 'w10max'), true)) { return 10; }
@@ -1157,6 +1176,9 @@ class Wx {
 			$presets = array(0, 1, 2, 3);
 		} elseif ($varName === 'snow' || $varName === 'lysnw') {
 			$presets = array(0, 0.5, 1, 3, 5, 10, 20);
+		} elseif ($unit === self::Pm25 && Page::aqUnits() === 'daqi') {
+			// Band tops, so each preset reads as a whole DAQI index.
+			$presets = array_slice(self::DAQI_PM25, 0, 6);
 		} elseif ($unit === self::Pm25) {
 			$presets = array(5, 10, 15, 20, 25, 30, 40, 50, 75, 100);
 		} else {
