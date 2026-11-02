@@ -40,7 +40,13 @@ log needs a catch-up jump after a gap, a scale over 2 with a gap, or have rain l
 are left out; 0.1-0.2 mm trace days count as dry. Wet % uses tip spells (30 min gap, starting 15 min before the
 first tip) from Apr 2014, when the gauge resolution changed.
 
-Sunshine: from 23 May 2025 the live sunlog (night counts as not sunny); days with under 90% of the possible sunshine
+Sunshine is the % of **possible** sunshine: a minute counts only when its possible-sun weight `pw` is at least 0.5
+(the sun above the local horizon cut-off, the same `pw` the sunlog and the sun tracker use for "possible"), so night
+and horizon-blocked minutes are in neither the sunny count nor the total. A 5-minute slot is dropped (no line) when it
+was possible on under 10% of the profile's days (`SUN_MIN_POSSIBLE_SHARE`), e.g. the June 04:45 slot in a whole-year
+profile. The summary's average is weighted by possible minutes.
+
+Sources: from 23 May 2025 the live sunlog; days with under 90% of the possible sunshine
 classified are left out, and Nov 2025 - 4 Apr 2026 is held pending review.
 
 Before that, from 7 Sep 2021 (the camera has been stable since then), sunshine is **model-estimated**: the same sun

@@ -72,7 +72,7 @@ details.dp-rules li { font-size: 0.85em; margin: 2px 0; }
 $groupOrder = ['temp' => ['temp'], 'rain' => ['rain', 'wet'], 'pres' => ['pres'], 'wind' => ['wind', 'gust'],
 	'humi' => ['humi'], 'dewp' => ['dewp'], 'sun' => ['sun']];
 $chipLabel = ['temp' => 'Temperature', 'dewp' => 'Dew point', 'humi' => 'Humidity', 'pres' => 'Pressure',
-	'wind' => 'Mean speed', 'gust' => 'Gust', 'rain' => 'Rain rate', 'wet' => 'Wet % of time', 'sun' => 'Sunshine % of time'];
+	'wind' => 'Mean speed', 'gust' => 'Gust', 'rain' => 'Rain rate', 'wet' => 'Wet % of time', 'sun' => 'Sunshine % of possible'];
 $groupMeta = [];
 foreach (Charts::selectableGroups() as $g) { $groupMeta[$g['id']] = $g; }
 $activeGroup = 'temp';
@@ -150,7 +150,7 @@ $notes = [
 	'gust' => 'Highest gust in each minute.',
 	'rain' => 'Average rain per hour at each time of day, counting dry days. Each day\'s minute-log rain is scaled to that day\'s checked daily total, so hand corrections (false or reassigned tips) carry through.',
 	'wet' => 'Share of the time it was raining, from rain-gauge tips: tips up to 30 minutes apart count as one spell, starting 15 minutes before the first tip. From Apr 2014 (finer gauge).',
-	'sun' => 'Share of the time it was sunny (night counts as not sunny), from the webcam sunshine model. From late May 2025 this is the live per-minute webcam log. Sep 2021 to May 2025 (years marked *) is model-estimated: the same model run over the archived webcam frames (every 7.5-15 minutes), each day scaled to its official sunshine total, so it gives the shape of the day rather than exact minutes. Nov 2025 to early Apr 2026 is left out until it has been reviewed.',
+	'sun' => 'Share of the possible sunshine that was sunny: only minutes when the sun is above the local horizon (as seen by the webcam) count, so night and the low-sun minutes blocked by buildings and trees are left out. Times of day that are only possible on a few of the days (under 10%) are not shown. From the webcam sunshine model. From late May 2025 this is the live per-minute webcam log. Sep 2021 to May 2025 (years marked *) is model-estimated: the same model run over the archived webcam frames (every 7.5-15 minutes), each day scaled to its official sunshine total, so it gives the shape of the day rather than exact minutes. Nov 2025 to early Apr 2026 is left out until it has been reviewed.',
 ];
 $js = [
 	'payload' => $payload,
@@ -162,7 +162,7 @@ $js = [
 	'built' => isset($meta['stats']['built']) ? date('j M Y H:i', $meta['stats']['built']) : null,
 ];
 Charts::assets();
-echo '<script src="/dayprofile.js?20261102k"></script>' . "\n";
+echo '<script src="/dayprofile.js?20261102m"></script>' . "\n";
 Charts::run('NW3DayProfile.init(' . nw3_json_encode($js) . ');');
 ?>
 
