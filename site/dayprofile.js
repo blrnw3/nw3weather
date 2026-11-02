@@ -53,7 +53,8 @@
 		var main = rebin(p.main, p.bin, bin);
 		// Compare by default except a single month against the all-months profile (different level; it squashes the chart).
 		var cmp = S.cmp !== null ? S.cmp : !(p.baseKey === 'all' && S.month && !S.year);
-		document.getElementById('dp-cmp').checked = cmp;
+		var cmpBtn = document.getElementById('dp-cmp');
+		cmpBtn.classList.toggle('active', cmp); cmpBtn.setAttribute('aria-pressed', cmp ? 'true' : 'false');
 		var base = cmp ? rebin(p.base, p.bin, bin) : null;
 		var period = periodLabel(S.year, S.month);
 		var has = main && main.some(function (q) { return q.y != null; });
@@ -139,20 +140,42 @@
 	}
 
 	function setActive(row, v) {
-		var as = document.querySelectorAll('[data-dp="' + row + '"] .dp-btn');
-		for (var i = 0; i < as.length; i++) { as[i].classList.toggle('on', as[i].getAttribute('data-v') === String(v)); }
+		var as = document.querySelectorAll('[data-dp="' + row + '"] a.wxsel-chip');
+		for (var i = 0; i < as.length; i++) { as[i].classList.toggle('active', as[i].getAttribute('data-v') === String(v)); }
+		if (row === 'var') {
+			// Group buttons and the measures shown follow the variable, as on the data tables.
+			var cur = document.querySelector('[data-dp="var"] a.wxsel-chip[data-v="' + v + '"]');
+			var g = cur ? cur.getAttribute('data-group') : null;
+			var bs = document.querySelectorAll('#dp-controls .wxsel-groups button');
+			for (var j = 0; j < bs.length; j++) { bs[j].classList.toggle('active', bs[j].getAttribute('data-group') === g); }
+			for (var k = 0; k < as.length; k++) { as[k].hidden = as[k].getAttribute('data-group') !== g; }
+			// No measure row for a group with a single measure: its group button already selects it.
+			var shown = 0;
+			for (var n = 0; n < as.length; n++) { if (!as[n].hidden) { shown++; } }
+			document.getElementById('dp-var-row').hidden = shown < 2;
+		}
+		if (row === 'year') {
+			// "Older" overflow: its summary shows the chosen older year, like the data tables.
+			var det = document.querySelector('[data-dp="year"] details.wxsel-overflow');
+			if (det) {
+				var sel = det.querySelector('a.wxsel-chip.active'), sum = det.querySelector('summary');
+				sum.textContent = sel ? sel.getAttribute('data-v') : 'Older';
+				sum.classList.toggle('active', !!sel);
+				det.open = false;
+			}
+		}
 	}
 	function refreshLinks() {
 		var rows = ['var', 'year', 'month'];
 		rows.forEach(function (row) {
-			var as = document.querySelectorAll('[data-dp="' + row + '"] .dp-btn');
+			var as = document.querySelectorAll('[data-dp="' + row + '"] a.wxsel-chip');
 			for (var i = 0; i < as.length; i++) {
 				var x = as[i].getAttribute('data-v');
 				var q = { v: S.v, year: S.year, month: S.month };
 				if (row === 'var') { q.v = x; } else if (row === 'year') { q.year = +x; } else { q.month = +x; }
 				as[i].setAttribute('href', 'wxdayprofile.php?' + qs(q));
 				if (row === 'year' && x !== '0') {
-					as[i].classList.toggle('off', (S.cfg.varYears[S.v] || []).indexOf(+x) < 0);
+					as[i].classList.toggle('dp-off', (S.cfg.varYears[S.v] || []).indexOf(+x) < 0);
 					as[i].classList.toggle('est', !!(S.cfg.estYears && S.cfg.estYears[S.v] && S.cfg.estYears[S.v][x]));
 				}
 			}
@@ -185,8 +208,8 @@
 	}
 
 	function syncBin(p) {
-		var b = S.bin || p.defaultBin, rs = document.querySelectorAll('input[name="dp-bin"]');
-		for (var i = 0; i < rs.length; i++) { rs[i].checked = (+rs[i].value === b); }
+		var b = S.bin || p.defaultBin, bs = document.querySelectorAll('#dp-bins .wxsel-chip');
+		for (var i = 0; i < bs.length; i++) { bs[i].classList.toggle('active', +bs[i].getAttribute('data-bin') === b); }
 	}
 
 	function init(cfg) {
@@ -197,19 +220,25 @@
 		syncBin(S.p);
 		var ctl = document.getElementById('dp-controls');
 		ctl.addEventListener('click', function (e) {
-			var a = e.target.closest ? e.target.closest('a.dp-btn') : null;
+			var t = e.target.closest ? e.target : null;
+			var q = { v: S.v, year: S.year, month: S.month };
+			var gb = t ? t.closest('.wxsel-groups button') : null;
+			if (gb) {
+				var first = gb.getAttribute('data-default-type');
+				var inGroup = document.querySelector('[data-dp="var"] a.wxsel-chip[data-v="' + S.v + '"][data-group="' + gb.getAttribute('data-group') + '"]');
+				if (!inGroup) { q.v = first; if (window.fetch) { load(q); } else { window.location.href = 'wxdayprofile.php?' + qs(q); } }
+				return;
+			}
+			var bb = t ? t.closest('#dp-bins .wxsel-chip') : null;
+			if (bb) { S.bin = +bb.getAttribute('data-bin'); syncBin(S.p); draw(); return; }
+			if (t && t.closest('#dp-cmp')) { S.cmp = !document.getElementById('dp-cmp').classList.contains('active'); draw(); return; }
+			var a = t ? t.closest('a.wxsel-chip') : null;
 			if (!a || !window.fetch || e.ctrlKey || e.metaKey || e.shiftKey) { return; }
 			e.preventDefault();
-			var row = a.parentNode.getAttribute('data-dp'), x = a.getAttribute('data-v');
-			var q = { v: S.v, year: S.year, month: S.month };
+			var row = a.closest('[data-dp]').getAttribute('data-dp'), x = a.getAttribute('data-v');
 			if (row === 'var') { q.v = x; } else if (row === 'year') { q.year = +x; } else { q.month = +x; }
 			load(q);
 		});
-		var rs = document.querySelectorAll('input[name="dp-bin"]');
-		for (var i = 0; i < rs.length; i++) {
-			rs[i].addEventListener('change', function () { S.bin = +this.value; draw(); });
-		}
-		document.getElementById('dp-cmp').addEventListener('change', function () { S.cmp = this.checked; draw(); });
 		draw();
 		var w = window.innerWidth;
 		window.addEventListener('resize', function () {
