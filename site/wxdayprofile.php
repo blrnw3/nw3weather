@@ -41,7 +41,7 @@ rsort($allYears);
 <style>
 .report-sel .wxsel-chip.dp-off { opacity: 0.35; pointer-events: none; }
 .report-sel .wxsel-chip.est::after { content: '*'; }
-#main .report-sel .wxsel-chip[hidden] { display: none; }
+#main .report-sel .wxsel-chip[hidden], #dp-var-row[hidden] { display: none; }
 #dp-chart { min-height: 440px; margin-top: 4px; }
 .dp-summary { font-size: 0.9em; margin: 4px 0; }
 .dp-note, .dp-foot { font-size: 0.85em; color: #555; margin: 3px 0; }
@@ -93,7 +93,8 @@ $yearChip = function ($y) use ($h, $link, $var, $year, $month, $years, $estYears
 			. '" data-default-type="' . $h($vs[0]) . '" title="' . $h($g['label']) . '">' . $icon . '<span>' . $h($g['label']) . '</span></button>';
 	} ?>
 	</div></div>
-	<div class="report-sel-row"><div class="wxsel-subtypes" role="tablist" data-dp="var">
+	<?php // measures only for groups with more than one; a single-measure group's button selects it directly ?>
+	<div class="report-sel-row" id="dp-var-row"<?= count($groupOrder[$activeGroup]) > 1 ? '' : ' hidden' ?>><div class="wxsel-subtypes" role="tablist" data-dp="var">
 	<?php foreach ($groupOrder as $gid => $vs) {
 		foreach ($vs as $v) {
 			echo '<a class="wxsel-chip' . ($v === $var ? ' active' : '') . '" data-v="' . $h($v) . '" data-group="' . $h($gid) . '"'
@@ -161,7 +162,7 @@ $js = [
 	'built' => isset($meta['stats']['built']) ? date('j M Y H:i', $meta['stats']['built']) : null,
 ];
 Charts::assets();
-echo '<script src="/dayprofile.js?20261102j"></script>' . "\n";
+echo '<script src="/dayprofile.js?20261102k"></script>' . "\n";
 Charts::run('NW3DayProfile.init(' . nw3_json_encode($js) . ');');
 ?>
 

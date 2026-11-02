@@ -149,6 +149,10 @@
 			var bs = document.querySelectorAll('#dp-controls .wxsel-groups button');
 			for (var j = 0; j < bs.length; j++) { bs[j].classList.toggle('active', bs[j].getAttribute('data-group') === g); }
 			for (var k = 0; k < as.length; k++) { as[k].hidden = as[k].getAttribute('data-group') !== g; }
+			// No measure row for a group with a single measure: its group button already selects it.
+			var shown = 0;
+			for (var n = 0; n < as.length; n++) { if (!as[n].hidden) { shown++; } }
+			document.getElementById('dp-var-row').hidden = shown < 2;
 		}
 		if (row === 'year') {
 			// "Older" overflow: its summary shows the chosen older year, like the data tables.
