@@ -193,6 +193,12 @@ if($firstday && $fiveMinutely && time() - filemtime(ROOT.'datm'.$yr_yest.'.csv')
 	mail("blr@nw3weather.co.uk","Monthly report $mon_yest $yr_yest", $rep);
 }
 
+// Recap data packs (api_recap_pack.php): precompute this morning's once the overnight data and sun total are in.
+// Packs are also rebuilt on request whenever the data files change.
+if($tstamp === '0715') {
+	exec(EXEC_PATH . 'warm_recap_pack.php > /dev/null 2>&1 &');
+}
+
  // Ensure that data.php did indeed run at midnight
 if($tstamp == '0700') {
 	$age = time() - filemtime(ROOT."dat" . $yr_yest . ".csv");
