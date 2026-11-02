@@ -27,7 +27,7 @@
  * sunshine, or whose model total is far from the official total, are left out.
  */
 class DayProfile {
-	const VERSION = 2;
+	const VERSION = 3;
 	const BIN = 5;                 // minutes per bin
 	const NBIN = 288;
 	const FIRST_YEAR = 2011;
@@ -60,7 +60,7 @@ class DayProfile {
 			'groups' => ['rain'], 'dp' => 3, 'area' => true, 'bin' => 30],
 		'wet' => ['name' => 'Raining (% of time)', 'short' => 'Wet', 'type' => Wx::Percentage, 'colour' => '#4263eb',
 			'groups' => ['rain'], 'dp' => 1, 'area' => true, 'from' => '2014-04-01', 'bin' => 30],
-		'sun' => ['name' => 'Sunshine (% of time)', 'short' => 'Sun', 'type' => Wx::Percentage, 'colour' => '#f59f00',
+		'sun' => ['name' => 'Sunshine (% of possible)', 'short' => 'Sun', 'type' => Wx::Percentage, 'colour' => '#f59f00',
 			'groups' => ['sun'], 'dp' => 1, 'area' => true, 'from' => '2021-09-07'],
 	];
 
@@ -94,6 +94,10 @@ class DayProfile {
 	/** A model day is used if |model - official| <= max(SUN_FIT_ABS h, SUN_FIT_REL x official). */
 	const SUN_FIT_ABS = 1.5;
 	const SUN_FIT_REL = 0.5;
+	/** A minute is possible sunshine when its possible-sun weight is at least this. */
+	const SUN_POSSIBLE_W = 0.5;
+	/** Sun slots possible on under this share of the profile's days are dropped (too few days to be a fair %). */
+	const SUN_MIN_POSSIBLE_SHARE = 0.1;
 
 	const ALL = ['temp', 'hum', 'pres', 'wind', 'rain'];
 
@@ -669,7 +673,9 @@ class DayProfile {
 	}
 
 	/**
-	 * Webcam sunshine: % of the time sunny, counting night as not sunny. Uses the live sunlog when there is one (from
+	 * Webcam sunshine: % of the possible-sun time that was sunny. A minute counts only when the sun could shine on the
+	 * camera's view (pw >= 0.5: sun above the local horizon cut-off, as in the sunlog's possible sunshine); night and
+	 * horizon-blocked minutes are left out of both sides. Uses the live sunlog when there is one (from
 	 * SUN_LOG_FROM), else the model-estimated timeline scaled to the official total. Returns true for an estimated day.
 	 */
 	private static function scanSun($ymd, $gx, &$acc, &$used, &$why, $sunhr) {
@@ -691,13 +697,13 @@ class DayProfile {
 			if ($rows['cov'] < self::SUN_MIN_COVERAGE) { $why['sun'] = 'suncov'; return false; }
 			$rows = $rows['rows'];
 		}
-		// $rows: minute => [sunny fraction 0..1 or null if unclassified, daylight weight]
+		// $rows: minute => [sunny fraction 0..1 or null if unclassified, daylight weight, possible-sun weight]
 		$bs = &$acc['sun'][0]; $bn = &$acc['sun'][1];
-		for ($k = 0; $k < 1440; $k++) {
-			if (isset($rows[$k]) && $rows[$k][0] === null) { continue; }
+		foreach ($rows as $k => $r) {
+			if ($r[0] === null || $r[2] < self::SUN_POSSIBLE_W || $k < 0 || $k >= 1440) { continue; }
 			$b = intdiv($k, self::BIN);
 			$bn[$b]++;
-			if (isset($rows[$k]) && $rows[$k][0] > 0) { $bs[$b] += 100 * $rows[$k][0] * min(1.0, $rows[$k][1]); }
+			if ($r[0] > 0) { $bs[$b] += 100 * min(1.0, $r[0]); }
 		}
 		unset($bs, $bn);
 		$used['sun'] = true;
@@ -717,7 +723,7 @@ class DayProfile {
 			$w = (float)$r[4];
 			$pw = (isset($r[6]) && $r[6] !== '') ? (float)$r[6] : $w;
 			$v = $r[1] === '' ? null : (int)$r[1];
-			$rows[$k] = [$v, $w];
+			$rows[$k] = [$v, $w, $pw];
 			$possible += $pw;
 			if ($v !== null) { $classified += $pw; }
 		}
@@ -777,7 +783,7 @@ class DayProfile {
 		$out = [];
 		if ($M >= $T) {
 			$f = $M > 0 ? $T / $M : 0.0;
-			foreach ($rows as $k => $r) { $out[$k] = [$r[0] === null ? null : $r[0] * $f, $r[2]]; }
+			foreach ($rows as $k => $r) { $out[$k] = [$r[0] === null ? null : $r[0] * $f, $r[2], $r[3]]; }
 			return $out;
 		}
 		$cand = []; $cap = 0.0;
@@ -798,7 +804,7 @@ class DayProfile {
 			if ($add($mid) < $need) { $lo = $mid; } else { $hi = $mid; }
 		}
 		foreach ($rows as $k => $r) {
-			$out[$k] = [$r[0] === null ? null : ($r[0] === 1 ? 1.0 : (isset($cand[$k]) ? min(1.0, $hi * $cand[$k]) : 0.0)), $r[2]];
+			$out[$k] = [$r[0] === null ? null : ($r[0] === 1 ? 1.0 : (isset($cand[$k]) ? min(1.0, $hi * $cand[$k]) : 0.0)), $r[2], $r[3]];
 		}
 		return $out;
 	}
@@ -835,7 +841,8 @@ class DayProfile {
 			$keep = [];
 			foreach ($keys as $key => $t) {
 				$avg = [];
-				for ($i = 0; $i < self::NBIN; $i++) { $avg[] = $t[1][$i] >= self::MIN_N ? round($t[0][$i] / $t[1][$i], 3) : null; }
+				$minN = $v === 'sun' ? max(self::MIN_N, self::SUN_MIN_POSSIBLE_SHARE * $t[2] * self::BIN) : self::MIN_N;
+				for ($i = 0; $i < self::NBIN; $i++) { $avg[] = $t[1][$i] >= $minN ? round($t[0][$i] / $t[1][$i], 3) : null; }
 				$json = nw3_json_encode(['var' => $v, 'key' => $key, 'bin' => self::BIN, 'days' => $t[2],
 					'from' => $t[3], 'to' => $t[4], 'est' => $t[5], 'avg' => $avg, 'n' => $t[1]]);
 				$f = $vdir . $key . '.json';

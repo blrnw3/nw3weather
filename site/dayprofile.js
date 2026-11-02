@@ -118,7 +118,9 @@
 			if (q.y == null) { return; }
 			if (!hi || q.y > hi.y) { hi = q; }
 			if (!lo || q.y < lo.y) { lo = q; }
-			s += q.y; n++;
+			// sunshine: weight by possible-sun minutes, so the average is the share of all possible sunshine
+			var w = p.var === 'sun' ? (q.n || 0) : 1;
+			s += q.y * w; n += w;
 		});
 		var bin = S.bin || p.defaultBin, at = function (q) { return hhmm(q.x - bin / 2); };
 		var txt;
@@ -126,7 +128,8 @@
 			txt = 'Wettest at ' + at(hi) + ' (' + fmt(hi.y, dp) + sep + u + '); driest at ' + at(lo) + ' (' + fmt(lo.y, dp)
 				+ sep + u + '). Average ' + fmt(s / n * 24, Math.max(1, dp - 2)) + sep + u.replace('/h', '') + ' a day.';
 		} else if (p.var === 'sun' || p.var === 'wet') {
-			txt = 'Peak ' + fmt(hi.y, dp) + '% at ' + at(hi) + '; ' + fmt(s / n, dp) + '% of the whole day on average.';
+			txt = 'Peak ' + fmt(hi.y, dp) + '% at ' + at(hi) + '; ' + fmt(s / n, dp)
+				+ (p.var === 'sun' ? '% of the possible sunshine on average.' : '% of the whole day on average.');
 		} else {
 			txt = 'Highest ' + fmt(hi.y, dp) + sep + u + ' at ' + at(hi) + '; lowest ' + fmt(lo.y, dp) + sep + u + ' at '
 				+ at(lo) + '; range ' + fmt(hi.y - lo.y, dp) + sep + u + '.';
