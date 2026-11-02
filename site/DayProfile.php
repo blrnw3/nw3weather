@@ -20,9 +20,14 @@
  * outages, from both the list below and the datm issues notes; within a day, stale/repeated feed rows, low-cadence
  * (externally filled) hours, flatlines, spikes and out-of-range values are masked minute by minute, and days with
  * too little clean data are dropped. Rain is scaled to each day's (hand-corrected) daily total.
+ *
+ * Sunshine: the live webcam sunlog (from late May 2025) as is; before that (and on later days with no sunlog) a
+ * model-estimated timeline from archived webcam frames (NW3_SUN_MODEL_DIR, scripts/sun_history.py), scaled to the
+ * day's official datm sunhr like rain, and tagged as estimated. Days whose frames cover under 90% of the possible
+ * sunshine, or whose model total is far from the official total, are left out.
  */
 class DayProfile {
-	const VERSION = 1;
+	const VERSION = 2;
 	const BIN = 5;                 // minutes per bin
 	const NBIN = 288;
 	const FIRST_YEAR = 2011;
@@ -56,7 +61,7 @@ class DayProfile {
 		'wet' => ['name' => 'Raining (% of time)', 'short' => 'Wet', 'type' => Wx::Percentage, 'colour' => '#4263eb',
 			'groups' => ['rain'], 'dp' => 1, 'area' => true, 'from' => '2014-04-01', 'bin' => 30],
 		'sun' => ['name' => 'Sunshine (% of time)', 'short' => 'Sun', 'type' => Wx::Percentage, 'colour' => '#f59f00',
-			'groups' => ['sun'], 'dp' => 1, 'area' => true, 'from' => '2025-05-23'],
+			'groups' => ['sun'], 'dp' => 1, 'area' => true, 'from' => '2021-09-07'],
 	];
 
 	/** Reason codes => text (shown on the page's data-quality table). */
@@ -73,7 +78,22 @@ class DayProfile {
 		'nolog' => 'No minute log',
 		'nosun' => 'No webcam sunshine log (no frames that day)',
 		'suncov' => 'Webcam sunshine classified for under 90% of daylight',
+		'sunfit' => 'Webcam model total far from the day\'s sunshine total',
+		'sunnodat' => 'No daily sunshine total to scale the webcam model to',
 	];
+
+	/** Live webcam sunlog from this day; before it, the model-estimated timeline. */
+	const SUN_LOG_FROM = '2025-05-23';
+	/**
+	 * First day of the model-estimated timeline: the camera has been stable since 7 Sep 2021 (re-aimed before that).
+	 * On 2018-06..2021-09 frames the model under-counts by about 1 h a day even on the days it would keep, and only
+	 * 35-53% of days pass, so those years are left out.
+	 */
+	const SUN_MODEL_FROM = '2021-09-07';
+	const SUN_MIN_COVERAGE = 0.9;
+	/** A model day is used if |model - official| <= max(SUN_FIT_ABS h, SUN_FIT_REL x official). */
+	const SUN_FIT_ABS = 1.5;
+	const SUN_FIT_REL = 0.5;
 
 	const ALL = ['temp', 'hum', 'pres', 'wind', 'rain'];
 
@@ -157,7 +177,8 @@ class DayProfile {
 			$dp = $cfg['dp'] + (($type === Wx::Pressure || $type === Wx::RainRate) && Page::$units === UNIT_US ? 2 : 0);
 			$out = [];
 			foreach ($p['avg'] as $v) { $out[] = ($v === null) ? null : Wx::convNum($v, $type, $dp); }
-			return ['avg' => $out, 'n' => $p['n'], 'days' => $p['days'], 'from' => $p['from'], 'to' => $p['to']];
+			return ['avg' => $out, 'n' => $p['n'], 'days' => $p['days'], 'from' => $p['from'], 'to' => $p['to'],
+				'est' => $p['est'] ?? 0];
 		};
 		$key = self::keyFor($year, $month);
 		$bk = $withBase ? self::baseKeyFor($year, $month) : null;
@@ -235,9 +256,9 @@ class DayProfile {
 
 	/** datm issues/extra notes and dat rain totals by date, for every year in range. */
 	public static function loadNotes() {
-		$out = ['notes' => [], 'rain' => []];
+		$out = ['notes' => [], 'rain' => [], 'sunhr' => []];
 		for ($y = self::FIRST_YEAR; $y <= (int)date('Y'); $y++) {
-			foreach (['datm' => ['extra', 'issues'], 'dat' => ['rain']] as $csv => $cols) {
+			foreach (['datm' => ['extra', 'issues', 'sunhr'], 'dat' => ['rain']] as $csv => $cols) {
 				$f = ROOT . $csv . $y . '.csv';
 				if (!is_file($f) || !($fh = fopen($f, 'r'))) { continue; }
 				$head = fgetcsv($fh, 0, ',', '"', '');
@@ -256,6 +277,8 @@ class DayProfile {
 							if (isset($idx[$c]) && isset($r[$idx[$c]]) && trim($r[$idx[$c]]) !== '') { $t[] = trim($r[$idx[$c]]); }
 						}
 						if ($t) { $out['notes'][$d] = implode(' || ', $t); }
+						$v = isset($idx['sunhr'], $r[$idx['sunhr']]) ? trim($r[$idx['sunhr']]) : '';
+						$out['sunhr'][$d] = is_numeric($v) ? (float)$v : null;
 					} elseif (isset($idx['rain'])) {
 						$v = isset($r[$idx['rain']]) ? trim($r[$idx['rain']]) : '';
 						$out['rain'][$d] = is_numeric($v) ? (float)$v : null;
@@ -278,8 +301,11 @@ class DayProfile {
 			$sf = NW3_SUNLOG_DIR . "$c.csv";
 			$parts[] = $ymd . ':' . (is_file($lf) ? filemtime($lf) . '/' . filesize($lf) : '-')
 				. ':' . (is_file($sf) ? filemtime($sf) . '/' . filesize($sf) : '-')
-				. ':' . ($notes['notes'][$ymd] ?? '') . ':' . var_export($notes['rain'][$ymd] ?? null, true);
+				. ':' . ($notes['notes'][$ymd] ?? '') . ':' . var_export($notes['rain'][$ymd] ?? null, true)
+				. ':' . var_export($notes['sunhr'][$ymd] ?? null, true);
 		}
+		$mf = NW3_SUN_MODEL_DIR . $y . '.csv';
+		$parts[] = 'model:' . (is_file($mf) ? filemtime($mf) . '/' . filesize($mf) : '-');
 		return md5(implode("\n", $parts));
 	}
 
@@ -353,7 +379,7 @@ class DayProfile {
 		$acc = self::emptyAcc();
 		$used = array_fill_keys(array_keys(self::$VARS), 0);
 		$excl = [];
-		$scaled = 0;
+		$scaled = 0; $sunEst = 0;
 		$n = (int)date('t', mktime(12, 0, 0, $m, 1, $y));
 		$ndays = 0;
 		for ($d = 1; $d <= $n; $d++) {
@@ -367,10 +393,11 @@ class DayProfile {
 				}
 			}
 			if (!empty($r['scaled'])) { $scaled++; }
+			if (!empty($r['sunEst'])) { $sunEst++; }
 		}
 		$packed = [];
 		foreach ($acc as $v => $sn) { $packed[$v] = [pack('e*', ...$sn[0]), pack('V*', ...$sn[1])]; }
-		return ['acc' => $packed, 'used' => $used, 'excl' => $excl, 'ndays' => $ndays, 'scaled' => $scaled];
+		return ['acc' => $packed, 'used' => $used, 'excl' => $excl, 'ndays' => $ndays, 'scaled' => $scaled, 'sunEst' => $sunEst];
 	}
 
 	/**
@@ -391,14 +418,14 @@ class DayProfile {
 		$windRangeOnly = isset($gx['wind']) && !isset($gx['temp']);
 
 		// ---- sunshine (webcam classifier) is independent of the station feed
-		self::scanSun($ymd, $gx, $acc, $used, $why);
+		$sunEst = self::scanSun($ymd, $gx, $acc, $used, $why, $notes['sunhr'][$ymd] ?? null);
 
 		$c = str_replace('-', '', $ymd);
 		$lf = ROOT . "logfiles/daily/{$c}log.txt";
 		$lines = is_file($lf) ? file($lf, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : false;
 		if (!$lines) {
 			foreach ($vars as $v) { if ($v !== 'sun') { $why[$v] = 'nolog'; } }
-			return ['used' => $used, 'why' => $why, 'scaled' => false];
+			return ['used' => $used, 'why' => $why, 'scaled' => false, 'sunEst' => $sunEst];
 		}
 		// ---- parse: first row per minute wins. Fields: wind, gust, wdir, temp, humi, pres, dewp, rain.
 		$W = $G = $D = $T = $H = $P = $DP = $R = $K = [];
@@ -604,7 +631,7 @@ class DayProfile {
 				$dbg['rainLog'] = $sum; $dbg['rainDay'] = $daily;
 			}
 		}
-		return ['used' => $used, 'why' => $why, 'scaled' => $scaled, 'debug' => $dbg, 'gx' => $gx];
+		return ['used' => $used, 'why' => $why, 'scaled' => $scaled, 'debug' => $dbg, 'gx' => $gx, 'sunEst' => $sunEst];
 	}
 
 	/** Runs where every series in $S is unchanged between consecutive minutes; calls $fn(k0, k1, rows). */
@@ -641,12 +668,46 @@ class DayProfile {
 		}
 	}
 
-	/** Webcam sunshine: % of the time sunny, counting night as not sunny. */
-	private static function scanSun($ymd, $gx, &$acc, &$used, &$why) {
-		if ($ymd < self::$VARS['sun']['from']) { $why['sun'] = 'before'; return; }
-		if (isset($gx['sun'])) { $why['sun'] = $gx['sun']; return; }
+	/**
+	 * Webcam sunshine: % of the time sunny, counting night as not sunny. Uses the live sunlog when there is one (from
+	 * SUN_LOG_FROM), else the model-estimated timeline scaled to the official total. Returns true for an estimated day.
+	 */
+	private static function scanSun($ymd, $gx, &$acc, &$used, &$why, $sunhr) {
+		if ($ymd < self::$VARS['sun']['from']) { $why['sun'] = 'before'; return false; }
+		if (isset($gx['sun'])) { $why['sun'] = $gx['sun']; return false; }
+		$est = false;
+		$rows = $ymd >= self::SUN_LOG_FROM ? self::readSunlog($ymd) : null;
+		if ($rows === null) {
+			$m = self::readSunModel($ymd);
+			if ($m === null) { $why['sun'] = 'nosun'; return false; }
+			if ($m['cov'] < self::SUN_MIN_COVERAGE) { $why['sun'] = 'suncov'; return false; }
+			if ($sunhr === null) { $why['sun'] = 'sunnodat'; return false; }
+			if (abs($m['hours'] - $sunhr) > max(self::SUN_FIT_ABS, self::SUN_FIT_REL * $sunhr)) { $why['sun'] = 'sunfit'; return false; }
+			$rows = self::scaleSun($m['rows'], $sunhr);
+			if ($rows === null) { $why['sun'] = 'sunfit'; return false; }
+			$est = true;
+		} else {
+			if (!$rows['rows']) { $why['sun'] = 'nosun'; return false; }
+			if ($rows['cov'] < self::SUN_MIN_COVERAGE) { $why['sun'] = 'suncov'; return false; }
+			$rows = $rows['rows'];
+		}
+		// $rows: minute => [sunny fraction 0..1 or null if unclassified, daylight weight]
+		$bs = &$acc['sun'][0]; $bn = &$acc['sun'][1];
+		for ($k = 0; $k < 1440; $k++) {
+			if (isset($rows[$k]) && $rows[$k][0] === null) { continue; }
+			$b = intdiv($k, self::BIN);
+			$bn[$b]++;
+			if (isset($rows[$k]) && $rows[$k][0] > 0) { $bs[$b] += 100 * $rows[$k][0] * min(1.0, $rows[$k][1]); }
+		}
+		unset($bs, $bn);
+		$used['sun'] = true;
+		return $est;
+	}
+
+	/** Official sunlog for a day: ['rows' => minute => [0|1|null, w], 'cov' => possible-sun coverage], or null. */
+	private static function readSunlog($ymd) {
 		$f = NW3_SUNLOG_DIR . str_replace('-', '', $ymd) . '.csv';
-		if (!is_file($f) || !($fh = fopen($f, 'r'))) { $why['sun'] = 'nosun'; return; }
+		if (!is_file($f) || !($fh = fopen($f, 'r'))) { return null; }
 		$rows = [];
 		$possible = 0.0; $classified = 0.0;
 		while (($r = fgetcsv($fh, 0, ',', '"', '')) !== false) {
@@ -661,17 +722,85 @@ class DayProfile {
 			if ($v !== null) { $classified += $pw; }
 		}
 		fclose($fh);
-		if (!$rows) { $why['sun'] = 'nosun'; return; }
-		if ($possible > 0 && $classified / $possible < 0.9) { $why['sun'] = 'suncov'; return; }
-		$bs = &$acc['sun'][0]; $bn = &$acc['sun'][1];
-		for ($k = 0; $k < 1440; $k++) {
-			if (isset($rows[$k]) && $rows[$k][0] === null) { continue; }
-			$b = intdiv($k, self::BIN);
-			$bn[$b]++;
-			if (isset($rows[$k]) && $rows[$k][0] === 1) { $bs[$b] += 100 * min(1.0, $rows[$k][1]); }
+		return ['rows' => $rows, 'cov' => $possible > 0 ? $classified / $possible : 0.0];
+	}
+
+	/**
+	 * One day of the model timeline (format in scripts/sun_history.py): rows minute => [state 0|1|null, p, w, pw],
+	 * possible-sun coverage and the model's own sunny hours; null if the day is not in the file.
+	 */
+	public static function readSunModel($ymd) {
+		static $year = null, $lines = [];
+		$y = substr($ymd, 0, 4);
+		if ($year !== $y) {
+			$year = $y; $lines = [];
+			$f = NW3_SUN_MODEL_DIR . $y . '.csv';
+			if (is_file($f) && ($fh = fopen($f, 'r'))) {
+				while (($ln = fgets($fh)) !== false) {
+					if (isset($ln[8]) && ctype_digit(substr($ln, 0, 8))) { $lines[substr($ln, 0, 8)] = rtrim($ln, "\r\n"); }
+				}
+				fclose($fh);
+			}
 		}
-		unset($bs, $bn);
-		$used['sun'] = true;
+		$key = str_replace('-', '', $ymd);
+		if (!isset($lines[$key])) { return null; }
+		$f = explode(',', $lines[$key], 8);
+		if (count($f) < 8 || !preg_match('/^\d{4}$/', $f[1])) { return null; }
+		$k0 = (int)substr($f[1], 0, 2) * 60 + (int)substr($f[1], 2, 2);
+		$n = intdiv(strlen($f[7]), 4);
+		$rows = []; $possible = 0.0; $classified = 0.0; $sunny = 0.0;
+		for ($i = 0; $i < $n; $i++) {
+			$k = $k0 + $i;
+			if ($k >= 1440) { break; }
+			$t = substr($f[7], $i * 4, 4);
+			$v = $t[0] === '-' ? null : (int)$t[0];
+			$p = substr($t, 1, 2) === '--' ? null : (int)substr($t, 1, 2) / 99;
+			$w = $i === 0 ? (float)$f[2] : ($i === $n - 1 ? (float)$f[3] : 1.0);
+			$pw = $t[3] === '.' ? $w : 0.0;
+			$rows[$k] = [$v, $p, $w, $pw];
+			$possible += $pw;
+			if ($v !== null) { $classified += $pw; }
+			if ($v === 1) { $sunny += $w; }
+		}
+		return ['rows' => $rows, 'cov' => $possible > 0 ? $classified / $possible : 0.0, 'hours' => $sunny / 60];
+	}
+
+	/**
+	 * Scale a model day to the official total (hours), like rain: minute => [sunny fraction, w]. Over-count: the sunny
+	 * minutes are scaled down. Under-count: sun is added to not-sunny minutes the sun could reach, in proportion to
+	 * the model's probability, capped at 1. Null if the total can't be reached.
+	 */
+	public static function scaleSun($rows, $hours) {
+		$T = $hours * 60.0;
+		$M = 0.0;
+		foreach ($rows as $r) { if ($r[0] === 1) { $M += $r[2]; } }
+		$out = [];
+		if ($M >= $T) {
+			$f = $M > 0 ? $T / $M : 0.0;
+			foreach ($rows as $k => $r) { $out[$k] = [$r[0] === null ? null : $r[0] * $f, $r[2]]; }
+			return $out;
+		}
+		$cand = []; $cap = 0.0;
+		foreach ($rows as $k => $r) {
+			if ($r[0] === 0 && $r[3] > 0) { $cand[$k] = max($r[1] ?? 0.0, 0.02); $cap += $r[2]; }
+		}
+		$need = $T - $M;
+		if ($cap + 1e-9 < $need) { return null; }
+		$add = function ($c) use ($cand, $rows) {
+			$s = 0.0;
+			foreach ($cand as $k => $p) { $s += $rows[$k][2] * min(1.0, $c * $p); }
+			return $s;
+		};
+		$lo = 0.0; $hi = 1.0;
+		while ($add($hi) < $need) { $hi *= 2; }
+		for ($i = 0; $i < 50; $i++) {
+			$mid = ($lo + $hi) / 2;
+			if ($add($mid) < $need) { $lo = $mid; } else { $hi = $mid; }
+		}
+		foreach ($rows as $k => $r) {
+			$out[$k] = [$r[0] === null ? null : ($r[0] === 1 ? 1.0 : (isset($cand[$k]) ? min(1.0, $hi * $cand[$k]) : 0.0)), $r[2]];
+		}
+		return $out;
 	}
 
 	/** Sum months into every profile key and write the files that changed. */
@@ -680,17 +809,18 @@ class DayProfile {
 			$y = substr($ym, 0, 4); $m = substr($ym, 5, 2);
 			return ['all', "y$y", "m$m", $ym];
 		};
-		$sum = [];      // var => key => [s, n, days, from, to]
+		$sum = [];      // var => key => [s, n, days, from, to, model-estimated days]
 		foreach ($state['months'] as $ym => $mo) {
 			foreach (self::$VARS as $v => $cfg) {
 				if (empty($mo['used'][$v])) { continue; }
 				$s = array_values(unpack('e*', $mo['acc'][$v][0]));
 				$n = array_values(unpack('V*', $mo['acc'][$v][1]));
 				foreach ($keysFor($ym) as $key) {
-					if (!isset($sum[$v][$key])) { $sum[$v][$key] = [array_fill(0, self::NBIN, 0.0), array_fill(0, self::NBIN, 0), 0, $ym, $ym]; }
+					if (!isset($sum[$v][$key])) { $sum[$v][$key] = [array_fill(0, self::NBIN, 0.0), array_fill(0, self::NBIN, 0), 0, $ym, $ym, 0]; }
 					$t = &$sum[$v][$key];
 					for ($i = 0; $i < self::NBIN; $i++) { $t[0][$i] += $s[$i]; $t[1][$i] += $n[$i]; }
 					$t[2] += $mo['used'][$v];
+					if ($v === 'sun') { $t[5] += $mo['sunEst'] ?? 0; }
 					if ($ym < $t[3]) { $t[3] = $ym; }
 					if ($ym > $t[4]) { $t[4] = $ym; }
 					unset($t);
@@ -707,7 +837,7 @@ class DayProfile {
 				$avg = [];
 				for ($i = 0; $i < self::NBIN; $i++) { $avg[] = $t[1][$i] >= self::MIN_N ? round($t[0][$i] / $t[1][$i], 3) : null; }
 				$json = nw3_json_encode(['var' => $v, 'key' => $key, 'bin' => self::BIN, 'days' => $t[2],
-					'from' => $t[3], 'to' => $t[4], 'avg' => $avg, 'n' => $t[1]]);
+					'from' => $t[3], 'to' => $t[4], 'est' => $t[5], 'avg' => $avg, 'n' => $t[1]]);
 				$f = $vdir . $key . '.json';
 				$keep[$key . '.json'] = true;
 				if (!is_file($f) || md5_file($f) !== md5($json)) { nw3_atomic_write($f, $json); $written++; }
@@ -721,10 +851,11 @@ class DayProfile {
 		$vars = [];
 		foreach (self::$VARS as $v => $cfg) {
 			$from = isset($cfg['from']) ? $cfg['from'] : self::FIRST_YEAR . '-01-01';
-			$possible = 0; $used = 0; $ex = []; $years = [];
+			$possible = 0; $used = 0; $ex = []; $years = []; $est = 0; $estYears = [];
 			foreach ($state['months'] as $ym => $mo) {
 				$y = substr($ym, 0, 4);
 				$used += $mo['used'][$v] ?? 0;
+				if ($v === 'sun' && !empty($mo['sunEst'])) { $est += $mo['sunEst']; $estYears[$y] = ($estYears[$y] ?? 0) + $mo['sunEst']; }
 				if (!empty($mo['used'][$v])) { $years[$y] = ($years[$y] ?? 0) + $mo['used'][$v]; }
 				foreach ($mo['excl'][$v] ?? [] as $r => $c) { $ex[$r] = ($ex[$r] ?? 0) + $c; }
 			}
@@ -735,6 +866,7 @@ class DayProfile {
 			arsort($ex);
 			$vars[$v] = ['from' => $from, 'possible' => max(0, $possible), 'used' => $used,
 				'pct' => $possible > 0 ? round(100 * $used / $possible, 1) : 0, 'excluded' => $ex, 'years' => $years];
+			if ($v === 'sun') { $vars[$v]['estimated'] = $est; $vars[$v]['estYears'] = $estYears; }
 		}
 		$scaled = 0; foreach ($state['months'] as $mo) { $scaled += $mo['scaled'] ?? 0; }
 		$meta = ['v' => self::VERSION, 'stats' => $stats, 'rainScaledDays' => $scaled, 'vars' => $vars];

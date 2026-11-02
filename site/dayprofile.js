@@ -133,7 +133,9 @@
 		}
 		sEl.textContent = txt;
 		fEl.textContent = p.main.days.toLocaleString() + ' days of data (' + monthSpan(p.main.from)
-			+ (p.main.from !== p.main.to ? ' to ' + monthSpan(p.main.to) : '') + '), ' + bin + '-minute averages.';
+			+ (p.main.from !== p.main.to ? ' to ' + monthSpan(p.main.to) : '') + '), ' + bin + '-minute averages.'
+			+ (p.main.est ? ' ' + (p.main.est === p.main.days ? 'All' : p.main.est.toLocaleString() + ' of them')
+				+ ' model-estimated from archived webcam frames, scaled to each day\'s sunshine total.' : '');
 	}
 
 	function setActive(row, v) {
@@ -151,6 +153,7 @@
 				as[i].setAttribute('href', 'wxdayprofile.php?' + qs(q));
 				if (row === 'year' && x !== '0') {
 					as[i].classList.toggle('off', (S.cfg.varYears[S.v] || []).indexOf(+x) < 0);
+					as[i].classList.toggle('est', !!(S.cfg.estYears && S.cfg.estYears[S.v] && S.cfg.estYears[S.v][x]));
 				}
 			}
 		});

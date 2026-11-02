@@ -40,7 +40,24 @@ log needs a catch-up jump after a gap, a scale over 2 with a gap, or have rain l
 are left out; 0.1-0.2 mm trace days count as dry. Wet % uses tip spells (30 min gap, starting 15 min before the
 first tip) from Apr 2014, when the gauge resolution changed.
 
-Sunshine: sunlog minute classes (night counts as not sunny) from 23 May 2025; days with under 90% of daylight
+Sunshine: from 23 May 2025 the live sunlog (night counts as not sunny); days with under 90% of the possible sunshine
 classified are left out, and Nov 2025 - 4 Apr 2026 is held pending review.
+
+Before that, from 7 Sep 2021 (the camera has been stable since then), sunshine is **model-estimated**: the same sun
+model run over the archived webcam frames (`scripts/sun_history.py`, written to `sunlog_model/YYYY.csv`, never to
+datm or `sunlog/`). Each day is scaled to its official datm sunhr like rain (over-counts scale the sunny minutes
+down; under-counts add sun to minutes the sun could reach, in proportion to the model's probability). A day is left
+out when frames cover under 90% of the possible sunshine (e.g. 2022 summer evenings, where the archive has empty
+frames) or when |model - official| > max(1.5 h, 50% of the official total). The page marks these years with *.
+
+Archive cadence: 30 min to mid-2020, 15 min 2020-2023, 7.5-10 min 2024-25, 5 min since Apr 2026. On 2018-06..2021-09
+frames (camera re-aimed several times) the model under-counts by ~1 h a day and only 35-53% of days pass, so those
+years are not used (`DayProfile::SUN_MODEL_FROM`). Thinning the 2025 frames to 30 min changes a monthly profile by
+about 1.4 % points RMS.
+
+Rebuild the timeline (about 75 s from cached frame scores; about 25 s a day when frames must be downloaded):
+
+    ~/sunenv/bin/python scripts/sun_history.py --from 2018-06-20 --to 2026-04-04 --out /var/www/html/sunlog_model \
+        --frames '' --cache-dir ~/sun_history_cache
 
 Use `php warm_day_profile.php day YYYY-MM-DD` to see why a day was used or not.

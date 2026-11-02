@@ -33,6 +33,9 @@ foreach (DayProfile::$VARS as $v => $c) {
 	$allYears = array_merge($allYears, $varYears[$v]);
 }
 $allYears = array_values(array_unique($allYears));
+// years whose profile is (partly) model-estimated: sunshine before the live webcam log
+$estYears = ['sun' => []];
+foreach (($meta['vars']['sun']['estYears'] ?? []) as $y => $n) { $estYears['sun'][(int)$y] = (int)$n; }
 rsort($allYears);
 ?>
 <style>
@@ -44,6 +47,7 @@ rsort($allYears);
 .dp-btn:hover { background: #e9eef5; }
 .dp-btn.on { background: #3b5b8c; border-color: #3b5b8c; color: #fff; }
 .dp-btn.off { opacity: 0.35; pointer-events: none; }
+.dp-btn.est::after { content: '*'; }
 .dp-opts { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; font-size: 0.85em; margin: 4px 0 2px; }
 .dp-opts label { cursor: pointer; }
 #dp-chart { min-height: 440px; margin-top: 4px; }
@@ -82,7 +86,7 @@ details.dp-rules li { font-size: 0.85em; margin: 2px 0; }
 	<?php
 	echo '<a rel="nofollow" class="dp-btn' . (!$year ? ' on' : '') . '" data-v="0" href="' . $h($link($var, 0, $month)) . '">All years</a>';
 	foreach ($allYears as $y) {
-		$cls = ($y === $year ? ' on' : '') . (in_array($y, $years, true) ? '' : ' off');
+		$cls = ($y === $year ? ' on' : '') . (in_array($y, $years, true) ? '' : ' off') . (isset($estYears[$var][$y]) ? ' est' : '');
 		echo '<a rel="nofollow" class="dp-btn' . $cls . '" data-v="' . $y . '" href="' . $h($link($var, $y, $month)) . '">' . $y . '</a>';
 	} ?>
 	</div>
@@ -118,18 +122,19 @@ $notes = [
 	'gust' => 'Highest gust in each minute.',
 	'rain' => 'Average rain per hour at each time of day, counting dry days. Each day\'s minute-log rain is scaled to that day\'s checked daily total, so hand corrections (false or reassigned tips) carry through.',
 	'wet' => 'Share of the time it was raining, from rain-gauge tips: tips up to 30 minutes apart count as one spell, starting 15 minutes before the first tip. From Apr 2014 (finer gauge).',
-	'sun' => 'Share of the time it was sunny (night counts as not sunny), from the webcam sunshine model. Available from late May 2025; Nov 2025 to early Apr 2026 is left out until it has been reviewed.',
+	'sun' => 'Share of the time it was sunny (night counts as not sunny), from the webcam sunshine model. From late May 2025 this is the live per-minute webcam log. Sep 2021 to May 2025 (years marked *) is model-estimated: the same model run over the archived webcam frames (every 7.5-15 minutes), each day scaled to its official sunshine total, so it gives the shape of the day rather than exact minutes. Nov 2025 to early Apr 2026 is left out until it has been reviewed.',
 ];
 $js = [
 	'payload' => $payload,
 	'months' => $months,
 	'notes' => $notes,
 	'varYears' => $varYears,
+	'estYears' => $estYears,
 	'vars' => array_map(function ($c) { return ['name' => $c['name'], 'short' => $c['short']]; }, DayProfile::$VARS),
 	'built' => isset($meta['stats']['built']) ? date('j M Y H:i', $meta['stats']['built']) : null,
 ];
 Charts::assets();
-echo '<script src="/dayprofile.js?20261102f"></script>' . "\n";
+echo '<script src="/dayprofile.js?20261102h"></script>' . "\n";
 Charts::run('NW3DayProfile.init(' . nw3_json_encode($js) . ');');
 ?>
 
@@ -151,7 +156,9 @@ Charts::run('NW3DayProfile.init(' . nw3_json_encode($js) . ');');
 		}
 		echo '<tr><td>' . $h($c['name']) . '</td><td>' . $h(date('M Y', strtotime($m['from']))) . '</td>'
 			. '<td class="num">' . number_format($m['used']) . ' of ' . number_format($m['possible']) . '</td>'
-			. '<td class="num">' . $h($m['pct']) . '%</td><td class="dp-why">' . implode('; ', $why) . '</td></tr>';
+			. '<td class="num">' . $h($m['pct']) . '%</td><td class="dp-why">' . implode('; ', $why)
+			. (!empty($m['estimated']) ? '<br />Of the days used, ' . number_format($m['estimated']) . ' are model-estimated from webcam ('
+				. $h(implode(', ', array_keys($m['estYears']))) . ')' : '') . '</td></tr>';
 	} ?>
 </table>
 <details class="dp-rules">
