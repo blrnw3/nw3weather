@@ -6,7 +6,7 @@
  * YYYY). The *_to_date kinds cover the 1st of the period up to yesterday (London), or the period end if earlier.
  *
  * Everything is in metric units (°C, mm, hours, mph, hPa, %, µg/m³). Comparisons:
- *   - normals: the site's 1971–2000 long-term averages (LTA), pro-rated by day for part months;
+ *   - normals: the site's 1991–2020 long-term averages (LTA), pro-rated by day for part months;
  *   - station: the same calendar span in every station year since 2009 (ranks, record, previous record,
  *     "highest since" years and the other years' mean);
  *   - long_term: the same span in the Hampstead archive (historical.csv, rain from 1871, temperature from 1881,
@@ -745,7 +745,7 @@ class RecapPack {
 			'from' => $from,
 			'to' => $to,
 			'station' => 'NW3 Weather, Hampstead, London (since 2009)',
-			'normals' => '1971–2000 long-term averages (LTA)',
+			'normals' => '1991–2020 long-term averages (LTA)',
 			'units' => self::UNITS,
 			'notes' => [
 				'Station ranks compare the same calendar span in each year since 2009 (rank 1 = highest/lowest; ties share).',
