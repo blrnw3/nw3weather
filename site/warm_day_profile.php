@@ -34,7 +34,7 @@ if ($mode === 'audit') {
 		foreach (DayProfile::$VARS as $v => $c) { $acc[$v] = [array_fill(0, DayProfile::NBIN, 0.0), array_fill(0, DayProfile::NBIN, 0)]; }
 		$ymd = date('Y-m-d', $d);
 		$r = DayProfile::scanDay($ymd, $notes, $acc);
-		echo json_encode(['d' => $ymd, 'why' => $r['why'], 'dbg' => $r['debug'] ?? null, 'scaled' => $r['scaled']]), "\n";
+		echo json_encode(['d' => $ymd, 'why' => $r['why'], 'dbg' => $r['debug'] ?? null, 'scaled' => $r['scaled'], 'sunEst' => $r['sunEst'] ?? false]), "\n";
 	}
 	exit(0);
 }
