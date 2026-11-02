@@ -405,7 +405,7 @@ if ($mode === 'annual') {
 			for ($z = 0; $z < $axisLen; $z++) {
 				$ts = Date::mkz($z, $yr);
 				$out['categories'][] = date('M', $ts);
-				$out['categoryTips'][] = date('j M', $ts);
+				$out['categoryTips'][] = date('d M', $ts);
 				if ((int)date('j', $ts) === 1) {
 					$tickPositions[] = $z;
 				}
@@ -489,7 +489,7 @@ if ($mode === 'annual') {
 				$out['series'][0]['type'] = 'line';
 				$out['series'][0]['marker'] = true;
 				$out['chartType'] = 'line';
-				foreach (array_keys($days) as $d) { $out['categoryTips'][] = date('j M', mktime(0, 0, 0, $mon, (int)$d, $yr)); }
+				foreach (array_keys($days) as $d) { $out['categoryTips'][] = date('d M', mktime(0, 0, 0, $mon, (int)$d, $yr)); }
 				addEnvelope($out, $type, $yr, $mon, array_values($days));
 			}
 		}

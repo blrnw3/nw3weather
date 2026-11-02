@@ -345,7 +345,7 @@
 				credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
 				legend: { enabled: keys.length > 1, itemStyle: { color: TEXT } },
 				xAxis: { type: 'datetime', crosshair: true, gridLineWidth: 1, gridLineColor: '#ddd',
-					dateTimeLabelFormats: { minute: '%H:%M', hour: '%H:%M', day: '%e %b' }, labels: { style: { color: TEXT } } },
+					dateTimeLabelFormats: { minute: '%H:%M', hour: '%H:%M', day: '%d %b' }, labels: { style: { color: TEXT } } },
 				yAxis: yAx,
 				tooltip: isDir
 					? { formatter: function () { return Highcharts.dateFormat('%a %H:%M', this.x) + '<br/><b>' + Math.round(this.y) + '\u00B0 (' + compass(this.y) + ')</b>'; } }
@@ -397,11 +397,12 @@
 		var y = parseInt(ymd.slice(0, 4), 10);
 		var m = parseInt(ymd.slice(4, 6), 10) - 1;
 		var d = parseInt(ymd.slice(6, 8), 10);
-		var end = d + ' ' + months[m] + ' ' + y;
+		function pad2(n) { return (n < 10 ? '0' : '') + n; }
+		var end = pad2(d) + ' ' + months[m] + ' ' + y;
 		var num = (json && json.num) ? parseInt(json.num, 10) : 1;
 		if (!num || num <= 1) { return end; }
 		var startDt = new Date(y, m, d - (num - 1));
-		return startDt.getDate() + ' ' + months[startDt.getMonth()] + ' ' + startDt.getFullYear() + ' \u2013 ' + end;
+		return pad2(startDt.getDate()) + ' ' + months[startDt.getMonth()] + ' ' + startDt.getFullYear() + ' \u2013 ' + end;
 	}
 
 	// Fixed report layout: one fetch → two multi-var charts + any single-var charts.
@@ -460,7 +461,7 @@
 	function dashTimeX() {
 		return {
 			type: 'datetime', crosshair: true, gridLineWidth: 1, gridLineColor: '#ddd',
-			dateTimeLabelFormats: { minute: '%H:%M', hour: '%H:%M', day: '%e %b' }, labels: { style: { color: TEXT } }
+			dateTimeLabelFormats: { minute: '%H:%M', hour: '%H:%M', day: '%d %b' }, labels: { style: { color: TEXT } }
 		};
 	}
 
@@ -1291,7 +1292,7 @@
 				text: 'Data: Yr.no / MET Norway', style: { color: '#999', fontSize: '9px' } },
 			legend: { enabled: true, itemStyle: { color: TEXT } },
 			xAxis: { type: 'datetime', crosshair: true, gridLineWidth: 1, gridLineColor: '#ddd',
-				dateTimeLabelFormats: { hour: '%H:%M', day: '%a %e' }, labels: { style: { color: TEXT } } },
+				dateTimeLabelFormats: { hour: '%H:%M', day: '%a %d' }, labels: { style: { color: TEXT } } },
 			yAxis: [
 				{ title: { text: 'Temperature / ' + tempU, style: { color: '#DF7401' } },
 					labels: { style: { color: '#DF7401' } }, gridLineColor: '#eee' },
@@ -1301,7 +1302,7 @@
 					labels: { style: { color: '#2D851B' } }, opposite: true, min: 0, gridLineWidth: 0,
 					showEmpty: false }
 			],
-			tooltip: { shared: true, xDateFormat: '%a %e %b %H:%M' },
+			tooltip: { shared: true, xDateFormat: '%a %d %b %H:%M' },
 			plotOptions: {
 				series: { animation: false, marker: { enabled: false } },
 				column: { borderWidth: 0, pointPadding: 0.05, groupPadding: 0.05 }
