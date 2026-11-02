@@ -173,7 +173,7 @@ function addEnvelope(&$out, $type, $yr, $mon, $raw = []) {
 	$out['envelope'] = true;
 
 	// Record days of the plotted year: markers on top, and a count under the title.
-	$marks = DailyRecords::recordDays($rec, $days, $yr, $summable, $out['yMinZero']);
+	$marks = DailyRecords::recordDays($rec, $days, $yr, $summable, $out['yMinZero'], null, $type);
 	$names = ['hi' => 'Record high', 'lo' => 'Record low'];
 	$colours = ['hi' => '#e03131', 'lo' => '#1b2a6b'];
 	$counts = [];
@@ -182,7 +182,10 @@ function addEnvelope(&$out, $type, $yr, $mon, $raw = []) {
 		if (!$at) { continue; }
 		$data = array_fill(0, $len, null);
 		foreach ($at as $i => $ties) {
-			$data[$i] = ['y' => cv($raw[$i]), 'tie' => $ties];
+			$data[$i] = ($ties === 'today')
+				// today so far: a hollow ring, like the climate card's provisional records
+				? ['y' => cv($raw[$i]), 'today' => date('d M'), 'marker' => ['fillColor' => '#ffffff', 'lineColor' => $colours[$k], 'lineWidth' => 2]]
+				: ['y' => cv($raw[$i]), 'tie' => $ties];
 		}
 		$out['series'][] = ['name' => $names[$k], 'data' => $data, 'color' => $colours[$k], 'type' => 'line', 'marks' => $k];
 	}

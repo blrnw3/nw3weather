@@ -107,16 +107,29 @@ class DailyRecords {
 	 * running). $highOnly skips lows (totals: the low is nearly always 0); $nonNeg skips a record low of 0 for
 	 * series that cannot go below it (calm, dry or sunless days are not records).
 	 */
-	public static function recordDays($rec, $days, $yr, $highOnly, $nonNeg, $now = null) {
-		$today = date('Y-m-d', ($now === null) ? time() : (int)$now);
+	public static function recordDays($rec, $days, $yr, $highOnly, $nonNeg, $now = null, $type = '') {
+		$now = ($now === null) ? time() : (int)$now;
+		$today = date('Y-m-d', $now);
+		$run = self::runningDir($type, $highOnly, $now);
 		$out = array('hi' => array(), 'lo' => array());
 		if ((int)$yr < Site::BASE_YEAR) { return $out; } // records are 2009+ only
 		foreach ($days as $i => $x) {
 			list($m, $d, $v) = $x;
 			if ($v === null || $v === '' || $v === '-' || !is_numeric($v)) { continue; }
-			if (sprintf('%04d-%02d-%02d', $yr, $m, $d) >= $today) { continue; }
+			$date = sprintf('%04d-%02d-%02d', $yr, $m, $d);
+			if ($date > $today) { continue; }
 			if (($rec['years'][$m][$d] ?? 0) < self::MIN_YEARS) { continue; }
 			$v = (float)$v;
+			if ($date === $today) {
+				// Today is still running: only a value already past the record is certain (a running max or total
+				// can only rise, a running min only fall). Ties and means are left out.
+				if ($run === 'hi' && isset($rec['hi'][$m][$d]) && $v > $rec['hi'][$m][$d] + self::EPS && !($highOnly && $v == 0)) {
+					$out['hi'][$i] = 'today';
+				} elseif ($run === 'lo' && isset($rec['lo'][$m][$d]) && $v < $rec['lo'][$m][$d] - self::EPS && $v < 99) {
+					$out['lo'][$i] = 'today';
+				}
+				continue;
+			}
 			if (isset($rec['hi'][$m][$d]) && abs($v - $rec['hi'][$m][$d]) <= self::EPS && !($highOnly && $v == 0)) {
 				$out['hi'][$i] = max(0, ($rec['nhi'][$m][$d] ?? 1) - 1);
 			} elseif (!$highOnly && isset($rec['lo'][$m][$d]) && abs($v - $rec['lo'][$m][$d]) <= self::EPS && !($nonNeg && $v == 0)) {
@@ -124,6 +137,20 @@ class DailyRecords {
 			}
 		}
 		return $out;
+	}
+
+	/**
+	 * Which way today's running value of a series can only move: 'hi' (maxima and totals), 'lo' (minima) or null
+	 * (means and anything else, which can go either way). Day max (09-21) counts only from 09:00.
+	 */
+	public static function runningDir($type, $summable, $now) {
+		$t = strtolower((string)$type);
+		if ($t === 'daymax' && (int)date('G', $now) < 9) { return null; }
+		if ($summable) { return 'hi'; }
+		if (strpos($t, 'mean') !== false || strpos($t, 'avg') !== false) { return null; }
+		if (strpos($t, 'max') !== false || $t === 'gust') { return 'hi'; }
+		if (strpos($t, 'min') !== false) { return 'lo'; }
+		return null;
 	}
 
 	/** Rebuild every stale series (cron, after the data refresh). Returns the number of series checked. */

@@ -146,9 +146,11 @@
 					if (p.series.options.recordHigh && p.y != null) { val = 'high ' + val; }
 					if (p.series.options.marks) {
 						var tie = p.point.options && p.point.options.tie;
+						var today = p.point.options && p.point.options.today;
 						var kind = p.series.options.marks === 'hi' ? 'record high' : 'record low';
-						html += '<br/><span style="color:' + p.color + '">\u25CF</span> <b>'
-							+ (tie ? 'Equals ' + kind + ' for ' + head + ' (with ' + tie + ' other year' + (tie === 1 ? '' : 's') + ')'
+						html += '<br/><span style="color:' + p.color + '">' + (today ? '\u25CB' : '\u25CF') + '</span> <b>'
+							+ (today ? kind.charAt(0).toUpperCase() + kind.slice(1) + ' for ' + today + ' (so far today)'
+							: tie ? 'Equals ' + kind + ' for ' + head + ' (with ' + tie + ' other year' + (tie === 1 ? '' : 's') + ')'
 								: kind.charAt(0).toUpperCase() + kind.slice(1) + ' for ' + head) + '</b>';
 						continue;
 					}
@@ -217,8 +219,7 @@
 		var el = document.getElementById(containerId);
 		if (!el || document.getElementById(containerId + '-rec')) { return; }
 		var wrap = document.createElement('div');
-		wrap.className = 'wxsel-options';
-		wrap.style.margin = '0.3rem 0 0.6rem';
+		wrap.className = 'wxrec-opts';
 		wrap.innerHTML = '<button type="button" class="wxsel-toggle" id="' + containerId + '-rec" aria-pressed="false"'
 			+ ' title="Shade the station\'s record low to record high for each date (since 2009) and mark this year\'s record days">'
 			+ 'Station record range</button>';
