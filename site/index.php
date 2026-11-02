@@ -410,7 +410,7 @@ else:
 		} elseif ($k === 'month') {
 			displayMonthlyReport(date('n', $repStamp), date('Y', $repStamp));
 		} elseif ($k === 'day') {
-			echo '<p class="recap-missing">Yesterday\'s summary isn\'t in yet. It is usually posted by about 08:00 UK time.</p>';
+			echo '<p class="recap-missing">Yesterday\'s summary isn\'t in yet. It is usually posted shortly after midnight UK time.</p>';
 		} else {
 			echo '<p class="recap-missing">No ' . ($k === 'month_to_date' ? 'month' : 'year') . '-so-far summary yet'
 				. ($k === 'month_to_date' && (int)Date::$dday === 1 ? ' (the month has only just started)' : '') . '.</p>';

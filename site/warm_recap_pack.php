@@ -1,6 +1,6 @@
 <?php
 /**
- * Precompute the recap data packs a writer will ask for this morning (RecapPack::warmList), so
+ * Precompute the recap data packs a writer will ask for just after midnight (RecapPack::warmList), so
  * api_recap_pack.php answers from cache. Run from cron_main.php after the overnight data is written; a pack is
  * also rebuilt on demand whenever the data files change.
  *   php warm_recap_pack.php [kind period ...]
