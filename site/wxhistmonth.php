@@ -217,6 +217,10 @@ HTML::table_end();
 echo '</div>';
 echo '<p><b>NB:</b> Hover over a value to see how many days of data it is from. Sun hrs, Wet hrs, Cloud cover and Events are based on manual observation and provided for interest only.</p>';
 
+// ---- Written report (Recap.php): the month's report, or the month so far for the current month ----
+require_once __DIR__ . '/Recap.php';
+echo Recap::monthSection($yproc, $mproc, $mproc == (int)Date::$dmonth && $yproc == (int)Date::$dyear);
+
 // ---- Days Of... ----
 $daysofRn = []; $daysofRnD = [];
 $threshsRn = [0, 0.1, 0.3, 1, 5, 10, 20];
