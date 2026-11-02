@@ -347,11 +347,96 @@ $runStr = $runYears . ' year' . ($runYears === 1 ? '' : 's')
 	<a href="wx8.php">About the station</a>
 </div>
 
+<?php
+// Written recaps (Recap.php): yesterday, month so far, year so far and last month. Falls back to the
+// generated monthly report when no written recap is fresh (or the recap storage is not set up).
+require_once __DIR__ . '/Recap.php';
+$recapToday = Recap::today();
+$recapEntries = Recap::homeEntries($recapToday);
+$repStamp = Date::mkdate(Date::$dmonth - 1, 1);
+if (!$recapEntries):
+?>
 <h1>Latest Monthly Weather Report</h1>
 <?php
-$repStamp = Date::mkdate(Date::$dmonth - 1, 1);
-displayMonthlyReport(date('n', $repStamp), date('Y', $repStamp));
+	displayMonthlyReport(date('n', $repStamp), date('Y', $repStamp));
+else:
+	$recapTabs = ['day' => 'Yesterday', 'month_to_date' => 'Month so far', 'year_to_date' => 'Year so far', 'month' => 'Last month'];
+	$recapDefault = array_key_first($recapEntries);
+	$recapExpected = [];
+	foreach ($recapTabs as $k => $unused) { $recapExpected[$k] = Recap::expected($k, $recapToday); }
 ?>
+<section class="recap-card" id="recap-card" data-default="<?php echo $recapDefault; ?>">
+	<h2 class="recap-title">Weather in brief</h2>
+	<div class="recap-tabs" role="tablist" aria-label="Weather summaries" hidden>
+		<?php foreach ($recapTabs as $k => $name): ?>
+		<button type="button" role="tab" id="recap-tab-<?php echo $k; ?>" aria-controls="recap-panel-<?php echo $k; ?>" data-recap-tab="<?php echo $k; ?>"<?php echo isset($recapEntries[$k]) ? '' : ' class="recap-stale"'; ?>><?php echo $name; ?></button>
+		<?php endforeach; ?>
+	</div>
+	<?php foreach ($recapTabs as $k => $name): ?>
+	<div class="recap-panel" role="tabpanel" id="recap-panel-<?php echo $k; ?>" aria-labelledby="recap-tab-<?php echo $k; ?>" data-recap-panel="<?php echo $k; ?>">
+		<h3 class="recap-tabname"><?php echo $name; ?></h3>
+		<?php
+		$rec = $recapEntries[$k] ?? null;
+		if ($rec) {
+			echo Recap::articleHtml($rec);
+			$p = Recap::parsePeriod($k, $rec['period']);
+			if ($k === 'day') {
+				$more = '<a href="wxhistday.php?year=' . $p[0] . '&amp;month=' . $p[1] . '&amp;day=' . $p[2] . '">Daily report</a>';
+			} elseif ($k === 'year_to_date') {
+				$more = '<a href="wxhistyear.php?year=' . $p[0] . '">Annual report</a>';
+			} else {
+				$more = '<a href="wxhistmonth.php?year=' . $p[0] . '&amp;month=' . $p[1] . '">Full monthly report</a>';
+			}
+			echo '<p class="recap-more">' . $more . '</p>';
+		} elseif ($k === 'month') {
+			displayMonthlyReport(date('n', $repStamp), date('Y', $repStamp));
+		} elseif ($k === 'day') {
+			echo '<p class="recap-missing">Yesterday\'s summary isn\'t in yet. It is usually posted by about 08:00 UK time.</p>';
+		} else {
+			echo '<p class="recap-missing">No ' . ($k === 'month_to_date' ? 'month' : 'year') . '-so-far summary yet'
+				. ($k === 'month_to_date' && (int)Date::$dday === 1 ? ' (the month has only just started)' : '') . '.</p>';
+		}
+		?>
+	</div>
+	<?php endforeach; ?>
+</section>
+<script type="text/javascript">
+	//<![CDATA[
+	(function () {
+		var card = document.getElementById('recap-card');
+		if (!card) { return; }
+		var tabs = card.querySelectorAll('[data-recap-tab]');
+		var panels = card.querySelectorAll('[data-recap-panel]');
+		function show(k, focus) {
+			for (var i = 0; i < tabs.length; i++) {
+				var on = tabs[i].getAttribute('data-recap-tab') === k;
+				tabs[i].className = (on ? 'active' : '') + (tabs[i].getAttribute('data-stale') ? ' recap-stale' : '');
+				tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
+				tabs[i].tabIndex = on ? 0 : -1;
+				if (on && focus) { tabs[i].focus(); }
+			}
+			for (var j = 0; j < panels.length; j++) {
+				panels[j].hidden = panels[j].getAttribute('data-recap-panel') !== k;
+			}
+		}
+		for (var i = 0; i < tabs.length; i++) {
+			if (/recap-stale/.test(tabs[i].className)) { tabs[i].setAttribute('data-stale', '1'); }
+			tabs[i].addEventListener('click', function () { show(this.getAttribute('data-recap-tab')); });
+			tabs[i].addEventListener('keydown', function (e) {
+				var idx = Array.prototype.indexOf.call(tabs, this), n = tabs.length;
+				if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+					e.preventDefault();
+					show(tabs[(idx + (e.key === 'ArrowRight' ? 1 : n - 1)) % n].getAttribute('data-recap-tab'), true);
+				}
+			});
+		}
+		card.querySelector('.recap-tabs').hidden = false;
+		card.className += ' recap-js';
+		show(card.getAttribute('data-default'));
+	})();
+	//]]>
+</script>
+<?php endif; ?>
 
 
 <?php

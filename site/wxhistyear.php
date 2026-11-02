@@ -33,6 +33,10 @@ echo '<p>Monthly weather charts for every available variable in ' . $yproc . ' f
 	. 'Long-term climate normals are overlaid where available. '
 	. '<a href="/wxhistmonth.php?year=' . $yproc . '&month=1" title="Detailed monthly reports">View detailed monthly reports</a>.</p>';
 
+// Written report for the year (Recap.php), or the year so far for the current year
+require_once __DIR__ . '/Recap.php';
+echo Recap::yearSection($yproc);
+
 // Grid of monthly charts per variable for the chosen year
 echo '<div class="annual-charts">';
 foreach (Report::$categories as $cat => $vars) {
