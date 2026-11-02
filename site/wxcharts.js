@@ -92,13 +92,15 @@
 			if (s.lineWidth != null) { o.lineWidth = s.lineWidth; }
 			if (s.opacity != null) { o.opacity = s.opacity; }
 			if (s.marker) { o.marker = { enabled: true, radius: 2.5 }; }
-			if (o.type === 'arearange') {
-				// Daily low-high envelope: a pale band behind the day's value.
+			if (s.band || o.type === 'arearange') {
+				// Station record range: a pale band (record low to high, or up to the record high for totals)
+				// behind the day's value.
 				o.fillOpacity = 0.22;
 				o.lineWidth = 0;
 				o.zIndex = 0;
 				o.threshold = null;
 				o.states = { hover: { lineWidth: 0 } };
+				if (s.recordHigh) { o.recordHigh = true; o.threshold = 0; }
 			}
 			if (autoscale) {
 				o.threshold = null;
@@ -133,6 +135,7 @@
 					var val = (p.point && p.point.low != null && p.point.high != null)
 						? Highcharts.numberFormat(p.point.low, dp) + ' \u2013 ' + Highcharts.numberFormat(p.point.high, dp)
 						: ((p.y == null) ? '\u2014' : Highcharts.numberFormat(p.y, dp));
+					if (p.series.options.recordHigh && p.y != null) { val = 'high ' + val; }
 					html += '<br/><span style="color:' + p.color + '">\u25CF</span> '
 						+ p.series.name + ': <b>' + val + unitSuffix + '</b>';
 				}
@@ -845,7 +848,7 @@
 			var showLenM = state.scale === 'monthly' && yr === 0;
 			var showStartEnd = state.scale === 'annual';
 			var showCume = summable && state.scale === 'daily' && yr > 0 && mon === '0';
-			// Daily range (low-high envelope): daily charts of a chosen year or month, for variables with a pair.
+			// Station record range (each date's record low-high since 2009): daily charts of a chosen year or month.
 			var showEnv = state.scale === 'daily' && yr > 0 && !!metaFor(state.type).envelope && !state.cume;
 			var showLta = (state.scale === 'monthly')
 				|| (state.scale === 'daily' && yr > 0 && mon === '0');
