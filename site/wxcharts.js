@@ -91,6 +91,15 @@
 			};
 			if (s.lineWidth != null) { o.lineWidth = s.lineWidth; }
 			if (s.opacity != null) { o.opacity = s.opacity; }
+			if (s.marker) { o.marker = { enabled: true, radius: 2.5 }; }
+			if (o.type === 'arearange') {
+				// Daily low-high envelope: a pale band behind the day's value.
+				o.fillOpacity = 0.22;
+				o.lineWidth = 0;
+				o.zIndex = 0;
+				o.threshold = null;
+				o.states = { hover: { lineWidth: 0 } };
+			}
 			if (autoscale) {
 				o.threshold = null;
 				o.softThreshold = false;
@@ -118,9 +127,12 @@
 				var idx = this.points[0].point.x;
 				var head = (tips[idx] != null) ? tips[idx] : this.x;
 				var html = '<span style="font-size:0.85em">' + head + '</span>';
+				var dp = decimals != null ? decimals : 1;
 				for (var i = 0; i < this.points.length; i++) {
 					var p = this.points[i];
-					var val = (p.y == null) ? '—' : Highcharts.numberFormat(p.y, decimals != null ? decimals : 1);
+					var val = (p.point && p.point.low != null && p.point.high != null)
+						? Highcharts.numberFormat(p.point.low, dp) + ' \u2013 ' + Highcharts.numberFormat(p.point.high, dp)
+						: ((p.y == null) ? '\u2014' : Highcharts.numberFormat(p.y, dp));
 					html += '<br/><span style="color:' + p.color + '">\u25CF</span> '
 						+ p.series.name + ': <b>' + val + unitSuffix + '</b>';
 				}
@@ -141,8 +153,14 @@
 		} else {
 			xAxis.tickInterval = opts.tickInterval || Math.max(1, Math.ceil(json.categories.length / 12));
 		}
+		var chartOpt = { backgroundColor: '#ffffff', spacing: [12, 12, 8, 6], style: { color: TEXT } };
+		if (json.zoomable) {
+			// Drag across to zoom in on a stretch of days; Highcharts adds a "Reset zoom" button.
+			chartOpt.zooming = { type: 'x', resetButton: { position: { align: 'right', x: -4, y: 4 } } };
+			chartOpt.zoomType = 'x';                 // pre-v10 alias
+		}
 		Highcharts.chart(containerId, {
-			chart: { backgroundColor: '#ffffff', spacing: [12, 12, 8, 6], style: { color: TEXT } },
+			chart: chartOpt,
 			title: { text: opts.title || json.title, style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
 			credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
 			subtitle: aqSubtitle(aqNote),
@@ -797,7 +815,8 @@
 			scale: 'daily',
 			summary: cfg.defaultSummary != null ? cfg.defaultSummary : 0,
 			lta: cfg.defaultLta !== false,
-			cume: false
+			cume: false,
+			env: false
 		};
 
 		function groupById(id) {
@@ -826,6 +845,8 @@
 			var showLenM = state.scale === 'monthly' && yr === 0;
 			var showStartEnd = state.scale === 'annual';
 			var showCume = summable && state.scale === 'daily' && yr > 0 && mon === '0';
+			// Daily range (low-high envelope): daily charts of a chosen year or month, for variables with a pair.
+			var showEnv = state.scale === 'daily' && yr > 0 && !!metaFor(state.type).envelope && !state.cume;
 			var showLta = (state.scale === 'monthly')
 				|| (state.scale === 'daily' && yr > 0 && mon === '0');
 			// Daily whole-year normals are always eligible; monthly needs mean/total.
@@ -843,6 +864,9 @@
 			setHidden(document.getElementById('cv-end-wrap'), !showStartEnd);
 			setHidden(document.getElementById('cv-cume'), !showCume);
 			setHidden(document.getElementById('cv-lta'), !showLta);
+			setHidden(document.getElementById('cv-env'), !showEnv);
+			var envBtn = document.getElementById('cv-env');
+			if (envBtn) { envBtn.classList.toggle('active', showEnv && state.env); }
 
 			var ltaBtn = document.getElementById('cv-lta');
 			if (ltaBtn && showLta) {
@@ -923,6 +947,7 @@
 				if (yr > 0) {
 					params.year = yr;
 					params.month = mon;
+					if (state.env && metaFor(state.type).envelope && !(state.cume && mon === '0')) { params.env = 1; }
 					if (mon === '0') {
 						if (state.cume && metaFor(state.type).summable) { params.cume = 1; }
 						if (state.lta) { params.lta = 1; }
@@ -968,6 +993,10 @@
 		$('#cv-lta').on('click', function () {
 			if (this.disabled) { return; }
 			state.lta = !state.lta;
+			load();
+		});
+		$('#cv-env').on('click', function () {
+			state.env = !state.env;
 			load();
 		});
 		$('#cv-cume').on('click', function () {

@@ -16,6 +16,7 @@
  *   lta          1 to overlay the daily climate normal (whole-year only)
  *   cume         1 for a cumulative running total (whole-year only)
  *   multiyr      "last" or comma-list of years to overlay (whole-year line)
+ *   env          1 to add a "Daily range" arearange of each day's low/high (Charts::envelopePair)
  * Monthly:
  *   length       last-N months (default 12)            [no year set]
  *   year         a single year (12 months)
@@ -136,6 +137,43 @@ function climateColour($type) {
 		return Wx::colourHex(Wx::$daily[$type]['colour']);
 	}
 	return '#999999';
+}
+
+/** [[low, high], ...] for each day of a year (month 0) or one month, from the variable's daily low/high pair. */
+function envelopeData($type, $yr, $mon, $len) {
+	$pair = Charts::envelopePair($type);
+	if ($pair === null) { return null; }
+	$lo = Data::getDailyDataForYear($pair[0], $yr);
+	$hi = Data::getDailyDataForYear($pair[1], $yr);
+	if ($mon > 0) {
+		$lo = isset($lo[$mon]) ? array_values($lo[$mon]) : [];
+		$hi = isset($hi[$mon]) ? array_values($hi[$mon]) : [];
+	} else {
+		$lo = Data::MDtoZ($lo);
+		$hi = Data::MDtoZ($hi);
+	}
+	$out = [];
+	for ($i = 0; $i < $len; $i++) {
+		$a = isset($lo[$i]) ? cv($lo[$i]) : null;
+		$b = isset($hi[$i]) ? cv($hi[$i]) : null;
+		$out[] = ($a === null || $b === null) ? null : [min($a, $b), max($a, $b)];
+	}
+	return $out;
+}
+
+/** Prepend the envelope series (drawn behind the others). */
+function addEnvelope(&$out, $type, $yr, $mon) {
+	$data = envelopeData($type, $yr, $mon, count($out['categories']));
+	if ($data === null) { return; }
+	$pair = Charts::envelopePair($type);
+	$names = ['wmean' => 'Mean wind to highest gust'];
+	array_unshift($out['series'], [
+		'name' => isset($names[$pair[0]]) ? $names[$pair[0]] : 'Daily low to high',
+		'data' => $data,
+		'color' => $out['colour'],
+		'type' => 'arearange',
+	]);
+	$out['envelope'] = true;
 }
 
 /** Last-N daily payload for one variable (home-page prefetch uses this in a batch). */
@@ -409,6 +447,7 @@ if ($mode === 'annual') {
 				];
 			}
 			$out['title'] = $yr . ($cume ? ' cumulative ' : ' ') . $meta['description'];
+			if (!empty($_GET['env']) && !$cume) { addEnvelope($out, $type, $yr, 0); }
 		} else {
 			// Single month (one bar/line per day)
 			$md = Data::getDailyDataForYear($type, $yr);
@@ -421,7 +460,16 @@ if ($mode === 'annual') {
 			$out['chartType'] = 'column';
 			$out['title'] = Date::$months3[$mon - 1] . ' ' . $yr . ' ' . $meta['description'];
 			$out['series'][] = ['name' => $meta['description'], 'data' => $data, 'color' => $colour, 'type' => 'column'];
+			if (!empty($_GET['env'])) {
+				// Columns would hide the band: draw the day's value as a line with markers instead.
+				$out['series'][0]['type'] = 'line';
+				$out['series'][0]['marker'] = true;
+				$out['chartType'] = 'line';
+				addEnvelope($out, $type, $yr, $mon);
+			}
 		}
+		// A whole year or month of days: drag across the chart to zoom in.
+		$out['zoomable'] = true;
 	} else {
 		// Last-N days. `types=a,b,c` returns every option in one payload so the
 		// home-page selector can switch without a round-trip.
