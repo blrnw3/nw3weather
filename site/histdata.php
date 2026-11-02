@@ -16,7 +16,7 @@
  *   lta          1 to overlay the daily climate normal (whole-year only)
  *   cume         1 for a cumulative running total (whole-year only)
  *   multiyr      "last" or comma-list of years to overlay (whole-year line)
- *   env          1 to add a "Daily range" arearange of each day's low/high (Charts::envelopePair)
+ *   env          1 to add the "Station record range" band: each date's record low-high since 2009 (DailyRecords)
  * Monthly:
  *   length       last-N months (default 12)            [no year set]
  *   year         a single year (12 months)
@@ -27,6 +27,7 @@
  *   summary_type as above
  */
 require __DIR__ . '/Page.php';
+require_once __DIR__ . '/DailyRecords.php';
 ini_set('display_errors', '0');
 
 // Resolve display units from the same cookie Page uses, without a full page init.
@@ -139,39 +140,38 @@ function climateColour($type) {
 	return '#999999';
 }
 
-/** [[low, high], ...] for each day of a year (month 0) or one month, from the variable's daily low/high pair. */
-function envelopeData($type, $yr, $mon, $len) {
-	$pair = Charts::envelopePair($type);
-	if ($pair === null) { return null; }
-	$lo = Data::getDailyDataForYear($pair[0], $yr);
-	$hi = Data::getDailyDataForYear($pair[1], $yr);
-	if ($mon > 0) {
-		$lo = isset($lo[$mon]) ? array_values($lo[$mon]) : [];
-		$hi = isset($hi[$mon]) ? array_values($hi[$mon]) : [];
-	} else {
-		$lo = Data::MDtoZ($lo);
-		$hi = Data::MDtoZ($hi);
-	}
+/**
+ * The station record range for each day on the axis of a year (month 0) or one month: the record low and high
+ * of $type on that calendar date over every year since 2009 (DailyRecords, precomputed). Totals (rain, sunshine
+ * ...) get only the record high, since their record low is nearly always 0. Returns [data, highOnly] or null.
+ */
+function recordRangeData($type, $yr, $mon, $len) {
+	global $summable;
+	$rec = DailyRecords::get($type);
+	if (!$rec || !count($rec['hi'])) { return null; }
 	$out = [];
 	for ($i = 0; $i < $len; $i++) {
-		$a = isset($lo[$i]) ? cv($lo[$i]) : null;
-		$b = isset($hi[$i]) ? cv($hi[$i]) : null;
-		$out[] = ($a === null || $b === null) ? null : [min($a, $b), max($a, $b)];
+		if ($mon > 0) { $m = $mon; $d = $i + 1; }
+		else { $ts = Date::mkz($i, $yr); $m = (int)date('n', $ts); $d = (int)date('j', $ts); }
+		$lo = isset($rec['lo'][$m][$d]) ? cv($rec['lo'][$m][$d]) : null;
+		$hi = isset($rec['hi'][$m][$d]) ? cv($rec['hi'][$m][$d]) : null;
+		if ($summable) { $out[] = $hi; }
+		else { $out[] = ($lo === null || $hi === null) ? null : [min($lo, $hi), max($lo, $hi)]; }
 	}
-	return $out;
+	return [$out, $summable];
 }
 
-/** Prepend the envelope series (drawn behind the others). */
+/** Prepend the station record range band (drawn behind the others). */
 function addEnvelope(&$out, $type, $yr, $mon) {
-	$data = envelopeData($type, $yr, $mon, count($out['categories']));
-	if ($data === null) { return; }
-	$pair = Charts::envelopePair($type);
-	$names = ['wmean' => 'Mean wind to highest gust'];
+	$r = recordRangeData($type, $yr, $mon, count($out['categories']));
+	if ($r === null) { return; }
 	array_unshift($out['series'], [
-		'name' => isset($names[$pair[0]]) ? $names[$pair[0]] : 'Daily low to high',
-		'data' => $data,
+		'name' => 'Station record range',
+		'data' => $r[0],
 		'color' => $out['colour'],
-		'type' => 'arearange',
+		'type' => $r[1] ? 'area' : 'arearange',
+		'band' => true,
+		'recordHigh' => $r[1],
 	]);
 	$out['envelope'] = true;
 }
