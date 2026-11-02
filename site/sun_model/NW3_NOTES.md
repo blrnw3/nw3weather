@@ -120,7 +120,7 @@ rows are the nightly auto-posted values from the older classifier, not yet hand-
 
 ## Rollout: model owns datm sunhr (2026-10-30)
 - Homepage unchanged for now (no sunshine card). Intraday charts and api_v1 carry the live series.
-- `cron_main` writes yesterday's sunhr from `sunlog/` at 00:40 London (the classifier finishes yesterday at 00:00-00:30)
+- `cron_main` writes yesterday's sunhr from `sunlog/` at 00:27 London (the classifier finishes yesterday at 00:00-00:25)
   and retries at the 06:03 datm check (`SunLog::writeDatm`, `NW3_SUN_AUTO_DATM`, default on). Under 50% coverage
   writes nothing (the usual 06:03 fallback then applies); a partial day writes its lower bound and mails for review.
 - Manual edits are never clobbered: the nightly path only appends the missing row for yesterday (`DatmWriter::write`

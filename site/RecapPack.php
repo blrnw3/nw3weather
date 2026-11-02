@@ -13,7 +13,7 @@
  *     sunshine from 1910, up to 2008) joined to the station years.
  *
  * Results are cached in V5_CACHE_ROOT/recap_pack/, keyed by the mtimes and sizes of the data files, so they are
- * rebuilt automatically whenever the data changes (and warmed each morning by warm_recap_pack.php).
+ * rebuilt automatically whenever the data changes (and warmed nightly at 00:28 by warm_recap_pack.php).
  */
 class RecapPack {
 	const VERSION = 1;

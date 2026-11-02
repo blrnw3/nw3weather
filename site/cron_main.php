@@ -122,10 +122,11 @@ copy($goodlog, $stamplog);
 file_put_contents(ROOT.'api_latest.txt', $newLine);
 
 //datm append
-// Webcam sunshine (sun_model) is the source of yesterday's sunhr: written at 00:40 (after the classifier finishes
-// yesterday at 00:00-00:30) and retried at the datm check. DatmWriter::write only appends a missing row, so an
-// existing row (hand-entered, datamod-edited or already written) is never changed.
-if(NW3_SUN_AUTO_DATM && ($tstamp === '0040' || $tstamp == $datmCheckTime)) {
+// Webcam sunshine (sun_model) is the source of yesterday's sunhr: written at 00:27 (after the classifier's last
+// pass over yesterday at 00:25; its daylight frames are long done) and retried at the datm check, so the recap
+// packs warmed at 00:28 include it. DatmWriter::write only appends a missing row, so an existing row
+// (hand-entered, datamod-edited or already written) is never changed.
+if(NW3_SUN_AUTO_DATM && ($tstamp === '0027' || $tstamp == $datmCheckTime)) {
 	SunLog::writeDatm(Date::$dtstamp_yest);
 }
 if($tstamp == $datmCheckTime) {
@@ -193,9 +194,10 @@ if($firstday && $fiveMinutely && time() - filemtime(ROOT.'datm'.$yr_yest.'.csv')
 	mail("blr@nw3weather.co.uk","Monthly report $mon_yest $yr_yest", $rep);
 }
 
-// Recap data packs (api_recap_pack.php): precompute this morning's once the overnight data and sun total are in.
+// Recap data packs (api_recap_pack.php): precompute yesterday's once the midnight data and sun total (00:27) are in,
+// ready for a writer just after 00:30.
 // Packs are also rebuilt on request whenever the data files change.
-if($tstamp === '0715') {
+if($tstamp === '0028') {
 	exec(EXEC_PATH . 'warm_recap_pack.php > /dev/null 2>&1 &');
 }
 
