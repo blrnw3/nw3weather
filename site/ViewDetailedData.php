@@ -1815,7 +1815,7 @@ class ViewDetailedData {
 				'month' => 0,
 				'multiyr' => 'last',
 				'lta' => 1,
-			], ['height' => 420]);
+			], ['height' => 420, 'recordToggle' => true]);
 			echo '</div>';
 		}
 
@@ -1829,7 +1829,7 @@ class ViewDetailedData {
 				'year' => $yr,
 				'month' => 0,
 				'lta' => 1,
-			], ['height' => 350]);
+			], ['height' => 350, 'recordToggle' => true]);
 			echo '</div>';
 		} elseif (!$this->isSummableDetail()) {
 			echo '<h3>This year min/max daily trends in detail for ' . $this->label . '</h3>';
@@ -1841,7 +1841,7 @@ class ViewDetailedData {
 				'year' => $yr,
 				'month' => 0,
 				'lta' => 1,
-			], ['height' => 350]);
+			], ['height' => 350, 'recordToggle' => true]);
 			echo '</div><div>';
 			Charts::daily([
 				'type' => $this->varMax,
@@ -1849,7 +1849,7 @@ class ViewDetailedData {
 				'year' => $yr,
 				'month' => 0,
 				'lta' => 1,
-			], ['height' => 350]);
+			], ['height' => 350, 'recordToggle' => true]);
 			echo '</div></div>';
 		}
 

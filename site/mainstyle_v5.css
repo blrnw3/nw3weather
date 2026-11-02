@@ -779,6 +779,24 @@ div.charts > .wxsel-wrap {
 	border-color: #15866A;
 	color: #fff;
 }
+/* Detail pages: the record-range toggle sits on its own small row under its chart (not a flex column beside it). */
+.wxrec-opts {
+	display: flex;
+	justify-content: flex-end;
+	flex: 1 1 100%;
+	width: 0;          /* adds no width of its own, so a shrink-to-fit parent keeps its chart's size */
+	min-width: 100%;
+	margin: -0.2rem 0 0.4rem;
+}
+.wxrec-opts .wxsel-toggle {
+	font-size: 0.75rem;
+	padding: 0.12rem 0.4rem;
+	margin: 0;
+}
+/* An active toggle keeps its colours on hover (touch screens keep :hover after a tap). */
+.wxsel-toggle.active:hover:not(:disabled) {
+	background: #052e24;
+}
 .wxsel-toggle:disabled,
 .wxsel-toggle.disabled {
 	opacity: 0.45;

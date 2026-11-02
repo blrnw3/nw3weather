@@ -102,6 +102,14 @@
 				o.states = { hover: { lineWidth: 0 } };
 				if (s.recordHigh) { o.recordHigh = true; o.threshold = 0; }
 			}
+			if (s.marks) {
+				// The plotted year's record days: dots only (red record high, navy record low), drawn on top.
+				o.marks = s.marks;
+				o.lineWidth = 0;
+				o.zIndex = 5;
+				o.marker = { enabled: true, symbol: 'circle', radius: 4, lineWidth: 1, lineColor: '#ffffff' };
+				o.states = { hover: { lineWidth: 0, lineWidthPlus: 0 } };
+			}
 			if (autoscale) {
 				o.threshold = null;
 				o.softThreshold = false;
@@ -136,6 +144,16 @@
 						? Highcharts.numberFormat(p.point.low, dp) + ' \u2013 ' + Highcharts.numberFormat(p.point.high, dp)
 						: ((p.y == null) ? '\u2014' : Highcharts.numberFormat(p.y, dp));
 					if (p.series.options.recordHigh && p.y != null) { val = 'high ' + val; }
+					if (p.series.options.marks) {
+						var tie = p.point.options && p.point.options.tie;
+						var today = p.point.options && p.point.options.today;
+						var kind = p.series.options.marks === 'hi' ? 'record high' : 'record low';
+						html += '<br/><span style="color:' + p.color + '">' + (today ? '\u25CB' : '\u25CF') + '</span> <b>'
+							+ (today ? kind.charAt(0).toUpperCase() + kind.slice(1) + ' for ' + today + ' (so far today)'
+							: tie ? 'Equals ' + kind + ' for ' + head + ' (with ' + tie + ' other year' + (tie === 1 ? '' : 's') + ')'
+								: kind.charAt(0).toUpperCase() + kind.slice(1) + ' for ' + head) + '</b>';
+						continue;
+					}
 					html += '<br/><span style="color:' + p.color + '">\u25CF</span> '
 						+ p.series.name + ': <b>' + val + unitSuffix + '</b>';
 				}
@@ -166,7 +184,7 @@
 			chart: chartOpt,
 			title: { text: opts.title || json.title, style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
 			credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
-			subtitle: aqSubtitle(aqNote),
+			subtitle: json.recordNote ? { text: json.recordNote, style: { color: TEXT, fontSize: '0.8rem' } } : aqSubtitle(aqNote),
 			legend: { enabled: series.length > 1, itemStyle: { color: TEXT } },
 			xAxis: xAxis,
 			yAxis: yAxis,
@@ -181,6 +199,7 @@
 
 	function histChart(containerId, url, opts) {
 		opts = opts || {};
+		if (opts.recordToggle) { recordToggle(containerId, url, opts); }
 		if (!opts.silent) { setLoading(containerId, true); }
 		return $.getJSON(url, function (json) {
 			if (!opts.silent) { setLoading(containerId, false); }
@@ -189,6 +208,29 @@
 			if (opts.silent) { return; }
 			setLoading(containerId, false);
 			$('#' + containerId).html('<p>Could not load chart.</p>');
+		});
+	}
+
+	/**
+	 * Detail pages: a "Station record range" toggle under a daily year chart, off by default. The records are only
+	 * fetched (histdata env=1) once it is switched on.
+	 */
+	function recordToggle(containerId, url, opts) {
+		var el = document.getElementById(containerId);
+		if (!el || document.getElementById(containerId + '-rec')) { return; }
+		var wrap = document.createElement('div');
+		wrap.className = 'wxrec-opts';
+		wrap.innerHTML = '<button type="button" class="wxsel-toggle" id="' + containerId + '-rec" aria-pressed="false"'
+			+ ' title="Shade the station\'s record low to record high for each date (since 2009) and mark this year\'s record days">'
+			+ 'Station record range</button>';
+		el.parentNode.insertBefore(wrap, el.nextSibling);
+		var btn = wrap.firstChild, on = false;
+		var sub = $.extend({}, opts, { recordToggle: false });
+		btn.addEventListener('click', function () {
+			on = !on;
+			btn.classList.toggle('active', on);
+			btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+			histChart(containerId, on ? url + (url.indexOf('?') < 0 ? '?' : '&') + 'env=1' : url, sub);
 		});
 	}
 
@@ -303,7 +345,7 @@
 				credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
 				legend: { enabled: keys.length > 1, itemStyle: { color: TEXT } },
 				xAxis: { type: 'datetime', crosshair: true, gridLineWidth: 1, gridLineColor: '#ddd',
-					dateTimeLabelFormats: { minute: '%H:%M', hour: '%H:%M', day: '%e %b' }, labels: { style: { color: TEXT } } },
+					dateTimeLabelFormats: { minute: '%H:%M', hour: '%H:%M', day: '%d %b' }, labels: { style: { color: TEXT } } },
 				yAxis: yAx,
 				tooltip: isDir
 					? { formatter: function () { return Highcharts.dateFormat('%a %H:%M', this.x) + '<br/><b>' + Math.round(this.y) + '\u00B0 (' + compass(this.y) + ')</b>'; } }
@@ -355,11 +397,12 @@
 		var y = parseInt(ymd.slice(0, 4), 10);
 		var m = parseInt(ymd.slice(4, 6), 10) - 1;
 		var d = parseInt(ymd.slice(6, 8), 10);
-		var end = d + ' ' + months[m] + ' ' + y;
+		function pad2(n) { return (n < 10 ? '0' : '') + n; }
+		var end = pad2(d) + ' ' + months[m] + ' ' + y;
 		var num = (json && json.num) ? parseInt(json.num, 10) : 1;
 		if (!num || num <= 1) { return end; }
 		var startDt = new Date(y, m, d - (num - 1));
-		return startDt.getDate() + ' ' + months[startDt.getMonth()] + ' ' + startDt.getFullYear() + ' \u2013 ' + end;
+		return pad2(startDt.getDate()) + ' ' + months[startDt.getMonth()] + ' ' + startDt.getFullYear() + ' \u2013 ' + end;
 	}
 
 	// Fixed report layout: one fetch → two multi-var charts + any single-var charts.
@@ -418,7 +461,7 @@
 	function dashTimeX() {
 		return {
 			type: 'datetime', crosshair: true, gridLineWidth: 1, gridLineColor: '#ddd',
-			dateTimeLabelFormats: { minute: '%H:%M', hour: '%H:%M', day: '%e %b' }, labels: { style: { color: TEXT } }
+			dateTimeLabelFormats: { minute: '%H:%M', hour: '%H:%M', day: '%d %b' }, labels: { style: { color: TEXT } }
 		};
 	}
 
@@ -582,6 +625,7 @@
 		var yearBtns = panel.querySelectorAll('.wxsel-years button');
 		var normBtn = panel.querySelector('.wxsel-toggle[data-lta]');
 		var cumeBtn = panel.querySelector('.wxsel-toggle[data-cume]');
+		var envBtn = panel.querySelector('.wxsel-toggle[data-env]');
 		var groups = cfg.groups || [];
 		var varMeta = cfg.varMeta || {};
 		var aggLabels = cfg.aggLabels || { 0: 'Mean', 1: 'Total', 2: 'Count', 3: 'Low', 4: 'High' };
@@ -591,6 +635,7 @@
 			summary: cfg.defaultSummary != null ? cfg.defaultSummary : 0,
 			lta: !!cfg.defaultLta,
 			cume: !!cfg.defaultCume,
+			env: false,
 			year: cfg.defaultYear || null
 		};
 		var cache = {};
@@ -620,6 +665,7 @@
 			cumeBtn.disabled = !allowed;
 			cumeBtn.classList.toggle('active', allowed && state.cume);
 			cumeBtn.classList.toggle('disabled', !allowed);
+			if (envBtn) { envBtn.classList.toggle('active', state.env); envBtn.setAttribute('aria-pressed', state.env ? 'true' : 'false'); }
 		}
 		function updateHeading() {
 			if (!cfg.headingId) { return; }
@@ -665,12 +711,14 @@
 			}
 			if (cfg.showCume && state.cume && metaFor(type).summable) {
 				url += '&cume=1';
+			} else if (envBtn && state.env) {
+				url += '&env=1';           // station record range + the year's record days (not for running totals)
 			}
 			if (fresh) { url += '&_=' + Date.now(); }
 			return url;
 		}
 		function drawCached() {
-			var json = cache[state.type];
+			var json = cache[typeUrl(state.type, false)];
 			if (!json) { return false; }
 			drawHistChart(cfg.containerId, json, $.extend({}, cfg.opts || {}, { silent: true }));
 			return true;
@@ -678,7 +726,7 @@
 		function prefetch(fresh, done) {
 			var types = allTypes();
 			if (!fresh) {
-				types = types.filter(function (t) { return !cache[t] && t !== state.type; });
+				types = types.filter(function (t) { return !cache[typeUrl(t, false)] && t !== state.type; });
 			}
 			if (!types.length) { if (done) { done(); } return; }
 			var url = cfg.url + (cfg.url.indexOf('?') >= 0 ? '&' : '?')
@@ -688,7 +736,7 @@
 				if (json && json.charts) {
 					Object.keys(json.charts).forEach(function (t) {
 						var c = json.charts[t];
-						if (c && !c.error && c.series) { cache[t] = c; }
+						if (c && !c.error && c.series) { cache[typeUrl(t, false)] = c; }
 					});
 				}
 				if (done) { done(); }
@@ -703,8 +751,9 @@
 			}
 			var chartOpts = cfg.opts || {};
 			if (fresh) { chartOpts = $.extend({}, chartOpts, { silent: true }); }
+			var key = typeUrl(state.type, false);
 			histChart(cfg.containerId, typeUrl(state.type, fresh), chartOpts).done(function (json) {
-				if (json && !json.error && json.series) { cache[state.type] = json; }
+				if (json && !json.error && json.series) { cache[key] = json; }
 			});
 		}
 		function renderAggregation() {
@@ -727,7 +776,7 @@
 			var opts = g.options || {};
 			var keys = Object.keys(opts);
 			if (keys.indexOf(state.type) < 0) { state.type = keys[0]; }
-			if (cfg.showCume) { state.cume = !!metaFor(state.type).summable; }
+			if (cfg.showCume) { state.cume = !state.env && !!metaFor(state.type).summable; }
 			var html = '', i, k;
 			for (i = 0; i < keys.length; i++) {
 				k = keys[i];
@@ -739,7 +788,7 @@
 				$(subEl).find('button').removeClass('active');
 				$(this).addClass('active');
 				state.type = String($(this).attr('data-type'));
-				if (cfg.showCume) { state.cume = !!metaFor(state.type).summable; }
+				if (cfg.showCume) { state.cume = !state.env && !!metaFor(state.type).summable; }
 				renderAggregation();
 				syncCumeUi();
 				load();
@@ -785,6 +834,15 @@
 			$(cumeBtn).on('click', function () {
 				if (cumeBtn.disabled) { return; }
 				state.cume = !state.cume;
+				if (state.cume) { state.env = false; }   // a running total has no per-date records
+				syncCumeUi();
+				load();
+			});
+		}
+		if (envBtn) {
+			$(envBtn).on('click', function () {
+				state.env = !state.env;
+				if (state.env) { state.cume = false; }
 				syncCumeUi();
 				load();
 			});
@@ -1234,7 +1292,7 @@
 				text: 'Data: Yr.no / MET Norway', style: { color: '#999', fontSize: '9px' } },
 			legend: { enabled: true, itemStyle: { color: TEXT } },
 			xAxis: { type: 'datetime', crosshair: true, gridLineWidth: 1, gridLineColor: '#ddd',
-				dateTimeLabelFormats: { hour: '%H:%M', day: '%a %e' }, labels: { style: { color: TEXT } } },
+				dateTimeLabelFormats: { hour: '%H:%M', day: '%a %d' }, labels: { style: { color: TEXT } } },
 			yAxis: [
 				{ title: { text: 'Temperature / ' + tempU, style: { color: '#DF7401' } },
 					labels: { style: { color: '#DF7401' } }, gridLineColor: '#eee' },
@@ -1244,7 +1302,7 @@
 					labels: { style: { color: '#2D851B' } }, opposite: true, min: 0, gridLineWidth: 0,
 					showEmpty: false }
 			],
-			tooltip: { shared: true, xDateFormat: '%a %e %b %H:%M' },
+			tooltip: { shared: true, xDateFormat: '%a %d %b %H:%M' },
 			plotOptions: {
 				series: { animation: false, marker: { enabled: false } },
 				column: { borderWidth: 0, pointPadding: 0.05, groupPadding: 0.05 }
