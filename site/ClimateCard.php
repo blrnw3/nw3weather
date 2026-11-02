@@ -277,7 +277,7 @@ class ClimateCard {
 
 	private static function fmtDate($date, $withYear = true) {
 		$ts = strtotime($date . ' 12:00');
-		return date($withYear ? 'j M Y' : 'j M', $ts);
+		return date($withYear ? 'd M Y' : 'd M', $ts);
 	}
 
 	/** Who holds a record, for the notes: the most recent year (calendar date) or date. */
@@ -325,7 +325,7 @@ class ClimateCard {
 		$d = (int)date('j', $now);
 		$y = (int)date('Y', $now);
 		$hour = (int)date('G', $now);
-		$dateLabel = date('j M', $now);
+		$dateLabel = date('d M', $now);
 		$monthLabel = date('F', $now);
 		$scopeLabels = array('day' => $dateLabel, 'month' => $monthLabel, 'all' => 'All-time');
 
