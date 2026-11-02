@@ -42,7 +42,7 @@ Charts::dailySelectable(['mode' => 'monthly', 'length' => 12, 'lta' => 1], ['hei
 <h2>Year-to-date</h2>
 <div class="charts">
 <?php
-Charts::cumeSelectable(['height' => 380], 'rain');
+Charts::cumeSelectable(['height' => 380, 'recordToggle' => true], 'rain');
 ?>
 </div>
 <p>Historical data and even more options can be found on the <a href="charts.php">Charts</a> page.</p>

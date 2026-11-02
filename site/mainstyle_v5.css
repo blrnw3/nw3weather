@@ -779,6 +779,10 @@ div.charts > .wxsel-wrap {
 	border-color: #15866A;
 	color: #fff;
 }
+/* An active toggle keeps its colours on hover (touch screens keep :hover after a tap). */
+.wxsel-toggle.active:hover:not(:disabled) {
+	background: #052e24;
+}
 .wxsel-toggle:disabled,
 .wxsel-toggle.disabled {
 	opacity: 0.45;

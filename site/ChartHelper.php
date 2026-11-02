@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/wxcharts.js?20261102i"></script>' . "\n";
+		echo '<script src="/wxcharts.js?20261102l"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */
@@ -639,6 +639,10 @@ class Charts {
 			. ($defaultSummable ? '' : ' disabled') . '"'
 			. ($defaultSummable ? '' : ' disabled="disabled"')
 			. ' data-cume="1" title="Running total (summable variables only)">Cumulative</button>'
+			. (!empty($opts['recordToggle'])
+				? '<button type="button" class="wxsel-toggle" data-env="1" aria-pressed="false"'
+					. ' title="Shade the station\'s record low to record high for each date (since 2009) and mark the year\'s record days">Station record range</button>'
+				: '')
 			. '</div>' . "\n";
 		echo '</div>' . "\n";
 		echo '<div id="' . $id . '" class="wxchart wxchart-loading" style="min-height:' . $height . 'px;"></div>' . "\n";
@@ -654,7 +658,7 @@ class Charts {
 			'panelId' => $panelId,
 			'headingId' => $headingId,
 			'url' => $url,
-			'opts' => $opts,
+			'opts' => array_diff_key($opts, array('recordToggle' => 1)), // the panel has its own toggle
 			'groups' => $groups,
 			'defaultType' => $default,
 			'defaultGroup' => $defaultGroup,

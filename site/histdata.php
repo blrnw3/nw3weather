@@ -16,7 +16,8 @@
  *   lta          1 to overlay the daily climate normal (whole-year only)
  *   cume         1 for a cumulative running total (whole-year only)
  *   multiyr      "last" or comma-list of years to overlay (whole-year line)
- *   env          1 to add the "Station record range" band: each date's record low-high since 2009 (DailyRecords)
+ *   env          1 to add the "Station record range" band: each date's record low-high since 2009 (DailyRecords),
+ *                with markers on the plotted year's record days
  * Monthly:
  *   length       last-N months (default 12)            [no year set]
  *   year         a single year (12 months)
@@ -143,37 +144,57 @@ function climateColour($type) {
 /**
  * The station record range for each day on the axis of a year (month 0) or one month: the record low and high
  * of $type on that calendar date over every year since 2009 (DailyRecords, precomputed). Totals (rain, sunshine
- * ...) get only the record high, since their record low is nearly always 0. Returns [data, highOnly] or null.
+ * ...) get only the record high, since their record low is nearly always 0. $raw is the plotted year's values in
+ * axis order, used to mark the days that set or equal a record.
  */
-function recordRangeData($type, $yr, $mon, $len) {
+function addEnvelope(&$out, $type, $yr, $mon, $raw = []) {
 	global $summable;
 	$rec = DailyRecords::get($type);
-	if (!$rec || !count($rec['hi'])) { return null; }
-	$out = [];
+	if (!$rec || !count($rec['hi'])) { return; }
+	$len = count($out['categories']);
+	$band = []; $days = [];
 	for ($i = 0; $i < $len; $i++) {
 		if ($mon > 0) { $m = $mon; $d = $i + 1; }
 		else { $ts = Date::mkz($i, $yr); $m = (int)date('n', $ts); $d = (int)date('j', $ts); }
 		$lo = isset($rec['lo'][$m][$d]) ? cv($rec['lo'][$m][$d]) : null;
 		$hi = isset($rec['hi'][$m][$d]) ? cv($rec['hi'][$m][$d]) : null;
-		if ($summable) { $out[] = $hi; }
-		else { $out[] = ($lo === null || $hi === null) ? null : [min($lo, $hi), max($lo, $hi)]; }
+		if ($summable) { $band[] = $hi; }
+		else { $band[] = ($lo === null || $hi === null) ? null : [min($lo, $hi), max($lo, $hi)]; }
+		$days[$i] = [$m, $d, $raw[$i] ?? null];
 	}
-	return [$out, $summable];
-}
-
-/** Prepend the station record range band (drawn behind the others). */
-function addEnvelope(&$out, $type, $yr, $mon) {
-	$r = recordRangeData($type, $yr, $mon, count($out['categories']));
-	if ($r === null) { return; }
 	array_unshift($out['series'], [
 		'name' => 'Station record range',
-		'data' => $r[0],
+		'data' => $band,
 		'color' => $out['colour'],
-		'type' => $r[1] ? 'area' : 'arearange',
+		'type' => $summable ? 'area' : 'arearange',
 		'band' => true,
-		'recordHigh' => $r[1],
+		'recordHigh' => $summable,
 	]);
 	$out['envelope'] = true;
+
+	// Record days of the plotted year: markers on top, and a count under the title.
+	$marks = DailyRecords::recordDays($rec, $days, $yr, $summable, $out['yMinZero']);
+	$names = ['hi' => 'Record high', 'lo' => 'Record low'];
+	$colours = ['hi' => '#e03131', 'lo' => '#1b2a6b'];
+	$counts = [];
+	foreach ($marks as $k => $at) {
+		$counts[$k] = count($at);
+		if (!$at) { continue; }
+		$data = array_fill(0, $len, null);
+		foreach ($at as $i => $ties) {
+			$data[$i] = ['y' => cv($raw[$i]), 'tie' => $ties];
+		}
+		$out['series'][] = ['name' => $names[$k], 'data' => $data, 'color' => $colours[$k], 'type' => 'line', 'marks' => $k];
+	}
+	$period = ($mon > 0 ? Date::$months3[$mon - 1] . ' ' : '') . $yr;
+	$plural = function ($n, $w) { return $n . ' record ' . $w . ($n === 1 ? '' : 's'); };
+	if ($summable) {
+		$out['recordNote'] = $counts['hi'] ? $plural($counts['hi'], 'high') . ' in ' . $period : 'No record highs in ' . $period;
+	} else {
+		$out['recordNote'] = ($counts['hi'] || $counts['lo'])
+			? $plural($counts['hi'], 'high') . ', ' . $plural($counts['lo'], 'low') . ' in ' . $period
+			: 'No record highs or lows in ' . $period;
+	}
 }
 
 /** Last-N daily payload for one variable (home-page prefetch uses this in a batch). */
@@ -447,7 +468,7 @@ if ($mode === 'annual') {
 				];
 			}
 			$out['title'] = $yr . ($cume ? ' cumulative ' : ' ') . $meta['description'];
-			if (!empty($_GET['env']) && !$cume) { addEnvelope($out, $type, $yr, 0); }
+			if (!empty($_GET['env']) && !$cume) { addEnvelope($out, $type, $yr, 0, Data::MDtoZ(Data::getDailyDataForYear($type, $yr))); }
 		} else {
 			// Single month (one bar/line per day)
 			$md = Data::getDailyDataForYear($type, $yr);
@@ -465,7 +486,8 @@ if ($mode === 'annual') {
 				$out['series'][0]['type'] = 'line';
 				$out['series'][0]['marker'] = true;
 				$out['chartType'] = 'line';
-				addEnvelope($out, $type, $yr, $mon);
+				foreach (array_keys($days) as $d) { $out['categoryTips'][] = date('j M', mktime(0, 0, 0, $mon, (int)$d, $yr)); }
+				addEnvelope($out, $type, $yr, $mon, array_values($days));
 			}
 		}
 		// A whole year or month of days: drag across the chart to zoom in.
