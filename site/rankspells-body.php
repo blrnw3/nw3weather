@@ -54,16 +54,20 @@ function nw3_rankspells_render(Report $report) {
 	if ($isAnom) {
 		echo nw3_spell_anom_status($report, $dir, $threshold, $current);
 	}
-	$report->spellRankTable($spells, 'Longest ' . $dirLabel, $isAnom);
-
-	if (!$isAnom && is_array($current) && !empty($current['length'])) {
-		$n = (int)$current['length'];
+	$curLine = '';
+	if (is_array($current) && !empty($current['length'])
+		&& ($month === 0 || (int)substr($current['midpointDate'], 5, 2) === (int)$month)
+		&& count($result['lengths'])) {
+		$cn = (int)$current['length'];
+		$st = Report::rankStats($result['lengths'], $cn, true);
 		$since = strtotime($current['startDate']);
-		$sinceLbl = $since ? date('d M Y', $since) : $current['startDate'];
-		echo '<p class="rk-blurb"><b>Current matching spell:</b> '
-			. $n . ' day' . ($n === 1 ? '' : 's')
-			. ' (since ' . htmlspecialchars($sinceLbl) . ')</p>';
+		$curLine = '<p class="rk-current-line' . (($st['rank'] <= 10 || $st['pct'] >= 99) ? ' rk-current-line-top' : '') . '">'
+			. '<b>Current spell (so far):</b> ' . $cn . ' day' . ($cn === 1 ? '' : 's')
+			. ($since ? ' since ' . date('d M Y', $since) : '')
+			. ' &middot; ' . htmlspecialchars(Report::rankStatsText($st, 'longest')) . '</p>';
 	}
+	echo $curLine;
+	$report->spellRankTable($spells, 'Longest ' . $dirLabel, $isAnom);
 
 	$extraMon = ($month === 0) ? '' : ' with midpoint in ' . Date::$months3[$month - 1];
 	if ($isAnom) {

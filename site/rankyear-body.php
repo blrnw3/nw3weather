@@ -54,26 +54,24 @@ function nw3_rankyear_render(Report $report) {
 			return '<a class="hidden-link" href="' . htmlspecialchars($href)
 				. '" title="View full data for year">' . $label . '</a>';
 		};
+		$yrKey = function ($ts) { return date('Y', $ts); };
+		$hiKeys = $loKeys = [];
 		for ($i = 1; $i <= $limit; $i++) {
 			if ($sortLen < $i) { break; }
 			$highest[$i] = $ranked[$sortLen - $i][0];
 			$highestDay[$i] = $fmtYr($ranked[$sortLen - $i][1]);
+			$hiKeys[$i] = $yrKey($ranked[$sortLen - $i][1]);
 			$lowest[$i] = $ranked[$i - 1][0];
 			$lowestDay[$i] = $fmtYr($ranked[$i - 1][1]);
+			$loKeys[$i] = $yrKey($ranked[$i - 1][1]);
 		}
 
-		foreach ($ranked as $rnk => $val) {
-			if ($val[1] === $curYearTs) {
-				$highest['today'] = $lowest['today'] = $val[0];
-				$lowestDay['today'] = $rnk + 1;
-				$highestDay['today'] = $sortLen - $rnk;
-			}
-			if ($val[1] === $lastYearTs) {
-				$highest['yest'] = $lowest['yest'] = $val[0];
-				$lowestDay['yest'] = $rnk + 1;
-				$highestDay['yest'] = $sortLen - $rnk;
-			}
-		}
+		// Current year is partial (so far); last year is complete.
+		$keys = array('today' => $yrKey($curYearTs), 'yest' => $yrKey($lastYearTs));
+		$cur = Report::currentRanks($ranked, $keys, $yrKey);
+		$labels = array('todayLabel' => 'Current year (so far)', 'yestLabel' => 'Last year');
+		$ctxHi = Report::rankCtx($cur, $hiKeys, $keys, true, $highest, $labels);
+		$ctxLo = Report::rankCtx($cur, $loKeys, $keys, false, $lowest, $labels);
 
 		// Annual totals are ~12× monthly; scale colour divisor accordingly.
 		$sumOff = ($st === Data::SUMMARY_SUM) ? $report->valcolSumOffset() * 12 : 1;
@@ -81,9 +79,15 @@ function nw3_rankyear_render(Report $report) {
 		$displayUnit = $report->summaryDisplayUnit($st);
 		$name = $report->summaryCaptionName($st);
 		echo "<div id='rank-$st' class='rank-tab'>";
+		foreach (array('today' => date('Y', $curYearTs) . ' (so far)', 'yest' => date('Y', $lastYearTs)) as $k => $lbl) {
+			if (isset($cur[$k])) {
+				echo Report::currentRankLine($lbl, $cur[$k]['hi'], $cur[$k]['lo'],
+					$report->rankValueText($cur[$k]['v'], $isCount, $displayUnit), 'highest', 'lowest');
+			}
+		}
 		echo '<div class="rk-pair">';
-		$report->rankTable($highest, $highestDay, $limit, 'Top annual ' . $name, true, true, true, 'annual', $isCount, $sumOff, $displayUnit);
-		$report->rankTable($lowest, $lowestDay, $limit, 'Bottom annual ' . $name, false, true, true, 'annual', $isCount, $sumOff, $displayUnit);
+		$report->rankTable($highest, $highestDay, $limit, 'Top annual ' . $name, true, true, true, 'annual', $isCount, $sumOff, $displayUnit, $ctxHi);
+		$report->rankTable($lowest, $lowestDay, $limit, 'Bottom annual ' . $name, false, true, true, 'annual', $isCount, $sumOff, $displayUnit, $ctxLo);
 		echo '</div>';
 		$extraTh = Data::isThresholdSummary($st) ? (' (' . $report->summaryThresholdPhrase($st) . ')') : '';
 		echo '<p class="rk-blurb">' . $report->description . ' annual extremes: ' . $explain[$st] . $extraTh . '.<br />'

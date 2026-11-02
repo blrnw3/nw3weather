@@ -3045,6 +3045,28 @@ body.cam-modal-open {
 	background-color: #fff4c2;
 	box-shadow: inset 0 0 0 1px #e0c25a;
 }
+.rk-row.rk-current-prev .rk-rank,
+.rk-row.rk-current-prev .rk-date {
+	background-color: #fbf8ea;
+}
+.rk-pctl {
+	display: block;
+	font-weight: 400;
+	font-size: 0.85em;
+	line-height: 1.2em;
+	color: #555;
+}
+.rk-current-line {
+	max-width: 42rem;
+	margin: 0.25rem 0 0.35rem;
+	font-size: 0.9rem;
+	color: #333;
+}
+.rk-current-line-top {
+	padding: 0.25rem 0.6rem;
+	border-left: 4px solid #e0c25a;
+	background: #fff8d9;
+}
 .rk-status {
 	max-width: 42rem;
 	margin: 0.4rem 0 0.7rem;

@@ -38,31 +38,40 @@ function nw3_rankday_render(Report $report) {
 	};
 
 	$highest = $lowest = $highestDay = $lowestDay = [];
+	$hiKeys = $loKeys = [];
+	$dayKey = function ($ts) { return date('Y-m-d', $ts); };
 	$limit = min($sortLen, $report->rankLimit);
 	for ($i = 1; $i <= $limit; $i++) {
 		$highest[$i] = $ranked[$sortLen - $i][0];
 		$highestDay[$i] = $fmtDay($ranked[$sortLen - $i][1]);
+		$hiKeys[$i] = $dayKey($ranked[$sortLen - $i][1]);
 		$lowest[$i] = $ranked[$i - 1][0];
 		$lowestDay[$i] = $fmtDay($ranked[$i - 1][1]);
+		$loKeys[$i] = $dayKey($ranked[$i - 1][1]);
 	}
 
-	foreach ($ranked as $rnk => $val) {
-		if ($val[1] === Date::$dtstamp) {
-			$highest['today'] = $lowest['today'] = $val[0];
-			$lowestDay['today'] = $rnk + 1;
-			$highestDay['today'] = $sortLen - $rnk;
-		}
-		if ($val[1] === Date::$dtstamp_yest) {
-			$highest['yest'] = $lowest['yest'] = $val[0];
-			$lowestDay['yest'] = $rnk + 1;
-			$highestDay['yest'] = $sortLen - $rnk;
-		}
-	}
+	// Current-day rank (today is partial: labelled "so far"). Manual variables
+	// have no live today value, so only yesterday is ranked for them.
+	$keys = array(
+		'today' => $report->hasToday ? $dayKey(Date::$dtstamp) : null,
+		'yest' => $dayKey(Date::$dtstamp_yest),
+	);
+	$cur = Report::currentRanks($ranked, $keys, $dayKey);
+	$labels = array('todayLabel' => 'Today (so far)', 'yestLabel' => 'Yesterday');
+	$ctxHi = Report::rankCtx($cur, $hiKeys, $keys, true, $highest, $labels);
+	$ctxLo = Report::rankCtx($cur, $loKeys, $keys, false, $lowest, $labels);
 
 	$footCond = ($month === 0 || $month == (int)Date::$dmonth);
+	if ($footCond) {
+		foreach (array('today' => 'Today (so far)', 'yest' => 'Yesterday') as $k => $lbl) {
+			if (isset($cur[$k])) {
+				echo Report::currentRankLine($lbl, $cur[$k]['hi'], $cur[$k]['lo'], $report->rankValueText($cur[$k]['v']));
+			}
+		}
+	}
 	echo '<div class="rk-pair">';
-	$report->rankTable($highest, $highestDay, $limit, 'Highest', true, $report->hasToday, $footCond, true);
-	$report->rankTable($lowest, $lowestDay, $limit, 'Lowest', false, $report->hasToday, $footCond, true);
+	$report->rankTable($highest, $highestDay, $limit, 'Highest', true, $report->hasToday, $footCond, true, false, 1, null, $ctxHi);
+	$report->rankTable($lowest, $lowestDay, $limit, 'Lowest', false, $report->hasToday, $footCond, true, false, 1, null, $ctxLo);
 	echo '</div>';
 
 	$extraMon = ($month === 0) ? '' : ' in ' . Date::$months3[$month - 1];

@@ -186,6 +186,14 @@ class Spells {
 		return $runs;
 	}
 
+	/** Ascending spell lengths (for rank / percentile of the current spell). */
+	public static function sortedLengths($runs) {
+		$l = [];
+		foreach ($runs as $sp) { $l[] = (int)$sp['length']; }
+		sort($l);
+		return $l;
+	}
+
 	public static function makeSpell($type, $dates, $ongoing) {
 		$length = count($dates);
 		$midpointIdx = $length - 1 - (int)floor($length / 2);
@@ -310,6 +318,7 @@ class Spells {
 			'total' => count($runs),
 			'current' => $current,
 			'startYear' => $effStart,
+			'lengths' => self::sortedLengths($runs),
 		];
 	}
 
@@ -385,7 +394,7 @@ class Spells {
 			'total' => count($runs),
 			'current' => $current,
 			'startYear' => $effStart,
-			'all' => $runs,
+			'lengths' => self::sortedLengths($runs),
 		];
 	}
 
