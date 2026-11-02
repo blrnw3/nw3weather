@@ -124,7 +124,7 @@ class Page {
 		$aq['unit'] = Wx::getUnitsText(Wx::Pm25);
 		$aq['mode'] = self::aqUnits();
 		$scripts .= '<script type="text/javascript">window.NW3_AQ=' . nw3_json_encode($aq) . ';</script>'
-			. '<script type="text/javascript" src="/aq.js?20261101b"></script>';
+			. '<script type="text/javascript" src="/aq.js?20261102b"></script>';
 
 		$title = self::$title;
 		$description = self::$description;
@@ -145,7 +145,7 @@ class Page {
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
-		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20261101b" media="screen" title="screen" />
+		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20261102b" media="screen" title="screen" />
 		$colorCss
 		$scripts
 	</head>

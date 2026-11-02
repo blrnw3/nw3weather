@@ -270,18 +270,24 @@ function nw3_render_cards() {
 	// Per-band class graduates the dot colour within each band group (1-10).
 	$daqiBandClass = ($daqiBand > 0) ? ' daqi-b' . $daqiBand : '';
 	// Clickable status: opens the DAQI scale popover (aq.js, delegated so it survives the live refresh).
-	$daqiBtn = function ($text) use ($daqiClass, $daqiBandClass, $daqiBand) {
-		return '<button type="button" id="var6" class="daqi-status daqi-btn ' . $daqiClass . $daqiBandClass . '"'
-			. ' data-pm="' . htmlspecialchars((string)Live::$pm25) . '" data-band="' . (int)$daqiBand . '"'
+	// Bands above Low put the (longer) band name on its own line under the index.
+	$daqiBtn = function ($band, $name) use ($daqiClass, $daqiBandClass) {
+		$wrap = ($name !== 'Low');
+		$info = '<span class="daqi-info" aria-hidden="true">i</span>';
+		$body = $wrap
+			? 'DAQI ' . $band . $info . '<span class="daqi-name">' . $name . '</span>'
+			: 'DAQI ' . $band . ' &middot; ' . $name . $info;
+		return '<button type="button" id="var6" class="daqi-status daqi-btn ' . $daqiClass . $daqiBandClass
+			. ($wrap ? ' daqi-wrap' : '') . '"'
+			. ' data-pm="' . htmlspecialchars((string)Live::$pm25) . '" data-band="' . (int)$band . '"'
 			. ' aria-haspopup="dialog" aria-expanded="false" aria-controls="daqi-pop"'
-			. ' title="Show the DAQI scale"><span class="daqi-dot"></span>' . $text
-			. '<span class="daqi-info" aria-hidden="true">i</span></button>';
+			. ' title="Show the DAQI scale"><span class="daqi-dot"></span>' . $body . '</button>';
 	};
 	// Top of the card always shows all three scales; the rows below follow the visitor's air-quality units.
 	$pmDpa = (Page::aqUnits() === 'pm') ? -1 : 0;
 	$pm25Now = (Live::$pm25 === null)
 		? '<span id="var6" class="daqi-status daqi-unknown"><span class="daqi-dot"></span>No data</span>'
-		: $daqiBtn('DAQI ' . $daqiBand . ' &middot; ' . $daqiName);
+		: $daqiBtn($daqiBand, $daqiName);
 	$pm25Sub = (Live::$pm25 === null) ? ''
 		: 'AQI <b>' . $usAqi . '</b> &middot; PM2.5 <b>' . nw3_number_format((float)Live::$pm25, 0) . ' &micro;g/m&sup3;</b>';
 	$pmHigh = nw3_at(nw3_live_get($NOW, 'max', 'pm25'), Wx::Pm25, nw3_live_get($NOW, 'timeMax', 'pm25'), $pmDpa);

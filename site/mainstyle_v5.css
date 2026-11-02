@@ -3207,6 +3207,8 @@ body.cam-modal-open {
 	border-radius: 6px; cursor: pointer; color: #1a1a1a; text-align: left; white-space: nowrap; max-width: 100%;
 }
 .wx-card-pm25 .daqi-btn { font-size: inherit; gap: 0.3rem; }
+.daqi-btn.daqi-wrap { flex-wrap: wrap; white-space: normal; row-gap: 0; }
+.daqi-wrap .daqi-name { flex: 0 0 100%; box-sizing: border-box; padding-left: calc(0.75em + 0.3rem); }
 .daqi-btn:hover { background: #f1f4f2; }
 .daqi-btn:focus-visible { outline: 2px solid #5B8A72; outline-offset: 1px; }
 .daqi-info {
