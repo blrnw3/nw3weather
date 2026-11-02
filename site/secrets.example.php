@@ -18,3 +18,7 @@ define('PURPLEAIR_KEY', '');
 // Editing is refused while either is missing or still the placeholder.
 define('ADMIN_DATAMOD_PASSWORD', 'CHANGE_ME_PLACEHOLDER');
 define('ADMIN_POND_PASSWORD', 'CHANGE_ME_PLACEHOLDER');
+
+// Bearer token for api_recap.php (written weather recaps). At least 32 random characters; the ingest answers
+// 503 while this is missing, empty or a placeholder.
+define('NW3_RECAP_TOKEN', '');
