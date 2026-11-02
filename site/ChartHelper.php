@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/wxcharts.js?20261102g"></script>' . "\n";
+		echo '<script src="/wxcharts.js?20261102i"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */
@@ -555,24 +555,6 @@ class Charts {
 	 * Per-type metadata for selectable charts: aggregations, description, start year.
 	 * Pass $groups to limit metadata to that set (defaults to full selectableGroups).
 	 */
-	/**
-	 * Daily low/high pair shaded behind a variable's daily chart ("Daily range"), or null when it has none.
-	 * Wind uses the mean speed to the highest gust: the day's lowest wind is almost always calm.
-	 */
-	public static function envelopePair($type) {
-		static $pairs = array(
-			'tmin' => array('tmin', 'tmax'), 'tmax' => array('tmin', 'tmax'), 'tmean' => array('tmin', 'tmax'),
-			'nightmin' => array('tmin', 'tmax'), 'daymax' => array('tmin', 'tmax'),
-			'hmin' => array('hmin', 'hmax'), 'hmax' => array('hmin', 'hmax'), 'hmean' => array('hmin', 'hmax'),
-			'pmin' => array('pmin', 'pmax'), 'pmax' => array('pmin', 'pmax'), 'pmean' => array('pmin', 'pmax'),
-			'dmin' => array('dmin', 'dmax'), 'dmax' => array('dmin', 'dmax'), 'dmean' => array('dmin', 'dmax'),
-			'fmin' => array('fmin', 'fmax'), 'fmax' => array('fmin', 'fmax'), 'fmean' => array('fmin', 'fmax'),
-			'aqmin' => array('aqmin', 'aqmax'), 'aqmax' => array('aqmin', 'aqmax'), 'aqmean' => array('aqmin', 'aqmax'),
-			'wmean' => array('wmean', 'gust'), 'wmax' => array('wmean', 'gust'), 'gust' => array('wmean', 'gust'),
-		);
-		return isset($pairs[$type]) ? $pairs[$type] : null;
-	}
-
 	public static function selectableVarMeta($groups = null) {
 		if ($groups === null) { $groups = self::selectableGroups(); }
 		$map = array();
@@ -587,7 +569,7 @@ class Charts {
 					'startYear' => isset($meta['start_year']) ? (int)$meta['start_year'] : 2009,
 					'summable' => !empty($meta['summable']),
 					'about' => Wx::measureAbout($type),
-					'envelope' => self::envelopePair($type) !== null,
+					'envelope' => true, // station record range band (DailyRecords) on daily charts
 				);
 			}
 		}
@@ -891,7 +873,7 @@ class Charts {
 		echo '<div class="wxsel-options">'
 			. '<button type="button" class="wxsel-toggle active" id="cv-lta" title="Climate normals (mean/total only)">Normals</button>'
 			. '<button type="button" class="wxsel-toggle" id="cv-cume" hidden title="Running total across the year">Cumulative</button>'
-			. '<button type="button" class="wxsel-toggle" id="cv-env" hidden title="Shade each day\'s lowest to highest value">Daily range</button>'
+			. '<button type="button" class="wxsel-toggle" id="cv-env" hidden title="Shade the station\'s record low to record high for each date (since 2009)">Station record range</button>'
 			. '</div>' . "\n";
 
 		echo '</div>' . "\n"; // panel
