@@ -152,10 +152,17 @@ $forecast = Forecast::days(2);
 			inFlight = true;
 			setBusy(true);
 			var oldData = readLiveData();
-			fetch('/ajaxwxbody.php', { cache: 'no-store' })
+			fetch('/ajaxwxbody.php?clim=1', { cache: 'no-store' })
 				.then(function (r) { return r.text(); })
 				.then(function (html) {
 					body.innerHTML = html;
+					// Move the refreshed climate card into its own slot below the 31-day trends
+					var climNext = document.getElementById('clim-next');
+					var climSlot = document.getElementById('clim-slot');
+					if (climNext) {
+						if (climSlot) { climSlot.innerHTML = climNext.innerHTML; }
+						climNext.parentNode.removeChild(climNext);
+					}
 					flashLiveChanges(oldData, readLiveData());
 					tick(); // reflect the fresh reading time/age immediately
 				})
@@ -229,14 +236,12 @@ $forecast = Forecast::days(2);
 		}
 
 		// Climate card: on narrow screens, pick which records to show. Kept on the
-		// outer grid so the choice survives the live refresh.
-		var cards = document.querySelector('.wx-cards');
-		if (cards) {
-			cards.addEventListener('click', function (e) {
-				var b = e.target.closest ? e.target.closest('[data-clim-scope]') : null;
-				if (b && b.tagName === 'BUTTON') { cards.setAttribute('data-clim-scope', b.getAttribute('data-clim-scope')); }
-			});
-		}
+		// card's wrapper (further down the page) so the choice survives the live refresh.
+		document.addEventListener('click', function (e) {
+			var b = e.target.closest ? e.target.closest('#clim-wrap [data-clim-scope]') : null;
+			var wrap = document.getElementById('clim-wrap');
+			if (b && wrap && b.tagName === 'BUTTON') { wrap.setAttribute('data-clim-scope', b.getAttribute('data-clim-scope')); }
+		});
 
 		tick();
 		setInterval(tick, 1000);
@@ -293,6 +298,10 @@ Charts::dailySelectable(
 );
 ?>
 <p class="home-chart-more"><a href="wx3.php" title="Latest graphs and more chart options">More graphs &amp; options &rarr;</a></p>
+</div>
+
+<div class="wx-cards home-clim" id="clim-wrap">
+	<div id="clim-slot" class="wx-live-cards"><?php nw3_render_clim_card(); ?></div>
 </div>
 
 <?php $pond = nw3_live_get($HR24, 'misc', 'pondTemp'); ?>

@@ -302,8 +302,10 @@ function nw3_render_cards() {
 			array('24hr avg', nw3_at(nw3_live_get($HR, 'mean', 'pm25'), Wx::Pm25, null, $pmDpa)),
 			array('Yesterday avg', nw3_yest_val('mean', 'pm25', Wx::Pm25, $pmDpa)),
 		));
+}
 
-	// Climate & extremes: today against the normals and the station records (full-width row)
+/** Climate & extremes card (home page, below the 31-day trends; refreshed with the live cards). */
+function nw3_render_clim_card() {
 	ClimateCard::renderCard();
 }
 ?>
