@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/wxcharts.js?20261102b"></script>' . "\n";
+		echo '<script src="/wxcharts.js?20261102c"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */

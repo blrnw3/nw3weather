@@ -5,6 +5,7 @@
  * Relies on Live::init() having been run (via Page::init).
  */
 require_once __DIR__ . '/SunTracker.php';
+require_once __DIR__ . '/ClimateCard.php';
 function nw3_live_get($arr, $k1, $k2 = null) {
 	if ($k2 === null) {
 		return isset($arr[$k1]) ? $arr[$k1] : null;
@@ -301,5 +302,8 @@ function nw3_render_cards() {
 			array('24hr avg', nw3_at(nw3_live_get($HR, 'mean', 'pm25'), Wx::Pm25, null, $pmDpa)),
 			array('Yesterday avg', nw3_yest_val('mean', 'pm25', Wx::Pm25, $pmDpa)),
 		));
+
+	// Climate & extremes: today against the normals and the station records (full-width row)
+	ClimateCard::renderCard();
 }
 ?>
