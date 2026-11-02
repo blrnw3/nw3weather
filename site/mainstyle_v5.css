@@ -3271,7 +3271,10 @@ body.cam-modal-open {
 }
 .clim-dot-record { background: #e02b1d; }
 .clim-dot-tie { background: #f08c00; }
-.clim-dot-sofar { background: #8e44ad; }
+/* Provisional ('so far'): hollow ring in the record/equal colour */
+.clim-dot.clim-dot-sofar { background: transparent; box-sizing: border-box; border: 2px solid #999; width: 0.62em; height: 0.62em; }
+.clim-dot-record.clim-dot-sofar { border-color: #e02b1d; }
+.clim-dot-tie.clim-dot-sofar { border-color: #f08c00; }
 .clim-wet { color: #567; white-space: nowrap; }
 .clim-wet::before { content: "\00b7  "; color: #aab; }
 .clim-legend { white-space: nowrap; margin-right: 0.5em; }

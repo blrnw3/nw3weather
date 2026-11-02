@@ -306,7 +306,8 @@ class ClimateCard {
 
 	private static function dot($flag) {
 		if ($flag === null) { return ''; }
-		$cls = $flag['soFar'] ? 'sofar' : $flag['status'];
+		// Provisional flags are hollow rings in the same colour (red new record, orange equal)
+		$cls = $flag['status'] . ($flag['soFar'] ? ' clim-dot-sofar' : '');
 		$title = ($flag['status'] === self::TIE ? 'Equals the record' : 'New record') . ($flag['soFar'] ? ' so far today (provisional)' : '');
 		return '<span class="clim-dot clim-dot-' . $cls . '" title="' . $title . '"></span>';
 	}
@@ -434,7 +435,8 @@ class ClimateCard {
 		echo '<div class="clim-foot">'
 			. '<span class="clim-legend"><span class="clim-dot clim-dot-record"></span>new record</span> '
 			. '<span class="clim-legend"><span class="clim-dot clim-dot-tie"></span>equals record</span> '
-			. '<span class="clim-legend"><span class="clim-dot clim-dot-sofar"></span>provisional (so far today)</span> &middot; '
+			. '<span class="clim-legend"><span class="clim-dot clim-dot-record clim-dot-sofar"></span>'
+			. '<span class="clim-dot clim-dot-tie clim-dot-sofar"></span>provisional (so far today)</span> &middot; '
 			. 'Records since ' . $since . ' (station data; ties show the most recent year) &middot; '
 			. 'day max 09-21, night min 21-09 &middot; '
 			. '<a href="/wxaverages.php" title="Long-term NW3 climate averages">normals</a> 1971-2000; '
