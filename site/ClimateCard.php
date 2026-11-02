@@ -330,6 +330,7 @@ class ClimateCard {
 		$scopeLabels = array('day' => $dateLabel, 'month' => $monthLabel, 'all' => 'All-time');
 
 		$notes = array();
+		$active = array();
 		$body = '';
 		foreach (self::rows() as $var => $cfg) {
 			$r = $recs['vars'][$var] ?? null;
@@ -396,6 +397,7 @@ class ClimateCard {
 			foreach (array('hi', 'lo') as $dir) {
 				$f = $flags[$dir];
 				if ($f === null) { continue; }
+				$active[$f['status'] . ($f['soFar'] ? '-sofar' : '')] = true;
 				$name = $cfg[$dir === 'hi' ? 'nameHi' : 'nameLo'];
 				$what = ($f['scope'] === 'all') ? 'All-time record ' . $name
 					: (($f['scope'] === 'month') ? $monthLabel . ' record ' . $name : 'Record ' . $name . ' for ' . $dateLabel);
@@ -432,11 +434,22 @@ class ClimateCard {
 			echo '<th class="clim-s-' . $s . ' clim-gs">Low</th><th class="clim-s-' . $s . '">High</th>';
 		}
 		echo '</tr></thead><tbody>' . $body . '</tbody></table></div>';
+		// Key: only the marker types shown on the card right now
+		$key = '';
+		foreach (array(self::RECORD => 'new record', self::TIE => 'equals record') as $st => $lab) {
+			if (isset($active[$st])) {
+				$key .= '<span class="clim-legend"><span class="clim-dot clim-dot-' . $st . '"></span>' . $lab . '</span> ';
+			}
+		}
+		$rings = '';
+		foreach (array(self::RECORD, self::TIE) as $st) {
+			if (isset($active[$st . '-sofar'])) { $rings .= '<span class="clim-dot clim-dot-' . $st . ' clim-dot-sofar"></span>'; }
+		}
+		if ($rings !== '') {
+			$key .= '<span class="clim-legend">' . $rings . 'provisional (so far today)</span> ';
+		}
 		echo '<div class="clim-foot">'
-			. '<span class="clim-legend"><span class="clim-dot clim-dot-record"></span>new record</span> '
-			. '<span class="clim-legend"><span class="clim-dot clim-dot-tie"></span>equals record</span> '
-			. '<span class="clim-legend"><span class="clim-dot clim-dot-record clim-dot-sofar"></span>'
-			. '<span class="clim-dot clim-dot-tie clim-dot-sofar"></span>provisional (so far today)</span> &middot; '
+			. ($key !== '' ? $key . '&middot; ' : '')
 			. 'Records since ' . $since . ' (station data; ties show the most recent year) &middot; '
 			. 'day max 09-21, night min 21-09 &middot; '
 			. '<a href="/wxaverages.php" title="Long-term NW3 climate averages">normals</a> 1971-2000; '
