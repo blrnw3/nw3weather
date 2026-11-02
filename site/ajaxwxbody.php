@@ -9,3 +9,9 @@ Page::init([
 ]);
 require __DIR__ . '/live-body.php';
 nw3_render_cards();
+// The home page also refreshes its climate card, which sits further down the page.
+if (isset($_GET['clim'])) {
+	echo '<div id="clim-next" hidden>';
+	nw3_render_clim_card();
+	echo '</div>';
+}
