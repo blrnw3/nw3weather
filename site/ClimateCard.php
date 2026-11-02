@@ -5,22 +5,24 @@
  * all time, with flags when today sets (or is on course for) a record.
  *
  * Record tables come from the station's daily data (2009 onwards) and are
- * cached in CACHE_ROOT/serialised_climrec.txt. Cron rebuilds the cache with
- * the detail summaries; a request rebuilds it only when it is for another day.
- * Today's row is always left out of the tables, so today is compared with
- * every earlier day.
+ * precomputed into CACHE_ROOT/serialised_climrec.txt. Cron rebuilds the cache
+ * after each data refresh; a request rebuilds it only when it is for another
+ * day or the daily data files have changed since it was built (one request
+ * at a time, others keep using the previous tables meanwhile). Today's row is
+ * always left out of the tables, so today is compared with every earlier day.
  */
 class ClimateCard {
 	const CACHE_FILE = 'serialised_climrec.txt';
-	const CACHE_VERSION = 2;
+	const CACHE_VERSION = 3;
 
 	/** First year used for records (the station record). */
 	const SINCE_YEAR = Site::BASE_YEAR;
 
-	/** London hour from which a record low maximum is shown ('so far'). */
-	const LOW_MAX_FROM_HOUR = 15;
-	/** London hour from which a record high minimum is shown ('so far'). */
-	const HIGH_MIN_FROM_HOUR = 10;
+	/** Day max covers 09-21: a record low day max is provisional from 15:00 and confirmed at 21:00. */
+	const LOW_DAYMAX_FROM_HOUR = 15;
+	const DAYMAX_END_HOUR = 21;
+	/** Night min covers 21-09: a record high night min is confirmed at 09:00. */
+	const NIGHTMIN_END_HOUR = 9;
 
 	/** Wet-day threshold (mm) for the rain normal: % of years with rain on this date. */
 	const WET_MM = 0.2;
@@ -32,46 +34,104 @@ class ClimateCard {
 	const TIE = 'tie';
 
 	/**
-	 * Card rows. 'lo'/'hi' say which extremes are shown; 'flagLo'/'flagHi' say
-	 * which can be flagged: 'now' as soon as today passes the record (the value
-	 * can only move further past it), or an hour after which the record is
-	 * shown as 'so far' (the value can still move back before midnight).
+	 * Card rows, keyed by daily data series. 'lo'/'hi' say which extremes are
+	 * shown; 'flagLo'/'flagHi' say which can be flagged:
+	 *   'now' - as soon as today passes the record (the value can only move further past it)
+	 *   ['from' => h, 'final' => h] - shown as provisional ('so far') from hour 'from'
+	 *     and as confirmed from hour 'final', when the series' period has ended.
+	 * 'dp' is the rounding (native units) used for records and comparisons.
+	 * 'norm' is the normals series.
 	 */
 	public static function rows() {
 		return array(
-			'tmax' => array('label' => 'High', 'unit' => Wx::Temperature, 'lo' => true, 'hi' => true,
-				'flagHi' => 'now', 'flagLo' => self::LOW_MAX_FROM_HOUR, 'nameHi' => 'high', 'nameLo' => 'low maximum'),
-			'tmin' => array('label' => 'Low', 'unit' => Wx::Temperature, 'lo' => true, 'hi' => true,
-				'flagLo' => 'now', 'flagHi' => self::HIGH_MIN_FROM_HOUR, 'nameLo' => 'low', 'nameHi' => 'high minimum'),
-			'tmean' => array('label' => 'Mean', 'unit' => Wx::Temperature, 'lo' => true, 'hi' => true),
-			'rain' => array('label' => 'Rain', 'unit' => Wx::Rain, 'lo' => false, 'hi' => true,
+			'daymax' => array('label' => 'Day max', 'title' => 'Highest temperature 09:00-21:00',
+				'unit' => Wx::Temperature, 'dp' => 1, 'norm' => 'tmax', 'lo' => true, 'hi' => true,
+				'flagHi' => 'now', 'flagLo' => array('from' => self::LOW_DAYMAX_FROM_HOUR, 'final' => self::DAYMAX_END_HOUR),
+				'nameHi' => 'high day max', 'nameLo' => 'low day max'),
+			'nightmin' => array('label' => 'Night min', 'title' => 'Lowest temperature 21:00-09:00 (overnight into today)',
+				'unit' => Wx::Temperature, 'dp' => 1, 'norm' => 'tmin', 'lo' => true, 'hi' => true,
+				'flagLo' => 'now', 'flagHi' => array('from' => self::NIGHTMIN_END_HOUR, 'final' => self::NIGHTMIN_END_HOUR),
+				'nameLo' => 'low night min', 'nameHi' => 'high night min'),
+			'tmean' => array('label' => 'Mean', 'title' => 'Mean temperature (midnight to midnight)',
+				'unit' => Wx::Temperature, 'dp' => 1, 'norm' => 'tmean', 'lo' => true, 'hi' => true),
+			'rain' => array('label' => 'Rain', 'unit' => Wx::Rain, 'dp' => 1, 'norm' => 'rain', 'lo' => false, 'hi' => true,
 				'flagHi' => 'now', 'nameHi' => 'daily rainfall'),
-			'sunhr' => array('label' => 'Sunshine', 'unit' => Wx::Hours, 'lo' => 'day', 'hi' => true,
+			'sunhr' => array('label' => 'Sunshine', 'unit' => Wx::Hours, 'dp' => 1, 'norm' => 'sunhr', 'lo' => 'day', 'hi' => true,
 				'flagHi' => 'now', 'nameHi' => 'daily sunshine'),
-			'gust' => array('label' => 'Max gust', 'unit' => Wx::Wind, 'lo' => false, 'hi' => true,
+			'gust' => array('label' => 'Max gust', 'unit' => Wx::Wind, 'dp' => 0, 'norm' => null, 'lo' => false, 'hi' => true,
 				'flagHi' => 'now', 'nameHi' => 'gust'),
 		);
 	}
 
-	/** Cached record tables for the date of $now, rebuilt when missing or for another day. */
+	/** Daily data files the record tables are built from. */
+	private static function sourceFiles() {
+		$out = array();
+		foreach (array_keys(self::rows()) as $var) {
+			$out[$var] = CACHE_ROOT . "serialised_dat_new_$var.txt";
+		}
+		return $out;
+	}
+
+	/** Cheap fingerprint of the source files (mtime and size), so data edits invalidate the cache. */
+	private static function signature() {
+		clearstatcache();
+		$sig = array();
+		foreach (self::sourceFiles() as $var => $f) {
+			$sig[$var] = is_file($f) ? filemtime($f) . ':' . filesize($f) : '-';
+		}
+		return $sig;
+	}
+
+	private static function readCache() {
+		$path = CACHE_ROOT . self::CACHE_FILE;
+		if (!is_file($path)) { return null; }
+		$c = @unserialize(file_get_contents($path));
+		return (is_array($c) && ($c['v'] ?? null) === self::CACHE_VERSION) ? $c : null;
+	}
+
+	private static function fresh($c, $ymd, $sig) {
+		return $c !== null && ($c['date'] ?? null) === $ymd && ($c['sig'] ?? null) === $sig;
+	}
+
+	/**
+	 * Record tables for the date of $now. Served from the cache; rebuilt when it
+	 * is missing, for another day, or older than the data. Only one process
+	 * rebuilds at a time; the others keep using a same-day cache meanwhile.
+	 */
 	public static function records($now = null) {
 		$now = ($now === null) ? time() : (int)$now;
 		$ymd = date('Y-m-d', $now);
-		$path = CACHE_ROOT . self::CACHE_FILE;
-		if (is_file($path)) {
-			$c = @unserialize(file_get_contents($path));
-			if (is_array($c) && ($c['v'] ?? null) === self::CACHE_VERSION && ($c['date'] ?? null) === $ymd) {
+		$sig = self::signature();
+		$c = self::readCache();
+		if (self::fresh($c, $ymd, $sig)) {
+			return $c;
+		}
+		$sameDay = ($c !== null && ($c['date'] ?? null) === $ymd);
+		$lockFile = CACHE_ROOT . 'serialised_climrec.lock';
+		$lock = @fopen($lockFile, 'c');
+		if ($lock) { @chmod($lockFile, 0664); } // cron and web users share it
+		if ($lock && !flock($lock, LOCK_EX | LOCK_NB)) {
+			if ($sameDay) {
+				fclose($lock);
 				return $c;
 			}
+			flock($lock, LOCK_EX);
 		}
-		return self::warm($now);
+		// Another process may have finished a rebuild while we waited.
+		$c2 = self::readCache();
+		if (self::fresh($c2, $ymd, $sig)) {
+			$out = $c2;
+		} else {
+			$out = self::build($now, $sig);
+			nw3_atomic_write(CACHE_ROOT . self::CACHE_FILE, serialize($out));
+		}
+		if ($lock) { flock($lock, LOCK_UN); fclose($lock); }
+		return $out;
 	}
 
-	/** Rebuild and store the record tables (called by cron and on a new day). */
+	/** Make sure the cache is current (called by cron after each data refresh). */
 	public static function warm($now = null) {
-		$c = self::build($now);
-		nw3_atomic_write(CACHE_ROOT . self::CACHE_FILE, serialize($c));
-		return $c;
+		return self::records($now);
 	}
 
 	/**
@@ -81,12 +141,13 @@ class ClimateCard {
 	 *   all   - every day
 	 * Each extreme is ['v' => value, 'n' => number of days with that value, 'at' => the latest few of those dates, oldest first].
 	 */
-	public static function build($now = null) {
+	public static function build($now = null, $sig = null) {
 		$now = ($now === null) ? time() : (int)$now;
 		$today = date('Y-m-d', $now);
 		$m = (int)date('n', $now);
 		$d = (int)date('j', $now);
-		$out = array('v' => self::CACHE_VERSION, 'date' => $today, 'built' => time(), 'vars' => array());
+		$out = array('v' => self::CACHE_VERSION, 'date' => $today, 'built' => time(),
+			'sig' => ($sig === null) ? self::signature() : $sig, 'vars' => array());
 		foreach (self::rows() as $var => $cfg) {
 			$res = array('day' => self::blank(), 'month' => self::blank(), 'all' => self::blank(),
 				'first' => null, 'dayYears' => 0, 'dayWet' => 0);
@@ -98,7 +159,7 @@ class ClimateCard {
 						if ($val === null || $val === '' || !is_numeric($val)) { continue; }
 						$date = sprintf('%04d-%02d-%02d', $y, $mm, $dd);
 						if ($date >= $today) { continue; }
-						$v = round((float)$val, 1);
+						$v = round((float)$val, $cfg['dp']);
 						if ($res['first'] === null || $date < $res['first']) { $res['first'] = $date; }
 						self::fold($res['all'], $v, $date);
 						if ((int)$mm === $m) {
@@ -151,10 +212,21 @@ class ClimateCard {
 			$v = $NOW[$agg][$var] ?? null;
 			return ($v === null || $v === '' || !is_numeric($v)) ? null : (float)$v;
 		};
+		// Day max (09-21): '-' before 09:00. Night min (21-09): today's readings to 09:00
+		// (99 when there are none) and yesterday's 21:00-midnight minimum, saved at midnight.
+		$nightMin = $get('min', 'night');
+		if ($nightMin !== null && $nightMin >= 99) { $nightMin = null; }
+		$nminFile = ROOT . 'nmin.txt';
+		if (is_file($nminFile) && date('Ymd', filemtime($nminFile)) === date('Ymd')) {
+			$prev = explode(',', (string)file_get_contents($nminFile));
+			if (is_numeric($prev[0]) && (float)$prev[0] < 99) {
+				$nightMin = ($nightMin === null) ? (float)$prev[0] : min($nightMin, (float)$prev[0]);
+			}
+		}
 		$sun = $NOW['sun']['hours'] ?? null;
 		return array(
-			'tmax' => $get('max', 'temp'),
-			'tmin' => $get('min', 'temp'),
+			'daymax' => $get('max', 'day'),
+			'nightmin' => $nightMin,
 			'tmean' => $get('mean', 'temp'),
 			'rain' => is_numeric(Live::$rain) ? (float)Live::$rain : null,
 			'sunhr' => is_numeric($sun) ? (float)$sun : null,
@@ -172,10 +244,10 @@ class ClimateCard {
 		if ($rule === null || $today === null || $recs === null) { return null; }
 		$soFar = false;
 		if ($rule !== 'now') {
-			if ($hour < (int)$rule) { return null; }
-			$soFar = true;
+			if ($hour < (int)$rule['from']) { return null; }
+			$soFar = ($hour < (int)$rule['final']);
 		}
-		$t = round($today, 1);
+		$t = round($today, $cfg['dp']);
 		// Totals that are still zero (no rain, sun or wind yet) only "tie" a record of zero.
 		if ($dir === 'hi' && $t <= 0 && in_array($cfg['unit'], array(Wx::Rain, Wx::Hours, Wx::Wind), true)) { return null; }
 		foreach (array('all', 'month', 'day') as $scope) {
@@ -197,6 +269,9 @@ class ClimateCard {
 		if ($unit === Wx::Hours) {
 			return nw3_number_format((float)$v, 1) . ($showUnit ? ' hrs' : '');
 		}
+		if ($unit === Wx::Wind) {
+			return Wx::conv($v, $unit, $showUnit, false, -1); // whole numbers
+		}
 		return Wx::conv($v, $unit, $showUnit);
 	}
 
@@ -205,41 +280,34 @@ class ClimateCard {
 		return date($withYear ? 'j M Y' : 'j M', $ts);
 	}
 
-	/** Who holds a record: "2014", "2012, 2018" or "5 years" for a calendar date; "13 Oct 2014" or "4 Nov 2010 and 2 other days" otherwise. */
+	/** Who holds a record, for the notes: the most recent year (calendar date) or date. */
 	private static function prevWhen($rec, $scope) {
 		$at = $rec['at'];
 		if (!$at) { return ''; }
-		$n = $rec['n'] ?? count($at);
-		if ($scope === 'day') {
-			return ($n > self::KEEP_DATES) ? $n . ' years' : implode(', ', self::years($at));
-		}
-		$more = $n - 1;
-		return self::fmtDate(end($at)) . ($more ? ' and ' . $more . ' other day' . ($more > 1 ? 's' : '') : '');
+		$last = end($at);
+		return ($scope === 'day') ? substr($last, 0, 4) : self::fmtDate($last);
 	}
 
-	private static function years($at) {
-		return array_values(array_unique(array_map(function ($x) { return substr($x, 0, 4); }, $at)));
-	}
-
-	/** Small grey "(2014)" after a record value, with the dates in the tooltip. */
+	/** Small grey "(2014)" after a record value: the most recent year it was set, with all the dates in the tooltip. */
 	private static function whenHtml($rec, $scope) {
 		$at = $rec['at'];
 		if (!$at) { return ''; }
 		$n = $rec['n'] ?? count($at);
+		$last = end($at);
 		if ($n > self::KEEP_DATES) {
-			$title = 'Set on ' . $n . ' days, most recently ' . self::fmtDate(end($at));
-			$label = $n . ($scope === 'day' ? ' yrs' : ' days');
+			$title = 'Set on ' . $n . ' days, most recently ' . self::fmtDate($last);
+		} elseif ($n > 1) {
+			$title = 'Set on ' . implode(', ', array_map(function ($x) { return self::fmtDate($x); }, $at));
 		} else {
-			$title = implode(', ', array_map(function ($x) { return self::fmtDate($x); }, $at));
-			$label = implode(', ', self::years($at));
+			$title = self::fmtDate($last);
 		}
-		return ' <span class="clim-yr" title="' . htmlspecialchars($title) . '">(' . $label . ')</span>';
+		return ' <span class="clim-yr" title="' . htmlspecialchars($title) . '">(' . substr($last, 0, 4) . ')</span>';
 	}
 
 	private static function dot($flag) {
 		if ($flag === null) { return ''; }
 		$cls = $flag['soFar'] ? 'sofar' : $flag['status'];
-		$title = ($flag['status'] === self::TIE ? 'Equals the record' : 'New record') . ($flag['soFar'] ? ' so far today' : '');
+		$title = ($flag['status'] === self::TIE ? 'Equals the record' : 'New record') . ($flag['soFar'] ? ' so far today (provisional)' : '');
 		return '<span class="clim-dot clim-dot-' . $cls . '" title="' . $title . '"></span>';
 	}
 
@@ -273,17 +341,26 @@ class ClimateCard {
 
 			// Normal for the date
 			$normTitle = 'Normal for ' . $dateLabel . ' (1971-2000)';
+			$normV = null;
+			if ($cfg['norm'] !== null) {
+				$normV = LTA::getDailyAnom($cfg['norm'], $m, $d, $y);
+				$normV = nw3_is_numeric($normV) ? (float)$normV : null;
+			}
 			if ($var === 'rain') {
 				$n = $r['dayYears'] ?? 0;
-				$normal = $n ? '<span title="Rain (&ge;' . self::WET_MM . ' mm) fell on ' . $dateLabel . ' in ' . $r['dayWet'] . ' of ' . $n . ' years">'
-					. (int)round(100 * $r['dayWet'] / $n) . '% wet</span>' : '&ndash;';
-				$normV = null;
-			} elseif ($var === 'gust') {
+				$normal = '<span title="Average daily rainfall for ' . $dateLabel . ' (1971-2000)">' . self::fmt($normV, $unit) . '</span>';
+				if ($n) {
+					$normal .= ' <span class="clim-wet" title="Rain (&ge;' . self::WET_MM . ' mm) fell on ' . $dateLabel . ' in '
+						. $r['dayWet'] . ' of ' . $n . ' years since ' . self::SINCE_YEAR . '">'
+						. (int)round(100 * $r['dayWet'] / $n) . '% wet</span>';
+				}
+				$normV = null; // no difference-from-normal for rain
+			} elseif ($normV === null) {
 				$normal = '&ndash;';
-				$normV = null;
 			} else {
-				$normV = LTA::getDailyAnom($var, $m, $d, $y);
-				$normV = nw3_is_numeric($normV) ? (float)$normV : null;
+				if ($var === 'daymax' || $var === 'nightmin') {
+					$normTitle = 'Normal ' . ($var === 'daymax' ? 'maximum' : 'minimum') . ' for ' . $dateLabel . ' (1971-2000)';
+				}
 				$normal = '<span title="' . $normTitle . '">' . self::fmt($normV, $unit) . '</span>';
 			}
 
@@ -294,7 +371,8 @@ class ClimateCard {
 					. Wx::conv($tv - $normV, Wx::AbsTemp, false, true) . '</span>';
 			}
 
-			$row = '<tr><th scope="row">' . $cfg['label'] . '</th>'
+			$label = isset($cfg['title']) ? '<span title="' . $cfg['title'] . '">' . $cfg['label'] . '</span>' : $cfg['label'];
+			$row = '<tr><th scope="row">' . $label . '</th>'
 				. '<td class="clim-today">' . $todayHtml . '</td>'
 				. '<td class="clim-norm">' . $normal . '</td>';
 			foreach (array('day', 'month', 'all') as $scope) {
@@ -353,9 +431,14 @@ class ClimateCard {
 			echo '<th class="clim-s-' . $s . ' clim-gs">Low</th><th class="clim-s-' . $s . '">High</th>';
 		}
 		echo '</tr></thead><tbody>' . $body . '</tbody></table></div>';
-		echo '<div class="clim-foot">Records since ' . $since . ' (station data) &middot; '
-			. '<a href="/wxaverages.php" title="Long-term NW3 climate averages">normals</a> 1971-2000 &middot; '
-			. 'rain normal is the share of years with &ge;' . self::WET_MM . ' mm on this date &middot; '
+		echo '<div class="clim-foot">'
+			. '<span class="clim-legend"><span class="clim-dot clim-dot-record"></span>new record</span> '
+			. '<span class="clim-legend"><span class="clim-dot clim-dot-tie"></span>equals record</span> '
+			. '<span class="clim-legend"><span class="clim-dot clim-dot-sofar"></span>provisional (so far today)</span> &middot; '
+			. 'Records since ' . $since . ' (station data; ties show the most recent year) &middot; '
+			. 'day max 09-21, night min 21-09 &middot; '
+			. '<a href="/wxaverages.php" title="Long-term NW3 climate averages">normals</a> 1971-2000; '
+			. 'rain normal is the average total and the share of years with &ge;' . self::WET_MM . ' mm on this date &middot; '
 			. '<a href="/RankDay.php" title="Daily records and rankings">more records</a></div>';
 		echo '</div>';
 	}
