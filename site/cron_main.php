@@ -201,6 +201,13 @@ if($tstamp === '0028') {
 	exec(EXEC_PATH . 'warm_recap_pack.php > /dev/null 2>&1 &');
 }
 
+// Daily profile cache (DayProfile): fold in yesterday's minute log and any edited history at a quiet time, in the
+// background at low priority. Only months whose sources changed are rescanned (about 1 s a night; a full rebuild,
+// e.g. after a code change, takes about 3 minutes).
+if($tstamp === '0347') {
+	exec('nice -n 15 ' . EXEC_PATH . 'warm_day_profile.php > /dev/null 2>&1 &');
+}
+
  // Ensure that data.php did indeed run at midnight
 if($tstamp == '0700') {
 	$age = time() - filemtime(ROOT."dat" . $yr_yest . ".csv");

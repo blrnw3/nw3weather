@@ -166,6 +166,7 @@ echo '</tr>';
 </table>
 
 <p>A day-by-day progression of the temperature averages can be found <a href="/wxtempltas.php" title="Daily long-term average temperatures">here</a>.</p>
+<p>How the weather typically changes through the day, by month and year, is shown in the <a href="/wxdayprofile.php" title="Average weather at each time of day">daily profile</a>.</p>
 
 <h2>Climate charts</h2>
 <?php

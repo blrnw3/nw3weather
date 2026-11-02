@@ -97,6 +97,7 @@ serialised_historical_*.txt
 forecast_v5.json
 pm25_latest.txt
 windy_widget.txt
+dayprofile/* [daily profile cache; warm_day_profile.php full rebuilds it]
 
 ## cache/legacy
 WindTags.php
