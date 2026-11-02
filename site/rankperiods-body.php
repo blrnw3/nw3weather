@@ -15,11 +15,11 @@ function nw3_period_date_label($startTs, $endTs) {
 	$star = ($startY < Site::BASE_YEAR) ? '*' : '';
 	if ($startY === $endY && date('n', $startTs) === date('n', $endTs)) {
 		// Same month: "1–5 Jul 2024"
-		$s = date('j', $startTs) . '–' . date('j M Y', $endTs) . $star;
+		$s = date('d', $startTs) . '–' . date('d M Y', $endTs) . $star;
 	} elseif ($startY === $endY) {
-		$s = date('j M', $startTs) . ' – ' . date('j M Y', $endTs) . $star;
+		$s = date('d M', $startTs) . ' – ' . date('d M Y', $endTs) . $star;
 	} else {
-		$s = date('j M Y', $startTs) . ' – ' . date('j M Y', $endTs) . $star;
+		$s = date('d M Y', $startTs) . ' – ' . date('d M Y', $endTs) . $star;
 	}
 	$yearSecs = 86400 * 365;
 	if ((Date::$dtstamp - $endTs) < $yearSecs) {
@@ -65,6 +65,33 @@ function nw3_period_pick($ranked, $limit, $fromHigh, $noOverlap) {
 }
 
 /**
+ * Status line for the anomaly summary: is the latest complete N-day window a
+ * heatwave (every day > normal + X) or cold snap (every day < normal − X)?
+ * @param array|null $row [meanAnom, startTs, endTs, allHot, allCold]
+ * @return string HTML
+ */
+function nw3_period_anom_status(Report $report, $length, $x, $row, $startTs, $endTs) {
+	$xTxt = Wx::plainText(Wx::conv(abs((float)$x), Wx::AbsTemp, true));
+	$when = 'Latest ' . (int)$length . '-day period (' . strip_tags(nw3_period_date_label($startTs, $endTs)) . ')';
+	if ($row === null) {
+		return '<p class="rk-status rk-status-off">' . htmlspecialchars($when) . ': incomplete data.</p>';
+	}
+	$mean = htmlspecialchars(Spells::anomText($row[0]));
+	if (!empty($row[3])) {
+		return '<p class="rk-status rk-status-hot rk-status-on"><b>Heatwave:</b> every day of the '
+			. htmlspecialchars(lcfirst($when)) . ' was more than ' . htmlspecialchars($xTxt)
+			. ' above normal (mean ' . $mean . ').</p>';
+	}
+	if (!empty($row[4])) {
+		return '<p class="rk-status rk-status-cold rk-status-on"><b>Cold snap:</b> every day of the '
+			. htmlspecialchars(lcfirst($when)) . ' was more than ' . htmlspecialchars($xTxt)
+			. ' below normal (mean ' . $mean . ').</p>';
+	}
+	return '<p class="rk-status rk-status-off">' . htmlspecialchars($when) . ': mean ' . $mean
+		. ' vs normal; not a heatwave or cold snap (needs every day beyond normal ± ' . htmlspecialchars($xTxt) . ').</p>';
+}
+
+/**
  * @param Report $report
  * @return array meta for AJAX clients
  */
@@ -86,6 +113,7 @@ function nw3_rankperiods_render(Report $report) {
 		Data::SUMMARY_RANGE => 'highest and lowest period ranges (daily max − min)',
 		Data::SUMMARY_COUNT_ABOVE => 'most and fewest days at or above the chosen threshold',
 		Data::SUMMARY_COUNT_BELOW => 'most and fewest days below the chosen threshold',
+		Data::SUMMARY_ANOM => 'warmest and coldest periods relative to the daily 1991-2020 normal (mean of each day\'s anomaly)',
 	];
 
 	// Latest complete window ends on yesterday (most recent finished day).
@@ -100,8 +128,11 @@ function nw3_rankperiods_render(Report $report) {
 		if ($st !== $report->summaryType) {
 			continue;
 		}
+		$isAnom = ($st === Data::SUMMARY_ANOM);
 		$th = Data::isThresholdSummary($st) ? $threshold : null;
-		$ranked = Data::getPeriodWindows($type, $length, $st, $startY, $month, $th);
+		$ranked = $isAnom
+			? Spells::periodAnomWindows($type, $length, $startY, $month, (float)$threshold)
+			: Data::getPeriodWindows($type, $length, $st, $startY, $month, $th);
 		sort($ranked);
 		$sortLen = count($ranked);
 		$limit = ($sortLen / 2 < $report->rankLimit) ? 1 + (int)($sortLen / 2) : $report->rankLimit;
@@ -112,14 +143,25 @@ function nw3_rankperiods_render(Report $report) {
 		$limitBot = count($botRows);
 		$limitShow = max($limitTop, $limitBot);
 
+		$xTxt = $isAnom ? Wx::plainText(Wx::conv(abs((float)$threshold), Wx::AbsTemp, true)) : '';
+		$hotTag = $isAnom ? ' <span class="rk-flag rk-flag-hot" title="Heatwave: every day &gt; normal + ' . htmlspecialchars($xTxt) . '">heatwave</span>' : '';
+		$coldTag = $isAnom ? ' <span class="rk-flag rk-flag-cold" title="Cold snap: every day &lt; normal − ' . htmlspecialchars($xTxt) . '">cold snap</span>' : '';
 		$highest = $lowest = $highestDay = $lowestDay = [];
 		for ($i = 1; $i <= $limitTop; $i++) {
 			$highest[$i] = $topRows[$i - 1][0];
-			$highestDay[$i] = nw3_period_date_label($topRows[$i - 1][1], $topRows[$i - 1][2]);
+			$highestDay[$i] = nw3_period_date_label($topRows[$i - 1][1], $topRows[$i - 1][2])
+				. (($isAnom && !empty($topRows[$i - 1][3])) ? $hotTag : '');
 		}
 		for ($i = 1; $i <= $limitBot; $i++) {
 			$lowest[$i] = $botRows[$i - 1][0];
-			$lowestDay[$i] = nw3_period_date_label($botRows[$i - 1][1], $botRows[$i - 1][2]);
+			$lowestDay[$i] = nw3_period_date_label($botRows[$i - 1][1], $botRows[$i - 1][2])
+				. (($isAnom && !empty($botRows[$i - 1][4])) ? $coldTag : '');
+		}
+		// Window timestamps are noon-based; match the latest window by date.
+		$latestRow = null;
+		$latestKey = date('Y-m-d', $latestStart);
+		foreach ($ranked as $val) {
+			if (date('Y-m-d', $val[1]) === $latestKey) { $latestRow = $val; break; }
 		}
 
 		$showFoot = ($month === 0 || (int)date('n', $latestStart) === $month);
@@ -141,12 +183,21 @@ function nw3_rankperiods_render(Report $report) {
 		$displayUnit = $report->summaryDisplayUnit($st);
 		$name = $length . '-day ' . $report->summaryCaptionName($st);
 		echo "<div id='rank-$st' class='rank-tab'>";
+		if ($isAnom) {
+			echo nw3_period_anom_status($report, $length, $threshold, $latestRow, $latestStart, $latestEnd);
+			$report->valcolIdxOverride = 15;
+		}
 		echo '<div class="rk-pair">';
-		$report->rankTable($highest, $highestDay, $limitShow, 'Top ' . $name, true, true, $showFoot, 'period', $isCount, $sumOff, $displayUnit);
-		$report->rankTable($lowest, $lowestDay, $limitShow, 'Bottom ' . $name, false, true, $showFoot, 'period', $isCount, $sumOff, $displayUnit);
+		$report->rankTable($highest, $highestDay, $limitShow, $isAnom ? ('Warmest ' . $length . '-day periods vs normal') : ('Top ' . $name), true, true, $showFoot, 'period', $isCount, $sumOff, $displayUnit);
+		$report->rankTable($lowest, $lowestDay, $limitShow, $isAnom ? ('Coldest ' . $length . '-day periods vs normal') : ('Bottom ' . $name), false, true, $showFoot, 'period', $isCount, $sumOff, $displayUnit);
 		echo '</div>';
+		$report->valcolIdxOverride = null;
 		$extraMon = ($month === 0) ? '' : ' starting in ' . Date::$months3[$month - 1];
 		$extraTh = Data::isThresholdSummary($st) ? (' (' . $report->summaryThresholdPhrase($st) . ')') : '';
+		if ($isAnom) {
+			$extraTh = '. Tagged periods had every day beyond normal ± ' . htmlspecialchars($xTxt)
+				. ' (heatwave above, cold snap below)';
+		}
 		$overlapNote = $noOverlap ? ', hiding overlapping windows' : '';
 		echo '<p class="rk-blurb">' . $report->description . ' ' . $length . '-day extremes: '
 			. $explain[$st] . $extraTh . '.<br />'

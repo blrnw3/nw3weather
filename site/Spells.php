@@ -6,8 +6,62 @@
  *   above → value >= threshold (blank days break the spell)
  *   below → value < threshold (blank days break the spell, except rain dry
  *            spells where blanks count as dry to match legacy)
+ *   heatwave  → value > that calendar day's 1991-2020 normal + X (temperature only)
+ *   coldsnap  → value < that calendar day's 1991-2020 normal − X (temperature only)
  */
 class Spells {
+
+	/** Variables with daily 1991-2020 normals, so heatwave / cold snap modes apply. */
+	public static $anomVars = ['tmin', 'tmax', 'tmean'];
+
+	/** Anomaly threshold presets (°C above / below the daily normal). */
+	public static $anomPresets = [2, 3, 4, 5, 6, 8];
+	const ANOM_DEFAULT = 5;
+
+	private static $normCache = [];
+
+	/** True when heatwave / cold snap modes are offered for a variable. */
+	public static function supportsAnomaly($varName) {
+		return in_array($varName, self::$anomVars, true);
+	}
+
+	/** True for the anomaly-relative spell directions. */
+	public static function isAnomalyDir($direction) {
+		return $direction === 'heatwave' || $direction === 'coldsnap';
+	}
+
+	/**
+	 * Daily 1991-2020 normal for a Y-m-d date (memoised by leap flag + day of year).
+	 * @return float|null
+	 */
+	public static function dailyNormal($varName, $ymd) {
+		$y = (int)substr($ymd, 0, 4);
+		$m = (int)substr($ymd, 5, 2);
+		$d = (int)substr($ymd, 8, 2);
+		$leap = ($y % 4 === 0 && ($y % 100 !== 0 || $y % 400 === 0)) ? 1 : 0;
+		$key = $varName . '|' . $leap . '|' . $m . '|' . $d;
+		if (!array_key_exists($key, self::$normCache)) {
+			LTA::init();
+			$n = LTA::getDailyAnom($varName, $m, $d, $leap ? 2024 : 2023);
+			self::$normCache[$key] = nw3_is_numeric($n) ? (float)$n : null;
+		}
+		return self::$normCache[$key];
+	}
+
+	/**
+	 * Y-m-d => anomaly (value − daily normal), null where the value or normal is blank.
+	 * @param array $vals Y-m-d => value
+	 * @return array
+	 */
+	public static function anomalySeries($varName, $vals) {
+		$out = [];
+		foreach ($vals as $ymd => $v) {
+			if (Util::isBlank($v)) { $out[$ymd] = null; continue; }
+			$n = self::dailyNormal($varName, $ymd);
+			$out[$ymd] = ($n === null) ? null : round((float)$v - $n, 2);
+		}
+		return $out;
+	}
 
 	/**
 	 * Load a flat Y-m-d => value series from the requested start year.
@@ -192,6 +246,10 @@ class Spells {
 			? (int)Wx::$daily[$varName]['start_year'] : Site::BASE_YEAR;
 		$effStart = max((int)$startYear, $varStart);
 
+		if (self::isAnomalyDir($direction)) {
+			return self::rankAnomaly($varName, $vals, (float)$threshold, $direction, $effStart, $limit, $month);
+		}
+
 		$opts = [];
 		if ($varName === 'rain' && $direction === 'below') {
 			$opts['blankAsBelow'] = true;
@@ -255,15 +313,155 @@ class Spells {
 		];
 	}
 
-	/** Short chip labels for the two spell directions, keyed above|below. */
+	/**
+	 * Heatwave / cold snap ranking: runs of days each beyond normal ± X.
+	 * Blank days (or days without a normal) break a spell. Each spell also
+	 * carries its mean and peak anomaly.
+	 * @return array same shape as rankLongest
+	 */
+	private static function rankAnomaly($varName, $vals, $x, $direction, $effStart, $limit, $month) {
+		$anom = self::anomalySeries($varName, $vals);
+		$hot = ($direction === 'heatwave');
+		$runs = [];
+		$dates = [];
+		$sum = 0.0;
+		$peak = null;
+		$flush = function ($ongoing) use (&$runs, &$dates, &$sum, &$peak, $direction) {
+			if (!count($dates)) { return; }
+			$sp = self::makeSpell($direction, $dates, $ongoing);
+			$sp['meanAnom'] = $sum / count($dates);
+			$sp['peakAnom'] = $peak;
+			$runs[] = $sp;
+			$dates = [];
+			$sum = 0.0;
+			$peak = null;
+		};
+		foreach ($anom as $ymd => $a) {
+			$match = ($a !== null) && ($hot ? ($a > $x) : ($a < -$x));
+			if ($match) {
+				$dates[] = $ymd;
+				$sum += $a;
+				if ($peak === null || ($hot ? $a > $peak : $a < $peak)) { $peak = $a; }
+			} else {
+				$flush(false);
+			}
+		}
+		$flush(true);
+
+		// Ongoing = the run reaches the latest day in the series, or ends
+		// yesterday while today has no qualifying value yet (still in progress).
+		$keys = array_keys($anom);
+		$lastKey = count($keys) ? $keys[count($keys) - 1] : null;
+		$yest = date('Y-m-d', Date::mkdate((int)Date::$mon_yest, (int)Date::$day_yest, (int)Date::$yr_yest));
+		$current = null;
+		if (count($runs)) {
+			$last = $runs[count($runs) - 1];
+			$isCur = !empty($last['ongoing']) || $last['endDate'] === $yest;
+			if ($isCur) {
+				$last['ongoing'] = true;
+				$last['endsYesterday'] = ($last['endDate'] === $yest && $lastKey !== $yest);
+				$runs[count($runs) - 1] = $last;
+				$current = $last;
+			}
+		}
+
+		$month = (int)$month;
+		if ($month >= 1 && $month <= 12) {
+			$runs = array_values(array_filter($runs, function ($sp) use ($month) {
+				return (int)substr($sp['midpointDate'], 5, 2) === $month;
+			}));
+		}
+		// Longest first; ties broken by stronger mean anomaly, then earlier start.
+		$sorted = $runs;
+		usort($sorted, function ($a, $b) use ($hot) {
+			if ($a['length'] !== $b['length']) { return ($a['length'] > $b['length']) ? -1 : 1; }
+			$ma = $hot ? -$a['meanAnom'] : $a['meanAnom'];
+			$mb = $hot ? -$b['meanAnom'] : $b['meanAnom'];
+			if (abs($ma - $mb) > 1e-9) { return ($ma < $mb) ? -1 : 1; }
+			return strcmp($a['startDate'], $b['startDate']);
+		});
+		return [
+			'spells' => array_slice($sorted, 0, (int)$limit),
+			'total' => count($runs),
+			'current' => $current,
+			'startYear' => $effStart,
+			'all' => $runs,
+		];
+	}
+
+	/**
+	 * Sliding N-day windows of mean daily anomaly (value − normal), for the
+	 * Ranked Periods "anomaly" summary. Same quality rule as
+	 * Data::getPeriodWindows: every day in a window needs a value.
+	 * @param float $x heatwave / cold snap threshold (°C from normal)
+	 * @return array list of [meanAnom, startTs, endTs, allHot(0|1), allCold(0|1)]
+	 */
+	public static function periodAnomWindows($varName, $length, $startYear, $monthStart, $x) {
+		$length = max(1, (int)$length);
+		$monthStart = (int)$monthStart;
+		$anom = self::anomalySeries($varName, self::loadDailySeries($varName, $startYear));
+		$dates = array_keys($anom);
+		$a = array_values($anom);
+		$n = count($a);
+		$out = [];
+		if ($n < $length) { return $out; }
+		$span = ($length - 1) * 86400;
+		$blank = 0; $sum = 0.0; $hot = 0; $cold = 0;
+		for ($i = 0; $i < $n; $i++) {
+			$v = $a[$i];
+			if ($v === null) { $blank++; } else {
+				$sum += $v;
+				if ($v > $x) { $hot++; }
+				if ($v < -$x) { $cold++; }
+			}
+			$left = $i - $length + 1;
+			if ($left > 0) {
+				$o = $a[$left - 1];
+				if ($o === null) { $blank--; } else {
+					$sum -= $o;
+					if ($o > $x) { $hot--; }
+					if ($o < -$x) { $cold--; }
+				}
+			}
+			if ($left < 0 || $blank !== 0) { continue; }
+			$startTs = strtotime($dates[$left] . ' 12:00:00');
+			if ($startTs === false) { continue; }
+			$endTs = $startTs + $span;
+			if ($dates[$i] !== date('Y-m-d', $endTs)) { continue; }
+			if ($monthStart > 0 && (int)date('n', $startTs) !== $monthStart) { continue; }
+			$out[] = [round($sum / $length, 4), $startTs, $endTs, ($hot === $length) ? 1 : 0, ($cold === $length) ? 1 : 0];
+		}
+		return $out;
+	}
+
+	/** Short chip labels for the spell directions, keyed above|below[|heatwave|coldsnap]. */
 	public static function directionChipLabels($varName) {
-		return ($varName === 'rain')
-			? ['above' => 'Wet', 'below' => 'Dry']
-			: ['above' => 'Above', 'below' => 'Below'];
+		if ($varName === 'rain') { return ['above' => 'Wet', 'below' => 'Dry']; }
+		$labels = ['above' => 'Above', 'below' => 'Below'];
+		if (self::supportsAnomaly($varName)) {
+			$labels['heatwave'] = 'Heatwave';
+			$labels['coldsnap'] = 'Cold snap';
+		}
+		return $labels;
+	}
+
+	/** "normal + 5.0 °C" / "normal − 5.0 °C" phrase for anomaly rules. */
+	public static function anomalyPhrase($direction, $x) {
+		$txt = Wx::plainText(Wx::conv(abs((float)$x), Wx::AbsTemp, true));
+		return ($direction === 'heatwave') ? ('> normal + ' . $txt) : ('< normal − ' . $txt);
+	}
+
+	/** Signed anomaly text, e.g. "+6.3 °C". */
+	public static function anomText($a) {
+		$a = (float)$a;
+		$txt = Wx::plainText(Wx::conv(abs($a), Wx::AbsTemp, true));
+		return (($a >= 0) ? '+' : '−') . $txt;
 	}
 
 	/** Comparison symbol shown for the rule, e.g. '≥' or '>' at a zero threshold. */
 	public static function ruleSymbol($varName, $direction, $threshold) {
+		if ($direction === 'heatwave') { return '>'; }
+		if ($direction === 'coldsnap') { return '<'; }
 		$strict = self::strictAbove($varName, $threshold);
 		if ($direction === 'above') { return $strict ? '>' : '≥'; }
 		return $strict ? '≤' : '<';
@@ -275,6 +473,10 @@ class Spells {
 		$unit = isset(Wx::$daily[$varName]['unit']) ? Wx::$daily[$varName]['unit'] : Wx::None;
 		$threshTxt = Wx::plainText(Wx::conv($thresh, $unit, true));
 		$sym = self::ruleSymbol($varName, $direction, $thresh);
+		if (self::isAnomalyDir($direction)) {
+			return (($direction === 'heatwave') ? 'Heatwaves' : 'Cold snaps')
+				. ' (' . self::anomalyPhrase($direction, $thresh) . ')';
+		}
 		if ($varName === 'rain') {
 			return ($direction === 'above')
 				? 'Wet spells (' . $sym . ' ' . $threshTxt . ')'

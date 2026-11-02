@@ -1270,10 +1270,12 @@ class Data {
 	const SUMMARY_RANGE = 5;
 	const SUMMARY_COUNT_ABOVE = 6;
 	const SUMMARY_COUNT_BELOW = 7;
+	/** Mean daily anomaly vs the 1991-2020 normal (Ranked Periods, temperature only). */
+	const SUMMARY_ANOM = 8;
 
 	public static $SUMMARY_NAMES = [
 		"mean", "total", "count", "lowest", "highest",
-		"range", "count ≥", "count <"
+		"range", "count ≥", "count <", "anomaly"
 	];
 	public static $SUMMARY_EXPLAIN = [
 		"monthly average",
@@ -1284,6 +1286,7 @@ class Data {
 		"range of daily values in each month (max − min)",
 		"number of days at or above a threshold",
 		"number of days below a threshold",
+		"mean difference from the daily normal",
 	];
 
 	/** True for thresholded day-count summaries. */

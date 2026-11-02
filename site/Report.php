@@ -27,6 +27,8 @@ class Report {
 	public $dayAgg;             // '' | 'min' | 'max' | 'mean' (calendar-day all-years)
 	public $periodLength;       // N-day period length for RankPeriods
 	public $periodNoOverlap;    // true = skip overlapping windows in period rankings
+	public $periodAnom = false; // Ranked Periods offers the anomaly summary (temperature)
+	public $valcolIdxOverride = null; // colour scheme override (e.g. anomaly tables)
 
 	// ---- Derived metadata for $type ----
 	public $meta;               // Wx::$daily[$type]
@@ -85,7 +87,7 @@ class Report {
 	private static $valcolLevel = [
 		0 => 'temp', 1 => 'humi', 2 => 'press', 3 => 'wind', 4 => 'degr', 5 => 'rain',
 		6 => 'rtmax', 7 => 'tchg', 8 => 'hchg', 9 => 'prng', 10 => 'dhrs', 11 => 'dhrs',
-		12 => 'temp', 13 => 'dhrs', 14 => 'aqi',
+		12 => 'temp', 13 => 'dhrs', 14 => 'aqi', 15 => 'temp',
 	];
 
 	/** Variable grouping for the colgroup drop-down (legacy $categories). */
@@ -166,6 +168,7 @@ class Report {
 	 */
 	public function summaryDisplayUnit($summaryType = null) {
 		$st = ($summaryType === null) ? $this->summaryType : (int)$summaryType;
+		if ($st === Data::SUMMARY_ANOM) { return Wx::AbsTemp; }
 		if ($st === Data::SUMMARY_RANGE && $this->unit === Wx::Temperature) {
 			return Wx::AbsTemp;
 		}
@@ -175,7 +178,12 @@ class Report {
 	/** True when the current (or given) summary type needs a threshold chip row. */
 	public function needsThreshold($summaryType = null) {
 		$st = ($summaryType === null) ? $this->summaryType : (int)$summaryType;
-		return Data::isThresholdSummary($st);
+		return Data::isThresholdSummary($st) || $st === Data::SUMMARY_ANOM;
+	}
+
+	/** Display labels for anomaly presets ("±5 °C"). */
+	public static function anomThresholdLabel($th) {
+		return '±' . Wx::plainText(Wx::conv(abs((float)$th), Wx::AbsTemp, false));
 	}
 
 	/**
@@ -194,6 +202,9 @@ class Report {
 	public function periodTitleSuffix($summaryType = null) {
 		$st = ($summaryType === null) ? $this->summaryType : (int)$summaryType;
 		$cap = $this->summaryCaptionName($st);
+		if ($st === Data::SUMMARY_ANOM) {
+			return $this->description . ' · ' . $this->periodLength . '-day anomaly vs 1991-2020 normal';
+		}
 		if (Data::isThresholdSummary($st)) {
 			return $this->description . ' · ' . $this->periodLength . '-day ' . $cap;
 		}
@@ -227,8 +238,9 @@ class Report {
 	/** Display labels for the current variable's threshold presets. */
 	public function thresholdLabels() {
 		$labels = [];
+		$anom = ($this->spellThresholds === Spells::$anomPresets);
 		foreach ($this->spellThresholds as $th) {
-			$labels[] = Wx::plainText(Wx::conv($th, $this->unit, false));
+			$labels[] = $anom ? self::anomThresholdLabel($th) : Wx::plainText(Wx::conv($th, $this->unit, false));
 		}
 		return $labels;
 	}
@@ -304,11 +316,24 @@ class Report {
 		$this->startYrReport = isset($_GET['start_year_rep']) ? (int)$_GET['start_year_rep'] : 2009;
 		$this->startYrReport = self::nearestStartYear($this->startYrReport, $this->startYearOptions);
 
-		// Spell ranking selectors
-		$this->spellDir = (isset($_GET['spell_dir']) && $_GET['spell_dir'] === 'below') ? 'below' : 'above';
-		// Spell / count-threshold selectors share the same preset list.
-		$this->spellThresholds = Wx::thresholdPresets($this->type);
-		$defThresh = Wx::defaultThreshold($this->type, $this->unit);
+		// Spell ranking selectors (heatwave / cold snap only for temperature normals).
+		$dirIn = isset($_GET['spell_dir']) ? (string)$_GET['spell_dir'] : 'above';
+		if ($dirIn === 'below') {
+			$this->spellDir = 'below';
+		} elseif (Spells::isAnomalyDir($dirIn) && Spells::supportsAnomaly($this->type)) {
+			$this->spellDir = $dirIn;
+		} else {
+			$this->spellDir = 'above';
+		}
+		$this->periodAnom = !empty($opts['periodAnom']) && Spells::supportsAnomaly($this->type);
+		$gSum = isset($_GET['summary_type']) ? (int)$_GET['summary_type'] : 0;
+		$anomThresh = !empty($opts['spellPage'])
+			? Spells::isAnomalyDir($this->spellDir)
+			: ($this->periodAnom && $gSum === Data::SUMMARY_ANOM);
+		// Spell / count-threshold selectors share the same preset list; anomaly
+		// modes use °C-from-normal presets instead.
+		$this->spellThresholds = $anomThresh ? Spells::$anomPresets : Wx::thresholdPresets($this->type);
+		$defThresh = $anomThresh ? Spells::ANOM_DEFAULT : Wx::defaultThreshold($this->type, $this->unit);
 		if (isset($_GET['threshold']) && nw3_is_numeric($_GET['threshold'])) {
 			$this->spellThreshold = (float)$_GET['threshold'];
 		} else {
@@ -337,9 +362,12 @@ class Report {
 			$this->availSummaryTypes[] = Data::SUMMARY_COUNT_ABOVE;
 			$this->availSummaryTypes[] = Data::SUMMARY_COUNT_BELOW;
 		}
+		if ($this->periodAnom) {
+			$this->availSummaryTypes[] = Data::SUMMARY_ANOM;
+		}
 
 		$g = isset($_GET['summary_type']) ? (int)$_GET['summary_type'] : 0;
-		if ($g < 0 || $g > 7) { $g = 0; }
+		if ($g < 0 || $g > 8) { $g = 0; }
 		if ($g <= 1) { $g = (int)$this->isSum; }
 		if (!in_array($g, $this->availSummaryTypes, true)) { $g = $this->availSummaryTypes[0]; }
 		$this->summaryType = $g;
@@ -383,6 +411,8 @@ class Report {
 			10 => [0, 0.3, 0.5, 1, 2, 3, 5, 7, 9, 12, 15],
 			11 => [0, 10, 20, 25, 35, 50, 65, 75, 85, 90, 95],
 			12 => [-10, -5, -2, 0, 2, 5, 10, 15, 20],
+			// Temperature anomaly vs normal, symmetric about zero (shaded in °C).
+			15 => [-8, -6, -4, -2, 0, 2, 4, 6, 8],
 			13 => [25, 50, 75, 90, 100, 110, 125, 150, 175, 200, 250],
 			// Shaded on the converted value: AQI, DAQI index (band n -> level n-1) or raw PM2.5.
 			14 => (Page::aqUnits() === 'aqi') ? [25, 50, 75, 100, 125, 150, 200, 300, 500]
@@ -397,6 +427,9 @@ class Report {
 	 * @param bool $countable use the day-count scale instead of the value scale
 	 */
 	public function valcolr($value, $countable = false) {
+		if ($this->valcolIdxOverride !== null && !$countable) {
+			return self::valcolForIdx($this->valcolIdxOverride, $value);
+		}
 		return self::valcolForType($this->type, $value, $countable);
 	}
 
@@ -416,6 +449,18 @@ class Report {
 		if (!isset(self::$valcolLevel[$idx], self::$thresholds[$idx])) { return 'reportday'; }
 		$level = self::$valcolLevel[$idx];
 		$values = $countable ? [0, 1, 3, 5, 7, 10, 15, 20, 25, 30, 31] : self::$thresholds[$idx];
+		for ($i = 0; $i < count($values); $i++) {
+			if ($value <= $values[$i]) { return 'level' . $level . '_' . $i; }
+		}
+		return 'level' . $level . '_' . $i;
+	}
+
+	/** Value-colour class for an explicit scheme index (e.g. 15 = temperature anomaly). */
+	public static function valcolForIdx($idx, $value) {
+		self::initThresholds();
+		if (!isset(self::$valcolLevel[$idx], self::$thresholds[$idx])) { return 'reportday'; }
+		$level = self::$valcolLevel[$idx];
+		$values = self::$thresholds[$idx];
 		for ($i = 0; $i < count($values); $i++) {
 			if ($value <= $values[$i]) { return 'level' . $level . '_' . $i; }
 		}
@@ -798,7 +843,7 @@ class Report {
 				$active = ($st === $this->summaryType) ? ' active' : '';
 				$label = ucfirst(Data::$SUMMARY_NAMES[$st]);
 				$hrefParams = array('summary_type' => $st);
-				if (Data::isThresholdSummary($st)) {
+				if ($this->needsThreshold($st)) {
 					$hrefParams['threshold'] = $this->spellThreshold;
 				}
 				echo '<a class="wxsel-chip' . $active . '" data-summary="' . (int)$st
@@ -814,9 +859,10 @@ class Report {
 			. ($showThreshold ? '' : ' hidden') . '>';
 		echo '<div class="wxsel-label">Threshold</div>';
 		echo '<div class="wxsel-scale wxsel-threshold" role="tablist">';
-		foreach ($this->spellThresholds as $th) {
+		$thLabels = $this->thresholdLabels();
+		foreach ($this->spellThresholds as $ti => $th) {
 			$active = (abs($th - $this->spellThreshold) < 1e-9) ? ' active' : '';
-			$label = Wx::plainText(Wx::conv($th, $this->unit, false));
+			$label = $thLabels[$ti];
 			echo '<a class="wxsel-chip' . $active . '" data-threshold="' . htmlspecialchars((string)$th)
 				. '" href="' . $selUrl(array('threshold' => $th)) . '">'
 				. htmlspecialchars($label) . '</a>';
@@ -1156,6 +1202,7 @@ class Report {
 
 	private function rankVal($v, $isCount, $unit = null) {
 		if ($isCount) { return $v; }
+		if ($this->valcolIdxOverride === 15) { return Spells::anomText($v); }
 		$u = ($unit !== null) ? $unit : $this->unit;
 		if ($u === Wx::Pm25) { return Wx::aqSpan($v, Wx::conv($v, $u, false), Wx::aqAvg($this->type)); }
 		return Wx::conv($v, $u, false);
@@ -1166,7 +1213,7 @@ class Report {
 			return self::dayCountClass($v);
 		}
 		$u = ($unit !== null) ? $unit : $this->unit;
-		$num = $this->valcolConvert ? Wx::convNum($v, $u) : (float)$v;
+		$num = ($this->valcolConvert && $this->valcolIdxOverride === null) ? Wx::convNum($v, $u) : (float)$v;
 		return $this->valcolr(($num === null ? 0 : $num) / $sumOff, $isCount);
 	}
 
@@ -1180,15 +1227,18 @@ class Report {
 	}
 
 	/**
-	 * Spell ranking table: # / Length / Period.
+	 * Spell ranking table: # / Length / Period (+ Anomaly for heatwave / cold snap).
+	 * The ongoing spell's row is highlighted.
 	 * @param array $spells list of spell records from Spells::rankLongest
 	 * @param string $title
+	 * @param bool $withAnom add a mean / peak anomaly column
 	 */
-	public function spellRankTable($spells, $title) {
-		echo '<div class="rk-grid rk-left" style="float:none;width:100%;max-width:42rem;">';
+	public function spellRankTable($spells, $title, $withAnom = false) {
+		echo '<div class="rk-grid rk-left rk-spells' . ($withAnom ? ' rk-grid-anom' : '') . '">';
 		echo '<div class="rk-caption">' . htmlspecialchars($title) . '</div>';
 		echo '<div class="rk-row rk-head">';
 		echo '<div class="rk-lab">#</div><div class="rk-lab">Length</div><div class="rk-lab">Period</div>';
+		if ($withAnom) { echo '<div class="rk-lab" title="Mean (peak) difference from the daily 1991-2020 normal">Anomaly</div>'; }
 		echo '</div>';
 
 		$yearSecs = 86400 * 365;
@@ -1196,24 +1246,34 @@ class Report {
 			$n = (int)$spell['length'];
 			$startTs = strtotime($spell['startDate']);
 			$endTs = strtotime($spell['endDate']);
-			$startLbl = $startTs ? date('j M Y', $startTs) : $spell['startDate'];
-			$endLbl = !empty($spell['ongoing']) ? 'Current' : ($endTs ? date('j M Y', $endTs) : $spell['endDate']);
+			$startLbl = $startTs ? date('d M Y', $startTs) : $spell['startDate'];
+			$endLbl = !empty($spell['ongoing']) ? 'Current' : ($endTs ? date('d M Y', $endTs) : $spell['endDate']);
 			$pre2009 = $startTs && (int)date('Y', $startTs) < Site::BASE_YEAR;
 			$period = $startLbl . ' – ' . $endLbl . ($pre2009 ? '*' : '');
 			if ($startTs && (Date::$dtstamp - $startTs) < $yearSecs) {
 				$period = '<b>' . $period . '</b>';
 			}
-			echo '<div class="rk-row">';
+			$cur = !empty($spell['ongoing']);
+			echo '<div class="rk-row' . ($cur ? ' rk-current' : '') . '"'
+				. ($cur ? ' title="Current spell (so far)"' : '') . '>';
 			echo '<div class="rk-rank">' . ($i + 1) . '</div>';
 			echo '<div class="rk-val spell-length spell-length-'
 				. Spells::lengthColourLevel($n) . '">' . $n . ' day'
-				. ($n === 1 ? '' : 's') . '</div>';
+				. ($n === 1 ? '' : 's') . ($cur ? '+' : '') . '</div>';
 			echo '<div class="rk-date">' . $period . '</div>';
+			if ($withAnom) {
+				$mean = isset($spell['meanAnom']) ? (float)$spell['meanAnom'] : 0.0;
+				$peak = isset($spell['peakAnom']) ? (float)$spell['peakAnom'] : $mean;
+				echo '<div class="rk-val rk-anom ' . self::valcolForIdx(15, $mean) . '">'
+					. htmlspecialchars(Spells::anomText($mean))
+					. ' <span class="rk-anom-peak">(' . htmlspecialchars(Spells::anomText($peak)) . ')</span></div>';
+			}
 			echo '</div>';
 		}
 		if (!count($spells)) {
 			echo '<div class="rk-row"><div class="rk-rank">–</div>'
-				. '<div class="rk-val">No spells</div><div class="rk-date"></div></div>';
+				. '<div class="rk-val">No spells</div><div class="rk-date"></div>'
+				. ($withAnom ? '<div class="rk-val"></div>' : '') . '</div>';
 		}
 		echo '</div>';
 	}

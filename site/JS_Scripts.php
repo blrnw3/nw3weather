@@ -160,7 +160,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		var reqSeq = 0;
 		function isThresholdSummary(st) {
 			st = parseInt(st, 10);
-			return st === 6 || st === 7;
+			return st === 6 || st === 7 || st === 8; // 8 = anomaly (± normal)
 		}
 		function syncThresholdVisibility() {
 			var row = document.getElementById('report-sel-threshold');
@@ -372,13 +372,16 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		}
 		function syncSpellDirChips() {
 			if (!spellDirEl) { return; }
-			spellDirEl.querySelectorAll('a.wxsel-chip[data-spell-dir]').forEach(function (a) {
-				var d = a.getAttribute('data-spell-dir');
-				a.classList.toggle('active', d === curSpellDir);
-				a.setAttribute('href', pageUrl({ spell_dir: d }));
-				// Rain reads as wet/dry, everything else as above/below.
-				if (spellDirLabels[d]) { a.textContent = spellDirLabels[d]; }
-			});
+			// Chip set depends on the variable (wet/dry, above/below, heatwave/cold snap).
+			var html = '', d;
+			if (!spellDirLabels[curSpellDir]) { curSpellDir = 'above'; }
+			for (d in spellDirLabels) {
+				if (!Object.prototype.hasOwnProperty.call(spellDirLabels, d)) { continue; }
+				html += '<a class="wxsel-chip' + (d === curSpellDir ? ' active' : '')
+					+ '" data-spell-dir="' + d + '" href="' + pageUrl({ spell_dir: d }) + '">'
+					+ spellDirLabels[d] + '</a>';
+			}
+			spellDirEl.innerHTML = html;
 		}
 		function syncThresholdChips() {
 			if (!thresholdEl) { return; }
@@ -501,8 +504,13 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			if (meta.startYears && meta.startYears.length) {
 				startYearOpts = meta.startYears.map(function (x) { return parseInt(x, 10); });
 			}
-			if (meta.spellDirLabels && meta.spellDirLabels.length === 2) {
-				spellDirLabels = { above: meta.spellDirLabels[0], below: meta.spellDirLabels[1] };
+			if (meta.spellDirLabels && meta.spellDirLabels.length) {
+				var sdl = {};
+				meta.spellDirLabels.forEach(function (pair) {
+					var ix = pair.indexOf(':');
+					if (ix > 0) { sdl[pair.substring(0, ix)] = pair.substring(ix + 1); }
+				});
+				if (sdl.above) { spellDirLabels = sdl; }
 			}
 			root.setAttribute('data-type', curType);
 			root.setAttribute('data-year', String(curYear));
