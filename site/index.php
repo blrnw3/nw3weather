@@ -545,7 +545,7 @@ function displayMonthlyReport($mon, $yr) {
 			$bigRnsFull had &gt;$mm10 of rain, and <b>$bigGusts</b> with gusts &gt;$mph30.</dd>
 		</dl>
 		<p>All long-term <a href='/wxaverages.php' title='Long-term NW3 climate averages'>climate averages</a>
-		are with respect to the period 1971-2000. &nbsp;
+		are with respect to the period 1991-2020. &nbsp;
 		<a href='/wxhistmonth.php'>View full report</a></p>";
 }
 ?>

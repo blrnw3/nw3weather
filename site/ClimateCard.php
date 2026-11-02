@@ -342,7 +342,7 @@ class ClimateCard {
 			);
 
 			// Normal for the date
-			$normTitle = 'Normal for ' . $dateLabel . ' (1971-2000)';
+			$normTitle = 'Normal for ' . $dateLabel . ' (1991-2020)';
 			$normV = null;
 			if ($cfg['norm'] !== null) {
 				$normV = LTA::getDailyAnom($cfg['norm'], $m, $d, $y);
@@ -350,7 +350,7 @@ class ClimateCard {
 			}
 			if ($var === 'rain') {
 				$n = $r['dayYears'] ?? 0;
-				$normal = '<span title="Average daily rainfall for ' . $dateLabel . ' (1971-2000)">' . self::fmt($normV, $unit) . '</span>';
+				$normal = '<span title="Average daily rainfall for ' . $dateLabel . ' (1991-2020)">' . self::fmt($normV, $unit) . '</span>';
 				if ($n) {
 					$normal .= ' <span class="clim-wet" title="Rain (&ge;' . self::WET_MM . ' mm) fell on ' . $dateLabel . ' in '
 						. $r['dayWet'] . ' of ' . $n . ' years since ' . self::SINCE_YEAR . '">'
@@ -361,7 +361,7 @@ class ClimateCard {
 				$normal = '&ndash;';
 			} else {
 				if ($var === 'daymax' || $var === 'nightmin') {
-					$normTitle = 'Normal ' . ($var === 'daymax' ? 'maximum' : 'minimum') . ' for ' . $dateLabel . ' (1971-2000)';
+					$normTitle = 'Normal ' . ($var === 'daymax' ? 'maximum' : 'minimum') . ' for ' . $dateLabel . ' (1991-2020)';
 				}
 				$normal = '<span title="' . $normTitle . '">' . self::fmt($normV, $unit) . '</span>';
 			}
@@ -450,9 +450,9 @@ class ClimateCard {
 		}
 		echo '<div class="clim-foot">'
 			. ($key !== '' ? $key . '&middot; ' : '')
-			. 'Records since ' . $since . ' (station data; ties show the most recent year) &middot; '
+			. 'Records since ' . $since . ' (ties show the most recent year) &middot; '
 			. 'day max 09-21, night min 21-09 &middot; '
-			. '<a href="/wxaverages.php" title="Long-term NW3 climate averages">normals</a> 1971-2000; '
+			. '<a href="/wxaverages.php" title="Long-term NW3 climate averages">normals</a> 1991-2020; '
 			. 'rain normal is the average total and the share of years with &ge;' . self::WET_MM . ' mm on this date &middot; '
 			. '<a href="/RankDay.php" title="Daily records and rankings">more records</a></div>';
 		echo '</div>';
