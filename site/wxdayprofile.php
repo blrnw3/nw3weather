@@ -39,17 +39,9 @@ foreach (($meta['vars']['sun']['estYears'] ?? []) as $y => $n) { $estYears['sun'
 rsort($allYears);
 ?>
 <style>
-.dp-controls { margin: 0.4em 0 0.2em; }
-.dp-row { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 6px; align-items: center; }
-.dp-row .dp-lab { width: 4.5em; font-size: 0.85em; color: #555; }
-.dp-btn { display: inline-block; padding: 3px 8px; border: 1px solid #bbb; border-radius: 4px; background: #f7f7f7;
-	color: #333; text-decoration: none; font-size: 0.85em; line-height: 1.4; }
-.dp-btn:hover { background: #e9eef5; }
-.dp-btn.on { background: #3b5b8c; border-color: #3b5b8c; color: #fff; }
-.dp-btn.off { opacity: 0.35; pointer-events: none; }
-.dp-btn.est::after { content: '*'; }
-.dp-opts { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; font-size: 0.85em; margin: 4px 0 2px; }
-.dp-opts label { cursor: pointer; }
+.report-sel .wxsel-chip.dp-off { opacity: 0.35; pointer-events: none; }
+.report-sel .wxsel-chip.est::after { content: '*'; }
+#main .report-sel .wxsel-chip[hidden] { display: none; }
 #dp-chart { min-height: 440px; margin-top: 4px; }
 .dp-summary { font-size: 0.9em; margin: 4px 0; }
 .dp-note, .dp-foot { font-size: 0.85em; color: #555; margin: 3px 0; }
@@ -59,7 +51,6 @@ table.dp-q td.num, table.dp-q th.num { text-align: right; white-space: nowrap; }
 details.dp-rules summary { cursor: pointer; font-size: 0.9em; margin: 6px 0; }
 details.dp-rules li { font-size: 0.85em; margin: 2px 0; }
 @media (max-width: 600px) {
-	.dp-row .dp-lab { width: 100%; }
 	#dp-chart { min-height: 340px; }
 	table.dp-q .dp-why { display: none; }
 }
@@ -76,35 +67,71 @@ details.dp-rules li { font-size: 0.85em; margin: 2px 0; }
 	<p><b>The daily profiles are being prepared. Please check back later.</b></p>
 <?php Page::End(); exit; } ?>
 
-<div class="dp-controls" id="dp-controls">
-	<div class="dp-row" data-dp="var"><span class="dp-lab">Variable</span>
-	<?php foreach (DayProfile::$VARS as $v => $c) {
-		echo '<a class="dp-btn' . ($v === $var ? ' on' : '') . '" data-v="' . $h($v) . '" href="' . $h($link($v, $year, $month)) . '">' . $h($c['short']) . '</a>';
+<?php
+// Selectors in the data tables' style (Report button selectors): variable groups, then their measures, then period.
+$groupOrder = ['temp' => ['temp'], 'rain' => ['rain', 'wet'], 'pres' => ['pres'], 'wind' => ['wind', 'gust'],
+	'humi' => ['humi'], 'dewp' => ['dewp'], 'sun' => ['sun']];
+$chipLabel = ['temp' => 'Temperature', 'dewp' => 'Dew point', 'humi' => 'Humidity', 'pres' => 'Pressure',
+	'wind' => 'Mean speed', 'gust' => 'Gust', 'rain' => 'Rain rate', 'wet' => 'Wet % of time', 'sun' => 'Sunshine % of time'];
+$groupMeta = [];
+foreach (Charts::selectableGroups() as $g) { $groupMeta[$g['id']] = $g; }
+$activeGroup = 'temp';
+foreach ($groupOrder as $gid => $vs) { if (in_array($var, $vs, true)) { $activeGroup = $gid; } }
+$recentYears = array_slice($allYears, 0, 5);
+$olderYears = array_slice($allYears, 5);
+$yearChip = function ($y) use ($h, $link, $var, $year, $month, $years, $estYears) {
+	$cls = ($y === $year ? ' active' : '') . (in_array($y, $years, true) ? '' : ' dp-off') . (isset($estYears[$var][$y]) ? ' est' : '');
+	return '<a rel="nofollow" class="wxsel-chip' . $cls . '" data-v="' . $y . '" href="' . $h($link($var, $y, $month)) . '">' . $y . '</a>';
+};
+?>
+<div class="report-sel" id="dp-controls">
+	<div class="report-sel-row"><div class="wxsel-groups" role="tablist">
+	<?php foreach ($groupOrder as $gid => $vs) {
+		$g = $groupMeta[$gid] ?? ['label' => DayProfile::$VARS[$vs[0]]['short']];
+		$icon = isset($g['icon']) ? '<img src="' . $h($g['icon']) . '" alt="" width="16" height="16" />' : '';
+		echo '<button type="button" class="' . ($gid === $activeGroup ? 'active' : '') . '" data-group="' . $h($gid)
+			. '" data-default-type="' . $h($vs[0]) . '" title="' . $h($g['label']) . '">' . $icon . '<span>' . $h($g['label']) . '</span></button>';
 	} ?>
-	</div>
-	<div class="dp-row" data-dp="year"><span class="dp-lab">Year</span>
-	<?php
-	echo '<a rel="nofollow" class="dp-btn' . (!$year ? ' on' : '') . '" data-v="0" href="' . $h($link($var, 0, $month)) . '">All years</a>';
-	foreach ($allYears as $y) {
-		$cls = ($y === $year ? ' on' : '') . (in_array($y, $years, true) ? '' : ' off') . (isset($estYears[$var][$y]) ? ' est' : '');
-		echo '<a rel="nofollow" class="dp-btn' . $cls . '" data-v="' . $y . '" href="' . $h($link($var, $y, $month)) . '">' . $y . '</a>';
+	</div></div>
+	<div class="report-sel-row"><div class="wxsel-subtypes" role="tablist" data-dp="var">
+	<?php foreach ($groupOrder as $gid => $vs) {
+		foreach ($vs as $v) {
+			echo '<a class="wxsel-chip' . ($v === $var ? ' active' : '') . '" data-v="' . $h($v) . '" data-group="' . $h($gid) . '"'
+				. ($gid === $activeGroup ? '' : ' hidden') . ' href="' . $h($link($v, $year, $month)) . '">' . $h($chipLabel[$v]) . '</a>';
+		}
 	} ?>
-	</div>
-	<div class="dp-row" data-dp="month"><span class="dp-lab">Month</span>
+	</div></div>
+	<div class="report-sel-row report-sel-labelled"><div class="wxsel-label">Year</div>
+	<div class="wxsel-scale wxsel-years" role="tablist" data-dp="year">
 	<?php
-	echo '<a rel="nofollow" class="dp-btn' . (!$month ? ' on' : '') . '" data-v="0" href="' . $h($link($var, $year, 0)) . '">All months</a>';
+	echo '<a rel="nofollow" class="wxsel-chip' . (!$year ? ' active' : '') . '" data-v="0" href="' . $h($link($var, 0, $month)) . '">All</a>';
+	foreach ($recentYears as $y) { echo $yearChip($y); }
+	if ($olderYears) {
+		$inOlder = in_array($year, $olderYears, true);
+		echo '<details class="wxsel-overflow"><summary class="wxsel-chip' . ($inOlder ? ' active' : '') . '">' . ($inOlder ? $year : 'Older') . '</summary>';
+		echo '<div class="wxsel-overflow-menu">';
+		foreach ($olderYears as $y) { echo $yearChip($y); }
+		echo '</div></details>';
+	} ?>
+	</div></div>
+	<div class="report-sel-row report-sel-labelled"><div class="wxsel-label">Month</div>
+	<div class="wxsel-scale wxsel-months" role="tablist" data-dp="month">
+	<?php
+	echo '<a rel="nofollow" class="wxsel-chip' . (!$month ? ' active' : '') . '" data-v="0" href="' . $h($link($var, $year, 0)) . '">All</a>';
 	foreach ($months as $i => $mn) {
-		echo '<a rel="nofollow" class="dp-btn' . ($month === $i + 1 ? ' on' : '') . '" data-v="' . ($i + 1) . '" href="' . $h($link($var, $year, $i + 1)) . '">' . $mn . '</a>';
+		echo '<a rel="nofollow" class="wxsel-chip' . ($month === $i + 1 ? ' active' : '') . '" data-v="' . ($i + 1) . '" href="' . $h($link($var, $year, $i + 1)) . '">' . $mn . '</a>';
 	} ?>
-	</div>
-	<div class="dp-opts">
-		<span>Average over:
-			<label><input type="radio" name="dp-bin" value="5" /> 5 min</label>
-			<label><input type="radio" name="dp-bin" value="30" /> 30 min</label>
-			<label><input type="radio" name="dp-bin" value="60" /> 1 hour</label>
-		</span>
-		<label id="dp-cmp-wrap"><input type="checkbox" id="dp-cmp" checked="checked" /> Compare with long-term profile</label>
-	</div>
+	</div></div>
+	<div class="report-sel-row report-sel-labelled"><div class="wxsel-label">Average over</div>
+	<div class="wxsel-scale" role="tablist" id="dp-bins">
+		<button type="button" class="wxsel-chip" data-bin="5">5 min</button>
+		<button type="button" class="wxsel-chip" data-bin="30">30 min</button>
+		<button type="button" class="wxsel-chip" data-bin="60">1 hour</button>
+	</div></div>
+	<div class="report-sel-row report-sel-labelled" id="dp-cmp-wrap"><div class="wxsel-label">Compare with</div>
+	<div class="wxsel-scale">
+		<button type="button" class="wxsel-chip active" id="dp-cmp" aria-pressed="true">Long-term profile</button>
+	</div></div>
 </div>
 
 <div id="dp-chart" class="wxchart"></div>
@@ -134,7 +161,7 @@ $js = [
 	'built' => isset($meta['stats']['built']) ? date('j M Y H:i', $meta['stats']['built']) : null,
 ];
 Charts::assets();
-echo '<script src="/dayprofile.js?20261102h"></script>' . "\n";
+echo '<script src="/dayprofile.js?20261102j"></script>' . "\n";
 Charts::run('NW3DayProfile.init(' . nw3_json_encode($js) . ');');
 ?>
 
