@@ -13,6 +13,7 @@ Page::Start();
 $report = new Report([
 	"default" => "rain",
 	"badCats" => ["wdir", "cloud", "comms", "extra", "issues", "away", "spare"],
+	"spellPage" => true,
 ]);
 $report->controls([
 	"heading" => "Historical Ranked Spells",

@@ -14,7 +14,7 @@ Page::init([
 ]);
 Page::requireNw3Ajax();
 
-$report = new Report(['default' => 'tmax', 'badCats' => ['cloud']]);
+$report = new Report(['default' => 'tmax', 'badCats' => ['cloud'], 'periodAnom' => true]);
 
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: public, max-age=300');

@@ -17,6 +17,7 @@ Page::requireNw3Ajax();
 $report = new Report([
 	'default' => 'rain',
 	'badCats' => ['wdir', 'cloud', 'comms', 'extra', 'issues', 'away', 'spare'],
+	'spellPage' => true,
 ]);
 
 header('Content-Type: text/html; charset=utf-8');
@@ -25,6 +26,13 @@ header('Cache-Control: no-store');
 ob_start();
 $meta = nw3_rankspells_render($report);
 $html = ob_get_clean();
+
+/** "above:Above,below:Below,…" for the JS chip re-render. */
+function nw3_spell_dir_attr($labels) {
+	$out = [];
+	foreach ($labels as $k => $v) { $out[] = $k . ':' . $v; }
+	return implode(',', $out);
+}
 
 $threshList = array_map(function ($t) { return (string)$t; }, $meta['thresholds']);
 $thLabels = isset($meta['thresholdLabels']) ? $meta['thresholdLabels'] : [];
@@ -36,7 +44,7 @@ echo '<div id="rs-fragment"'
 	. ' data-start-years="' . htmlspecialchars(implode(',', $meta['startYearOptions'])) . '"'
 	. ' data-rank-limit="' . (int)$meta['rankLimit'] . '"'
 	. ' data-spell-dir="' . htmlspecialchars($meta['spellDir']) . '"'
-	. ' data-spell-dir-labels="' . htmlspecialchars(implode(',', $meta['spellDirLabels'])) . '"'
+	. ' data-spell-dir-labels="' . htmlspecialchars(nw3_spell_dir_attr($meta['spellDirLabels'])) . '"'
 	. ' data-threshold="' . htmlspecialchars((string)$meta['threshold']) . '"'
 	. ' data-thresholds="' . htmlspecialchars(implode(',', $threshList)) . '"'
 	. ' data-threshold-labels="' . htmlspecialchars(implode('|', $thLabels)) . '"'

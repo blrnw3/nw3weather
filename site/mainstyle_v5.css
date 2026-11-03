@@ -3027,6 +3027,59 @@ body.cam-modal-open {
 .spell-length-7 { background-color: #327e52; color: #fff; }
 .spell-length-8 { background-color: #20643e; color: #fff; }
 .spell-length-9 { background-color: #104b2d; color: #fff; }
+.rk-spells {
+	float: none;
+	width: 100%;
+	max-width: 42rem;
+}
+.rk-spells.rk-grid-anom {
+	max-width: 52rem;
+}
+.rk-grid-anom .rk-row {
+	grid-template-columns: 2.4rem minmax(4rem, 0.8fr) minmax(9rem, 1.8fr) minmax(4.5rem, 0.8fr) minmax(6.5rem, 1.1fr) minmax(5.5rem, 0.9fr);
+}
+.rk-anom-peak {
+	font-weight: 400;
+	font-size: 0.9em;
+	opacity: 0.85;
+}
+.rk-row.rk-current .rk-rank,
+.rk-row.rk-current .rk-date {
+	background-color: #fff4c2;
+	box-shadow: inset 0 0 0 1px #e0c25a;
+}
+.rk-status {
+	max-width: 42rem;
+	margin: 0.4rem 0 0.7rem;
+	padding: 0.4rem 0.7rem;
+	border-radius: 6px;
+	border: 1px solid #d5dbe3;
+	background: #f6f8fb;
+	color: #333;
+	font-size: 0.9rem;
+}
+.rk-status-on.rk-status-hot {
+	background: #fff0e6;
+	border-color: #f0a56e;
+	color: #6b2a00;
+}
+.rk-status-on.rk-status-cold {
+	background: #e9f2ff;
+	border-color: #86aee6;
+	color: #0d3266;
+}
+.rk-flag {
+	display: inline-block;
+	margin-left: 0.3em;
+	padding: 0 0.4em;
+	border-radius: 0.7em;
+	font-size: 0.78em;
+	font-weight: 600;
+	line-height: 1.4em;
+	vertical-align: baseline;
+}
+.rk-flag-hot { background: #ffe0cc; color: #8a3300; }
+.rk-flag-cold { background: #dbe9ff; color: #133f80; }
 .rk-foot {
 	margin-top: 0.35rem;
 	font-weight: 600;
@@ -3200,6 +3253,13 @@ body.cam-modal-open {
 @media only screen and (max-width: 486px) {
 	.rk-pair {
 		flex-direction: column;
+	}
+	.rk-grid-anom .rk-row {
+		grid-template-columns: 1.5rem minmax(2.6rem, 0.6fr) minmax(4.8rem, 1.3fr) minmax(3rem, 0.7fr) minmax(3.4rem, 0.8fr) minmax(3rem, 0.8fr);
+		font-size: 0.92em;
+	}
+	.rk-anom-peak {
+		display: block;
 	}
 	.rk-grid {
 		width: 100%;

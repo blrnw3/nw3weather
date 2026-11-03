@@ -28,7 +28,7 @@ Page::init([
 ]);
 Page::Start();
 
-$report = new Report(["default" => "tmax", "badCats" => ["cloud"]]);
+$report = new Report(["default" => "tmax", "badCats" => ["cloud"], "periodAnom" => true]);
 $report->controls([
 	"heading" => "Historical Ranked Periods",
 	"mode" => "rank-periods",
