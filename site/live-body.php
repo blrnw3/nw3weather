@@ -6,6 +6,7 @@
  */
 require_once __DIR__ . '/SunTracker.php';
 require_once __DIR__ . '/ClimateCard.php';
+require_once __DIR__ . '/RankFlags.php';
 function nw3_live_get($arr, $k1, $k2 = null) {
 	if ($k2 === null) {
 		return isset($arr[$k1]) ? $arr[$k1] : null;
@@ -307,5 +308,7 @@ function nw3_render_cards() {
 /** Climate & extremes card (home page, below the 31-day trends; refreshed with the live cards). */
 function nw3_render_clim_card() {
 	ClimateCard::renderCard();
+	// Notable rankings (precomputed by warm_rank_flags.php); nothing when none qualify.
+	RankFlags::renderCard();
 }
 ?>

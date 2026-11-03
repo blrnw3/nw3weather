@@ -201,6 +201,12 @@ if($tstamp === '0028') {
 	exec(EXEC_PATH . 'warm_recap_pack.php > /dev/null 2>&1 &');
 }
 
+// Home page "notable in the rankings" flag: ranks today / this month / year / latest periods / current spells against
+// the full record (about 15 s), so every 15 minutes in the background rather than every 5.
+if(in_array(substr($tstamp, 2, 2), array('02', '17', '32', '47'), true)) {
+	exec('nice -n 10 ' . EXEC_PATH . 'warm_rank_flags.php > /dev/null 2>&1 &');
+}
+
 // Daily profile cache (DayProfile): fold in yesterday's minute log and any edited history at a quiet time, in the
 // background at low priority. Only months whose sources changed are rescanned (about 1 s a night; a full rebuild,
 // e.g. after a code change, takes about 3 minutes).
