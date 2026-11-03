@@ -24,7 +24,13 @@ function nw3_spell_anom_status(Report $report, $dir, $x, $current) {
 		return '<p class="' . $cls . ' rk-status-on"><b>' . $noun . ' in progress:</b> '
 			. $n . ' day' . ($n === 1 ? '' : 's') . ' so far, since ' . htmlspecialchars($sinceLbl)
 			. ' (mean ' . htmlspecialchars(Spells::anomText($current['meanAnom']))
-			. ', peak ' . htmlspecialchars(Spells::anomText($current['peakAnom'])) . $extra . '). '
+			. ', peak ' . htmlspecialchars(Spells::anomText($current['peakAnom']))
+			. (isset($current['meanVal']) && $current['meanVal'] !== null
+				? '; mean ' . Wx::conv((float)$current['meanVal'], $report->unit, false) : '')
+			. (isset($current['peakVal']) && $current['peakVal'] !== null
+				? '; ' . ($hot ? 'highest ' : 'lowest ') . Wx::conv((float)$current['peakVal'], $report->unit, false)
+				: '')
+			. $extra . '). '
 			. 'Rule: ' . $rule . '.</p>';
 	}
 	return '<p class="rk-status rk-status-off">No ' . strtolower($noun) . ' in progress (' . $rule . ').</p>';
