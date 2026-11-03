@@ -1,0 +1,319 @@
+<?php
+/**
+ * Home-page "notable rankings" flag: does today, the current month / year,
+ * the latest N-day period or a current spell rank near the top or bottom of
+ * the station's all-time rankings for any variable?
+ *
+ * Built by warm_rank_flags.php (cron_main, every 5 minutes, in the background)
+ * into CACHE_ROOT/rank_flags.json; the home page only reads that file.
+ *
+ * Qualifies: percentile >= PCT, or rank <= TOP_N with percentile >= TOP_N_PCT
+ * (so a top-10 inside a big tie, e.g. one of 200 frost-free Octobers, or in a
+ * short record does not count), in either direction. Rank and percentile follow
+ * the ranking pages (Report::rankStats): competition rank, percentile = share
+ * of other entries strictly beaten in that direction.
+ *
+ * Partial items (today so far, month / year so far, a spell still running) only
+ * count in the direction more data cannot undo: totals, counts, maxima and
+ * spell lengths can only rise, minima only fall. They are labelled "so far".
+ */
+class RankFlags {
+
+	const TOP_N = 10;
+	const PCT = 99.0;
+	const TOP_N_PCT = 90.0;
+	const FILE = 'rank_flags.json';
+	const MAX_AGE = 3600;     // ignore a cache older than this (cron stalled)
+	const SHOW = 4;           // items shown before "more"
+
+	/** Variables never ranked here (directions, notes, manual flags, pond). */
+	private static $skip = ['wdir', 'cloud', 'comms', 'extra', 'issues', 'away', 'spare', 'pond'];
+
+	/** Day definitions differ from midnight-midnight: no "today so far" for these. */
+	private static $noToday = ['nightmin', 'daymax'];
+
+	/** Variables with N-day period checks, and the lengths checked. */
+	private static $periodVars = ['tmax', 'tmin', 'tmean', 'rain'];
+	private static $periodLengths = [7, 30];
+
+	/** Spell checks: [var, direction, threshold]. */
+	private static $spellChecks = [
+		['rain', 'above', 0.2], ['rain', 'below', 0.2],
+		['tmax', 'heatwave', 5], ['tmax', 'coldsnap', 5],
+		['tmin', 'heatwave', 5], ['tmin', 'coldsnap', 5],
+	];
+
+	private static $manualVars = [
+		'sunhr', 'wethr', 'cloud', 'snow', 'lysnw', 'hail', 'thunder', 'fog',
+		'comms', 'extra', 'issues', 'away', 'pond', 'spare',
+	];
+
+	public static function file() {
+		return CACHE_ROOT . self::FILE;
+	}
+
+	/** Ranked daily variables, in the data-table category order. */
+	public static function vars() {
+		$out = [];
+		foreach (Report::$categories as $types) {
+			foreach ($types as $t) {
+				if (isset(Wx::$daily[$t]) && !in_array($t, self::$skip, true)) { $out[] = $t; }
+			}
+		}
+		return $out;
+	}
+
+	private static function isSum($var) {
+		$m = Wx::$daily[$var];
+		return !empty($m['summable']) || !empty($m['count-only']);
+	}
+
+	/** Direction a partial value can only move in: 'hi', 'lo' or null. */
+	/** Daily lows that are just "nothing happened" (dry, calm-rate, frost-free days). */
+	private static function dayLowBoring($var) {
+		return self::isSum($var) || in_array($var, ['hrmax', '10max', 'ratemax', 'ratemean'], true);
+	}
+
+	public static function monotoneDir($var) {
+		if (self::isSum($var)) { return 'hi'; }
+		if (preg_match('/(max|range|gust)$/', $var) || $var === 'gust') { return 'hi'; }
+		if (preg_match('/min$/', $var)) { return 'lo'; }
+		return null;
+	}
+
+	private static function qualifies($st) {
+		return $st['n'] > 1
+			&& ($st['pct'] >= self::PCT || ($st['rank'] <= self::TOP_N && $st['pct'] >= self::TOP_N_PCT));
+	}
+
+	/** Evaluate one item in the allowed directions; append to $items when it qualifies. */
+	private static function consider(&$items, $cur, $dirs, $base, $words = ['highest', 'lowest']) {
+		if (!$cur) { return; }
+		$best = null;
+		foreach ($dirs as $d) {
+			$st = ($d === 'hi') ? $cur['hi'] : $cur['lo'];
+			if (!self::qualifies($st)) { continue; }
+			if ($best === null || $st['rank'] < $best[1]['rank']) { $best = [$d, $st]; }
+		}
+		if ($best === null) { return; }
+		list($d, $st) = $best;
+		$items[] = $base + [
+			'value' => $cur['v'],
+			'dir' => $d,
+			'word' => ($d === 'hi') ? $words[0] : $words[1],
+			'rank' => $st['rank'],
+			'n' => $st['n'],
+			'tied' => $st['tied'],
+			'pct' => round($st['pct'], 2),
+		];
+	}
+
+	private static function url($page, $params) {
+		return '/' . $page . '?' . http_build_query($params);
+	}
+
+	/**
+	 * Build the full flag list (CLI / cron). Expensive: every variable's full record.
+	 * @return array ['generated' => ts, 'items' => [...], 'ms' => int]
+	 */
+	public static function build() {
+		$t0 = microtime(true);
+		LTA::init();
+		$items = [];
+		$endY = (int)Date::$dyear;
+		$dayKey = function ($ts) { return date('Y-m-d', $ts); };
+		$monKey = function ($ts) { return date('Y-m', $ts); };
+		$yrKey = function ($ts) { return date('Y', $ts); };
+		$todayKey = $dayKey(Date::$dtstamp);
+		$yestKey = $dayKey(Date::$dtstamp_yest);
+		$curMonTs = Date::mkdate((int)Date::$dmonth, 1, (int)Date::$dyear);
+		$lastMonTs = Date::mkdate((int)Date::$dmonth - 1, 1, (int)Date::$dyear);
+		$dom = (int)Date::$dday;
+		$doy = (int)date('z', Date::$dtstamp) + 1;
+
+		foreach (self::vars() as $var) {
+			$meta = Wx::$daily[$var];
+			$start = isset($meta['start_year']) ? (int)$meta['start_year'] : Site::BASE_YEAR;
+			$isSum = self::isSum($var);
+			$mono = self::monotoneDir($var);
+			$unit = isset($meta['unit']) ? $meta['unit'] : Wx::None;
+			$common = ['var' => $var, 'desc' => isset($meta['description']) ? $meta['description'] : $var,
+				'unit' => $unit, 'count' => !empty($meta['count-only'])];
+
+			// Days
+			$ranked = [];
+			foreach (Data::getDailyData($var, $start) as $y => $months) {
+				foreach ($months as $m => $daily) {
+					foreach ($daily as $d => $v) {
+						if (!Util::isBlank($v)) { $ranked[] = [(float)$v, Date::mkdate($m, $d, $y)]; }
+					}
+				}
+			}
+			sort($ranked);
+			$hasToday = !in_array($var, self::$manualVars, true) && empty($meta['derived'])
+				&& !in_array($var, self::$noToday, true);
+			$cur = Report::currentRanks($ranked, ['today' => $hasToday ? $todayKey : null, 'yest' => $yestKey], $dayKey);
+			$dayUrl = self::url('RankDay.php', ['vartype' => $var, 'month' => 0, 'start_year_rep' => $start, 'rankLimit' => 25]);
+			if (isset($cur['today']) && $mono !== null && !($mono === 'lo' && self::dayLowBoring($var))) {
+				self::consider($items, $cur['today'], [$mono], $common + ['kind' => 'day', 'label' => 'Today', 'date' => $todayKey, 'soFar' => true, 'url' => $dayUrl]);
+			}
+			if (isset($cur['yest'])) {
+				self::consider($items, $cur['yest'], self::dayLowBoring($var) ? ['hi'] : ['hi', 'lo'], $common + ['kind' => 'day', 'label' => 'Yesterday', 'date' => $yestKey, 'soFar' => false, 'url' => $dayUrl]);
+			}
+			unset($ranked);
+
+			// Months and years: totals for summable variables, else means.
+			$st = $isSum ? Data::SUMMARY_SUM : Data::SUMMARY_MEAN;
+			$mRanked = [];
+			foreach (Data::getMonthlySummary($var, $st, $start, $endY, null) as $y => $months) {
+				foreach ($months as $m => $v) {
+					if (!Util::isBlank($v)) { $mRanked[] = [(float)$v, Date::mkdate($m, 1, $y)]; }
+				}
+			}
+			sort($mRanked);
+			$cur = Report::currentRanks($mRanked, ['today' => $monKey($curMonTs), 'yest' => $monKey($lastMonTs)], $monKey);
+			$monUrl = self::url('RankMonth.php', ['vartype' => $var, 'month' => 0, 'start_year_rep' => $start, 'summary_type' => $st, 'rankLimit' => 25]);
+			$sumWord = $isSum ? 'total' : 'mean';
+			if (isset($cur['today']) && $isSum) {
+				self::consider($items, $cur['today'], ['hi'], $common + ['kind' => 'month', 'label' => date('F', $curMonTs), 'agg' => $sumWord, 'soFar' => true, 'url' => $monUrl]);
+			}
+			if (isset($cur['yest']) && $dom <= 7) {
+				self::consider($items, $cur['yest'], ['hi', 'lo'], $common + ['kind' => 'month', 'label' => date('F', $lastMonTs), 'agg' => $sumWord, 'soFar' => false, 'url' => $monUrl]);
+			}
+			$yRanked = [];
+			foreach (Data::getAnnualData($var, $st, $start, $endY, null) as $y => $v) {
+				if (!Util::isBlank($v)) { $yRanked[] = [(float)$v, Date::mkdate(1, 1, $y)]; }
+			}
+			sort($yRanked);
+			$cur = Report::currentRanks($yRanked, ['today' => (string)$endY, 'yest' => (string)($endY - 1)], $yrKey);
+			$yrUrl = self::url('RankYear.php', ['vartype' => $var, 'start_year_rep' => $start, 'summary_type' => $st]);
+			if (isset($cur['today']) && $isSum) {
+				self::consider($items, $cur['today'], ['hi'], $common + ['kind' => 'year', 'label' => (string)$endY, 'agg' => $sumWord, 'soFar' => true, 'url' => $yrUrl]);
+			}
+			if (isset($cur['yest']) && $doy <= 14) {
+				self::consider($items, $cur['yest'], ['hi', 'lo'], $common + ['kind' => 'year', 'label' => (string)($endY - 1), 'agg' => $sumWord, 'soFar' => false, 'url' => $yrUrl]);
+			}
+		}
+
+		// Latest complete N-day periods (ending yesterday).
+		$latestEnd = Date::mkdate((int)Date::$mon_yest, (int)Date::$day_yest, (int)Date::$yr_yest);
+		foreach (self::$periodVars as $var) {
+			if (!isset(Wx::$daily[$var])) { continue; }
+			$meta = Wx::$daily[$var];
+			$start = isset($meta['start_year']) ? (int)$meta['start_year'] : Site::BASE_YEAR;
+			$st = self::isSum($var) ? Data::SUMMARY_SUM : Data::SUMMARY_MEAN;
+			foreach (self::$periodLengths as $len) {
+				$ranked = Data::getPeriodWindows($var, $len, $st, $start, 0, null);
+				sort($ranked);
+				$startKey = $dayKey($latestEnd - ($len - 1) * 86400);
+				$cur = Report::currentRanks($ranked, ['today' => $startKey], $dayKey);
+				if (!isset($cur['today'])) { continue; }
+				self::consider($items, $cur['today'], ['hi', 'lo'], [
+					'var' => $var, 'desc' => $meta['description'], 'unit' => $meta['unit'], 'count' => false,
+					'kind' => 'period', 'label' => 'last ' . $len . ' days', 'agg' => self::isSum($var) ? 'total' : 'mean',
+					'soFar' => false,
+					'url' => self::url('RankPeriods.php', ['vartype' => $var, 'month' => 0, 'start_year_rep' => $start,
+						'summary_type' => $st, 'period' => $len, 'no_overlap' => 0, 'rankLimit' => 25]),
+				]);
+			}
+		}
+
+		// Spells still running.
+		foreach (self::$spellChecks as $chk) {
+			list($var, $dir, $th) = $chk;
+			if (!isset(Wx::$daily[$var])) { continue; }
+			$meta = Wx::$daily[$var];
+			$start = isset($meta['start_year']) ? (int)$meta['start_year'] : Site::BASE_YEAR;
+			$res = Spells::rankLongest($var, $th, $dir, $start, 1, 0);
+			$c = $res['current'];
+			if (!is_array($c) || empty($c['length']) || !count($res['lengths'])) { continue; }
+			$len = (int)$c['length'];
+			$stats = Report::rankStats($res['lengths'], $len, true);
+			self::consider($items, ['v' => $len, 'hi' => $stats, 'lo' => $stats], ['hi'], [
+				'var' => $var, 'desc' => $meta['description'], 'unit' => Wx::None, 'count' => true,
+				'kind' => 'spell', 'spellDir' => $dir, 'th' => $th, 'label' => 'since ' . date('d M', strtotime($c['startDate'])), 'soFar' => true,
+				'url' => self::url('RankSpells.php', ['vartype' => $var, 'month' => 0, 'start_year_rep' => $start,
+					'spell_dir' => $dir, 'threshold' => $th, 'rankLimit' => 25]),
+			], ['longest', 'longest']);
+		}
+
+		usort($items, function ($a, $b) {
+			if ($a['rank'] !== $b['rank']) { return $a['rank'] - $b['rank']; }
+			return ($a['pct'] > $b['pct']) ? -1 : (($a['pct'] < $b['pct']) ? 1 : 0);
+		});
+		return ['generated' => time(), 'items' => $items, 'ms' => (int)round((microtime(true) - $t0) * 1000)];
+	}
+
+	/** Write the cache (atomic). */
+	public static function warm() {
+		$data = self::build();
+		nw3_atomic_write(self::file(), json_encode($data));
+		return $data;
+	}
+
+	/** Read the cache; null when missing or stale. */
+	public static function load() {
+		$f = self::file();
+		if (!is_readable($f)) { return null; }
+		$data = json_decode((string)@file_get_contents($f), true);
+		if (!is_array($data) || !isset($data['generated'], $data['items'])) { return null; }
+		if (time() - (int)$data['generated'] > self::MAX_AGE) { return null; }
+		return $data;
+	}
+
+	/** Item headline text, e.g. "Rainfall, October total: 165.8 mm". */
+	private static function itemText($it) {
+		$val = $it['count'] ? ((int)$it['value'] . ' day' . ((int)$it['value'] === 1 ? '' : 's'))
+			: Wx::plainText(Wx::conv($it['value'], $it['unit'], true));
+		$so = $it['soFar'] ? ' so far' : '';
+		switch ($it['kind']) {
+			case 'spell':
+				$dir = $it['spellDir'];
+				$name = Spells::isAnomalyDir($dir)
+					? (($dir === 'heatwave') ? 'Heatwave' : 'Cold snap') . ' (' . $it['desc'] . ' ' . Spells::anomalyPhrase($dir, $it['th']) . ')'
+					: (($it['var'] === 'rain') ? (($dir === 'above') ? 'Wet spell' : 'Dry spell') : $it['desc'] . ' spell');
+				$what = $name . ': ' . $val . $so . ' (' . $it['label'] . ')';
+				break;
+			case 'day':
+				$what = $it['desc'] . ', ' . strtolower($it['label']) . $so
+					. (isset($it['date']) ? ' (' . date('d M', strtotime($it['date'])) . ')' : '') . ': ' . $val;
+				break;
+			default:
+				$what = $it['desc'] . ', ' . $it['label'] . ' ' . $it['agg'] . $so . ': ' . $val;
+		}
+		$scope = ['day' => 'days', 'month' => 'months', 'year' => 'years', 'period' => 'periods', 'spell' => 'spells'];
+		$rank = ($it['tied'] ? '=' : '') . Report::ordinal($it['rank']) . ' ' . $it['word'];
+		return [$what, $rank . ' of ' . number_format($it['n']) . ' ' . $scope[$it['kind']]
+			. ' (' . Report::pctText($it['pct']) . ')'];
+	}
+
+	/** Home-page card; renders nothing unless something qualifies. */
+	public static function renderCard($data = null) {
+		$data = ($data === null) ? self::load() : $data;
+		if (!$data || empty($data['items'])) { return; }
+		if (!class_exists('Report', false)) { require_once __DIR__ . '/Report.php'; }
+		$items = $data['items'];
+		$li = [];
+		$anySoFar = false;
+		foreach ($items as $i => $it) {
+			list($what, $rank) = self::itemText($it);
+			if ($it['soFar']) { $anySoFar = true; }
+				$top = ($it['rank'] === 1 && !$it['tied']) ? ' rkf-record' : '';
+			$li[] = '<li class="clim-note rkf-item' . $top . '"><span class="rkf-dot rkf-dot-' . htmlspecialchars($it['dir']) . '"></span>'
+				. '<a href="' . htmlspecialchars($it['url']) . '" title="Open the ranking">' . htmlspecialchars($what) . '</a> '
+				. '&middot; <b>' . htmlspecialchars($rank) . '</b>' . ($it['soFar'] ? ' <span class="rkf-prov">provisional</span>' : '') . '</li>';
+		}
+		echo '<div class="wx-card wx-card-clim wx-card-rkf" id="rkf-card">';
+		echo '<div class="wx-card-head"><span class="wx-card-label">Notable in the rankings</span></div>';
+		echo '<ul class="clim-notes rkf-list">' . implode('', array_slice($li, 0, self::SHOW)) . '</ul>';
+		if (count($li) > self::SHOW) {
+			echo '<details class="rkf-more"><summary>' . (count($li) - self::SHOW) . ' more</summary>'
+				. '<ul class="clim-notes rkf-list">' . implode('', array_slice($li, self::SHOW)) . '</ul></details>';
+		}
+		echo '<div class="clim-foot">Ranks in the top ' . self::TOP_N . ' (and ' . (int)self::TOP_N_PCT . 'th percentile) or at the '
+			. (int)self::PCT . 'th percentile and above, highest or lowest, over the full record'
+			. ($anySoFar ? ' &middot; "so far" items are provisional and only flagged where more data can only push them further' : '')
+			. ' &middot; <a href="/RankDay.php">rankings</a></div>';
+		echo '</div>';
+	}
+}

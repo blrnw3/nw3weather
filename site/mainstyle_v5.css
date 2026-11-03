@@ -3432,6 +3432,17 @@ body.cam-modal-open {
 .clim-note { padding: 0.12rem 0; }
 .clim-note .clim-dot { margin: 0 0.4em 0 0; }
 .clim-foot { margin-top: 0.4rem; font-size: 0.8rem; color: #778; }
+/* Home "notable in the rankings" card (RankFlags), below the climate card */
+.wx-card-rkf { margin-top: 0.6rem; }
+.rkf-list .rkf-item a { color: inherit; text-decoration: underline dotted #b9a48f; text-underline-offset: 2px; }
+.rkf-list .rkf-item a:hover { color: #9C5B1F; }
+.rkf-dot { display: inline-block; width: 0.55em; height: 0.55em; border-radius: 50%; margin: 0 0.45em 0 0; vertical-align: 0.08em; }
+.rkf-dot-hi { background: #e0661d; }
+.rkf-dot-lo { background: #2f6fd0; }
+.rkf-record .rkf-dot { box-shadow: 0 0 0 2px #fff, 0 0 0 3px #e02b1d; }
+.rkf-prov { font-size: 0.78em; color: #889; border: 1px solid #ddd; border-radius: 0.6em; padding: 0 0.4em; white-space: nowrap; }
+.rkf-more { font-size: 0.88rem; }
+.rkf-more summary { cursor: pointer; color: #9C5B1F; }
 .clim-scopes { display: none; margin-left: auto; font-weight: 400; font-size: 0.85rem; }
 .clim-scopes button {
 	border: 1px solid #d8c8b8;

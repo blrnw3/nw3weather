@@ -98,6 +98,7 @@ forecast_v5.json
 pm25_latest.txt
 windy_widget.txt
 dayprofile/* [daily profile cache; warm_day_profile.php full rebuilds it]
+rank_flags.json [home page "notable in the rankings" flag; warm_rank_flags.php every 15 min from cron_main]
 
 ## cache/legacy
 WindTags.php
