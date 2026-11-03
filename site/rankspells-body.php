@@ -23,13 +23,14 @@ function nw3_spell_anom_status(Report $report, $dir, $x, $current) {
 		$extra = !empty($current['endsYesterday']) ? '; today not yet qualifying' : '';
 		return '<p class="' . $cls . ' rk-status-on"><b>' . $noun . ' in progress:</b> '
 			. $n . ' day' . ($n === 1 ? '' : 's') . ' so far, since ' . htmlspecialchars($sinceLbl)
-			. ' (mean ' . htmlspecialchars(Spells::anomText($current['meanAnom']))
-			. ', peak ' . htmlspecialchars(Spells::anomText($current['peakAnom']))
+			. ' ('
 			. (isset($current['meanVal']) && $current['meanVal'] !== null
-				? '; mean ' . Wx::conv((float)$current['meanVal'], $report->unit, false) : '')
+				? 'mean ' . Wx::conv((float)$current['meanVal'], $report->unit, false) . ', ' : '')
+			. 'anomaly ' . htmlspecialchars(Spells::anomText($current['meanAnom']))
 			. (isset($current['peakVal']) && $current['peakVal'] !== null
 				? '; ' . ($hot ? 'highest ' : 'lowest ') . Wx::conv((float)$current['peakVal'], $report->unit, false)
-				: '')
+				: '; peak')
+			. ' (' . htmlspecialchars(Spells::anomText($current['peakAnom'])) . ')'
 			. $extra . '). '
 			. 'Rule: ' . $rule . '.</p>';
 	}
@@ -79,7 +80,8 @@ function nw3_rankspells_render(Report $report) {
 	if ($isAnom) {
 		$ruleTxt = htmlspecialchars($report->description) . ' ' . htmlspecialchars(Spells::anomalyPhrase($dir, $threshold))
 			. ' on every day, where normal is that calendar day\'s 1991-2020 average. '
-			. 'Anomaly column: mean (and peak) difference from normal over the spell';
+			. 'Anomaly column: mean difference from normal over the spell; ' . (($dir === 'heatwave') ? 'Highest' : 'Lowest')
+			. ' column: peak value with the peak anomaly in brackets, and the date of the peak value';
 	} else {
 		$rule = Spells::ruleSymbol($type, $dir, $threshold);
 		$threshTxt = Wx::plainText(Wx::conv($threshold, $report->unit, true));

@@ -1374,7 +1374,7 @@ class Report {
 	}
 
 	/**
-	 * Spell ranking table: # / Length / Period (+ Mean, Anomaly and Highest/Lowest for heatwave / cold snap).
+	 * Spell ranking table: # / Length / Period (+ Mean, Anomaly (mean) and Highest/Lowest (+ peak anomaly) for heatwave / cold snap).
 	 * The ongoing spell's row is highlighted.
 	 * @param array $spells list of spell records from Spells::rankLongest
 	 * @param string $title
@@ -1388,8 +1388,8 @@ class Report {
 		$hotTbl = ($this->spellDir === 'heatwave');
 		if ($withAnom) {
 			echo '<div class="rk-lab" title="Mean value over the spell">Mean</div>';
-			echo '<div class="rk-lab" title="Mean (peak) difference from the daily 1991-2020 normal">Anomaly</div>';
-			echo '<div class="rk-lab" title="' . ($hotTbl ? 'Highest' : 'Lowest') . ' value during the spell">'
+			echo '<div class="rk-lab" title="Mean difference from the daily 1991-2020 normal">Anomaly</div>';
+			echo '<div class="rk-lab" title="' . ($hotTbl ? 'Highest' : 'Lowest') . ' value during the spell (peak anomaly) and its date">'
 				. ($hotTbl ? 'Highest' : 'Lowest') . '</div>';
 		}
 		echo '</div>';
@@ -1424,14 +1424,14 @@ class Report {
 					echo '<div class="rk-val"></div>';
 				}
 				echo '<div class="rk-val rk-anom ' . self::valcolForIdx(15, $mean) . '">'
-					. htmlspecialchars(Spells::anomText($mean))
-					. ' <span class="rk-anom-peak">(' . htmlspecialchars(Spells::anomText($peak)) . ')</span></div>';
+					. htmlspecialchars(Spells::anomText($mean)) . '</div>';
 				if (isset($spell['peakVal']) && $spell['peakVal'] !== null) {
 					$pv = (float)$spell['peakVal'];
 					$pd = !empty($spell['peakDate']) ? strtotime($spell['peakDate']) : false;
 					echo '<div class="rk-val rk-peakval ' . $this->rankClass($pv, false, 1) . '">'
 						. $this->rankVal($pv, false)
-						. ($pd ? ' <span class="rk-anom-peak">' . date('d M', $pd) . '</span>' : '') . '</div>';
+						. ' <span class="rk-anom-peak rk-peak-anom" title="Peak anomaly">(' . htmlspecialchars(Spells::anomText($peak)) . ')</span>'
+						. ($pd ? ' <span class="rk-anom-peak rk-peak-date">' . date('d M', $pd) . '</span>' : '') . '</div>';
 				} else {
 					echo '<div class="rk-val"></div>';
 				}
