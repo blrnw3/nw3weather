@@ -8,8 +8,6 @@
  *            spells where blanks count as dry to match legacy)
  *   heatwave  → value > that calendar day's 1991-2020 normal + X (temperature only)
  *   coldsnap  → value < that calendar day's 1991-2020 normal − X (temperature only)
- *   heatwave_mm / coldsnap_mm → the day's max AND min are both beyond normal ± X
- *               (offered on any temperature variable; uses tmax and tmin)
  */
 class Spells {
 
@@ -29,46 +27,7 @@ class Spells {
 
 	/** True for the anomaly-relative spell directions. */
 	public static function isAnomalyDir($direction) {
-		return in_array($direction, ['heatwave', 'coldsnap', 'heatwave_mm', 'coldsnap_mm'], true);
-	}
-
-	/** Heatwave-type (warm) anomaly direction? */
-	public static function isHotDir($direction) {
-		return $direction === 'heatwave' || $direction === 'heatwave_mm';
-	}
-
-	/** Combined max & min direction? */
-	public static function isBothDir($direction) {
-		return $direction === 'heatwave_mm' || $direction === 'coldsnap_mm';
-	}
-
-	/**
-	 * Full rule text, e.g. "Maximum Temperature > normal + 5.0 °C" or
-	 * "Max and min temperature both > normal + 5.0 °C".
-	 */
-	public static function anomalyRule($varName, $direction, $x) {
-		if (self::isBothDir($direction)) {
-			return 'Max and min temperature both ' . self::anomalyPhrase($direction, $x);
-		}
-		$desc = isset(Wx::$daily[$varName]['description']) ? Wx::$daily[$varName]['description'] : $varName;
-		return $desc . ' ' . self::anomalyPhrase($direction, $x);
-	}
-
-	/**
-	 * Daily "limiting" anomaly for the combined max & min mode: the weaker of the
-	 * two (min of the max/min anomalies for heat, max for cold), so it beats X
-	 * exactly when both do. Null when either is blank.
-	 */
-	public static function bothAnomalySeries($direction, $startYear) {
-		$hi = self::anomalySeries('tmax', self::loadDailySeries('tmax', $startYear));
-		$lo = self::anomalySeries('tmin', self::loadDailySeries('tmin', $startYear));
-		$hot = self::isHotDir($direction);
-		$out = [];
-		foreach ($hi as $ymd => $a) {
-			$b = array_key_exists($ymd, $lo) ? $lo[$ymd] : null;
-			$out[$ymd] = ($a === null || $b === null) ? null : ($hot ? min($a, $b) : max($a, $b));
-		}
-		return $out;
+		return $direction === 'heatwave' || $direction === 'coldsnap';
 	}
 
 	/**
@@ -361,10 +320,8 @@ class Spells {
 	 * @return array same shape as rankLongest
 	 */
 	private static function rankAnomaly($varName, $vals, $x, $direction, $effStart, $limit, $month) {
-		$anom = self::isBothDir($direction)
-			? self::bothAnomalySeries($direction, $effStart)
-			: self::anomalySeries($varName, $vals);
-		$hot = self::isHotDir($direction);
+		$anom = self::anomalySeries($varName, $vals);
+		$hot = ($direction === 'heatwave');
 		$runs = [];
 		$dates = [];
 		$sum = 0.0;
@@ -484,8 +441,6 @@ class Spells {
 		if (self::supportsAnomaly($varName)) {
 			$labels['heatwave'] = 'Heatwave';
 			$labels['coldsnap'] = 'Cold snap';
-			$labels['heatwave_mm'] = 'Heatwave (max & min)';
-			$labels['coldsnap_mm'] = 'Cold snap (max & min)';
 		}
 		return $labels;
 	}
@@ -493,7 +448,7 @@ class Spells {
 	/** "normal + 5.0 °C" / "normal − 5.0 °C" phrase for anomaly rules. */
 	public static function anomalyPhrase($direction, $x) {
 		$txt = Wx::plainText(Wx::conv(abs((float)$x), Wx::AbsTemp, true));
-		return self::isHotDir($direction) ? ('> normal + ' . $txt) : ('< normal − ' . $txt);
+		return ($direction === 'heatwave') ? ('> normal + ' . $txt) : ('< normal − ' . $txt);
 	}
 
 	/** Signed anomaly text, e.g. "+6.3 °C". */
@@ -505,7 +460,8 @@ class Spells {
 
 	/** Comparison symbol shown for the rule, e.g. '≥' or '>' at a zero threshold. */
 	public static function ruleSymbol($varName, $direction, $threshold) {
-		if (self::isAnomalyDir($direction)) { return self::isHotDir($direction) ? '>' : '<'; }
+		if ($direction === 'heatwave') { return '>'; }
+		if ($direction === 'coldsnap') { return '<'; }
 		$strict = self::strictAbove($varName, $threshold);
 		if ($direction === 'above') { return $strict ? '>' : '≥'; }
 		return $strict ? '≤' : '<';
@@ -518,8 +474,8 @@ class Spells {
 		$threshTxt = Wx::plainText(Wx::conv($thresh, $unit, true));
 		$sym = self::ruleSymbol($varName, $direction, $thresh);
 		if (self::isAnomalyDir($direction)) {
-			return (self::isHotDir($direction) ? 'Heatwaves' : 'Cold snaps')
-				. (self::isBothDir($direction) ? ' (max & min ' : ' (') . self::anomalyPhrase($direction, $thresh) . ')';
+			return (($direction === 'heatwave') ? 'Heatwaves' : 'Cold snaps')
+				. ' (' . self::anomalyPhrase($direction, $thresh) . ')';
 		}
 		if ($varName === 'rain') {
 			return ($direction === 'above')
