@@ -325,7 +325,8 @@ class Spells {
 	/**
 	 * Heatwave / cold snap ranking: runs of days each beyond normal ± X.
 	 * Blank days (or days without a normal) break a spell. Each spell also
-	 * carries its mean and peak anomaly.
+	 * carries its mean and peak anomaly, its mean value, and its peak value (highest in a
+ * heatwave, lowest in a cold snap) and that day's date.
 	 * @return array same shape as rankLongest
 	 */
 	private static function rankAnomaly($varName, $vals, $x, $direction, $effStart, $limit, $month) {
@@ -335,15 +336,24 @@ class Spells {
 		$dates = [];
 		$sum = 0.0;
 		$peak = null;
-		$flush = function ($ongoing) use (&$runs, &$dates, &$sum, &$peak, $direction) {
+		$pkVal = null;
+		$pkDate = null;
+		$vsum = 0.0;
+		$flush = function ($ongoing) use (&$runs, &$dates, &$sum, &$peak, &$pkVal, &$pkDate, &$vsum, $direction) {
 			if (!count($dates)) { return; }
 			$sp = self::makeSpell($direction, $dates, $ongoing);
 			$sp['meanAnom'] = $sum / count($dates);
 			$sp['peakAnom'] = $peak;
+			$sp['meanVal'] = $vsum / count($dates);
+			$sp['peakVal'] = $pkVal;
+			$sp['peakDate'] = $pkDate;
 			$runs[] = $sp;
 			$dates = [];
 			$sum = 0.0;
 			$peak = null;
+			$pkVal = null;
+			$pkDate = null;
+			$vsum = 0.0;
 		};
 		foreach ($anom as $ymd => $a) {
 			$match = ($a !== null) && ($hot ? ($a > $x) : ($a < -$x));
@@ -351,6 +361,10 @@ class Spells {
 				$dates[] = $ymd;
 				$sum += $a;
 				if ($peak === null || ($hot ? $a > $peak : $a < $peak)) { $peak = $a; }
+				// Highest value in a heatwave, lowest in a cold snap (first day on ties).
+				$v = (float)$vals[$ymd];
+				$vsum += $v;
+				if ($pkVal === null || ($hot ? $v > $pkVal : $v < $pkVal)) { $pkVal = $v; $pkDate = $ymd; }
 			} else {
 				$flush(false);
 			}
