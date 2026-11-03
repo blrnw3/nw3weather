@@ -13,9 +13,13 @@
  * the ranking pages (Report::rankStats): competition rank, percentile = share
  * of other entries strictly beaten in that direction.
  *
- * Partial items (today so far, month / year so far, a spell still running) only
- * count in the direction more data cannot undo: totals, counts, maxima and
- * spell lengths can only rise, minima only fall. They are labelled "so far".
+ * Partial items (today so far, month / year so far, a spell still running)
+ * count in the direction more data cannot undo (totals, counts, maxima and
+ * spell lengths can only rise, minima only fall), or in either direction (means
+ * included) once the period is at least COMPLETE_FRAC done: by time of day for
+ * today, by elapsed time for the month / year. They are labelled provisional.
+ *
+ * Each item carries the first year of the data it was ranked against ("since").
  */
 class RankFlags {
 
@@ -25,6 +29,7 @@ class RankFlags {
 	const FILE = 'rank_flags.json';
 	const MAX_AGE = 3600;     // ignore a cache older than this (cron stalled)
 	const SHOW = 4;           // items shown before "more"
+	const COMPLETE_FRAC = 0.95; // partial periods this complete rank in both directions
 
 	/** Variables never ranked here (directions, notes, manual flags, pond). */
 	private static $skip = ['wdir', 'cloud', 'comms', 'extra', 'issues', 'away', 'spare', 'pond'];
@@ -108,6 +113,21 @@ class RankFlags {
 		];
 	}
 
+	/** First year among ranked [value, ts, ...] rows (the record's real start). */
+	private static function firstYear($ranked, $fallback) {
+		$min = null;
+		foreach ($ranked as $r) {
+			if ($min === null || $r[1] < $min) { $min = $r[1]; }
+		}
+		return ($min === null) ? (int)$fallback : (int)date('Y', $min);
+	}
+
+	/** Directions allowed for a partial item: the certain one, or both when nearly complete. */
+	private static function partialDirs($mono, $frac, $lowBoring = false) {
+		if ($frac >= self::COMPLETE_FRAC) { return $lowBoring ? ['hi'] : ['hi', 'lo']; }
+		return ($mono === null) ? [] : [$mono];
+	}
+
 	private static function url($page, $params) {
 		return '/' . $page . '?' . http_build_query($params);
 	}
@@ -130,6 +150,10 @@ class RankFlags {
 		$lastMonTs = Date::mkdate((int)Date::$dmonth - 1, 1, (int)Date::$dyear);
 		$dom = (int)Date::$dday;
 		$doy = (int)date('z', Date::$dtstamp) + 1;
+		// How complete today / this month / this year are (0–1).
+		$dayFrac = min(1.0, max(0.0, (time() - Date::$dtstamp) / 86400)); // dtstamp = local midnight
+		$monFrac = ($dom - 1 + $dayFrac) / (int)date('t', Date::$dtstamp);
+		$yrFrac = ($doy - 1 + $dayFrac) / (365 + (int)date('L', Date::$dtstamp));
 
 		foreach (self::vars() as $var) {
 			$meta = Wx::$daily[$var];
@@ -150,12 +174,14 @@ class RankFlags {
 				}
 			}
 			sort($ranked);
+			$common['since'] = self::firstYear($ranked, $start);
 			$hasToday = !in_array($var, self::$manualVars, true) && empty($meta['derived'])
 				&& !in_array($var, self::$noToday, true);
 			$cur = Report::currentRanks($ranked, ['today' => $hasToday ? $todayKey : null, 'yest' => $yestKey], $dayKey);
 			$dayUrl = self::url('RankDay.php', ['vartype' => $var, 'month' => 0, 'start_year_rep' => $start, 'rankLimit' => 25]);
-			if (isset($cur['today']) && $mono !== null && !($mono === 'lo' && self::dayLowBoring($var))) {
-				self::consider($items, $cur['today'], [$mono], $common + ['kind' => 'day', 'label' => 'Today', 'date' => $todayKey, 'soFar' => true, 'url' => $dayUrl]);
+			$tDirs = self::partialDirs($mono, $dayFrac, self::dayLowBoring($var));
+			if (isset($cur['today']) && count($tDirs)) {
+				self::consider($items, $cur['today'], $tDirs, $common + ['kind' => 'day', 'label' => 'Today', 'date' => $todayKey, 'soFar' => true, 'url' => $dayUrl]);
 			}
 			if (isset($cur['yest'])) {
 				self::consider($items, $cur['yest'], self::dayLowBoring($var) ? ['hi'] : ['hi', 'lo'], $common + ['kind' => 'day', 'label' => 'Yesterday', 'date' => $yestKey, 'soFar' => false, 'url' => $dayUrl]);
@@ -171,11 +197,13 @@ class RankFlags {
 				}
 			}
 			sort($mRanked);
+			$common['since'] = self::firstYear($mRanked, $start);
 			$cur = Report::currentRanks($mRanked, ['today' => $monKey($curMonTs), 'yest' => $monKey($lastMonTs)], $monKey);
 			$monUrl = self::url('RankMonth.php', ['vartype' => $var, 'month' => 0, 'start_year_rep' => $start, 'summary_type' => $st, 'rankLimit' => 25]);
 			$sumWord = $isSum ? 'total' : 'mean';
-			if (isset($cur['today']) && $isSum) {
-				self::consider($items, $cur['today'], ['hi'], $common + ['kind' => 'month', 'label' => date('F', $curMonTs), 'agg' => $sumWord, 'soFar' => true, 'url' => $monUrl]);
+			$mDirs = self::partialDirs($isSum ? 'hi' : null, $monFrac);
+			if (isset($cur['today']) && count($mDirs)) {
+				self::consider($items, $cur['today'], $mDirs, $common + ['kind' => 'month', 'label' => date('F', $curMonTs), 'agg' => $sumWord, 'soFar' => true, 'url' => $monUrl]);
 			}
 			if (isset($cur['yest']) && $dom <= 7) {
 				self::consider($items, $cur['yest'], ['hi', 'lo'], $common + ['kind' => 'month', 'label' => date('F', $lastMonTs), 'agg' => $sumWord, 'soFar' => false, 'url' => $monUrl]);
@@ -185,10 +213,12 @@ class RankFlags {
 				if (!Util::isBlank($v)) { $yRanked[] = [(float)$v, Date::mkdate(1, 1, $y)]; }
 			}
 			sort($yRanked);
+			$common['since'] = self::firstYear($yRanked, $start);
 			$cur = Report::currentRanks($yRanked, ['today' => (string)$endY, 'yest' => (string)($endY - 1)], $yrKey);
 			$yrUrl = self::url('RankYear.php', ['vartype' => $var, 'start_year_rep' => $start, 'summary_type' => $st]);
-			if (isset($cur['today']) && $isSum) {
-				self::consider($items, $cur['today'], ['hi'], $common + ['kind' => 'year', 'label' => (string)$endY, 'agg' => $sumWord, 'soFar' => true, 'url' => $yrUrl]);
+			$yDirs = self::partialDirs($isSum ? 'hi' : null, $yrFrac);
+			if (isset($cur['today']) && count($yDirs)) {
+				self::consider($items, $cur['today'], $yDirs, $common + ['kind' => 'year', 'label' => (string)$endY, 'agg' => $sumWord, 'soFar' => true, 'url' => $yrUrl]);
 			}
 			if (isset($cur['yest']) && $doy <= 14) {
 				self::consider($items, $cur['yest'], ['hi', 'lo'], $common + ['kind' => 'year', 'label' => (string)($endY - 1), 'agg' => $sumWord, 'soFar' => false, 'url' => $yrUrl]);
@@ -210,6 +240,7 @@ class RankFlags {
 				if (!isset($cur['today'])) { continue; }
 				self::consider($items, $cur['today'], ['hi', 'lo'], [
 					'var' => $var, 'desc' => $meta['description'], 'unit' => $meta['unit'], 'count' => false,
+					'since' => self::firstYear($ranked, $start),
 					'kind' => 'period', 'label' => 'last ' . $len . ' days', 'agg' => self::isSum($var) ? 'total' : 'mean',
 					'soFar' => false,
 					'url' => self::url('RankPeriods.php', ['vartype' => $var, 'month' => 0, 'start_year_rep' => $start,
@@ -231,6 +262,7 @@ class RankFlags {
 			$stats = Report::rankStats($res['lengths'], $len, true);
 			self::consider($items, ['v' => $len, 'hi' => $stats, 'lo' => $stats], ['hi'], [
 				'var' => $var, 'desc' => $meta['description'], 'unit' => Wx::None, 'count' => true,
+				'since' => (int)$res['startYear'],
 				'kind' => 'spell', 'spellDir' => $dir, 'th' => $th, 'label' => 'since ' . date('d M', strtotime($c['startDate'])), 'soFar' => true,
 				'url' => self::url('RankSpells.php', ['vartype' => $var, 'month' => 0, 'start_year_rep' => $start,
 					'spell_dir' => $dir, 'threshold' => $th, 'rankLimit' => 25]),
@@ -284,6 +316,7 @@ class RankFlags {
 		$scope = ['day' => 'days', 'month' => 'months', 'year' => 'years', 'period' => 'periods', 'spell' => 'spells'];
 		$rank = ($it['tied'] ? '=' : '') . Report::ordinal($it['rank']) . ' ' . $it['word'];
 		return [$what, $rank . ' of ' . number_format($it['n']) . ' ' . $scope[$it['kind']]
+			. (!empty($it['since']) ? ' since ' . (int)$it['since'] : '')
 			. ' (' . Report::pctText($it['pct']) . ')'];
 	}
 
@@ -294,11 +327,9 @@ class RankFlags {
 		if (!class_exists('Report', false)) { require_once __DIR__ . '/Report.php'; }
 		$items = $data['items'];
 		$li = [];
-		$anySoFar = false;
 		foreach ($items as $i => $it) {
 			list($what, $rank) = self::itemText($it);
-			if ($it['soFar']) { $anySoFar = true; }
-				$top = ($it['rank'] === 1 && !$it['tied']) ? ' rkf-record' : '';
+			$top = ($it['rank'] === 1 && !$it['tied']) ? ' rkf-record' : '';
 			$li[] = '<li class="clim-note rkf-item' . $top . '"><span class="rkf-dot rkf-dot-' . htmlspecialchars($it['dir']) . '"></span>'
 				. '<a href="' . htmlspecialchars($it['url']) . '" title="Open the ranking">' . htmlspecialchars($what) . '</a> '
 				. '&middot; <b>' . htmlspecialchars($rank) . '</b>' . ($it['soFar'] ? ' <span class="rkf-prov">provisional</span>' : '') . '</li>';
@@ -310,9 +341,8 @@ class RankFlags {
 			echo '<details class="rkf-more"><summary>' . (count($li) - self::SHOW) . ' more</summary>'
 				. '<ul class="clim-notes rkf-list">' . implode('', array_slice($li, self::SHOW)) . '</ul></details>';
 		}
-		echo '<div class="clim-foot">Ranks in the top ' . self::TOP_N . ' (and ' . (int)self::TOP_N_PCT . 'th percentile) or at the '
-			. (int)self::PCT . 'th percentile and above, highest or lowest, over the full record'
-			. ($anySoFar ? ' &middot; "so far" items are provisional and only flagged where more data can only push them further' : '')
+		echo '<div class="clim-foot">Ranks in the top 10 or above 99th percentile for historical record; '
+			. 'provisional records shown if certain or period is 95% complete'
 			. ' &middot; <a href="/RankDay.php">rankings</a></div>';
 		echo '</div>';
 	}
