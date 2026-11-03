@@ -12,9 +12,9 @@
  * @return string HTML
  */
 function nw3_spell_anom_status(Report $report, $dir, $x, $current) {
-	$hot = ($dir === 'heatwave');
+	$hot = Spells::isHotDir($dir);
 	$noun = $hot ? 'Heatwave' : 'Cold snap';
-	$rule = htmlspecialchars($report->description . ' ' . Spells::anomalyPhrase($dir, $x));
+	$rule = htmlspecialchars(Spells::anomalyRule($report->type, $dir, $x));
 	$cls = 'rk-status ' . ($hot ? 'rk-status-hot' : 'rk-status-cold');
 	if (is_array($current) && !empty($current['length'])) {
 		$n = (int)$current['length'];
@@ -67,9 +67,10 @@ function nw3_rankspells_render(Report $report) {
 
 	$extraMon = ($month === 0) ? '' : ' with midpoint in ' . Date::$months3[$month - 1];
 	if ($isAnom) {
-		$ruleTxt = htmlspecialchars($report->description) . ' ' . htmlspecialchars(Spells::anomalyPhrase($dir, $threshold))
+		$ruleTxt = htmlspecialchars(Spells::anomalyRule($type, $dir, $threshold))
 			. ' on every day, where normal is that calendar day\'s 1991-2020 average. '
-			. 'Anomaly column: mean (and peak) difference from normal over the spell';
+			. 'Anomaly column: mean (and peak) difference from normal over the spell'
+			. (Spells::isBothDir($dir) ? ', using the smaller of each day\'s max and min anomalies' : '');
 	} else {
 		$rule = Spells::ruleSymbol($type, $dir, $threshold);
 		$threshTxt = Wx::plainText(Wx::conv($threshold, $report->unit, true));
