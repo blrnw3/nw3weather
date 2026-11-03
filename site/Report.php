@@ -1131,6 +1131,147 @@ class Report {
 		echo DataSummarizer::historicalNoteHtml($windowStart);
 	}
 
+	// ---- Current-item rank / percentile ----
+
+	/**
+	 * Competition rank and percentile of $v within an ascending list of values.
+	 * Rank = 1 + entries strictly better in the ranking direction (ties share a
+	 * rank, shown "=37th"). Percentile = share of the other entries it strictly
+	 * beats in that direction: 100 = beats all, 0 = beats none.
+	 * @param float[] $sortedAsc all entries, ascending (including the item itself)
+	 * @param float $v
+	 * @param bool $fromHigh true = higher is better (top / highest / longest)
+	 * @return array rank, n, tied, pct
+	 */
+	public static function rankStats($sortedAsc, $v, $fromHigh) {
+		$n = count($sortedAsc);
+		$v = (float)$v;
+		$eps = 1e-9;
+		// lower = count(< v), upper = count(<= v)
+		$lo = 0; $hi = $n;
+		while ($lo < $hi) { $mid = ($lo + $hi) >> 1; if ((float)$sortedAsc[$mid] < $v - $eps) { $lo = $mid + 1; } else { $hi = $mid; } }
+		$lower = $lo;
+		$lo = $lower; $hi = $n;
+		while ($lo < $hi) { $mid = ($lo + $hi) >> 1; if ((float)$sortedAsc[$mid] <= $v + $eps) { $lo = $mid + 1; } else { $hi = $mid; } }
+		$upper = $lo;
+		$better = $fromHigh ? ($n - $upper) : $lower;
+		$worse = $fromHigh ? $lower : ($n - $upper);
+		return array(
+			'rank' => $better + 1,
+			'n' => $n,
+			'tied' => ($upper - $lower) > 1,
+			'pct' => ($n > 1) ? (100 * $worse / ($n - 1)) : 100.0,
+		);
+	}
+
+	/** 1 → "1st", 22 → "22nd", 113 → "113th" (with thousands separators). */
+	public static function ordinal($n) {
+		$n = (int)$n;
+		$m100 = $n % 100;
+		$m10 = $n % 10;
+		$suf = 'th';
+		if ($m100 < 11 || $m100 > 13) {
+			if ($m10 === 1) { $suf = 'st'; } elseif ($m10 === 2) { $suf = 'nd'; } elseif ($m10 === 3) { $suf = 'rd'; }
+		}
+		return number_format($n) . $suf;
+	}
+
+	/** Percentile text, floored to 0.1 so only a true record reads 100.0th. */
+	public static function pctText($pct) {
+		$p = floor((float)$pct * 10 + 1e-6) / 10;
+		$txt = number_format($p, 1);
+		$tenths = (int)round($p * 10);
+		$last = $tenths % 10;
+		$suf = 'th';
+		if ($last === 0) {
+			$suf = 'th';
+		} elseif ($last === 1) { $suf = 'st'; } elseif ($last === 2) { $suf = 'nd'; } elseif ($last === 3) { $suf = 'rd'; }
+		return $txt . $suf . ' %ile';
+	}
+
+	/** "=37th highest of 6,140 (99.4th %ile)" */
+	public static function rankStatsText($st, $word) {
+		return ($st['tied'] ? '=' : '') . self::ordinal($st['rank']) . ($word !== '' ? ' ' . $word : '')
+			. ' of ' . number_format($st['n']) . ' (' . self::pctText($st['pct']) . ')';
+	}
+
+	/**
+	 * One-line summary above a ranking: where the current item ranks, in the
+	 * direction it ranks better.
+	 * @param string $label e.g. "Today (so far)"
+	 * @param array $hi rankStats from the high end
+	 * @param array $lo rankStats from the low end
+	 * @param string $valueHtml formatted value
+	 */
+	public static function currentRankLine($label, $hi, $lo, $valueHtml, $hiWord = 'highest', $loWord = 'lowest') {
+		$useHi = ($hi['rank'] <= $lo['rank']);
+		$st = $useHi ? $hi : $lo;
+		$top = ($st['rank'] <= 10 || $st['pct'] >= 99) ? ' rk-current-line-top' : '';
+		return '<p class="rk-current-line' . $top . '"><b>' . htmlspecialchars($label) . ':</b> '
+			. $valueHtml . ' &middot; ' . htmlspecialchars(self::rankStatsText($st, $useHi ? $hiWord : $loWord)) . '</p>';
+	}
+
+	/**
+	 * Rank stats for the current / previous item of a ranking.
+	 * @param array $ranked ascending list of [value, ts, ...]
+	 * @param array $keys 'today' / 'yest' => key string to match
+	 * @param callable $keyFn ts => key string
+	 * @return array 'today' / 'yest' => [v, hi, lo] for the keys found
+	 */
+	public static function currentRanks($ranked, $keys, $keyFn) {
+		$vals = array();
+		foreach ($ranked as $r) { $vals[] = (float)$r[0]; }
+		$out = array();
+		foreach ($ranked as $r) {
+			$k = $keyFn($r[1]);
+			foreach ($keys as $name => $want) {
+				if ($want !== null && $k === $want && !isset($out[$name])) {
+					$out[$name] = array(
+						'v' => (float)$r[0],
+						'hi' => self::rankStats($vals, $r[0], true),
+						'lo' => self::rankStats($vals, $r[0], false),
+					);
+				}
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Footer / highlight context for rankTable from currentRanks() output.
+	 * @param array $cur currentRanks() result
+	 * @param array $rowKeys rowIdx => key string of the rows shown in this table
+	 * @param array $keys 'today' / 'yest' => key string
+	 * @param bool $fromHigh which direction this table ranks
+	 * @param array $values table values, updated with 'today' / 'yest'
+	 * @return array ctx for rankTable
+	 */
+	public static function rankCtx($cur, $rowKeys, $keys, $fromHigh, &$values, $labels = array()) {
+		$ctx = $labels;
+		$ctx['hl'] = array();
+		foreach ($rowKeys as $i => $k) {
+			foreach ($keys as $name => $want) {
+				if ($want !== null && $k === $want && isset($cur[$name])) { $ctx['hl'][$i] = $name; }
+			}
+		}
+		foreach (array('today', 'yest') as $name) {
+			if (isset($cur[$name])) {
+				$values[$name] = $cur[$name]['v'];
+				$ctx[$name] = $fromHigh ? $cur[$name]['hi'] : $cur[$name]['lo'];
+			}
+		}
+		return $ctx;
+	}
+
+	/** Formatted value as shown in rank tables (public wrapper). */
+	public function rankValueText($v, $isCount = false, $unit = null) {
+		if ($isCount) { return (int)$v . ' day' . ((int)$v === 1 ? '' : 's'); }
+		if ($this->valcolIdxOverride === 15) { return Spells::anomText($v); }
+		$u = ($unit !== null) ? $unit : $this->unit;
+		if ($u === Wx::Pm25) { return $this->rankVal($v, $isCount, $unit); }
+		return Wx::conv($v, $u, true);
+	}
+
 	/**
 	 * Renders a ranked Value/Date table (top $rankNum rows) with optional
 	 * today/yesterday footer rows.
@@ -1145,7 +1286,10 @@ class Report {
 	 * @param bool $isCount   values are plain counts (no unit conversion)
 	 * @param float $sumfix   divisor applied before colour lookup
 	 */
-	public function rankTable($values, $dates, $rankNum, $title, $alignLeft, $showToday, $showFoot, $isDaily = true, $isCount = false, $sumOff = 1, $unitOverride = null) {
+	public function rankTable($values, $dates, $rankNum, $title, $alignLeft, $showToday, $showFoot, $isDaily = true, $isCount = false, $sumOff = 1, $unitOverride = null, $ctx = array()) {
+		// $ctx: 'today' / 'yest' => rankStats() for footer rows; 'hl' => [rowIdx => 'today'|'yest'];
+		//       'todayLabel' / 'yestLabel' override the footer labels.
+		$hl = isset($ctx['hl']) ? $ctx['hl'] : array();
 		$side = $alignLeft ? 'rk-left' : 'rk-right';
 		$unit = ($unitOverride !== null) ? $unitOverride : $this->unit;
 		echo '<div class="rk-grid ' . $side . '">';
@@ -1156,7 +1300,8 @@ class Report {
 
 		for ($i = 1; $i <= $rankNum; $i++) {
 			if (!isset($values[$i])) { continue; }
-			echo '<div class="rk-row">';
+			$hlCls = isset($hl[$i]) ? (($hl[$i] === 'today') ? ' rk-current' : ' rk-current-prev') : '';
+			echo '<div class="rk-row' . $hlCls . '">';
 			echo '<div class="rk-rank">' . $i . '</div>';
 			echo '<div class="rk-val ' . $this->rankClass($values[$i], $isCount, $sumOff, $unit) . '">'
 				. $this->rankVal($values[$i], $isCount, $unit) . '</div>';
@@ -1179,20 +1324,22 @@ class Report {
 				$todayLbl = 'Today';
 				$yestLbl = 'Yesterday';
 			}
-			if ($showToday && isset($values['today'])) {
-				echo '<div class="rk-row rk-foot rk-foot-today">';
-				echo '<div class="rk-rank">' . (isset($dates['today']) ? $dates['today'] : '') . '</div>';
-				echo '<div class="rk-val ' . $this->rankClass($values['today'], $isCount, $sumOff, $unit) . '">'
-					. $this->rankVal($values['today'], $isCount, $unit) . '</div>';
-				echo '<div class="rk-date">' . $todayLbl . '</div>';
-				echo '</div>';
-			}
-			if (isset($values['yest']) && $values['yest'] !== null) {
-				echo '<div class="rk-row rk-foot">';
-				echo '<div class="rk-rank">' . (isset($dates['yest']) ? $dates['yest'] : '') . '</div>';
-				echo '<div class="rk-val ' . $this->rankClass($values['yest'], $isCount, $sumOff, $unit) . '">'
-					. $this->rankVal($values['yest'], $isCount, $unit) . '</div>';
-				echo '<div class="rk-date">' . $yestLbl . '</div>';
+			if (isset($ctx['todayLabel'])) { $todayLbl = $ctx['todayLabel']; }
+			if (isset($ctx['yestLabel'])) { $yestLbl = $ctx['yestLabel']; }
+			foreach (array('today' => $todayLbl, 'yest' => $yestLbl) as $key => $lbl) {
+				if ($key === 'today' && !$showToday) { continue; }
+				if (!isset($values[$key]) || $values[$key] === null) { continue; }
+				$st = isset($ctx[$key]) ? $ctx[$key] : null;
+				// Narrow rank column: show ranks up to 999 there; the full
+				// "=1,685th of 1,871 · 9.8th %ile" goes under the label.
+				$rankCell = $st ? (($st['rank'] <= 999) ? (($st['tied'] ? '=' : '') . $st['rank']) : '&ndash;')
+					: (isset($dates[$key]) ? $dates[$key] : '');
+				$pctl = $st ? ('<span class="rk-pctl">' . htmlspecialchars(self::rankStatsText($st, '')) . '</span>') : '';
+				echo '<div class="rk-row rk-foot' . ($key === 'today' ? ' rk-foot-today' : '') . '">';
+				echo '<div class="rk-rank">' . $rankCell . '</div>';
+				echo '<div class="rk-val ' . $this->rankClass($values[$key], $isCount, $sumOff, $unit) . '">'
+					. $this->rankVal($values[$key], $isCount, $unit) . '</div>';
+				echo '<div class="rk-date">' . htmlspecialchars($lbl) . $pctl . '</div>';
 				echo '</div>';
 			}
 		}

@@ -165,18 +165,18 @@ function nw3_rankperiods_render(Report $report) {
 		}
 
 		$showFoot = ($month === 0 || (int)date('n', $latestStart) === $month);
-		foreach ($ranked as $rnk => $val) {
-			if ($val[1] === $latestStart && $val[2] === $latestEnd) {
-				$highest['today'] = $lowest['today'] = $val[0];
-				$lowestDay['today'] = $rnk + 1;
-				$highestDay['today'] = $sortLen - $rnk;
-			}
-			if ($val[1] === $prevStart && $val[2] === $prevEnd) {
-				$highest['yest'] = $lowest['yest'] = $val[0];
-				$lowestDay['yest'] = $rnk + 1;
-				$highestDay['yest'] = $sortLen - $rnk;
-			}
-		}
+		// Window timestamps are noon-based; match windows by start date.
+		$perKey = function ($ts) { return date('Y-m-d', $ts); };
+		$keys = array('today' => $perKey($latestStart), 'yest' => $perKey($prevStart));
+		$cur = Report::currentRanks($ranked, $keys, $perKey);
+		$hiKeys = $loKeys = array();
+		for ($i = 1; $i <= $limitTop; $i++) { $hiKeys[$i] = $perKey($topRows[$i - 1][1]); }
+		for ($i = 1; $i <= $limitBot; $i++) { $loKeys[$i] = $perKey($botRows[$i - 1][1]); }
+		$latestLbl = 'Latest (' . strip_tags(nw3_period_date_label($latestStart, $latestEnd)) . ')';
+		$prevLbl = 'Previous (' . strip_tags(nw3_period_date_label($prevStart, $prevEnd)) . ')';
+		$labels = array('todayLabel' => $latestLbl, 'yestLabel' => $prevLbl);
+		$ctxHi = Report::rankCtx($cur, $hiKeys, $keys, true, $highest, $labels);
+		$ctxLo = Report::rankCtx($cur, $loKeys, $keys, false, $lowest, $labels);
 
 		$sumOff = ($st === Data::SUMMARY_SUM) ? $report->valcolSumOffset() * max(1, $length / 30) : 1;
 		$isCount = Data::isCountSummary($st);
@@ -187,9 +187,15 @@ function nw3_rankperiods_render(Report $report) {
 			echo nw3_period_anom_status($report, $length, $threshold, $latestRow, $latestStart, $latestEnd);
 			$report->valcolIdxOverride = 15;
 		}
+		if ($showFoot && isset($cur['today'])) {
+			echo Report::currentRankLine('Latest ' . $length . ' days (to ' . date('d M', $latestEnd) . ')',
+				$cur['today']['hi'], $cur['today']['lo'],
+				$report->rankValueText($cur['today']['v'], $isCount, $displayUnit),
+				$isAnom ? 'warmest' : 'highest', $isAnom ? 'coldest' : 'lowest');
+		}
 		echo '<div class="rk-pair">';
-		$report->rankTable($highest, $highestDay, $limitShow, $isAnom ? ('Warmest ' . $length . '-day periods vs normal') : ('Top ' . $name), true, true, $showFoot, 'period', $isCount, $sumOff, $displayUnit);
-		$report->rankTable($lowest, $lowestDay, $limitShow, $isAnom ? ('Coldest ' . $length . '-day periods vs normal') : ('Bottom ' . $name), false, true, $showFoot, 'period', $isCount, $sumOff, $displayUnit);
+		$report->rankTable($highest, $highestDay, $limitShow, $isAnom ? ('Warmest ' . $length . '-day periods vs normal') : ('Top ' . $name), true, true, $showFoot, 'period', $isCount, $sumOff, $displayUnit, $ctxHi);
+		$report->rankTable($lowest, $lowestDay, $limitShow, $isAnom ? ('Coldest ' . $length . '-day periods vs normal') : ('Bottom ' . $name), false, true, $showFoot, 'period', $isCount, $sumOff, $displayUnit, $ctxLo);
 		echo '</div>';
 		$report->valcolIdxOverride = null;
 		$extraMon = ($month === 0) ? '' : ' starting in ' . Date::$months3[$month - 1];
@@ -203,7 +209,8 @@ function nw3_rankperiods_render(Report $report) {
 			. $explain[$st] . $extraTh . '.<br />'
 			. 'There are <b>' . $sortLen . '</b> valid ' . $length . '-day periods from ' . $startY
 			. ' to present' . $extraMon . ' in London, NW3 (complete windows only'
-			. $overlapNote . '). Data for '
+			. $overlapNote . '). The latest period ends yesterday; its rank and percentile are among all '
+			. $sortLen . ' windows, overlapping or not. Data for '
 			. $report->description . ' begins in ' . (int)$report->startYear . '.</p>';
 		echo '</div>';
 	}

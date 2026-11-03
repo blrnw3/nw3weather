@@ -55,35 +55,41 @@ function nw3_rankmonth_render(Report $report) {
 			if ((Date::$dtstamp - $ts) < $yearSecs) { $s = "<b>$s</b>"; }
 			return $s;
 		};
+		$monKey = function ($ts) { return date('Y-m', $ts); };
+		$hiKeys = $loKeys = [];
 		for ($i = 1; $i <= $limit; $i++) {
 			if ($sortLen < $i) { break; }
 			$highest[$i] = $ranked[$sortLen - $i][0];
 			$highestDay[$i] = $fmtMon($ranked[$sortLen - $i][1]);
+			$hiKeys[$i] = $monKey($ranked[$sortLen - $i][1]);
 			$lowest[$i] = $ranked[$i - 1][0];
 			$lowestDay[$i] = $fmtMon($ranked[$i - 1][1]);
+			$loKeys[$i] = $monKey($ranked[$i - 1][1]);
 		}
 
-		foreach ($ranked as $rnk => $val) {
-			if ($val[1] === $curMonthTs) {
-				$highest['today'] = $lowest['today'] = $val[0];
-				$lowestDay['today'] = $rnk + 1;
-				$highestDay['today'] = $sortLen - $rnk;
-			}
-			if ($val[1] === $lastMonthTs) {
-				$highest['yest'] = $lowest['yest'] = $val[0];
-				$lowestDay['yest'] = $rnk + 1;
-				$highestDay['yest'] = $sortLen - $rnk;
-			}
-		}
+		// Current month is partial (so far); last month is complete.
+		$keys = array('today' => $monKey($curMonthTs), 'yest' => $monKey($lastMonthTs));
+		$cur = Report::currentRanks($ranked, $keys, $monKey);
+		$labels = array('todayLabel' => 'Current month (so far)', 'yestLabel' => 'Last month');
+		$ctxHi = Report::rankCtx($cur, $hiKeys, $keys, true, $highest, $labels);
+		$ctxLo = Report::rankCtx($cur, $loKeys, $keys, false, $lowest, $labels);
 
 		$sumOff = ($st === Data::SUMMARY_SUM) ? $report->valcolSumOffset() : 1;
 		$isCount = Data::isCountSummary($st);
 		$displayUnit = $report->summaryDisplayUnit($st);
 		$name = $report->summaryCaptionName($st);
 		echo "<div id='rank-$st' class='rank-tab'>";
+		if ($footCond) {
+			foreach (array('today' => date('M Y', $curMonthTs) . ' (so far)', 'yest' => date('M Y', $lastMonthTs)) as $k => $lbl) {
+				if (isset($cur[$k])) {
+					echo Report::currentRankLine($lbl, $cur[$k]['hi'], $cur[$k]['lo'],
+						$report->rankValueText($cur[$k]['v'], $isCount, $displayUnit), 'highest', 'lowest');
+				}
+			}
+		}
 		echo '<div class="rk-pair">';
-		$report->rankTable($highest, $highestDay, $limit, 'Top monthly ' . $name, true, true, $footCond, false, $isCount, $sumOff, $displayUnit);
-		$report->rankTable($lowest, $lowestDay, $limit, 'Bottom monthly ' . $name, false, true, $footCond, false, $isCount, $sumOff, $displayUnit);
+		$report->rankTable($highest, $highestDay, $limit, 'Top monthly ' . $name, true, true, $footCond, false, $isCount, $sumOff, $displayUnit, $ctxHi);
+		$report->rankTable($lowest, $lowestDay, $limit, 'Bottom monthly ' . $name, false, true, $footCond, false, $isCount, $sumOff, $displayUnit, $ctxLo);
 		echo '</div>';
 		$extraMon = ($month === 0) ? '' : ' for ' . Date::$months3[$month - 1];
 		$extraTh = Data::isThresholdSummary($st) ? (' (' . $report->summaryThresholdPhrase($st) . ')') : '';
