@@ -342,7 +342,7 @@ class Recap {
 		return null;
 	}
 
-	/** Human label for an entry, e.g. "Sunday 1 November 2026", "1–14 November 2026", "October 2026". */
+	/** Human label for an entry, e.g. "Sunday 01 November 2026", "01–14 November 2026", "October 2026". */
 	static function label($rec) {
 		$kind = $rec['kind'];
 		$p = self::parsePeriod($kind, $rec['period']);
@@ -357,7 +357,7 @@ class Recap {
 		$mon = date('F', mktime(12, 0, 0, $p[1], 1, $p[0]));
 		switch ($kind) {
 			case 'day':
-				return date('l j F Y', mktime(12, 0, 0, $p[1], $p[2], $p[0]));
+				return date('l d F Y', mktime(12, 0, 0, $p[1], $p[2], $p[0]));
 			case 'month':
 				return "$mon {$p[0]}";
 			case 'year':
@@ -365,26 +365,26 @@ class Recap {
 			case 'month_to_date':
 				if ($through !== null) {
 					$d = (int)substr($through, 8, 2);
-					return ($d === 1 ? "1 $mon" : "1–$d $mon") . " {$p[0]}";
+					return ($d === 1 ? "01 $mon" : sprintf('01–%02d', $d) . " $mon") . " {$p[0]}";
 				}
 				return "$mon {$p[0]} so far";
 			case 'year_to_date':
 				if ($through !== null) {
 					$t = self::parsePeriod('day', $through);
-					return "1 January – " . date('j F', mktime(12, 0, 0, $t[1], $t[2], $t[0])) . " {$p[0]}";
+					return "01 January – " . date('d F', mktime(12, 0, 0, $t[1], $t[2], $t[0])) . " {$p[0]}";
 				}
 				return "{$p[0]} so far";
 		}
 		return $rec['period'];
 	}
 
-	/** "Mon 2 Nov, 07:31 GMT" for a stored ISO time. */
+	/** "Mon 02 Nov, 07:31 GMT" for a stored ISO time. */
 	static function writtenLabel($iso) {
 		$t = strtotime((string)$iso);
 		if ($t === false) { return ''; }
 		$d = new DateTime('@' . $t);
 		$d->setTimezone(self::tz());
-		return $d->format('D j M, H:i T');
+		return $d->format('D d M, H:i T');
 	}
 
 	// ---------------------------------------------------------------- markdown subset
@@ -557,9 +557,22 @@ class Recap {
 		$h = $heading === null ? self::label($rec) : $heading;
 		return '<article class="recap-entry recap-' . self::esc($rec['kind']) . '">'
 			. '<div class="recap-period">' . self::esc($h) . '</div>'
-			. '<div class="recap-body">' . self::render($rec['body_md']) . '</div>'
+			. '<div class="recap-body">' . self::render(self::padDates($rec['body_md'])) . '</div>'
 			. '<div class="recap-meta">Written ' . self::esc(self::writtenLabel($rec['generated_at'] ?? '')) . '</div>'
 			. '</article>';
+	}
+
+	/**
+	 * Zero-pad day numbers written before a month name, including ranges:
+	 * "3 November" -> "03 November", "4–6 Oct" -> "04–06 Oct". Decimals and other numbers are left alone.
+	 */
+	static function padDates($text) {
+		$mon = '(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\\b';
+		return preg_replace_callback('/(?<![\\d.,])(\\d{1,2})(?:(\\s?[–-]\\s?)(\\d{1,2}))?(?=\\s' . $mon . ')/u', function ($m) {
+			$out = sprintf('%02d', (int)$m[1]);
+			if (isset($m[3]) && $m[3] !== '') { $out .= $m[2] . sprintf('%02d', (int)$m[3]); }
+			return $out;
+		}, (string)$text);
 	}
 
 	/** "October 2026" for a YYYY-MM key, "2026" for a year. */
