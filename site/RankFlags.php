@@ -14,8 +14,9 @@
  * of other entries strictly beaten in that direction.
  *
  * Partial items (today so far, month / year so far, a spell still running)
- * count in the direction more data cannot undo (totals, counts, maxima and
- * spell lengths can only rise, minima only fall), or in either direction (means
+ * count in the direction more data cannot undo (see $certainDir: totals,
+ * counts, maxima, ranges, largest rises / falls and spell lengths can only
+ * rise, minima only fall), or in either direction (means
  * included) once the period is at least COMPLETE_FRAC done: by time of day for
  * today, by elapsed time for the month / year. They are labelled provisional.
  *
@@ -73,17 +74,34 @@ class RankFlags {
 		return !empty($m['summable']) || !empty($m['count-only']);
 	}
 
-	/** Direction a partial value can only move in: 'hi', 'lo' or null. */
 	/** Daily lows that are just "nothing happened" (dry, calm-rate, frost-free days). */
 	private static function dayLowBoring($var) {
 		return self::isSum($var) || in_array($var, ['hrmax', '10max', 'ratemax', 'ratemean'], true);
 	}
 
+	/**
+	 * Direction a partial daily value can only move in as the day goes on:
+	 * 'hi' = can only rise (totals, counts, daily maxima, ranges, and the
+	 * largest rise / fall in 10 min or 1 hr, which are stored as positive
+	 * magnitudes), 'lo' = can only fall (daily minima). Anything not listed
+	 * (means, percentages, derived rates, new variables) is uncertain both
+	 * ways and only ranks once the period is COMPLETE_FRAC done.
+	 */
+	private static $certainDir = [
+		'tmax' => 'hi', 'rain' => 'hi', 'hrmax' => 'hi', '10max' => 'hi', 'ratemax' => 'hi',
+		'wmax' => 'hi', 'gust' => 'hi', 'w10max' => 'hi', 'hmax' => 'hi', 'pmax' => 'hi',
+		'dmax' => 'hi', 'fmax' => 'hi', 'daymax' => 'hi',
+		'sunhr' => 'hi', 'wethr' => 'hi', 'afhrs' => 'hi', 'snow' => 'hi', 'lysnw' => 'hi',
+		'hail' => 'hi', 'thunder' => 'hi', 'fog' => 'hi',
+		'trange' => 'hi', 'hrange' => 'hi', 'prange' => 'hi',
+		'tc10max' => 'hi', 'tchrmax' => 'hi', 'hchrmax' => 'hi',   // largest rises
+		'tc10min' => 'hi', 'tchrmin' => 'hi', 'hchrmin' => 'hi',   // largest falls (positive)
+		'tmin' => 'lo', 'hmin' => 'lo', 'pmin' => 'lo', 'dmin' => 'lo', 'fmin' => 'lo',
+		'nightmin' => 'lo',
+	];
+
 	public static function monotoneDir($var) {
-		if (self::isSum($var)) { return 'hi'; }
-		if (preg_match('/(max|range|gust)$/', $var) || $var === 'gust') { return 'hi'; }
-		if (preg_match('/min$/', $var)) { return 'lo'; }
-		return null;
+		return isset(self::$certainDir[$var]) ? self::$certainDir[$var] : null;
 	}
 
 	private static function qualifies($st) {
@@ -151,7 +169,10 @@ class RankFlags {
 		$dom = (int)Date::$dday;
 		$doy = (int)date('z', Date::$dtstamp) + 1;
 		// How complete today / this month / this year are (0–1).
-		$dayFrac = min(1.0, max(0.0, (time() - Date::$dtstamp) / 86400)); // dtstamp = local midnight
+		// Share of today elapsed, in London time (dtstamp = local midnight; the
+		// day length allows for 23 / 25 h clock-change days).
+		$dayLen = max(1, strtotime('tomorrow', Date::$dtstamp) - Date::$dtstamp);
+		$dayFrac = min(1.0, max(0.0, (time() - Date::$dtstamp) / $dayLen));
 		$monFrac = ($dom - 1 + $dayFrac) / (int)date('t', Date::$dtstamp);
 		$yrFrac = ($doy - 1 + $dayFrac) / (365 + (int)date('L', Date::$dtstamp));
 
