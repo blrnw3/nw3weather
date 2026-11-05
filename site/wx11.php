@@ -25,7 +25,7 @@ $mainTables->rankTables();
 <p class="report-var-about">Sunshine hours are counted for each calendar day (midnight to midnight, local time) from daylight webcam imagery, as a fraction of the maximum possible.</p>
 <h2>Notes</h2>
 <ul>
-	<li>Sunshine totals are currently only available for prior days because they are computed daily from webcam footage using an image classification model</li>
+	<li>Sunshine hours are computed live from webcam imagery using an image classification model. Today's value is updated throughout the day as data arrives.</li>
 	<li>Sunshine records at NW3 began in 2009. A long-term series from nearby sites is available from 1910 (use Start year above).</li>
 	<li>Figures in brackets refer to departure from
 		<a href="/wxaverages.php" title="Long-term NW3 climate averages">average conditions</a>

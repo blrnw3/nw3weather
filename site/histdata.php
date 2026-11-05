@@ -36,6 +36,7 @@ $unitPref = isset($_GET['unit']) ? $_GET['unit'] : (isset($_COOKIE['SetUnits']) 
 Page::$units = ($unitPref === 'US') ? UNIT_US : (($unitPref === 'EU') ? UNIT_EU : UNIT_UK);
 Page::resolveAqUnits();
 LTA::init();
+Live::init();
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -87,6 +88,29 @@ $out = [
 	'categories'  => [],
 	'series'      => [],
 ];
+
+/**
+ * Get today's value for sunshine variables (sunhr / sunhrp) from Live::$NOW.
+ * Returns the raw value (hours for sunhr, percent for sunhrp), or null if not available.
+ */
+function getTodaySunValue($type) {
+	if ($type !== 'sunhr' && $type !== 'sunhrp') {
+		return null;
+	}
+	if (!isset(Live::$NOW['sun']) || !is_array(Live::$NOW['sun'])) {
+		return null;
+	}
+	$sunData = Live::$NOW['sun'];
+	if ($type === 'sunhr') {
+		// Raw hours from the live sunshine data
+		return isset($sunData['hours']) && nw3_is_numeric($sunData['hours']) ? (float)$sunData['hours'] : null;
+	}
+	if ($type === 'sunhrp') {
+		// Percentage of max possible
+		return isset($sunData['pct_of_max']) && nw3_is_numeric($sunData['pct_of_max']) ? (float)$sunData['pct_of_max'] : null;
+	}
+	return null;
+}
 
 /** Map a variable to its LTA monthly normal array, or null. */
 function ltaMonthly($type) {
@@ -239,6 +263,15 @@ function histDailyLastN($type, $length) {
 			}
 		}
 	}
+	// Append today's value for sunshine variables if available
+	$todaySun = getTodaySunValue($type);
+	if ($todaySun !== null) {
+		$todayTs = Date::mkdate((int)Date::$dmonth, (int)Date::$dday, (int)Date::$dyear);
+		$flatVals[] = $cv($todaySun);
+		$flatLabels[] = date($fmt, $todayTs);
+		$flatTips[] = date($tipFmt, $todayTs);
+	}
+	
 	$length = min($length, count($flatVals));
 	$kind = ($length > 90 ? 'line' : 'column');
 	$out['categories'] = array_slice($flatLabels, -$length);
@@ -373,9 +406,16 @@ if ($mode === 'annual') {
 		if ($mon === 0) {
 			// Whole year (day-of-year aligned), with optional cume + lta + multiyr overlays
 			$ltaDaily = ltaDaily($type);
-			$buildYear = function($y) use ($type, $cume) {
+			$buildYear = function($y) use ($type, $cume, $yr) {
 				$md = Data::getDailyDataForYear($type, $y);
 				$flat = Data::MDtoZ($md);
+				// Append today's sunshine value if this is the current year
+				if ($y == (int)Date::$dyear) {
+					$todaySun = getTodaySunValue($type);
+					if ($todaySun !== null) {
+						$flat[] = $todaySun;
+					}
+				}
 				$series = []; $run = 0;
 				foreach ($flat as $v) {
 					$val = cv($v);
@@ -471,11 +511,28 @@ if ($mode === 'annual') {
 				];
 			}
 			$out['title'] = $yr . ($cume ? ' cumulative ' : ' ') . $meta['description'];
-			if (!empty($_GET['env']) && !$cume) { addEnvelope($out, $type, $yr, 0, Data::MDtoZ(Data::getDailyDataForYear($type, $yr))); }
+			if (!empty($_GET['env']) && !$cume) {
+				$rawForEnv = Data::MDtoZ(Data::getDailyDataForYear($type, $yr));
+				// Append today's sunshine for record-day markers if this is the current year
+				if ($yr == (int)Date::$dyear) {
+					$todaySun = getTodaySunValue($type);
+					if ($todaySun !== null) {
+						$rawForEnv[] = $todaySun;
+					}
+				}
+				addEnvelope($out, $type, $yr, 0, $rawForEnv);
+			}
 		} else {
 			// Single month (one bar/line per day)
 			$md = Data::getDailyDataForYear($type, $yr);
 			$days = isset($md[$mon]) ? $md[$mon] : [];
+			// Append today's sunshine value if this is the current month and year
+			if ($yr == (int)Date::$dyear && $mon == (int)Date::$dmonth) {
+				$todaySun = getTodaySunValue($type);
+				if ($todaySun !== null) {
+					$days[(int)Date::$dday] = $todaySun;
+				}
+			}
 			$data = [];
 			foreach ($days as $d => $v) {
 				$out['categories'][] = (string)$d;
