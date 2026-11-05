@@ -29,6 +29,7 @@
  */
 require __DIR__ . '/Page.php';
 require_once __DIR__ . '/DailyRecords.php';
+require_once __DIR__ . '/SunTracker.php';
 ini_set('display_errors', '0');
 
 // Resolve display units from the same cookie Page uses, without a full page init.
@@ -128,24 +129,29 @@ function overlaySunshineRecent($type, $data, $yr = null) {
 		return nw3_round($val, $dp);
 	};
 	
-	// Yesterday: fill if missing/blank (00:00-00:27 gap or older gaps)
-	$yYmd = date('Ymd', Date::$dtstamp_yest);
-	$yTot = SunLog::dayTotal($yYmd);
-	$yHours = $yTot['hours'] ?? null;
-	$yVal = ($type === 'sunhr') ? $yHours : (($yHours !== null) ? $toPercent($yHours, (int)Date::$mon_yest, (int)Date::$day_yest, (int)Date::$yr_yest) : null);
-	if ($yVal !== null) {
-		if ($yr === null) {
-			// Multi-year mode: [year][month][day]
-			if (!isset($data[(int)Date::$yr_yest][(int)Date::$mon_yest][(int)Date::$day_yest])
-				|| Util::isBlank($data[(int)Date::$yr_yest][(int)Date::$mon_yest][(int)Date::$day_yest])) {
-				$data[(int)Date::$yr_yest][(int)Date::$mon_yest][(int)Date::$day_yest] = $yVal;
-			}
-		} elseif ($yr == (int)Date::$yr_yest) {
-			// Single-year mode: [month][day]
-			if (!isset($data[(int)Date::$mon_yest][(int)Date::$day_yest])
-				|| Util::isBlank($data[(int)Date::$mon_yest][(int)Date::$day_yest])) {
-				$data[(int)Date::$mon_yest][(int)Date::$day_yest] = $yVal;
-			}
+	// Track whether we need to ksort after modifications
+	$modifiedMonths = [];
+	
+	// Check if yesterday is missing before lazy lookup
+	$yMissing = false;
+	if ($yr === null) {
+		$yMissing = !isset($data[(int)Date::$yr_yest][(int)Date::$mon_yest][(int)Date::$day_yest])
+			|| Util::isBlank($data[(int)Date::$yr_yest][(int)Date::$mon_yest][(int)Date::$day_yest]);
+	} elseif ($yr == (int)Date::$yr_yest) {
+		$yMissing = !isset($data[(int)Date::$mon_yest][(int)Date::$day_yest])
+			|| Util::isBlank($data[(int)Date::$mon_yest][(int)Date::$day_yest]);
+	}
+	
+	// Yesterday: fill if missing/blank (00:00-00:27 gap or older gaps), lazy lookup
+	$yVal = null;
+	if ($yMissing && (int)Date::$yr_yest >= Site::BASE_YEAR) {
+		$yYmd = date('Ymd', Date::$dtstamp_yest);
+		$yTot = SunLog::dayTotal($yYmd);
+		$yHours = $yTot['hours'] ?? null;
+		if ($yHours !== null && $type === 'sunhr') {
+			$yVal = nw3_round((float)$yHours, 1);
+		} elseif ($yHours !== null && $type === 'sunhrp') {
+			$yVal = $toPercent($yHours, (int)Date::$mon_yest, (int)Date::$day_yest, (int)Date::$yr_yest);
 		}
 	}
 	
@@ -156,14 +162,54 @@ function overlaySunshineRecent($type, $data, $yr = null) {
 	} else {
 		$tHours = isset($sunLive['hours']) && nw3_is_numeric($sunLive['hours']) ? (float)$sunLive['hours'] : null;
 	}
-	$tVal = ($type === 'sunhr') ? $tHours : (($tHours !== null) ? $toPercent($tHours, (int)Date::$dmonth, (int)Date::$dday, (int)Date::$dyear) : null);
-	if ($tVal !== null) {
-		if ($yr === null) {
-			// Multi-year mode: [year][month][day]
+	$tVal = null;
+	if ($tHours !== null) {
+		if ($type === 'sunhr') {
+			$tVal = nw3_round((float)$tHours, 1);
+		} elseif ($type === 'sunhrp') {
+			$tVal = $toPercent($tHours, (int)Date::$dmonth, (int)Date::$dday, (int)Date::$dyear);
+		}
+	}
+	
+	// Apply overlays: always set yesterday's key (even null) when today is being written, to prevent DOY shifts
+	if ($yr === null) {
+		// Multi-year mode: [year][month][day]
+		if ($yMissing && $tVal !== null && (int)Date::$yr_yest >= Site::BASE_YEAR) {
+			if (!isset($data[(int)Date::$yr_yest])) { $data[(int)Date::$yr_yest] = []; }
+			if (!isset($data[(int)Date::$yr_yest][(int)Date::$mon_yest])) { $data[(int)Date::$yr_yest][(int)Date::$mon_yest] = []; }
+			$data[(int)Date::$yr_yest][(int)Date::$mon_yest][(int)Date::$day_yest] = $yVal;
+			$modifiedMonths[(int)Date::$yr_yest][(int)Date::$mon_yest] = true;
+		}
+		if ($tVal !== null) {
+			if (!isset($data[(int)Date::$dyear])) { $data[(int)Date::$dyear] = []; }
+			if (!isset($data[(int)Date::$dyear][(int)Date::$dmonth])) { $data[(int)Date::$dyear][(int)Date::$dmonth] = []; }
 			$data[(int)Date::$dyear][(int)Date::$dmonth][(int)Date::$dday] = $tVal;
-		} elseif ($yr == (int)Date::$dyear) {
-			// Single-year mode: [month][day]
+			$modifiedMonths[(int)Date::$dyear][(int)Date::$dmonth] = true;
+		}
+	} elseif ($yr == (int)Date::$dyear || $yr == (int)Date::$yr_yest) {
+		// Single-year mode: [month][day]
+		if ($yMissing && $tVal !== null && $yr == (int)Date::$yr_yest && (int)Date::$yr_yest >= Site::BASE_YEAR) {
+			if (!isset($data[(int)Date::$mon_yest])) { $data[(int)Date::$mon_yest] = []; }
+			$data[(int)Date::$mon_yest][(int)Date::$day_yest] = $yVal;
+			$modifiedMonths[(int)Date::$mon_yest] = true;
+		}
+		if ($tVal !== null && $yr == (int)Date::$dyear) {
+			if (!isset($data[(int)Date::$dmonth])) { $data[(int)Date::$dmonth] = []; }
 			$data[(int)Date::$dmonth][(int)Date::$dday] = $tVal;
+			$modifiedMonths[(int)Date::$dmonth] = true;
+		}
+	}
+	
+	// ksort modified month arrays to ensure contiguous day order for Data::MDtoZ
+	if ($yr === null) {
+		foreach ($modifiedMonths as $y => $months) {
+			foreach (array_keys($months) as $m) {
+				if (isset($data[$y][$m])) { ksort($data[$y][$m]); }
+			}
+		}
+	} else {
+		foreach (array_keys($modifiedMonths) as $m) {
+			if (isset($data[$m])) { ksort($data[$m]); }
 		}
 	}
 	
@@ -339,12 +385,21 @@ if ($mode === 'annual') {
 	$end   = isset($_GET['end']) ? (int)$_GET['end'] : (int)Date::$dyear;
 	$isCount = ($summaryType === Data::SUMMARY_COUNT);
 	$annual = Data::getAnnualData($type, $summaryType, $start, $end);
-	// Overlay sunshine and recompute current year summary
-	if (($type === 'sunhr' || $type === 'sunhrp') && isset($annual[(int)Date::$dyear])) {
-		$mdCurr = Data::getDailyDataForYear($type, (int)Date::$dyear);
-		$mdCurr = overlaySunshineRecent($type, $mdCurr, (int)Date::$dyear);
-		$flatCurr = Data::MDtoZ($mdCurr);
-		$annual[(int)Date::$dyear] = Data::summarize($flatCurr, $summaryType, null, $type);
+	// Overlay sunshine and recompute current year summary (and yesterday's year if 1 Jan 00:00-00:27)
+	if ($type === 'sunhr' || $type === 'sunhrp') {
+		if ((int)Date::$dyear >= $start && (int)Date::$dyear <= $end) {
+			$mdCurr = Data::getDailyDataForYear($type, (int)Date::$dyear);
+			$mdCurr = overlaySunshineRecent($type, $mdCurr, (int)Date::$dyear);
+			$flatCurr = Data::MDtoZ($mdCurr);
+			$annual[(int)Date::$dyear] = Data::summarize($flatCurr, $summaryType, null, $type);
+		}
+		if ((int)Date::$yr_yest != (int)Date::$dyear && (int)Date::$yr_yest >= $start && (int)Date::$yr_yest <= $end) {
+			$mdYest = Data::getDailyDataForYear($type, (int)Date::$yr_yest);
+			$mdYest = overlaySunshineRecent($type, $mdYest, (int)Date::$yr_yest);
+			$flatYest = Data::MDtoZ($mdYest);
+			$annual[(int)Date::$yr_yest] = Data::summarize($flatYest, $summaryType, null, $type);
+		}
+		ksort($annual);
 	}
 	$data = [];
 	foreach ($annual as $yr => $v) {
@@ -387,14 +442,34 @@ if ($mode === 'annual') {
 		$length = isset($_GET['length']) ? (int)$_GET['length'] : 12;
 		$startYr = (int)Date::$dyear - intval($length / 12) - 1;
 		$ms = Data::getMonthlySummary($type, $summaryType, $startYr, (int)Date::$dyear);
-		// Overlay sunshine and recompute current month
-		if (($type === 'sunhr' || $type === 'sunhrp') && isset($ms[(int)Date::$dyear])) {
+		// Overlay sunshine and recompute current month (and previous month if 1st 00:00-00:27)
+		if ($type === 'sunhr' || $type === 'sunhrp') {
 			$mdCurr = Data::getDailyDataForYear($type, (int)Date::$dyear);
 			$mdCurr = overlaySunshineRecent($type, $mdCurr, (int)Date::$dyear);
 			$msRecalc = Data::MDtoMsummary($mdCurr, $summaryType, null, $type);
+			if (!isset($ms[(int)Date::$dyear])) { $ms[(int)Date::$dyear] = []; }
 			if (isset($msRecalc[(int)Date::$dmonth])) {
 				$ms[(int)Date::$dyear][(int)Date::$dmonth] = $msRecalc[(int)Date::$dmonth];
 			}
+			if ((int)Date::$mon_yest !== (int)Date::$dmonth) {
+				$yrYest = (int)Date::$yr_yest;
+				$monYest = (int)Date::$mon_yest;
+				if ($yrYest == (int)Date::$dyear) {
+					if (isset($msRecalc[$monYest])) {
+						$ms[$yrYest][$monYest] = $msRecalc[$monYest];
+					}
+				} else {
+					$mdYest = Data::getDailyDataForYear($type, $yrYest);
+					$mdYest = overlaySunshineRecent($type, $mdYest, $yrYest);
+					$msRecalcYest = Data::MDtoMsummary($mdYest, $summaryType, null, $type);
+					if (!isset($ms[$yrYest])) { $ms[$yrYest] = []; }
+					if (isset($msRecalcYest[$monYest])) {
+						$ms[$yrYest][$monYest] = $msRecalcYest[$monYest];
+					}
+					ksort($ms[$yrYest]);
+				}
+			}
+			ksort($ms);
 		}
 		$flatVals = []; $flatLabels = []; $flatTips = [];
 		foreach ($ms as $yr => $months) {
