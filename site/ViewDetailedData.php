@@ -1965,7 +1965,7 @@ class ViewDetailedData {
 			Charts::daily([
 				'type' => $this->varMean,
 				'mode' => 'daily',
-				'year' => Date::$yr_yest,
+				'year' => (int)Date::$dyear,
 				'month' => 0,
 				'cume' => 1,
 				'lta' => 1,

@@ -820,7 +820,7 @@ class Charts {
 		echo '<label class="wxsel-field" id="cv-year-wrap"><span>Year</span>'
 			. '<select id="cv-year" class="wxsel">';
 		echo '<option value="0" selected="selected">Recent</option>';
-		for ($i = $yrYest; $i >= 1871; $i--) {
+		for ($i = $yrNow; $i >= 1871; $i--) {
 			echo '<option value="' . $i . '">' . $i . '</option>';
 		}
 		echo '</select></label>' . "\n";
