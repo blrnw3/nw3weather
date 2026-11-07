@@ -659,13 +659,18 @@
 			normBtn.classList.toggle('disabled', !allowed);
 		}
 		function syncCumeUi() {
+			// Sync env button state first (independent of cumeBtn)
+			if (envBtn) { 
+				envBtn.classList.toggle('active', state.env); 
+				envBtn.setAttribute('aria-pressed', state.env ? 'true' : 'false'); 
+			}
+			// Then handle cumulative button if present
 			if (!cumeBtn || !cfg.showCume) { return; }
 			var allowed = !!metaFor(state.type).summable;
 			if (!allowed) { state.cume = false; }
 			cumeBtn.disabled = !allowed;
 			cumeBtn.classList.toggle('active', allowed && state.cume);
 			cumeBtn.classList.toggle('disabled', !allowed);
-			if (envBtn) { envBtn.classList.toggle('active', state.env); envBtn.setAttribute('aria-pressed', state.env ? 'true' : 'false'); }
 		}
 		function updateHeading() {
 			if (!cfg.headingId) { return; }
@@ -681,7 +686,8 @@
 				}
 			}
 			if (cfg.showCume && state.cume) { title = 'Cumulative ' + title; }
-			if (cfg.showYears && state.year) { title = state.year + ' ' + title; }
+			// Include year if showYears is enabled OR if defaultYear is set (for YTD charts)
+			if ((cfg.showYears || cfg.defaultYear) && state.year) { title = state.year + ' ' + title; }
 			el.textContent = (cfg.headingPrefix != null ? cfg.headingPrefix : 'Custom: ') + title;
 		}
 		function allTypes() {

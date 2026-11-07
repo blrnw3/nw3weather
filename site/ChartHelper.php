@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/wxcharts.js?20261107a"></script>' . "\n";
+		echo '<script src="/wxcharts.js?20261107b"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */
@@ -758,12 +758,15 @@ class Charts {
 			$varOptions[$k] = $v['label'];
 		}
 		
+		// Remove recordToggle from opts to prevent duplicate controls (homepage has own env button)
+		$chartOpts = array_diff_key($opts, array('recordToggle' => 1));
+		
 		$cfg = array(
 			'containerId' => $id,
 			'panelId' => $panelId,
 			'headingId' => $headingId,
 			'url' => $url,
-			'opts' => $opts,
+			'opts' => $chartOpts,
 			'groups' => array(array('id' => 'ytd-home', 'options' => $varOptions)),
 			'defaultType' => $default,
 			'defaultGroup' => 'ytd-home',
@@ -776,6 +779,7 @@ class Charts {
 			'defaultLta' => true,    // normals always on (no UI toggle)
 			'defaultCume' => $defaultCume,
 			'varMeta' => $varMeta,
+			'headingPrefix' => '',    // empty prefix for clean year-to-date heading
 		);
 		self::run('NW3.histSelectGrouped(' . nw3_json_encode($cfg) . ');');
 	}

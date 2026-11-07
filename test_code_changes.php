@@ -336,8 +336,8 @@ test('histdata.php still calls regular envelope for non-cumulative',
 test('ChartHelper removes misleading tooltip limitation text',
 	!preg_match('/not cumulative envelopes|NOT a cumulative envelope/i', $chartHelper));
 
-test('wxcharts.js cache buster bumped to 20261107a',
-	preg_match('/wxcharts\.js\?20261107a/', $chartHelper) === 1);
+test('wxcharts.js cache buster bumped to 20261107b (rendering fixes)',
+	preg_match('/wxcharts\.js\?20261107b/', $chartHelper) === 1);
 
 echo "\n";
 
