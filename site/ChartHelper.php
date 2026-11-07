@@ -692,20 +692,21 @@ class Charts {
 
 		// Restricted variable list: only these 5 measures.
 		$vars = array(
-			'tmin' => ['description' => 'Minimum temperature', 'unit' => Wx::Temperature, 'summable' => false],
-			'tmax' => ['description' => 'Maximum temperature', 'unit' => Wx::Temperature, 'summable' => false],
-			'tmean' => ['description' => 'Mean temperature', 'unit' => Wx::Temperature, 'summable' => false],
-			'rain' => ['description' => 'Rainfall', 'unit' => Wx::Rain, 'summable' => true],
-			'sunhr' => ['description' => 'Sunshine', 'unit' => Wx::Hours, 'summable' => true],
+			'tmin' => ['label' => 'Minimum temperature', 'summable' => false],
+			'tmax' => ['label' => 'Maximum temperature', 'summable' => false],
+			'tmean' => ['label' => 'Mean temperature', 'summable' => false],
+			'rain' => ['label' => 'Total rain', 'summable' => true],
+			'sunhr' => ['label' => 'Total sunshine', 'summable' => true],
 		);
 		$varMeta = array();
 		foreach ($vars as $k => $v) {
-			$varMeta[$k] = array_merge(Wx::$daily[$k] ?? [], $v, [
+			$base = Wx::$daily[$k] ?? [];
+			$varMeta[$k] = array(
 				'aggregations' => array(Data::SUMMARY_SUM),
-				'description' => $v['description'],
-				'unit' => $v['unit'],
+				'description' => $v['label'],
+				'unit' => isset($base['unit']) ? $base['unit'] : Wx::None,
 				'summable' => $v['summable'],
-			]);
+			);
 		}
 
 		$defaultDesc = $vars[$default]['description'];
@@ -723,7 +724,7 @@ class Charts {
 		foreach ($vars as $k => $v) {
 			$active = ($k === $default) ? ' active' : '';
 			echo '<button type="button" class="' . trim($active) . '" data-type="' . $k . '">'
-				. htmlspecialchars($v['description']) . '</button>' . "\n";
+				. htmlspecialchars($v['label']) . '</button>' . "\n";
 			$first = false;
 		}
 		echo '</div>' . "\n";
@@ -740,8 +741,12 @@ class Charts {
 		echo '<div class="wxsel-label">Options</div>' . "\n";
 		echo '<div class="wxsel-normals">'
 			. '<button type="button" class="wxsel-toggle" data-env="1" aria-pressed="false"'
-			. ' title="Shade the station\'s record low to record high for each date (since 2009) and mark the year\'s record days">Station record range</button>'
+			. ' title="Shade the station\'s record low to record high for each date (since 2009; shows daily ranges, not cumulative envelopes)">Station record range</button>'
 			. '</div>' . "\n";
+		// Note: Record range (env=1) shows daily min/max ranges per calendar date.
+		// For cumulative totals (rain/sunshine), this is NOT a cumulative envelope
+		// but shows the range of daily values, which may not be meaningful.
+		// Proper cumulative envelope would require backend implementation.
 		echo '</div>' . "\n";
 		echo '<div id="' . $id . '" class="wxchart wxchart-loading" style="min-height:' . $height . 'px;"></div>' . "\n";
 		echo '</div>' . "\n"; // wxsel-chart

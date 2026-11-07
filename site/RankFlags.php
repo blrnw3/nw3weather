@@ -28,6 +28,7 @@ class RankFlags {
 	const PCT = 99.0;
 	const TOP_N_PCT = 90.0;
 	const FILE = 'rank_flags.json';
+	const CACHE_VERSION = 2; // bump to invalidate cache when logic changes
 	const MAX_AGE = 3600;     // ignore a cache older than this (cron stalled)
 	const SHOW = 4;           // items shown before "more"
 	const COMPLETE_FRAC = 0.90; // partial periods this complete rank in both directions
@@ -76,7 +77,16 @@ class RankFlags {
 
 	/** Daily lows that are just "nothing happened" (dry, calm-rate, frost-free days, calm max winds). */
 	private static function dayLowBoring($var) {
-		return self::isSum($var) || in_array($var, ['hrmax', '10max', 'ratemax', 'ratemean', 'wmax', 'gust', 'w10max'], true);
+		// Summable totals (rain, sunshine) have boring low values (zero/low totals are common)
+		// Plus specific maxima: hourly/10-min rain rates, and the three wind maxima
+		if (self::isSum($var)) { return true; }
+		// Specific non-summable maxima with boring low values
+		return in_array($var, ['hrmax', '10max', 'ratemax', 'ratemean', 'wmax', 'gust', 'w10max'], true);
+	}
+
+	/** Wind maxima with boring LOW values (calm maxima) - excludes LOW from ALL ranking periods. */
+	private static function windMaxBoring($var) {
+		return in_array($var, ['wmax', 'gust', 'w10max'], true);
 	}
 
 	/**
@@ -222,12 +232,12 @@ class RankFlags {
 			$cur = Report::currentRanks($mRanked, ['today' => $monKey($curMonTs), 'yest' => $monKey($lastMonTs)], $monKey);
 			$monUrl = self::url('RankMonth.php', ['vartype' => $var, 'month' => 0, 'start_year_rep' => $start, 'summary_type' => $st, 'rankLimit' => 25]);
 			$sumWord = $isSum ? 'total' : 'mean';
-			$mDirs = self::partialDirs($isSum ? 'hi' : null, $monFrac, self::dayLowBoring($var));
+			$mDirs = self::partialDirs($isSum ? 'hi' : null, $monFrac, self::windMaxBoring($var));
 			if (isset($cur['today']) && count($mDirs)) {
 				self::consider($items, $cur['today'], $mDirs, $common + ['kind' => 'month', 'label' => date('F', $curMonTs), 'agg' => $sumWord, 'soFar' => true, 'url' => $monUrl]);
 			}
 			if (isset($cur['yest']) && $dom <= 7) {
-				self::consider($items, $cur['yest'], self::dayLowBoring($var) ? ['hi'] : ['hi', 'lo'], $common + ['kind' => 'month', 'label' => date('F', $lastMonTs), 'agg' => $sumWord, 'soFar' => false, 'url' => $monUrl]);
+				self::consider($items, $cur['yest'], self::windMaxBoring($var) ? ['hi'] : ['hi', 'lo'], $common + ['kind' => 'month', 'label' => date('F', $lastMonTs), 'agg' => $sumWord, 'soFar' => false, 'url' => $monUrl]);
 			}
 			$yRanked = [];
 			foreach (Data::getAnnualData($var, $st, $start, $endY, null) as $y => $v) {
@@ -237,12 +247,12 @@ class RankFlags {
 			$common['since'] = self::firstYear($yRanked, $start);
 			$cur = Report::currentRanks($yRanked, ['today' => (string)$endY, 'yest' => (string)($endY - 1)], $yrKey);
 			$yrUrl = self::url('RankYear.php', ['vartype' => $var, 'start_year_rep' => $start, 'summary_type' => $st]);
-			$yDirs = self::partialDirs($isSum ? 'hi' : null, $yrFrac, self::dayLowBoring($var));
+			$yDirs = self::partialDirs($isSum ? 'hi' : null, $yrFrac, self::windMaxBoring($var));
 			if (isset($cur['today']) && count($yDirs)) {
 				self::consider($items, $cur['today'], $yDirs, $common + ['kind' => 'year', 'label' => (string)$endY, 'agg' => $sumWord, 'soFar' => true, 'url' => $yrUrl]);
 			}
 			if (isset($cur['yest']) && $doy <= 14) {
-				self::consider($items, $cur['yest'], self::dayLowBoring($var) ? ['hi'] : ['hi', 'lo'], $common + ['kind' => 'year', 'label' => (string)($endY - 1), 'agg' => $sumWord, 'soFar' => false, 'url' => $yrUrl]);
+				self::consider($items, $cur['yest'], self::windMaxBoring($var) ? ['hi'] : ['hi', 'lo'], $common + ['kind' => 'year', 'label' => (string)($endY - 1), 'agg' => $sumWord, 'soFar' => false, 'url' => $yrUrl]);
 			}
 		}
 
@@ -294,7 +304,7 @@ class RankFlags {
 			if ($a['rank'] !== $b['rank']) { return $a['rank'] - $b['rank']; }
 			return ($a['pct'] > $b['pct']) ? -1 : (($a['pct'] < $b['pct']) ? 1 : 0);
 		});
-		return ['generated' => time(), 'items' => $items, 'ms' => (int)round((microtime(true) - $t0) * 1000)];
+		return ['version' => self::CACHE_VERSION, 'generated' => time(), 'items' => $items, 'ms' => (int)round((microtime(true) - $t0) * 1000)];
 	}
 
 	/** Write the cache (atomic). */
@@ -304,12 +314,13 @@ class RankFlags {
 		return $data;
 	}
 
-	/** Read the cache; null when missing or stale. */
+	/** Read the cache; null when missing, stale, or wrong version. */
 	public static function load() {
 		$f = self::file();
 		if (!is_readable($f)) { return null; }
 		$data = json_decode((string)@file_get_contents($f), true);
 		if (!is_array($data) || !isset($data['generated'], $data['items'])) { return null; }
+		if (isset($data['version']) && (int)$data['version'] !== self::CACHE_VERSION) { return null; }
 		if (time() - (int)$data['generated'] > self::MAX_AGE) { return null; }
 		return $data;
 	}

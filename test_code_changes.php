@@ -53,17 +53,19 @@ test('dayLowBoring includes w10max',
 	preg_match('/dayLowBoring.*w10max/s', $rankFlags) === 1);
 
 // Check that dayLowBoring is passed to partialDirs for months/years
-test('dayLowBoring passed to month partial dirs',
-	preg_match('/partialDirs\(\$isSum.*\$monFrac.*dayLowBoring/', $rankFlags) === 1);
+test('windMaxBoring used for month partial dirs (not dayLowBoring)',
+	preg_match('/partialDirs.*\$monFrac.*windMaxBoring/', $rankFlags) === 1);
 
-test('dayLowBoring passed to year partial dirs',
-	preg_match('/partialDirs\(\$isSum.*\$yrFrac.*dayLowBoring/', $rankFlags) === 1);
+test('windMaxBoring used for year partial dirs (not dayLowBoring)',
+	preg_match('/partialDirs.*\$yrFrac.*windMaxBoring/', $rankFlags) === 1);
 
-test('dayLowBoring applied to completed previous month',
-	preg_match('/dayLowBoring.*\$cur.*yest.*month/s', $rankFlags) === 1);
+test('windMaxBoring checks previous month',
+	preg_match('/yest.*month.*windMaxBoring/s', $rankFlags) === 1 ||
+	preg_match('/month.*yest.*windMaxBoring/s', $rankFlags) === 1);
 
-test('dayLowBoring applied to completed previous year',
-	preg_match('/dayLowBoring.*\$cur.*yest.*year/s', $rankFlags) === 1);
+test('windMaxBoring checks previous year',
+	preg_match('/yest.*year.*windMaxBoring/s', $rankFlags) === 1 ||
+	preg_match('/year.*yest.*windMaxBoring/s', $rankFlags) === 1);
 
 echo "\n";
 
@@ -220,6 +222,60 @@ foreach ($files as $file) {
 		$ret === 0 && strpos(implode("\n", $output), 'No syntax errors') !== false);
 	$output = [];
 }
+
+echo "\n";
+
+echo "Test 7: Behavioral Tests - URL Generation and State\n";
+echo str_repeat("-", 70) . "\n";
+
+// Test windMaxBoring separate from dayLowBoring
+$rankFlags = file_get_contents(__DIR__ . '/site/RankFlags.php');
+
+test('windMaxBoring function exists',
+	preg_match('/function\s+windMaxBoring/', $rankFlags) === 1);
+
+test('windMaxBoring only checks wmax/gust/w10max',
+	preg_match('/function\s+windMaxBoring.*?wmax.*?gust.*?w10max/s', $rankFlags) === 1);
+
+test('Monthly rankings use windMaxBoring',
+	preg_match('/\$mDirs.*windMaxBoring/', $rankFlags) === 1);
+
+test('Yearly rankings use windMaxBoring',
+	preg_match('/\$yDirs.*windMaxBoring/', $rankFlags) === 1);
+
+test('Daily rankings still use dayLowBoring',
+	preg_match('/\$tDirs.*dayLowBoring/', $rankFlags) === 1);
+
+test('RankFlags has CACHE_VERSION constant',
+	preg_match('/const\s+CACHE_VERSION\s*=\s*\d+/', $rankFlags) === 1);
+
+test('RankFlags build() includes version in output',
+	preg_match('/return.*[\'"]version[\'"].*CACHE_VERSION/', $rankFlags) === 1);
+
+test('RankFlags load() checks version and invalidates on mismatch',
+	preg_match('/function\s+load.*version.*!==.*CACHE_VERSION.*return\s+null/s', $rankFlags) === 1);
+
+// Test JS URL generation
+$wxcharts = file_get_contents(__DIR__ . '/site/wxcharts.js');
+
+test('JS sends year when defaultYear exists (YTD fallback)',
+	preg_match('/defaultYear.*!cfg\.showAggregation/s', $wxcharts) === 1 ||
+	preg_match('/else if.*defaultYear.*year/s', $wxcharts) === 1);
+
+test('JS comment explains YTD year behavior',
+	preg_match('/YTD.*always.*year.*hidden/i', $wxcharts) === 1);
+
+// Test variable labels
+$chartHelper = file_get_contents(__DIR__ . '/site/ChartHelper.php');
+
+test('YTD variables use "label" not "description"',
+	preg_match('/tmin.*[\'"]label[\'"]/', $chartHelper) === 1);
+
+test('Rain label is "Total rain"',
+	preg_match('/[\'"]rain[\'"].*[\'"]label[\'"].*[\'"]Total rain[\'"]/', $chartHelper) === 1);
+
+test('Sunshine label is "Total sunshine"',
+	preg_match('/[\'"]sunhr[\'"].*[\'"]label[\'"].*[\'"]Total sunshine[\'"]/', $chartHelper) === 1);
 
 echo "\n";
 

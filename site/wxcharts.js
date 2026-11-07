@@ -697,26 +697,30 @@
 			}
 			return out;
 		}
-		function typeUrl(type, fresh) {
-			var url = cfg.url + (cfg.url.indexOf('?') >= 0 ? '&' : '?')
-				+ 'type=' + encodeURIComponent(type);
-			if (cfg.showYears && state.year) {
-				url += '&year=' + encodeURIComponent(state.year);
-			}
-			if (cfg.showAggregation) {
-				url += '&summary_type=' + encodeURIComponent(state.summary);
-			}
-			if (cfg.showNormals && state.lta && (!cfg.showAggregation || state.summary === 0 || state.summary === 1)) {
-				url += '&lta=1';
-			}
-			if (cfg.showCume && state.cume && metaFor(type).summable) {
-				url += '&cume=1';
-			} else if (envBtn && state.env) {
-				url += '&env=1';           // station record range + the year's record days (not for running totals)
-			}
-			if (fresh) { url += '&_=' + Date.now(); }
-			return url;
+	function typeUrl(type, fresh) {
+		var url = cfg.url + (cfg.url.indexOf('?') >= 0 ? '&' : '?')
+			+ 'type=' + encodeURIComponent(type);
+		if (cfg.showYears && state.year) {
+			url += '&year=' + encodeURIComponent(state.year);
+		} else if (cfg.defaultYear && !cfg.showAggregation) {
+			// YTD charts: always send year even when year selector hidden
+			url += '&year=' + encodeURIComponent(state.year || cfg.defaultYear);
 		}
+		if (cfg.showAggregation) {
+			url += '&summary_type=' + encodeURIComponent(state.summary);
+		}
+		if (cfg.showNormals && state.lta && (!cfg.showAggregation || state.summary === 0 || state.summary === 1)) {
+			url += '&lta=1';
+		}
+		if (cfg.showCume && state.cume && metaFor(type).summable) {
+			url += '&cume=1';
+		}
+		if (envBtn && state.env) {
+			url += '&env=1';           // station record range + the year's record days
+		}
+		if (fresh) { url += '&_=' + Date.now(); }
+		return url;
+	}
 		function drawCached() {
 			var json = cache[typeUrl(state.type, false)];
 			if (!json) { return false; }
