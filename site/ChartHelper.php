@@ -676,9 +676,10 @@ class Charts {
 	}
 
 	/**
-	 * Year-to-date chart for the homepage: reduced selector with only 5 core variables,
-	 * normals always on (no toggle), record range off by default but toggleable,
-	 * and a prior-year toggle available in January only.
+	 * Year-to-date chart for the homepage: icon-based grouped selector (Temp/Rain/Sun)
+	 * with controls ABOVE the chart so the plot spans full width.
+	 * Normals always on, record range off by default but toggleable,
+	 * prior-year toggle available in January only.
 	 */
 	public static function ytdHomeChart($opts = array()) {
 		self::assets();
@@ -690,44 +691,42 @@ class Charts {
 		$inJanuary = ($month === 1);
 		$default = 'rain';
 
-		// Restricted variable list: only these 5 measures.
-		$vars = array(
-			'tmin' => ['label' => 'Minimum temperature', 'summable' => false],
-			'tmax' => ['label' => 'Maximum temperature', 'summable' => false],
-			'tmean' => ['label' => 'Mean temperature', 'summable' => false],
-			'rain' => ['label' => 'Total rain', 'summable' => true],
-			'sunhr' => ['label' => 'Total sunshine', 'summable' => true],
+		// Icon-based groups: Temp (Min/Mean/Max), Rain (Total), Sun (Total)
+		$img = Site::IMG_ROOT;
+		$groups = array(
+			array(
+				'id' => 'temp', 'label' => 'Temp', 'icon' => $img . 'thermom8_small.png',
+				'options' => array('tmin' => 'Min', 'tmean' => 'Mean', 'tmax' => 'Max'),
+			),
+			array(
+				'id' => 'rain', 'label' => 'Rain', 'icon' => $img . 'icon-rain.svg',
+				'options' => array('rain' => 'Total'),
+			),
+			array(
+				'id' => 'sun', 'label' => 'Sun', 'icon' => $img . 'icon-sun.svg',
+				'options' => array('sunhr' => 'Total'),
+			),
 		);
-		$varMeta = array();
-		foreach ($vars as $k => $v) {
-			$base = Wx::$daily[$k] ?? [];
-			$varMeta[$k] = array(
-				'aggregations' => array(Data::SUMMARY_SUM),
-				'description' => $v['label'],
-				'unit' => isset($base['unit']) ? $base['unit'] : Wx::None,
-				'summable' => $v['summable'],
-			);
-		}
 
-		$defaultDesc = $vars[$default]['label'];
+		$varMeta = self::selectableVarMeta($groups);
+		$defaultGroup = 'rain';
+		foreach ($groups as $g) {
+			if (isset($g['options'][$default])) { $defaultGroup = $g['id']; break; }
+		}
+		$defaultCume = !empty($varMeta[$default]['summable']);
 		$headingId = $id . '-heading';
-		$defaultCume = !empty($vars[$default]['summable']);
+		$defaultDesc = isset($varMeta[$default]['description']) ? $varMeta[$default]['description'] : $default;
 
 		echo '<div class="wxsel-wrap ytd-home-wrap">' . "\n";
 		echo '<h3 id="' . $headingId . '" class="wxsel-heading">' . htmlspecialchars($year . ($defaultCume ? ' Cumulative ' : ' ') . $defaultDesc) . '</h3>' . "\n";
-		echo '<div class="wxsel-chart">' . "\n";
-		echo '<div id="' . $panelId . '" class="wxsel-panel" role="group" aria-label="Year-to-date variable">' . "\n";
+		// Controls above chart (not sidebar): panel first, then full-width chart below
+		echo '<div id="' . $panelId . '" class="wxsel-panel wxsel-panel-above" role="group" aria-label="Year-to-date variable">' . "\n";
+		
+		// Icon-based group buttons (Temp/Rain/Sun)
+		self::emitGroupButtons($groups, $defaultGroup);
 		
 		echo '<div class="wxsel-label">Measure</div>' . "\n";
-		echo '<div class="wxsel-subtypes wxsel-ytd-home" role="tablist">';
-		$first = true;
-		foreach ($vars as $k => $v) {
-			$active = ($k === $default) ? ' active' : '';
-			echo '<button type="button" class="' . trim($active) . '" data-type="' . $k . '">'
-				. htmlspecialchars($v['label']) . '</button>' . "\n";
-			$first = false;
-		}
-		echo '</div>' . "\n";
+		echo '<div class="wxsel-subtypes" role="tablist"></div>' . "\n";
 
 		// Year selector: current year, or prior year if in January
 		if ($inJanuary) {
@@ -743,20 +742,14 @@ class Charts {
 			. '<button type="button" class="wxsel-toggle" data-env="1" aria-pressed="false"'
 			. ' title="Shade the station\'s record low to record high for each date (since 2009)">Station record range</button>'
 			. '</div>' . "\n";
-		echo '</div>' . "\n";
+		echo '</div>' . "\n"; // wxsel-panel
 		echo '<div id="' . $id . '" class="wxchart wxchart-loading" style="min-height:' . $height . 'px;"></div>' . "\n";
-		echo '</div>' . "\n"; // wxsel-chart
 		echo '</div>' . "\n"; // wxsel-wrap
 
 		$url = self::url('histdata.php', array(
 			'mode' => 'daily',
 			'month' => 0,
 		));
-		// Map keys to labels for JS display
-		$varOptions = array();
-		foreach ($vars as $k => $v) {
-			$varOptions[$k] = $v['label'];
-		}
 		
 		// Remove recordToggle from opts to prevent duplicate controls (homepage has own env button)
 		$chartOpts = array_diff_key($opts, array('recordToggle' => 1));
@@ -767,9 +760,9 @@ class Charts {
 			'headingId' => $headingId,
 			'url' => $url,
 			'opts' => $chartOpts,
-			'groups' => array(array('id' => 'ytd-home', 'options' => $varOptions)),
+			'groups' => $groups,
 			'defaultType' => $default,
-			'defaultGroup' => 'ytd-home',
+			'defaultGroup' => $defaultGroup,
 			'showAggregation' => false,
 			'showNormals' => true,  // enables normals in URL
 			'showCume' => true,

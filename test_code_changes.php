@@ -268,14 +268,14 @@ test('JS comment explains YTD year behavior',
 // Test variable labels
 $chartHelper = file_get_contents(__DIR__ . '/site/ChartHelper.php');
 
-test('YTD variables use "label" not "description"',
-	preg_match('/tmin.*[\'"]label[\'"]/', $chartHelper) === 1);
+test('YTD uses icon-based groups (Temp/Rain/Sun)',
+	preg_match('/["\']temp["\'].*["\']rain["\'].*["\']sun["\']/s', $chartHelper) === 1);
 
-test('Rain label is "Total rain"',
-	preg_match('/[\'"]rain[\'"].*[\'"]label[\'"].*[\'"]Total rain[\'"]/', $chartHelper) === 1);
+test('Rain group has rain=>Total option',
+	preg_match('/["\']rain["\'].*["\']rain["\'].*["\']Total["\']/s', $chartHelper) === 1);
 
-test('Sunshine label is "Total sunshine"',
-	preg_match('/[\'"]sunhr[\'"].*[\'"]label[\'"].*[\'"]Total sunshine[\'"]/', $chartHelper) === 1);
+test('Sun group has sunhr=>Total option',
+	preg_match('/["\']sun["\'].*["\']sunhr["\'].*["\']Total["\']/s', $chartHelper) === 1);
 
 echo "\n";
 

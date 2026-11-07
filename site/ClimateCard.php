@@ -58,7 +58,7 @@ class ClimateCard {
 				'flagHi' => 'now', 'nameHi' => 'daily rainfall'),
 		'sunhr' => array('label' => 'Sunshine', 'unit' => Wx::Hours, 'dp' => 1, 'norm' => 'sunhr', 'lo' => 'day', 'hi' => true,
 			'flagHi' => 'now', 'nameHi' => 'daily sunshine'),
-		'wmean' => array('label' => 'Mean wind', 'unit' => Wx::Wind, 'dp' => 0, 'norm' => 'wmean', 'lo' => false, 'hi' => true),
+		'wmean' => array('label' => 'Mean wind', 'unit' => Wx::Wind, 'dp' => 1, 'norm' => 'wmean', 'lo' => true, 'hi' => true),
 		);
 	}
 

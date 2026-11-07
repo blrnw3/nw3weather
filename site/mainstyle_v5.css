@@ -713,6 +713,22 @@ div.charts > .wxsel-wrap {
 	width: 100%;
 	max-width: none;
 }
+/* YTD homepage: controls above chart, chart spans full width */
+.ytd-home-wrap {
+	display: flex;
+	flex-direction: column;
+}
+.ytd-home-wrap .wxsel-panel-above {
+	width: 100%;
+	max-width: none;
+	order: 0;
+}
+.ytd-home-wrap .wxchart {
+	width: 100%;
+	flex: 1 1 auto;
+	order: 1;
+	min-width: 0;
+}
 .wxsel-panel {
 	flex: 1 1 0;
 	min-width: 9rem;
