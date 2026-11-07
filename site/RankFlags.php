@@ -30,7 +30,7 @@ class RankFlags {
 	const FILE = 'rank_flags.json';
 	const MAX_AGE = 3600;     // ignore a cache older than this (cron stalled)
 	const SHOW = 4;           // items shown before "more"
-	const COMPLETE_FRAC = 0.95; // partial periods this complete rank in both directions
+	const COMPLETE_FRAC = 0.90; // partial periods this complete rank in both directions
 
 	/** Variables never ranked here (directions, notes, manual flags, pond). */
 	private static $skip = ['wdir', 'cloud', 'comms', 'extra', 'issues', 'away', 'spare', 'pond'];
@@ -222,12 +222,12 @@ class RankFlags {
 			$cur = Report::currentRanks($mRanked, ['today' => $monKey($curMonTs), 'yest' => $monKey($lastMonTs)], $monKey);
 			$monUrl = self::url('RankMonth.php', ['vartype' => $var, 'month' => 0, 'start_year_rep' => $start, 'summary_type' => $st, 'rankLimit' => 25]);
 			$sumWord = $isSum ? 'total' : 'mean';
-			$mDirs = self::partialDirs($isSum ? 'hi' : null, $monFrac);
+			$mDirs = self::partialDirs($isSum ? 'hi' : null, $monFrac, self::dayLowBoring($var));
 			if (isset($cur['today']) && count($mDirs)) {
 				self::consider($items, $cur['today'], $mDirs, $common + ['kind' => 'month', 'label' => date('F', $curMonTs), 'agg' => $sumWord, 'soFar' => true, 'url' => $monUrl]);
 			}
 			if (isset($cur['yest']) && $dom <= 7) {
-				self::consider($items, $cur['yest'], ['hi', 'lo'], $common + ['kind' => 'month', 'label' => date('F', $lastMonTs), 'agg' => $sumWord, 'soFar' => false, 'url' => $monUrl]);
+				self::consider($items, $cur['yest'], self::dayLowBoring($var) ? ['hi'] : ['hi', 'lo'], $common + ['kind' => 'month', 'label' => date('F', $lastMonTs), 'agg' => $sumWord, 'soFar' => false, 'url' => $monUrl]);
 			}
 			$yRanked = [];
 			foreach (Data::getAnnualData($var, $st, $start, $endY, null) as $y => $v) {
@@ -237,12 +237,12 @@ class RankFlags {
 			$common['since'] = self::firstYear($yRanked, $start);
 			$cur = Report::currentRanks($yRanked, ['today' => (string)$endY, 'yest' => (string)($endY - 1)], $yrKey);
 			$yrUrl = self::url('RankYear.php', ['vartype' => $var, 'start_year_rep' => $start, 'summary_type' => $st]);
-			$yDirs = self::partialDirs($isSum ? 'hi' : null, $yrFrac);
+			$yDirs = self::partialDirs($isSum ? 'hi' : null, $yrFrac, self::dayLowBoring($var));
 			if (isset($cur['today']) && count($yDirs)) {
 				self::consider($items, $cur['today'], $yDirs, $common + ['kind' => 'year', 'label' => (string)$endY, 'agg' => $sumWord, 'soFar' => true, 'url' => $yrUrl]);
 			}
 			if (isset($cur['yest']) && $doy <= 14) {
-				self::consider($items, $cur['yest'], ['hi', 'lo'], $common + ['kind' => 'year', 'label' => (string)($endY - 1), 'agg' => $sumWord, 'soFar' => false, 'url' => $yrUrl]);
+				self::consider($items, $cur['yest'], self::dayLowBoring($var) ? ['hi'] : ['hi', 'lo'], $common + ['kind' => 'year', 'label' => (string)($endY - 1), 'agg' => $sumWord, 'soFar' => false, 'url' => $yrUrl]);
 			}
 		}
 
@@ -363,7 +363,7 @@ class RankFlags {
 				. '<ul class="clim-notes rkf-list">' . implode('', array_slice($li, self::SHOW)) . '</ul></details>';
 		}
 		echo '<div class="clim-foot">Ranks in the top 10 or above 99th percentile for historical record; '
-			. 'provisional records shown if certain or period is 95% complete'
+			. 'provisional records shown if certain or period is 90% complete'
 			. ' &middot; <a href="/RankDay.php">rankings</a></div>';
 		echo '</div>';
 	}

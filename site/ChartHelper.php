@@ -739,7 +739,6 @@ class Charts {
 
 		echo '<div class="wxsel-label">Options</div>' . "\n";
 		echo '<div class="wxsel-normals">'
-			. '<button type="button" class="wxsel-toggle active disabled" data-lta="1" disabled="disabled" title="Climate normals (always on)">Normals</button>'
 			. '<button type="button" class="wxsel-toggle" data-env="1" aria-pressed="false"'
 			. ' title="Shade the station\'s record low to record high for each date (since 2009) and mark the year\'s record days">Station record range</button>'
 			. '</div>' . "\n";
@@ -762,15 +761,14 @@ class Charts {
 			'defaultType' => $default,
 			'defaultGroup' => 'ytd-home',
 			'showAggregation' => false,
-			'showNormals' => true,
+			'showNormals' => true,  // enables normals in URL
 			'showCume' => true,
 			'showYears' => $inJanuary,
 			'defaultYear' => $year,
 			'defaultSummary' => Data::SUMMARY_SUM,
-			'defaultLta' => true, // always on
+			'defaultLta' => true,    // normals always on (no UI toggle)
 			'defaultCume' => $defaultCume,
 			'varMeta' => $varMeta,
-			'normalsLocked' => true, // custom flag to prevent toggling normals
 		);
 		self::run('NW3.histSelectGrouped(' . nw3_json_encode($cfg) . ');');
 	}

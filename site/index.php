@@ -300,6 +300,10 @@ Charts::dailySelectable(
 <p class="home-chart-more"><a href="wx3.php" title="Latest graphs and more chart options">More graphs &amp; options &rarr;</a></p>
 </div>
 
+<div class="wx-cards home-clim" id="clim-wrap">
+	<div id="clim-slot" class="wx-live-cards"><?php nw3_render_clim_card(); ?></div>
+</div>
+
 <h2>Year-to-date</h2>
 <div class="charts home-ytd">
 <?php
@@ -309,10 +313,6 @@ Charts::ytdHomeChart(array(
 ));
 ?>
 <p class="home-chart-more"><a href="wx3.php#ytd" title="Year-to-date charts with more variables">More YTD options &rarr;</a></p>
-</div>
-
-<div class="wx-cards home-clim" id="clim-wrap">
-	<div id="clim-slot" class="wx-live-cards"><?php nw3_render_clim_card(); ?></div>
 </div>
 
 <?php $pond = nw3_live_get($HR24, 'misc', 'pondTemp'); ?>
