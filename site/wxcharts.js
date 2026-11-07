@@ -659,13 +659,18 @@
 			normBtn.classList.toggle('disabled', !allowed);
 		}
 		function syncCumeUi() {
+			// Sync env button state first (independent of cumeBtn)
+			if (envBtn) { 
+				envBtn.classList.toggle('active', state.env); 
+				envBtn.setAttribute('aria-pressed', state.env ? 'true' : 'false'); 
+			}
+			// Then handle cumulative button if present
 			if (!cumeBtn || !cfg.showCume) { return; }
 			var allowed = !!metaFor(state.type).summable;
 			if (!allowed) { state.cume = false; }
 			cumeBtn.disabled = !allowed;
 			cumeBtn.classList.toggle('active', allowed && state.cume);
 			cumeBtn.classList.toggle('disabled', !allowed);
-			if (envBtn) { envBtn.classList.toggle('active', state.env); envBtn.setAttribute('aria-pressed', state.env ? 'true' : 'false'); }
 		}
 		function updateHeading() {
 			if (!cfg.headingId) { return; }
@@ -681,7 +686,8 @@
 				}
 			}
 			if (cfg.showCume && state.cume) { title = 'Cumulative ' + title; }
-			if (cfg.showYears && state.year) { title = state.year + ' ' + title; }
+			// Include year if showYears is enabled OR if defaultYear is set (for YTD charts)
+			if ((cfg.showYears || cfg.defaultYear) && state.year) { title = state.year + ' ' + title; }
 			el.textContent = (cfg.headingPrefix != null ? cfg.headingPrefix : 'Custom: ') + title;
 		}
 		function allTypes() {
@@ -697,26 +703,30 @@
 			}
 			return out;
 		}
-		function typeUrl(type, fresh) {
-			var url = cfg.url + (cfg.url.indexOf('?') >= 0 ? '&' : '?')
-				+ 'type=' + encodeURIComponent(type);
-			if (cfg.showYears && state.year) {
-				url += '&year=' + encodeURIComponent(state.year);
-			}
-			if (cfg.showAggregation) {
-				url += '&summary_type=' + encodeURIComponent(state.summary);
-			}
-			if (cfg.showNormals && state.lta && (!cfg.showAggregation || state.summary === 0 || state.summary === 1)) {
-				url += '&lta=1';
-			}
-			if (cfg.showCume && state.cume && metaFor(type).summable) {
-				url += '&cume=1';
-			} else if (envBtn && state.env) {
-				url += '&env=1';           // station record range + the year's record days (not for running totals)
-			}
-			if (fresh) { url += '&_=' + Date.now(); }
-			return url;
+	function typeUrl(type, fresh) {
+		var url = cfg.url + (cfg.url.indexOf('?') >= 0 ? '&' : '?')
+			+ 'type=' + encodeURIComponent(type);
+		if (cfg.showYears && state.year) {
+			url += '&year=' + encodeURIComponent(state.year);
+		} else if (cfg.defaultYear && !cfg.showAggregation) {
+			// YTD charts: always send year even when year selector hidden
+			url += '&year=' + encodeURIComponent(state.year || cfg.defaultYear);
 		}
+		if (cfg.showAggregation) {
+			url += '&summary_type=' + encodeURIComponent(state.summary);
+		}
+		if (cfg.showNormals && state.lta && (!cfg.showAggregation || state.summary === 0 || state.summary === 1)) {
+			url += '&lta=1';
+		}
+		if (cfg.showCume && state.cume && metaFor(type).summable) {
+			url += '&cume=1';
+		}
+		if (envBtn && state.env) {
+			url += '&env=1';           // station record range + the year's record days
+		}
+		if (fresh) { url += '&_=' + Date.now(); }
+		return url;
+	}
 		function drawCached() {
 			var json = cache[typeUrl(state.type, false)];
 			if (!json) { return false; }
@@ -776,7 +786,7 @@
 			var opts = g.options || {};
 			var keys = Object.keys(opts);
 			if (keys.indexOf(state.type) < 0) { state.type = keys[0]; }
-			if (cfg.showCume) { state.cume = !state.env && !!metaFor(state.type).summable; }
+			if (cfg.showCume) { state.cume = !!metaFor(state.type).summable; }
 			var html = '', i, k;
 			for (i = 0; i < keys.length; i++) {
 				k = keys[i];
@@ -788,7 +798,7 @@
 				$(subEl).find('button').removeClass('active');
 				$(this).addClass('active');
 				state.type = String($(this).attr('data-type'));
-				if (cfg.showCume) { state.cume = !state.env && !!metaFor(state.type).summable; }
+				if (cfg.showCume) { state.cume = !!metaFor(state.type).summable; }
 				renderAggregation();
 				syncCumeUi();
 				load();
@@ -834,7 +844,7 @@
 			$(cumeBtn).on('click', function () {
 				if (cumeBtn.disabled) { return; }
 				state.cume = !state.cume;
-				if (state.cume) { state.env = false; }   // a running total has no per-date records
+				// Cumulative envelopes now supported - don't clear env state
 				syncCumeUi();
 				load();
 			});
@@ -842,7 +852,7 @@
 		if (envBtn) {
 			$(envBtn).on('click', function () {
 				state.env = !state.env;
-				if (state.env) { state.cume = false; }
+				// Don't modify state.cume - cumulative envelopes now supported for summable variables
 				syncCumeUi();
 				load();
 			});
@@ -907,7 +917,8 @@
 			var showStartEnd = state.scale === 'annual';
 			var showCume = summable && state.scale === 'daily' && yr > 0 && mon === '0';
 			// Station record range (each date's record low-high since 2009): daily charts of a chosen year or month.
-			var showEnv = state.scale === 'daily' && yr > 0 && !!metaFor(state.type).envelope && !state.cume;
+			// Now supports cumulative envelopes for summable variables.
+			var showEnv = state.scale === 'daily' && yr > 0 && !!metaFor(state.type).envelope;
 			var showLta = (state.scale === 'monthly')
 				|| (state.scale === 'daily' && yr > 0 && mon === '0');
 			// Daily whole-year normals are always eligible; monthly needs mean/total.

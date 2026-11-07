@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/wxcharts.js?20261102o"></script>' . "\n";
+		echo '<script src="/wxcharts.js?20261107b"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */
@@ -671,6 +671,94 @@ class Charts {
 			'defaultLta' => $defaultLta,
 			'defaultCume' => $defaultCume,
 			'varMeta' => $varMeta,
+		);
+		self::run('NW3.histSelectGrouped(' . nw3_json_encode($cfg) . ');');
+	}
+
+	/**
+	 * Year-to-date chart for the homepage: icon-based grouped selector
+	 * with same options as 31-day chart, controls ABOVE the chart so plot spans full width.
+	 * Normals always on, record range off by default but toggleable,
+	 * prior-year toggle available in January only.
+	 */
+	public static function ytdHomeChart($opts = array()) {
+		self::assets();
+		$id = 'wxc' . (++self::$seq);
+		$panelId = $id . '-panel';
+		$height = isset($opts['height']) ? (int)$opts['height'] : 360;
+		$year = (int)Date::$dyear;
+		$month = (int)Date::$dmonth;
+		$inJanuary = ($month === 1);
+		$default = 'rain';
+
+		// Use same groups as 31-day chart (Temp, Rain, Wind, Pressure, Humidity, Dew, Sun)
+		$groups = self::simpleGroups();
+
+		$varMeta = self::selectableVarMeta($groups);
+		$defaultGroup = 'rain';
+		foreach ($groups as $g) {
+			if (isset($g['options'][$default])) { $defaultGroup = $g['id']; break; }
+		}
+		$defaultCume = !empty($varMeta[$default]['summable']);
+		$headingId = $id . '-heading';
+		$defaultDesc = isset($varMeta[$default]['description']) ? $varMeta[$default]['description'] : $default;
+
+		echo '<div class="wxsel-wrap ytd-home-wrap">' . "\n";
+		echo '<h3 id="' . $headingId . '" class="wxsel-heading">' . htmlspecialchars($year . ($defaultCume ? ' Cumulative ' : ' ') . $defaultDesc) . '</h3>' . "\n";
+		// Controls above chart (not sidebar): panel first, then full-width chart below
+		echo '<div id="' . $panelId . '" class="wxsel-panel wxsel-panel-above" role="group" aria-label="Year-to-date variable">' . "\n";
+		
+		// Icon-based group buttons (Temp/Rain/Sun)
+		self::emitGroupButtons($groups, $defaultGroup);
+		
+		echo '<div class="wxsel-label">Measure</div>' . "\n";
+		echo '<div class="wxsel-subtypes" role="tablist"></div>' . "\n";
+
+		// Year selector: current year, or prior year if in January
+		if ($inJanuary) {
+			echo '<div class="wxsel-label">Year</div>' . "\n";
+			echo '<div class="wxsel-scale wxsel-years" role="tablist">';
+			echo '<button type="button" class="active" data-year="' . $year . '">' . $year . '</button>';
+			echo '<button type="button" data-year="' . ($year - 1) . '">' . ($year - 1) . '</button>';
+			echo '</div>' . "\n";
+		}
+
+		echo '<div class="wxsel-label">Options</div>' . "\n";
+		echo '<div class="wxsel-normals">'
+			. '<button type="button" class="wxsel-toggle" data-env="1" aria-pressed="false"'
+			. ' title="Shade the station\'s record low to record high for each date (since 2009)">Station record range</button>'
+			. '</div>' . "\n";
+		echo '</div>' . "\n"; // wxsel-panel
+		echo '<div id="' . $id . '" class="wxchart wxchart-loading" style="min-height:' . $height . 'px;"></div>' . "\n";
+		echo '</div>' . "\n"; // wxsel-wrap
+
+		$url = self::url('histdata.php', array(
+			'mode' => 'daily',
+			'month' => 0,
+		));
+		
+		// Remove recordToggle from opts to prevent duplicate controls (homepage has own env button)
+		$chartOpts = array_diff_key($opts, array('recordToggle' => 1));
+		
+		$cfg = array(
+			'containerId' => $id,
+			'panelId' => $panelId,
+			'headingId' => $headingId,
+			'url' => $url,
+			'opts' => $chartOpts,
+			'groups' => $groups,
+			'defaultType' => $default,
+			'defaultGroup' => $defaultGroup,
+			'showAggregation' => false,
+			'showNormals' => true,  // enables normals in URL
+			'showCume' => true,
+			'showYears' => $inJanuary,
+			'defaultYear' => $year,
+			'defaultSummary' => Data::SUMMARY_SUM,
+			'defaultLta' => true,    // normals always on (no UI toggle)
+			'defaultCume' => $defaultCume,
+			'varMeta' => $varMeta,
+			'headingPrefix' => '',    // empty prefix for clean year-to-date heading
 		);
 		self::run('NW3.histSelectGrouped(' . nw3_json_encode($cfg) . ');');
 	}
