@@ -676,6 +676,106 @@ class Charts {
 	}
 
 	/**
+	 * Year-to-date chart for the homepage: reduced selector with only 5 core variables,
+	 * normals always on (no toggle), record range off by default but toggleable,
+	 * and a prior-year toggle available in January only.
+	 */
+	public static function ytdHomeChart($opts = array()) {
+		self::assets();
+		$id = 'wxc' . (++self::$seq);
+		$panelId = $id . '-panel';
+		$height = isset($opts['height']) ? (int)$opts['height'] : 360;
+		$year = (int)Date::$dyear;
+		$month = (int)Date::$dmonth;
+		$inJanuary = ($month === 1);
+		$default = 'rain';
+
+		// Restricted variable list: only these 5 measures.
+		$vars = array(
+			'tmin' => ['description' => 'Minimum temperature', 'unit' => Wx::Temperature, 'summable' => false],
+			'tmax' => ['description' => 'Maximum temperature', 'unit' => Wx::Temperature, 'summable' => false],
+			'tmean' => ['description' => 'Mean temperature', 'unit' => Wx::Temperature, 'summable' => false],
+			'rain' => ['description' => 'Rainfall', 'unit' => Wx::Rain, 'summable' => true],
+			'sunhr' => ['description' => 'Sunshine', 'unit' => Wx::Hours, 'summable' => true],
+		);
+		$varMeta = array();
+		foreach ($vars as $k => $v) {
+			$varMeta[$k] = array_merge(Wx::$daily[$k] ?? [], $v, [
+				'aggregations' => array(Data::SUMMARY_SUM),
+				'description' => $v['description'],
+				'unit' => $v['unit'],
+				'summable' => $v['summable'],
+			]);
+		}
+
+		$defaultDesc = $vars[$default]['description'];
+		$headingId = $id . '-heading';
+		$defaultCume = !empty($vars[$default]['summable']);
+
+		echo '<div class="wxsel-wrap ytd-home-wrap">' . "\n";
+		echo '<h3 id="' . $headingId . '" class="wxsel-heading">' . htmlspecialchars($year . ($defaultCume ? ' Cumulative ' : ' ') . $defaultDesc) . '</h3>' . "\n";
+		echo '<div class="wxsel-chart">' . "\n";
+		echo '<div id="' . $panelId . '" class="wxsel-panel" role="group" aria-label="Year-to-date variable">' . "\n";
+		
+		echo '<div class="wxsel-label">Measure</div>' . "\n";
+		echo '<div class="wxsel-subtypes wxsel-ytd-home" role="tablist">';
+		$first = true;
+		foreach ($vars as $k => $v) {
+			$active = ($k === $default) ? ' active' : '';
+			echo '<button type="button" class="' . trim($active) . '" data-type="' . $k . '">'
+				. htmlspecialchars($v['description']) . '</button>' . "\n";
+			$first = false;
+		}
+		echo '</div>' . "\n";
+
+		// Year selector: current year, or prior year if in January
+		if ($inJanuary) {
+			echo '<div class="wxsel-label">Year</div>' . "\n";
+			echo '<div class="wxsel-scale wxsel-years" role="tablist">';
+			echo '<button type="button" class="active" data-year="' . $year . '">' . $year . '</button>';
+			echo '<button type="button" data-year="' . ($year - 1) . '">' . ($year - 1) . '</button>';
+			echo '</div>' . "\n";
+		}
+
+		echo '<div class="wxsel-label">Options</div>' . "\n";
+		echo '<div class="wxsel-normals">'
+			. '<button type="button" class="wxsel-toggle active disabled" data-lta="1" disabled="disabled" title="Climate normals (always on)">Normals</button>'
+			. '<button type="button" class="wxsel-toggle" data-env="1" aria-pressed="false"'
+			. ' title="Shade the station\'s record low to record high for each date (since 2009) and mark the year\'s record days">Station record range</button>'
+			. '</div>' . "\n";
+		echo '</div>' . "\n";
+		echo '<div id="' . $id . '" class="wxchart wxchart-loading" style="min-height:' . $height . 'px;"></div>' . "\n";
+		echo '</div>' . "\n"; // wxsel-chart
+		echo '</div>' . "\n"; // wxsel-wrap
+
+		$url = self::url('histdata.php', array(
+			'mode' => 'daily',
+			'month' => 0,
+		));
+		$cfg = array(
+			'containerId' => $id,
+			'panelId' => $panelId,
+			'headingId' => $headingId,
+			'url' => $url,
+			'opts' => $opts,
+			'groups' => array(array('id' => 'ytd-home', 'options' => array_combine(array_keys($vars), array_keys($vars)))),
+			'defaultType' => $default,
+			'defaultGroup' => 'ytd-home',
+			'showAggregation' => false,
+			'showNormals' => true,
+			'showCume' => true,
+			'showYears' => $inJanuary,
+			'defaultYear' => $year,
+			'defaultSummary' => Data::SUMMARY_SUM,
+			'defaultLta' => true, // always on
+			'defaultCume' => $defaultCume,
+			'varMeta' => $varMeta,
+			'normalsLocked' => true, // custom flag to prevent toggling normals
+		);
+		self::run('NW3.histSelectGrouped(' . nw3_json_encode($cfg) . ');');
+	}
+
+	/**
 	 * Categorical trend chart with a left-hand selector panel (~1/3) and chart (~2/3).
 	 * Group → subtype buttons; monthly mode also gets aggregation + normals toggles.
 	 * $params holds the shared mode/length (but no type); lta/summary_type are

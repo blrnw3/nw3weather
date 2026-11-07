@@ -74,9 +74,9 @@ class RankFlags {
 		return !empty($m['summable']) || !empty($m['count-only']);
 	}
 
-	/** Daily lows that are just "nothing happened" (dry, calm-rate, frost-free days). */
+	/** Daily lows that are just "nothing happened" (dry, calm-rate, frost-free days, calm max winds). */
 	private static function dayLowBoring($var) {
-		return self::isSum($var) || in_array($var, ['hrmax', '10max', 'ratemax', 'ratemean'], true);
+		return self::isSum($var) || in_array($var, ['hrmax', '10max', 'ratemax', 'ratemean', 'wmax', 'gust', 'w10max'], true);
 	}
 
 	/**

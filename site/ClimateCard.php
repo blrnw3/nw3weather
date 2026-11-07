@@ -13,7 +13,7 @@
  */
 class ClimateCard {
 	const CACHE_FILE = 'serialised_climrec.txt';
-	const CACHE_VERSION = 3;
+	const CACHE_VERSION = 4;
 
 	/** First year used for records (the station record). */
 	const SINCE_YEAR = Site::BASE_YEAR;
@@ -52,14 +52,14 @@ class ClimateCard {
 				'unit' => Wx::Temperature, 'dp' => 1, 'norm' => 'tmin', 'lo' => true, 'hi' => true,
 				'flagLo' => 'now', 'flagHi' => array('from' => self::NIGHTMIN_END_HOUR, 'final' => self::NIGHTMIN_END_HOUR),
 				'nameLo' => 'low night min', 'nameHi' => 'high night min'),
-			'tmean' => array('label' => 'Mean', 'title' => 'Mean temperature (midnight to midnight)',
-				'unit' => Wx::Temperature, 'dp' => 1, 'norm' => 'tmean', 'lo' => true, 'hi' => true),
+		'tmean' => array('label' => 'Avg temp', 'title' => 'Mean temperature (midnight to midnight)',
+			'unit' => Wx::Temperature, 'dp' => 1, 'norm' => 'tmean', 'lo' => true, 'hi' => true),
 			'rain' => array('label' => 'Rain', 'unit' => Wx::Rain, 'dp' => 1, 'norm' => 'rain', 'lo' => false, 'hi' => true,
 				'flagHi' => 'now', 'nameHi' => 'daily rainfall'),
-			'sunhr' => array('label' => 'Sunshine', 'unit' => Wx::Hours, 'dp' => 1, 'norm' => 'sunhr', 'lo' => 'day', 'hi' => true,
-				'flagHi' => 'now', 'nameHi' => 'daily sunshine'),
-			'gust' => array('label' => 'Max gust', 'unit' => Wx::Wind, 'dp' => 0, 'norm' => null, 'lo' => false, 'hi' => true,
-				'flagHi' => 'now', 'nameHi' => 'gust'),
+		'sunhr' => array('label' => 'Sunshine', 'unit' => Wx::Hours, 'dp' => 1, 'norm' => 'sunhr', 'lo' => 'day', 'hi' => true,
+			'flagHi' => 'now', 'nameHi' => 'daily sunshine'),
+		'wmean' => array('label' => 'Mean wind', 'unit' => Wx::Wind, 'dp' => 0, 'norm' => 'wmean', 'lo' => false, 'hi' => true,
+			'flagHi' => 'now', 'nameHi' => 'mean wind speed'),
 		);
 	}
 
@@ -230,7 +230,7 @@ class ClimateCard {
 			'tmean' => $get('mean', 'temp'),
 			'rain' => is_numeric(Live::$rain) ? (float)Live::$rain : null,
 			'sunhr' => is_numeric($sun) ? (float)$sun : null,
-			'gust' => $get('max', 'gust'),
+			'wmean' => $get('mean', 'wind'),
 		);
 	}
 
