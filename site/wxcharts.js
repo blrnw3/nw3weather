@@ -838,7 +838,7 @@
 			$(cumeBtn).on('click', function () {
 				if (cumeBtn.disabled) { return; }
 				state.cume = !state.cume;
-				if (state.cume) { state.env = false; }   // a running total has no per-date records
+				// Cumulative envelopes now supported - don't clear env state
 				syncCumeUi();
 				load();
 			});
@@ -846,7 +846,7 @@
 		if (envBtn) {
 			$(envBtn).on('click', function () {
 				state.env = !state.env;
-				if (state.env) { state.cume = false; }
+				// Don't modify state.cume - cumulative envelopes now supported for summable variables
 				syncCumeUi();
 				load();
 			});
@@ -911,7 +911,8 @@
 			var showStartEnd = state.scale === 'annual';
 			var showCume = summable && state.scale === 'daily' && yr > 0 && mon === '0';
 			// Station record range (each date's record low-high since 2009): daily charts of a chosen year or month.
-			var showEnv = state.scale === 'daily' && yr > 0 && !!metaFor(state.type).envelope && !state.cume;
+			// Now supports cumulative envelopes for summable variables.
+			var showEnv = state.scale === 'daily' && yr > 0 && !!metaFor(state.type).envelope;
 			var showLta = (state.scale === 'monthly')
 				|| (state.scale === 'daily' && yr > 0 && mon === '0');
 			// Daily whole-year normals are always eligible; monthly needs mean/total.

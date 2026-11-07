@@ -709,7 +709,7 @@ class Charts {
 			);
 		}
 
-		$defaultDesc = $vars[$default]['description'];
+		$defaultDesc = $vars[$default]['label'];
 		$headingId = $id . '-heading';
 		$defaultCume = !empty($vars[$default]['summable']);
 
@@ -752,13 +752,19 @@ class Charts {
 			'mode' => 'daily',
 			'month' => 0,
 		));
+		// Map keys to labels for JS display
+		$varOptions = array();
+		foreach ($vars as $k => $v) {
+			$varOptions[$k] = $v['label'];
+		}
+		
 		$cfg = array(
 			'containerId' => $id,
 			'panelId' => $panelId,
 			'headingId' => $headingId,
 			'url' => $url,
 			'opts' => $opts,
-			'groups' => array(array('id' => 'ytd-home', 'options' => array_combine(array_keys($vars), array_keys($vars)))),
+			'groups' => array(array('id' => 'ytd-home', 'options' => $varOptions)),
 			'defaultType' => $default,
 			'defaultGroup' => 'ytd-home',
 			'showAggregation' => false,

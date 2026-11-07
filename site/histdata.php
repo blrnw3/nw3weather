@@ -340,10 +340,13 @@ function addCumulativeEnvelope(&$out, $type, $yr, $raw = []) {
 	$len = count($out['categories']);
 	$band = [];
 
+	// Use calendar date alignment (m-d), not numeric DOY
 	for ($i = 0; $i < $len; $i++) {
-		$doy = $i + 1; // Day of year (1-based)
-		$lo = isset($rec['lo'][$doy]) ? cv($rec['lo'][$doy]) : null;
-		$hi = isset($rec['hi'][$doy]) ? cv($rec['hi'][$doy]) : null;
+		$ts = Date::mkz($i, $yr);
+		$m = (int)date('n', $ts);
+		$d = (int)date('j', $ts);
+		$lo = isset($rec['lo'][$m][$d]) ? cv($rec['lo'][$m][$d]) : null;
+		$hi = isset($rec['hi'][$m][$d]) ? cv($rec['hi'][$m][$d]) : null;
 		// For cumulative totals, show range from low to high (both exist for cumulative envelopes)
 		$band[] = ($lo === null || $hi === null) ? null : [min($lo, $hi), max($lo, $hi)];
 	}
@@ -696,7 +699,7 @@ if ($mode === 'annual') {
 			if (!empty($_GET['env'])) {
 				if ($cume && $summable) {
 					// Cumulative record envelope for summable variables
-					addCumulativeEnvelope($out, $type, $yr, $cumeSeries);
+					addCumulativeEnvelope($out, $type, $yr, $thisYear);
 				} elseif (!$cume) {
 					// Daily record envelope
 					$mdForEnv = Data::getDailyDataForYear($type, $yr);

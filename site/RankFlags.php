@@ -320,7 +320,8 @@ class RankFlags {
 		if (!is_readable($f)) { return null; }
 		$data = json_decode((string)@file_get_contents($f), true);
 		if (!is_array($data) || !isset($data['generated'], $data['items'])) { return null; }
-		if (isset($data['version']) && (int)$data['version'] !== self::CACHE_VERSION) { return null; }
+		// Reject cache if version is absent or mismatched
+		if (!isset($data['version']) || (int)$data['version'] !== self::CACHE_VERSION) { return null; }
 		if (time() - (int)$data['generated'] > self::MAX_AGE) { return null; }
 		return $data;
 	}

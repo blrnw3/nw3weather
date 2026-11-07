@@ -45,8 +45,8 @@ class CumulativeRecords {
 
 	/**
 	 * Get cumulative records for a summable variable.
-	 * @return array|null ['lo' => [doy] => value, 'hi' => [doy] => value, 'years' => [doy] => count]
-	 *   where doy is 1-based day of year (1..366). Returns null if not summable or no data.
+	 * @return array|null ['lo' => [m][d] => value, 'hi' => [m][d] => value, 'years' => [m][d] => count]
+	 *   where m is month (1-12) and d is day of month. Returns null if not summable or no data.
 	 */
 	public static function get($var) {
 		if (!isset(Wx::$daily[$var])) { return null; }
@@ -83,49 +83,56 @@ class CumulativeRecords {
 
 	/**
 	 * Build cumulative record envelope for a variable.
-	 * For each historic complete year, compute Jan1-to-date cumulative sums.
-	 * Take min/max across years for each day of year.
+	 * For each historic complete year, compute Jan1-to-date cumulative sums aligned by calendar date.
+	 * Take min/max across years for each calendar date (month-day).
+	 * Uses RAW unconverted values to match DailyRecords behavior (conversion happens in addCumulativeEnvelope via cv()).
 	 */
 	private static function build($var, $sig = null) {
 		$today = date('Y-m-d');
 		$thisYear = (int)date('Y');
-		$thisDoy = (int)date('z') + 1;
 		$start = Site::BASE_YEAR;
 
-		// Compute cumulative sums for each complete year
-		$cumeSums = []; // [year][doy] => cumulative sum from Jan 1
+		// Compute cumulative sums for each complete year, aligned by calendar date (m-d)
+		$cumeSums = []; // [year][m][d] => cumulative sum from Jan 1
 		foreach (Data::getDailyData($var, $start) as $y => $months) {
 			if ((int)$y >= $thisYear) { continue; } // Skip current incomplete year
 			if (!is_array($months)) { continue; }
 
+			$cume = 0;
+			$yearValid = true;
+			$lastValidMD = null;
+			$hasMissing = false;
+
+			// Iterate chronologically through the year
 			$isLeap = (int)date('L', mktime(0, 0, 0, 1, 1, $y));
 			$maxDoy = $isLeap ? 366 : 365;
-			$cume = 0;
-			$hasMissing = false;
-			$lastDoy = 0;
-
-			foreach ($months as $m => $days) {
-				if (!is_array($days)) { continue; }
-				foreach ($days as $d => $v) {
-					$doy = (int)date('z', Date::mkdate($m, $d, $y)) + 1;
-					$lastDoy = max($lastDoy, $doy);
-
-					if ($v === null || $v === '' || !is_numeric($v)) {
-						$hasMissing = true;
-						continue; // Skip missing data, don't treat as zero
-					}
-
-					$cume += (float)$v;
-					$cumeSums[$y][$doy] = $cume;
+			
+			for ($doy = 1; $doy <= $maxDoy; $doy++) {
+				$ts = mktime(0, 0, 0, 1, $doy, $y);
+				$m = (int)date('n', $ts);
+				$d = (int)date('j', $ts);
+				
+				$v = isset($months[$m][$d]) ? $months[$m][$d] : null;
+				
+				if ($v === null || $v === '' || !is_numeric($v)) {
+					// Missing data: stop accumulating for this year beyond this point
+					// Don't forward-fill or treat missing as zero
+					$hasMissing = true;
+					break;
 				}
+
+				// Accumulate raw values; conversion to user units happens in addCumulativeEnvelope via cv()
+				$cume += (float)$v;
+				if (!isset($cumeSums[$y])) { $cumeSums[$y] = []; }
+				if (!isset($cumeSums[$y][$m])) { $cumeSums[$y][$m] = []; }
+				$cumeSums[$y][$m][$d] = $cume;
+				$lastValidMD = [$m, $d];
 			}
-
-			// Forward-fill for valid days (only within observed range)
-			if (!$hasMissing && $lastDoy < $maxDoy) {
-				// If year data ends early (incomplete historical year), forward-fill to year end
-				for ($doy = $lastDoy + 1; $doy <= $maxDoy; $doy++) {
-					$cumeSums[$y][$doy] = $cume;
-				}
+			
+			// If year completed without missing data and ends early, reject it (incomplete year)
+			if (!$hasMissing && $lastValidMD && $lastValidMD[0] < 12) {
+				// Year data ends before December - incomplete historical year, skip it
+				unset($cumeSums[$y]);
 			}
 		}
 
@@ -134,24 +141,36 @@ class CumulativeRecords {
 				'lo' => [], 'hi' => [], 'years' => []];
 		}
 
-		// Compute min/max across years for each day of year
+		// Compute min/max across years for each calendar date (month-day)
+		// Using [m][d] keys for proper calendar alignment (March 1 is always 3-1, not DOY 60 vs 61)
 		$lo = [];
 		$hi = [];
 		$years = [];
 
-		for ($doy = 1; $doy <= 366; $doy++) {
-			$vals = [];
-			foreach ($cumeSums as $y => $days) {
-				if (isset($days[$doy])) {
-					$vals[] = $days[$doy];
+		// Iterate through all possible calendar dates (Jan 1 through Dec 31, including Feb 29)
+		for ($m = 1; $m <= 12; $m++) {
+			$daysInMonth = ($m === 2) ? 29 : (in_array($m, [4, 6, 9, 11]) ? 30 : 31);
+			for ($d = 1; $d <= $daysInMonth; $d++) {
+				// Skip Feb 29 for the final DOY-indexed output (will be handled separately if needed)
+				if ($m === 2 && $d === 29) { continue; }
+				
+				$vals = [];
+				foreach ($cumeSums as $y => $ymonths) {
+					if (isset($ymonths[$m][$d])) {
+						$vals[] = $ymonths[$m][$d];
+					}
 				}
+
+				if (empty($vals)) { continue; }
+
+				if (!isset($lo[$m])) { $lo[$m] = []; }
+				if (!isset($hi[$m])) { $hi[$m] = []; }
+				if (!isset($years[$m])) { $years[$m] = []; }
+				
+				$lo[$m][$d] = min($vals);
+				$hi[$m][$d] = max($vals);
+				$years[$m][$d] = count($vals);
 			}
-
-			if (empty($vals)) { continue; }
-
-			$lo[$doy] = min($vals);
-			$hi[$doy] = max($vals);
-			$years[$doy] = count($vals);
 		}
 
 		return [
