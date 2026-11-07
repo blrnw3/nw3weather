@@ -676,8 +676,8 @@ class Charts {
 	}
 
 	/**
-	 * Year-to-date chart for the homepage: icon-based grouped selector (Temp/Rain/Sun)
-	 * with controls ABOVE the chart so the plot spans full width.
+	 * Year-to-date chart for the homepage: icon-based grouped selector
+	 * with same options as 31-day chart, controls ABOVE the chart so plot spans full width.
 	 * Normals always on, record range off by default but toggleable,
 	 * prior-year toggle available in January only.
 	 */
@@ -691,22 +691,8 @@ class Charts {
 		$inJanuary = ($month === 1);
 		$default = 'rain';
 
-		// Icon-based groups: Temp (Min/Mean/Max), Rain (Total), Sun (Total)
-		$img = Site::IMG_ROOT;
-		$groups = array(
-			array(
-				'id' => 'temp', 'label' => 'Temp', 'icon' => $img . 'thermom8_small.png',
-				'options' => array('tmin' => 'Min', 'tmean' => 'Mean', 'tmax' => 'Max'),
-			),
-			array(
-				'id' => 'rain', 'label' => 'Rain', 'icon' => $img . 'icon-rain.svg',
-				'options' => array('rain' => 'Total'),
-			),
-			array(
-				'id' => 'sun', 'label' => 'Sun', 'icon' => $img . 'icon-sun.svg',
-				'options' => array('sunhr' => 'Total'),
-			),
-		);
+		// Use same groups as 31-day chart (Temp, Rain, Wind, Pressure, Humidity, Dew, Sun)
+		$groups = self::simpleGroups();
 
 		$varMeta = self::selectableVarMeta($groups);
 		$defaultGroup = 'rain';
