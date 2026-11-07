@@ -601,11 +601,23 @@ if ($mode === 'annual') {
 				$md = Data::getDailyDataForYear($type, $y);
 				$md = overlaySunshineRecent($type, $md, $y);
 				$flat = Data::MDtoZ($md);
-				$series = []; $run = 0;
-				foreach ($flat as $v) {
-					$val = cv($v);
-					if ($cume) { $run += ($val === null ? 0 : $val); $series[] = nw3_round($run, 2); }
-					else { $series[] = $val; }
+				$series = [];
+				if ($cume) {
+					// For cumulative: accumulate raw values first, then convert cumulative totals
+					// This matches the CumulativeRecords behavior for consistency
+					$run = 0;
+					foreach ($flat as $v) {
+						if ($v !== null && $v !== '' && nw3_is_numeric($v)) {
+							$run += (float)$v;
+						}
+						// Convert the cumulative total to user units
+						$series[] = nw3_round(cv($run), 2);
+					}
+				} else {
+					// For non-cumulative: convert each daily value
+					foreach ($flat as $v) {
+						$series[] = cv($v);
+					}
 				}
 				return $series;
 			};
@@ -679,11 +691,23 @@ if ($mode === 'annual') {
 				}
 			}
 			if (isset($_GET['lta']) && $ltaDaily) {
-				$ltaSeries = []; $run = 0;
-				for ($z = 0; $z < $axisLen; $z++) {
-					$lv = isset($ltaDaily[$z]) ? cv($ltaDaily[$z]) : null;
-					if ($cume) { $run += ($lv === null ? 0 : $lv); $ltaSeries[] = nw3_round($run, 2); }
-					else { $ltaSeries[] = $lv; }
+				$ltaSeries = [];
+				if ($cume) {
+					// For cumulative normals: accumulate raw values first, then convert cumulative totals
+					$run = 0;
+					for ($z = 0; $z < $axisLen; $z++) {
+						$lv = isset($ltaDaily[$z]) ? $ltaDaily[$z] : null;
+						if ($lv !== null && nw3_is_numeric($lv)) {
+							$run += (float)$lv;
+						}
+						$ltaSeries[] = nw3_round(cv($run), 2);
+					}
+				} else {
+					// For non-cumulative normals: convert each daily value
+					for ($z = 0; $z < $axisLen; $z++) {
+						$lv = isset($ltaDaily[$z]) ? $ltaDaily[$z] : null;
+						$ltaSeries[] = cv($lv);
+					}
 				}
 				// Same colour as the main series, dotted (legacy jpgraph style).
 				$out['series'][] = [

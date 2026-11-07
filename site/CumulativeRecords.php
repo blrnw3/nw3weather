@@ -12,7 +12,7 @@
  * rebuilt when date or data files change (same pattern as DailyRecords).
  */
 class CumulativeRecords {
-	const CACHE_VERSION = 1;
+	const CACHE_VERSION = 2;
 	const EPS = 1e-6;
 
 	/** Cheap fingerprint of daily data files to invalidate cache on edits. */
@@ -93,15 +93,21 @@ class CumulativeRecords {
 		$start = Site::BASE_YEAR;
 
 		// Compute cumulative sums for each complete year, aligned by calendar date (m-d)
+		// Only include years with data through at least December (complete historical years)
 		$cumeSums = []; // [year][m][d] => cumulative sum from Jan 1
 		foreach (Data::getDailyData($var, $start) as $y => $months) {
 			if ((int)$y >= $thisYear) { continue; } // Skip current incomplete year
 			if (!is_array($months)) { continue; }
 
+			// Pre-validate: check if year has data through December
+			// Require at least one day in December to be considered complete
+			if (!isset($months[12]) || empty($months[12])) {
+				continue; // Incomplete year, skip entirely
+			}
+
 			$cume = 0;
-			$yearValid = true;
+			$yearCume = []; // Temporary storage for this year
 			$lastValidMD = null;
-			$hasMissing = false;
 
 			// Iterate chronologically through the year
 			$isLeap = (int)date('L', mktime(0, 0, 0, 1, 1, $y));
@@ -117,22 +123,19 @@ class CumulativeRecords {
 				if ($v === null || $v === '' || !is_numeric($v)) {
 					// Missing data: stop accumulating for this year beyond this point
 					// Don't forward-fill or treat missing as zero
-					$hasMissing = true;
 					break;
 				}
 
 				// Accumulate raw values; conversion to user units happens in addCumulativeEnvelope via cv()
 				$cume += (float)$v;
-				if (!isset($cumeSums[$y])) { $cumeSums[$y] = []; }
-				if (!isset($cumeSums[$y][$m])) { $cumeSums[$y][$m] = []; }
-				$cumeSums[$y][$m][$d] = $cume;
+				if (!isset($yearCume[$m])) { $yearCume[$m] = []; }
+				$yearCume[$m][$d] = $cume;
 				$lastValidMD = [$m, $d];
 			}
 			
-			// If year completed without missing data and ends early, reject it (incomplete year)
-			if (!$hasMissing && $lastValidMD && $lastValidMD[0] < 12) {
-				// Year data ends before December - incomplete historical year, skip it
-				unset($cumeSums[$y]);
+			// Only include this year if we reached December with valid data
+			if ($lastValidMD && $lastValidMD[0] === 12) {
+				$cumeSums[$y] = $yearCume;
 			}
 		}
 
@@ -151,9 +154,6 @@ class CumulativeRecords {
 		for ($m = 1; $m <= 12; $m++) {
 			$daysInMonth = ($m === 2) ? 29 : (in_array($m, [4, 6, 9, 11]) ? 30 : 31);
 			for ($d = 1; $d <= $daysInMonth; $d++) {
-				// Skip Feb 29 for the final DOY-indexed output (will be handled separately if needed)
-				if ($m === 2 && $d === 29) { continue; }
-				
 				$vals = [];
 				foreach ($cumeSums as $y => $ymonths) {
 					if (isset($ymonths[$m][$d])) {

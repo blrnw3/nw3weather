@@ -79,13 +79,13 @@ echo "Test 5: CumulativeRecords calendar date alignment\n";
 echo str_repeat("-", 70) . "\n";
 $cumeRec = file_get_contents(__DIR__ . '/site/CumulativeRecords.php');
 test('CumulativeRecords uses [m][d] structure not [doy]',
-	preg_match('/\$cumeSums\[\$y\]\[\$m\]\[\$d\]/', $cumeRec) === 1);
+	preg_match('/\[\$m\]\[\$d\]\s*=\s*\$cume/', $cumeRec) === 1);
 test('CumulativeRecords comment mentions calendar date alignment',
 	preg_match('/calendar date.*alignment|aligned by calendar date/i', $cumeRec) === 1);
 test('CumulativeRecords stops on missing data',
-	preg_match('/\$hasMissing\s*=\s*true.*break/s', $cumeRec) === 1);
+	preg_match('/Missing data.*break|null.*break/is', $cumeRec) === 1);
 test('CumulativeRecords rejects incomplete years ending before Dec',
-	preg_match('/\$lastValidMD.*<\s*12.*unset.*cumeSums/s', $cumeRec) === 1);
+	preg_match('/\$lastValidMD.*===\s*12|reached December.*valid/is', $cumeRec) === 1);
 test('CumulativeRecords return structure uses [m][d]',
 	preg_match('/\$lo\[\$m\]\[\$d\].*=.*min/', $cumeRec) === 1);
 

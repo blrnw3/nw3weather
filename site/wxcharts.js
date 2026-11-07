@@ -780,7 +780,7 @@
 			var opts = g.options || {};
 			var keys = Object.keys(opts);
 			if (keys.indexOf(state.type) < 0) { state.type = keys[0]; }
-			if (cfg.showCume) { state.cume = !state.env && !!metaFor(state.type).summable; }
+			if (cfg.showCume) { state.cume = !!metaFor(state.type).summable; }
 			var html = '', i, k;
 			for (i = 0; i < keys.length; i++) {
 				k = keys[i];
@@ -792,7 +792,7 @@
 				$(subEl).find('button').removeClass('active');
 				$(this).addClass('active');
 				state.type = String($(this).attr('data-type'));
-				if (cfg.showCume) { state.cume = !state.env && !!metaFor(state.type).summable; }
+				if (cfg.showCume) { state.cume = !!metaFor(state.type).summable; }
 				renderAggregation();
 				syncCumeUi();
 				load();
