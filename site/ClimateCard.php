@@ -269,7 +269,7 @@ class ClimateCard {
 			return nw3_number_format((float)$v, 1) . ($showUnit ? ' hrs' : '');
 		}
 		if ($unit === Wx::Wind) {
-			return Wx::conv($v, $unit, $showUnit, false, 1); // 1 decimal place for mean wind
+			return Wx::conv($v, $unit, $showUnit);
 		}
 		return Wx::conv($v, $unit, $showUnit);
 	}
