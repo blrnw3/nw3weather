@@ -29,6 +29,7 @@
  */
 require __DIR__ . '/Page.php';
 require_once __DIR__ . '/DailyRecords.php';
+require_once __DIR__ . '/CumulativeRecords.php';
 require_once __DIR__ . '/SunTracker.php';
 ini_set('display_errors', '0');
 
@@ -326,6 +327,40 @@ function addEnvelope(&$out, $type, $yr, $mon, $raw = []) {
 			? $plural($counts['hi'], 'high') . ', ' . $plural($counts['lo'], 'low') . ' in ' . $period
 			: 'No record highs or lows in ' . $period;
 	}
+}
+
+/**
+ * Cumulative station record envelope for YTD charts: the record low-high Jan1-to-date cumulative
+ * total across historic complete years (CumulativeRecords, precomputed). Only for summable variables.
+ * $raw is the plotted year's cumulative values in axis order.
+ */
+function addCumulativeEnvelope(&$out, $type, $yr, $raw = []) {
+	$rec = CumulativeRecords::get($type);
+	if (!$rec || !count($rec['hi'])) { return; }
+	$len = count($out['categories']);
+	$band = [];
+
+	for ($i = 0; $i < $len; $i++) {
+		$doy = $i + 1; // Day of year (1-based)
+		$lo = isset($rec['lo'][$doy]) ? cv($rec['lo'][$doy]) : null;
+		$hi = isset($rec['hi'][$doy]) ? cv($rec['hi'][$doy]) : null;
+		// For cumulative totals, show range from low to high (both exist for cumulative envelopes)
+		$band[] = ($lo === null || $hi === null) ? null : [min($lo, $hi), max($lo, $hi)];
+	}
+
+	array_unshift($out['series'], [
+		'name' => 'Station record range',
+		'data' => $band,
+		'color' => $out['colour'],
+		'type' => 'arearange',
+		'band' => true,
+		'recordHigh' => false, // Cumulative envelope shows both low and high
+	]);
+	$out['envelope'] = true;
+
+	// Note: No "record day" markers for cumulative (comparing cumulative vs cumulative is complex)
+	// Just show the envelope band for reference
+	$out['recordNote'] = 'Cumulative record range shown (historic complete years since ' . Site::BASE_YEAR . ')';
 }
 
 /** Last-N daily payload for one variable (home-page prefetch uses this in a batch). */
@@ -658,10 +693,16 @@ if ($mode === 'annual') {
 				];
 			}
 			$out['title'] = $yr . ($cume ? ' cumulative ' : ' ') . $meta['description'];
-			if (!empty($_GET['env']) && !$cume) {
-				$mdForEnv = Data::getDailyDataForYear($type, $yr);
-				$mdForEnv = overlaySunshineRecent($type, $mdForEnv, $yr);
-				addEnvelope($out, $type, $yr, 0, Data::MDtoZ($mdForEnv));
+			if (!empty($_GET['env'])) {
+				if ($cume && $summable) {
+					// Cumulative record envelope for summable variables
+					addCumulativeEnvelope($out, $type, $yr, $cumeSeries);
+				} elseif (!$cume) {
+					// Daily record envelope
+					$mdForEnv = Data::getDailyDataForYear($type, $yr);
+					$mdForEnv = overlaySunshineRecent($type, $mdForEnv, $yr);
+					addEnvelope($out, $type, $yr, 0, Data::MDtoZ($mdForEnv));
+				}
 			}
 		} else {
 			// Single month (one bar/line per day)

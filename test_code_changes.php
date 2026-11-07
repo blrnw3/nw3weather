@@ -279,6 +279,68 @@ test('Sunshine label is "Total sunshine"',
 
 echo "\n";
 
+// Test cumulative envelope implementation
+echo "Cumulative Envelope Tests:\n";
+echo str_repeat("-", 70) . "\n";
+
+test('CumulativeRecords.php exists',
+	file_exists(__DIR__ . '/site/CumulativeRecords.php'));
+
+test('CumulativeRecords.php has valid syntax',
+	shell_exec('php -l ' . escapeshellarg(__DIR__ . '/site/CumulativeRecords.php') . ' 2>&1 | grep -c "No syntax errors"') == 1);
+
+$cumeRec = file_get_contents(__DIR__ . '/site/CumulativeRecords.php');
+
+test('CumulativeRecords has CACHE_VERSION constant',
+	preg_match('/const\s+CACHE_VERSION\s*=\s*\d+/', $cumeRec) === 1);
+
+test('CumulativeRecords::get() checks summable variables only',
+	preg_match('/summable.*return\s+null/s', $cumeRec) === 1);
+
+test('CumulativeRecords::build() computes Jan1-to-date cumulative sums',
+	preg_match('/cumulative.*Jan.*date|cume.*\+=/s', $cumeRec) === 1);
+
+test('CumulativeRecords handles leap years',
+	preg_match('/leap|366|isLeap/i', $cumeRec) === 1);
+
+test('CumulativeRecords skips current incomplete year',
+	preg_match('/thisYear.*continue|if.*>=.*thisYear/s', $cumeRec) === 1);
+
+test('CumulativeRecords skips missing data (not treating as zero)',
+	preg_match('/null.*continue|missing.*continue/s', $cumeRec) === 1 &&
+	preg_match('/Skip missing data/i', $cumeRec) === 1);
+
+test('CumulativeRecords computes min/max per day of year',
+	preg_match('/min.*vals.*max.*vals/s', $cumeRec) === 1);
+
+$histdata = file_get_contents(__DIR__ . '/site/histdata.php');
+
+test('histdata.php requires CumulativeRecords.php',
+	preg_match('/require.*CumulativeRecords\.php/', $histdata) === 1);
+
+test('histdata.php has addCumulativeEnvelope function',
+	preg_match('/function\s+addCumulativeEnvelope/', $histdata) === 1);
+
+test('addCumulativeEnvelope calls CumulativeRecords::get()',
+	preg_match('/CumulativeRecords::get/', $histdata) === 1);
+
+test('addCumulativeEnvelope uses arearange type for cumulative band',
+	preg_match('/addCumulativeEnvelope.*arearange/s', $histdata) === 1);
+
+test('histdata.php allows env=1 with cume=1 for summable variables',
+	preg_match('/if.*env.*cume.*summable.*addCumulativeEnvelope/s', $histdata) === 1);
+
+test('histdata.php still calls regular envelope for non-cumulative',
+	preg_match('/elseif.*!.*cume.*addEnvelope/s', $histdata) === 1);
+
+test('ChartHelper removes misleading tooltip limitation text',
+	!preg_match('/not cumulative envelopes|NOT a cumulative envelope/i', $chartHelper));
+
+test('wxcharts.js cache buster bumped to 20261107a',
+	preg_match('/wxcharts\.js\?20261107a/', $chartHelper) === 1);
+
+echo "\n";
+
 // Summary
 echo str_repeat("=", 70) . "\n";
 echo "Test Summary\n";

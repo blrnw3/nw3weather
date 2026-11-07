@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/wxcharts.js?20261102o"></script>' . "\n";
+		echo '<script src="/wxcharts.js?20261107a"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */
@@ -741,12 +741,8 @@ class Charts {
 		echo '<div class="wxsel-label">Options</div>' . "\n";
 		echo '<div class="wxsel-normals">'
 			. '<button type="button" class="wxsel-toggle" data-env="1" aria-pressed="false"'
-			. ' title="Shade the station\'s record low to record high for each date (since 2009; shows daily ranges, not cumulative envelopes)">Station record range</button>'
+			. ' title="Shade the station\'s record low to record high for each date (since 2009)">Station record range</button>'
 			. '</div>' . "\n";
-		// Note: Record range (env=1) shows daily min/max ranges per calendar date.
-		// For cumulative totals (rain/sunshine), this is NOT a cumulative envelope
-		// but shows the range of daily values, which may not be meaningful.
-		// Proper cumulative envelope would require backend implementation.
 		echo '</div>' . "\n";
 		echo '<div id="' . $id . '" class="wxchart wxchart-loading" style="min-height:' . $height . 'px;"></div>' . "\n";
 		echo '</div>' . "\n"; // wxsel-chart
