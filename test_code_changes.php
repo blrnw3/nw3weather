@@ -307,8 +307,8 @@ test('CumulativeRecords skips current incomplete year',
 	preg_match('/thisYear.*continue|if.*>=.*thisYear/s', $cumeRec) === 1);
 
 test('CumulativeRecords skips missing data (not treating as zero)',
-	preg_match('/null.*continue|missing.*continue/s', $cumeRec) === 1 &&
-	preg_match('/Missing data.*stop|hasMissing.*=.*true/is', $cumeRec) === 1);
+	preg_match('/Missing data.*discard/is', $cumeRec) === 1 &&
+	preg_match('/\$yearCume\s*=\s*\[\]/', $cumeRec) === 1);
 
 test('CumulativeRecords computes min/max per day of year',
 	preg_match('/min.*vals.*max.*vals/s', $cumeRec) === 1);

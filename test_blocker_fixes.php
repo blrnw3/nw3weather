@@ -55,25 +55,25 @@ test('CumulativeRecords does NOT have "Skip Feb 29" comment',
 
 echo "\n";
 
-// Blocker 4: Cache version bumped
-echo "Blocker 4: Cache version bumped to 2\n";
+// Blocker 4: Cache version bumped (now 3 after final blocker fix)
+echo "Blocker 4: Cache version bumped\n";
 echo str_repeat("-", 70) . "\n";
-test('CumulativeRecords CACHE_VERSION is 2',
-	preg_match('/const\s+CACHE_VERSION\s*=\s*2/', $cumeRec) === 1);
-test('CumulativeRecords CACHE_VERSION is NOT 1',
-	preg_match('/const\s+CACHE_VERSION\s*=\s*1/', $cumeRec) === 0);
+test('CumulativeRecords CACHE_VERSION is 3',
+	preg_match('/const\s+CACHE_VERSION\s*=\s*3/', $cumeRec) === 1);
+test('CumulativeRecords CACHE_VERSION is NOT 1 or 2',
+	preg_match('/const\s+CACHE_VERSION\s*=\s*[12]/', $cumeRec) === 0);
 
 echo "\n";
 
-// Blocker 5: Incomplete year rejection
+// Blocker 5: Incomplete year rejection (final fix: require exactly Dec 31)
 echo "Blocker 5: Complete year validation\n";
 echo str_repeat("-", 70) . "\n";
-test('CumulativeRecords pre-validates December presence',
-	preg_match('/check.*December|December.*complete|!isset.*months\[12\]/is', $cumeRec) === 1);
-test('CumulativeRecords only includes if reached December',
-	preg_match('/\$lastValidMD.*===.*12|reached December/is', $cumeRec) === 1);
-test('CumulativeRecords comment mentions complete historical years',
-	preg_match('/complete historical years|complete year/i', $cumeRec) === 1);
+test('CumulativeRecords requires lastValidMD === [12, 31]',
+	preg_match('/\$lastValidMD\[0\]\s*===\s*12\s*&&\s*\$lastValidMD\[1\]\s*===\s*31/', $cumeRec) === 1);
+test('CumulativeRecords discards yearCume on missing data',
+	preg_match('/\$yearCume\s*=\s*\[\]/', $cumeRec) === 1);
+test('CumulativeRecords comment mentions "every expected calendar day" or "exactly Dec 31"',
+	preg_match('/every expected calendar day|exactly Dec 31/i', $cumeRec) === 1);
 
 echo "\n";
 

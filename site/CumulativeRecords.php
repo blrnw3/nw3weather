@@ -12,7 +12,7 @@
  * rebuilt when date or data files change (same pattern as DailyRecords).
  */
 class CumulativeRecords {
-	const CACHE_VERSION = 2;
+	const CACHE_VERSION = 3;
 	const EPS = 1e-6;
 
 	/** Cheap fingerprint of daily data files to invalidate cache on edits. */
@@ -93,17 +93,11 @@ class CumulativeRecords {
 		$start = Site::BASE_YEAR;
 
 		// Compute cumulative sums for each complete year, aligned by calendar date (m-d)
-		// Only include years with data through at least December (complete historical years)
+		// Only include years with valid data for every expected calendar day through Dec 31
 		$cumeSums = []; // [year][m][d] => cumulative sum from Jan 1
 		foreach (Data::getDailyData($var, $start) as $y => $months) {
 			if ((int)$y >= $thisYear) { continue; } // Skip current incomplete year
 			if (!is_array($months)) { continue; }
-
-			// Pre-validate: check if year has data through December
-			// Require at least one day in December to be considered complete
-			if (!isset($months[12]) || empty($months[12])) {
-				continue; // Incomplete year, skip entirely
-			}
 
 			$cume = 0;
 			$yearCume = []; // Temporary storage for this year
@@ -121,8 +115,9 @@ class CumulativeRecords {
 				$v = isset($months[$m][$d]) ? $months[$m][$d] : null;
 				
 				if ($v === null || $v === '' || !is_numeric($v)) {
-					// Missing data: stop accumulating for this year beyond this point
+					// Missing data: discard entire temporary year upon ANY missing day
 					// Don't forward-fill or treat missing as zero
+					$yearCume = []; // Discard all accumulated data for this year
 					break;
 				}
 
@@ -133,8 +128,9 @@ class CumulativeRecords {
 				$lastValidMD = [$m, $d];
 			}
 			
-			// Only include this year if we reached December with valid data
-			if ($lastValidMD && $lastValidMD[0] === 12) {
+			// Only include this year if last valid date is exactly Dec 31
+			// This ensures every expected calendar day was valid (no missing days)
+			if ($lastValidMD && $lastValidMD[0] === 12 && $lastValidMD[1] === 31) {
 				$cumeSums[$y] = $yearCume;
 			}
 		}
