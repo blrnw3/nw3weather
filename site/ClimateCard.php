@@ -13,7 +13,7 @@
  */
 class ClimateCard {
 	const CACHE_FILE = 'serialised_climrec.txt';
-	const CACHE_VERSION = 4;
+	const CACHE_VERSION = 5;
 
 	/** First year used for records (the station record). */
 	const SINCE_YEAR = Site::BASE_YEAR;
@@ -269,7 +269,7 @@ class ClimateCard {
 			return nw3_number_format((float)$v, 1) . ($showUnit ? ' hrs' : '');
 		}
 		if ($unit === Wx::Wind) {
-			return Wx::conv($v, $unit, $showUnit, false, -1); // whole numbers
+			return Wx::conv($v, $unit, $showUnit, false, 1); // 1 decimal place for mean wind
 		}
 		return Wx::conv($v, $unit, $showUnit);
 	}

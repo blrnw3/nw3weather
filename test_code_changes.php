@@ -75,8 +75,8 @@ echo str_repeat("-", 70) . "\n";
 
 $climateCard = file_get_contents(__dir__ . '/site/ClimateCard.php');
 
-test('CACHE_VERSION is 4',
-	preg_match('/const\s+CACHE_VERSION\s*=\s*4/', $climateCard) === 1);
+test('CACHE_VERSION is 5 (invalidates old mean wind cache)',
+	preg_match('/const\s+CACHE_VERSION\s*=\s*5/', $climateCard) === 1);
 
 test('wmean row exists with label "Mean wind"',
 	preg_match('/[\'"]wmean[\'"].*[\'"]label[\'"].*=>[^;]*[\'"]Mean wind[\'"]/', $climateCard) === 1);
