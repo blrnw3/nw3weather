@@ -272,9 +272,18 @@ JS;
 		}
 		$rows[] = ['<span title="Sunshine from the webcam, yesterday">Yesterday</span>', '<b>' . self::fmtHours($yTot['hours'] ?? null, (bool)($yTot['partial'] ?? false)) . '</b>'
 			. ($yTot !== null && $yTot['pct'] !== null ? ' <span class="wx-when">(' . $yTot['pct'] . '%)</span>' : '')];
-		$rows[] = ['<span title="' . htmlspecialchars($moonName) . '">Moon</span>', '<b>' . ($moonphase ?? '&ndash;') . '</b> lit'
-			. (($wax = self::moonWaxing($moonage ?? null)) !== null ? ', ' . ($wax ? 'waxing' : 'waning') : '')];
-		$rows[] = ['Moonrise/set', '<b>' . ($moonrise ?? '&ndash;') . '</b> / <b>' . ($moonset ?? '&ndash;') . '</b>'];
+		// Single moon line: "Moon 5% lit · ↑ rise ↓ set" (times in chronological order).
+		$moonVal = '<b>' . ($moonphase ?? '&ndash;') . '</b> lit';
+		$mr = isset($moonrise) ? trim((string)$moonrise) : '';
+		$ms = isset($moonset) ? trim((string)$moonset) : '';
+		$bits = [];
+		if ($mr !== '') { $bits[] = ['t' => $mr, 'html' => '<span title="Moonrise">&uarr; <b>' . htmlspecialchars($mr) . '</b></span>']; }
+		if ($ms !== '') { $bits[] = ['t' => $ms, 'html' => '<span title="Moonset"><b>' . htmlspecialchars($ms) . '</b> &darr;</span>']; }
+		usort($bits, function ($a, $b) { return strcmp($a['t'], $b['t']); });
+		if ($bits) {
+			$moonVal .= ' &middot; ' . implode(' ', array_map(function ($b) { return $b['html']; }, $bits));
+		}
+		$rows[] = ['<span title="' . htmlspecialchars($moonName) . '">Moon</span>', $moonVal];
 		echo '<div class="wx-card-rows">';
 		foreach ($rows as $r) { echo '<div><span class="k">' . $r[0] . '</span><span class="v">' . $r[1] . '</span></div>'; }
 		echo '</div></div>';

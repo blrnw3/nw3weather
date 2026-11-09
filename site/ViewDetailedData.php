@@ -1951,7 +1951,8 @@ class ViewDetailedData {
 		if ($this->isSummableDetail()) {
 			$recentLabel = ($this->intradayVar !== null) ? 'Past 24hrs' : 'Past 31 days';
 			echo '<h3>' . $recentLabel . ' and current year cumulative trends for ' . $this->label . '</h3>';
-			echo '<div class="detail-grid charts">';
+			// detail-chart-pair required: bare "charts" sets display:flex and stacks the two wrappers.
+			echo '<div class="detail-grid charts detail-chart-pair">';
 			echo '<div>';
 			if ($this->intradayVar !== null) {
 				Charts::intraday(['num' => 1], $this->intradayVar, ['height' => 330]);

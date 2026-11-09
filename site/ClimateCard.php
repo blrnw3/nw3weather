@@ -307,7 +307,7 @@ class ClimateCard {
 		if ($flag === null) { return ''; }
 		// Provisional flags are hollow rings in the same colour (red new record, orange equal)
 		$cls = $flag['status'] . ($flag['soFar'] ? ' clim-dot-sofar' : '');
-		$title = ($flag['status'] === self::TIE ? 'Equals the record' : 'New record') . ($flag['soFar'] ? ' so far today (provisional)' : '');
+		$title = ($flag['status'] === self::TIE ? 'Equals record' : 'New record') . ($flag['soFar'] ? ' so far today (provisional)' : '');
 		return '<span class="clim-dot clim-dot-' . $cls . '" title="' . $title . '"></span>';
 	}
 
@@ -353,7 +353,7 @@ class ClimateCard {
 				if ($n) {
 					$normal .= ' <span class="clim-wet" title="Rain (&ge;' . self::WET_MM . ' mm) fell on ' . $dateLabel . ' in '
 						. $r['dayWet'] . ' of ' . $n . ' years since ' . self::SINCE_YEAR . '">'
-						. (int)round(100 * $r['dayWet'] / $n) . '% wet</span>';
+						. (int)round(100 * $r['dayWet'] / $n) . '%</span>';
 				}
 				$normV = null; // no difference-from-normal for rain
 			} elseif ($normV === null) {
@@ -401,7 +401,7 @@ class ClimateCard {
 				$what = ($f['scope'] === 'all') ? 'All-time record ' . $name
 					: (($f['scope'] === 'month') ? $monthLabel . ' record ' . $name : 'Record ' . $name . ' for ' . $dateLabel);
 				$prev = $f['rec'];
-				$text = ($f['status'] === self::TIE ? 'Equals the ' . lcfirst($what) : $what)
+				$text = ($f['status'] === self::TIE ? 'Equals ' . lcfirst($what) : $what)
 					. ($f['soFar'] ? ' so far' : '') . ': <b>' . self::fmt($tv, $unit, true) . '</b> '
 					. ($f['status'] === self::TIE ? '' : 'beats ' . self::fmt($prev['v'], $unit, true) . ' ')
 					. '(' . self::prevWhen($prev, $f['scope']) . ')';
@@ -449,10 +449,10 @@ class ClimateCard {
 		}
 		echo '<div class="clim-foot">'
 			. ($key !== '' ? $key . '&middot; ' : '')
-			. 'Records since ' . $since . ' (ties show the most recent year) &middot; '
+			. 'Records since ' . $since . ' (ties show most recent year) &middot; '
 			. 'day max 09-21, night min 21-09 &middot; '
 			. '<a href="/wxaverages.php" title="Long-term NW3 climate averages">normals</a> 1991-2020; '
-			. 'rain normal is the average total and the share of years with &ge;' . self::WET_MM . ' mm on this date &middot; '
+			. 'rain normal is average total and share of years with &ge;' . self::WET_MM . ' mm on this date &middot; '
 			. '<a href="/RankDay.php" title="Daily records and rankings">more records</a></div>';
 		echo '</div>';
 	}
