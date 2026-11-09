@@ -28,13 +28,16 @@ class RankFlags {
 	const PCT = 99.0;
 	const TOP_N_PCT = 90.0;
 	const FILE = 'rank_flags.json';
-	const CACHE_VERSION = 2; // bump to invalidate cache when logic changes
+	const CACHE_VERSION = 3; // bump to invalidate cache when logic changes
 	const MAX_AGE = 3600;     // ignore a cache older than this (cron stalled)
 	const SHOW = 4;           // items shown before "more"
 	const COMPLETE_FRAC = 0.90; // partial periods this complete rank in both directions
 
 	/** Variables never ranked here (directions, notes, manual flags, pond). */
 	private static $skip = ['wdir', 'cloud', 'comms', 'extra', 'issues', 'away', 'spare', 'pond'];
+
+	/** Skip daily (today/yesterday) flags only; monthly/annual/period/spell still allowed. */
+	private static $skipDaily = ['fog'];
 
 	/** Day definitions differ from midnight-midnight: no "today so far" for these. */
 	private static $noToday = ['nightmin', 'daymax'];
@@ -195,29 +198,31 @@ class RankFlags {
 			$common = ['var' => $var, 'desc' => isset($meta['description']) ? $meta['description'] : $var,
 				'unit' => $unit, 'count' => !empty($meta['count-only'])];
 
-			// Days
-			$ranked = [];
-			foreach (Data::getDailyData($var, $start) as $y => $months) {
-				foreach ($months as $m => $daily) {
-					foreach ($daily as $d => $v) {
-						if (!Util::isBlank($v)) { $ranked[] = [(float)$v, Date::mkdate($m, $d, $y)]; }
+			// Days (fog excluded: a 0/1 observation does not rank usefully day-by-day)
+			if (!in_array($var, self::$skipDaily, true)) {
+				$ranked = [];
+				foreach (Data::getDailyData($var, $start) as $y => $months) {
+					foreach ($months as $m => $daily) {
+						foreach ($daily as $d => $v) {
+							if (!Util::isBlank($v)) { $ranked[] = [(float)$v, Date::mkdate($m, $d, $y)]; }
+						}
 					}
 				}
+				sort($ranked);
+				$common['since'] = self::firstYear($ranked, $start);
+				$hasToday = !in_array($var, self::$manualVars, true) && empty($meta['derived'])
+					&& !in_array($var, self::$noToday, true);
+				$cur = Report::currentRanks($ranked, ['today' => $hasToday ? $todayKey : null, 'yest' => $yestKey], $dayKey);
+				$dayUrl = self::url('RankDay.php', ['vartype' => $var, 'month' => 0, 'start_year_rep' => $start, 'rankLimit' => 25]);
+				$tDirs = self::partialDirs($mono, $dayFrac, self::dayLowBoring($var));
+				if (isset($cur['today']) && count($tDirs)) {
+					self::consider($items, $cur['today'], $tDirs, $common + ['kind' => 'day', 'label' => 'Today', 'date' => $todayKey, 'soFar' => true, 'url' => $dayUrl]);
+				}
+				if (isset($cur['yest'])) {
+					self::consider($items, $cur['yest'], self::dayLowBoring($var) ? ['hi'] : ['hi', 'lo'], $common + ['kind' => 'day', 'label' => 'Yesterday', 'date' => $yestKey, 'soFar' => false, 'url' => $dayUrl]);
+				}
+				unset($ranked);
 			}
-			sort($ranked);
-			$common['since'] = self::firstYear($ranked, $start);
-			$hasToday = !in_array($var, self::$manualVars, true) && empty($meta['derived'])
-				&& !in_array($var, self::$noToday, true);
-			$cur = Report::currentRanks($ranked, ['today' => $hasToday ? $todayKey : null, 'yest' => $yestKey], $dayKey);
-			$dayUrl = self::url('RankDay.php', ['vartype' => $var, 'month' => 0, 'start_year_rep' => $start, 'rankLimit' => 25]);
-			$tDirs = self::partialDirs($mono, $dayFrac, self::dayLowBoring($var));
-			if (isset($cur['today']) && count($tDirs)) {
-				self::consider($items, $cur['today'], $tDirs, $common + ['kind' => 'day', 'label' => 'Today', 'date' => $todayKey, 'soFar' => true, 'url' => $dayUrl]);
-			}
-			if (isset($cur['yest'])) {
-				self::consider($items, $cur['yest'], self::dayLowBoring($var) ? ['hi'] : ['hi', 'lo'], $common + ['kind' => 'day', 'label' => 'Yesterday', 'date' => $yestKey, 'soFar' => false, 'url' => $dayUrl]);
-			}
-			unset($ranked);
 
 			// Months and years: totals for summable variables, else means.
 			$st = $isSum ? Data::SUMMARY_SUM : Data::SUMMARY_MEAN;
