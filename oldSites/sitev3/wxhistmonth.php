@@ -49,23 +49,28 @@ $fdatt = $fullpath."datt".$yproc.".csv";
 $fdatm = $fullpath."datm".$yproc.".csv";
 $dsun = file($root.'maxsun.csv');
 $dtfanom = file($root.'tminmaxav.csv');
-$dfdat = file($fdat);
-$dfdatt = file($fdatt);
-$dfdatm = file($fdatm);
+$dfdat = file($fdat) ?: array();
+$dfdatt = file($fdatt) ?: array();
+$dfdatm = file($fdatm) ?: array();
 /*
 if(mkdate() == $sproc) {
 }
 */
 
 for($d = 0; $d < $dim; $d++) {
-	$mdat[$d] = explode(',', $dfdat[$dzed-$d]);
-	$mdatt[$d] = explode(',', $dfdatt[$dzed-$d]);
-	$mdatm[$d] = explode(',', $dfdatm[$dzed-$d]);
-	for($v = 0; $v < 3; $v++) { $mdatx[$v][$d] = $mdat[$d][$v*3+1] - $mdat[$d][$v*3]; }
+	// Missing year files / not-yet-written day rows (just after midnight) must not fatal.
+	$mdat[$d] = explode(',', $dfdat[$dzed-$d] ?? '');
+	$mdatt[$d] = explode(',', $dfdatt[$dzed-$d] ?? '');
+	$mdatm[$d] = explode(',', $dfdatm[$dzed-$d] ?? '');
+	for($v = 0; $v < 3; $v++) { $mdatx[$v][$d] = nw3_to_number($mdat[$d][$v*3+1] ?? null) - nw3_to_number($mdat[$d][$v*3] ?? null); }
 }
 //print_r($mdat);
 $mdat = array_dswap($mdat); $mdatm = array_dswap($mdatm); $mdatt = array_dswap($mdatt);
-if(is_array($mdat[29])) { $mdat[29] = array_map('clearblank2',$mdat[29]); } //special case due to weird issue with csv end-of-line blanks
+if(is_array($mdat[29] ?? null)) { $mdat[29] = array_map('clearblank2',$mdat[29]); } //special case due to weird issue with csv end-of-line blanks
+// Ensure event/sun columns exist after transpose when some day rows were blank/short.
+for($v = 0; $v <= 7; $v++) {
+	if(!isset($mdatm[$v]) || !is_array($mdatm[$v])) { $mdatm[$v] = array(); }
+}
 
 for($v = 0; $v < count($data_description); $v++) {
 	if(!isset($mdat[$v])) { $mdat[$v] = array(); } // older months have fewer columns: 'n/a' below
@@ -140,8 +145,8 @@ $daysofOtherDescrip[6] = 'Total Events';
 
 //Misc.
 $snowfall = 0;
-foreach ($mdatm[3] as $d => $sn) {
-	$snowfall += nw3_to_number(($sn == 'y') ? $mdat[13][$d] : $sn); // 8.x: '' + int is a TypeError
+foreach (($mdatm[3] ?? array()) as $d => $sn) {
+	$snowfall += nw3_to_number(($sn == 'y') ? ($mdat[13][$d] ?? null) : $sn); // 8.x: '' + int is a TypeError
 }
 if($daysofRn[2] > 0) {
 	$misc[0] = 'Mean rainfall for days with >0.3mm: '. conv($msdat[13][2]*$dim / $daysofRn[2], 2);

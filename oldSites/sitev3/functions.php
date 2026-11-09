@@ -553,6 +553,8 @@ function mymin($arr, $debug = false) {
 }
 
 function sum_cond($arr, $isGreater, $limit, $isMean = false) {
+	// PHP 8: count(null) is a TypeError; callers may pass a missing CSV column.
+	if(!is_array($arr)) return null;
 	$cnt = $blanks = 0;
 
 	if($isGreater) {
