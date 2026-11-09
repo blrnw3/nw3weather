@@ -8,9 +8,11 @@ Page::init([
 	"description" => "Historical ranked daily weather values for Hampstead, London (NW3) - temperature, rainfall, wind and more.",
 	"needValcolStyle" => true,
 ]);
+// Daily fog rankings are binary (fog/no fog) and not meaningful; keep fog on monthly+.
+if (isset($_GET['vartype']) && $_GET['vartype'] === 'fog') { unset($_GET['vartype']); }
 Page::Start();
 
-$report = new Report(["default" => "rain", "badCats" => ["cloud"]]);
+$report = new Report(["default" => "rain", "badCats" => ["cloud", "fog"]]);
 $report->controls([
 	"heading" => "Historical Ranked Daily Data",
 	"mode" => "rank-daily",
