@@ -311,29 +311,34 @@ Charts::dailySelectable(
 <?php endif; ?>
 
 <?php if ($forecast): ?>
-<h2>Forecast</h2>
-<div class="home-forecast">
-	<?php foreach ($forecast as $day): ?>
-	<div class="fcast-day">
-		<img src="<?php echo Site::IMG_ROOT . $day['icon']; ?>_lg.png" width="60" alt="<?php echo htmlspecialchars($day['desc']); ?>" title="<?php echo htmlspecialchars($day['desc']); ?>" />
-		<div class="fcast-label"><?php echo htmlspecialchars($day['label']); ?></div>
-		<?php if (!empty($day['desc'])): ?>
-		<div class="fcast-desc"><?php echo htmlspecialchars($day['desc']); ?></div>
-		<?php endif; ?>
-		<div class="fcast-temps"><b><?php echo Wx::conv($day['tmax'], Wx::Temperature, true, false, -1); ?></b> / <?php echo Wx::conv($day['tmin'], Wx::Temperature, true, false, -1); ?></div>
-		<?php
-		$precip = isset($day['precip']) ? $day['precip'] : null;
-		$pop = isset($day['pop']) ? $day['pop'] : null;
-		if ($precip !== null && $precip !== '' && (float)$precip > 0): ?>
-		<div class="fcast-pop"><?php echo Wx::conv($precip, Wx::Rain, true); ?></div>
-		<?php elseif ($pop !== null && $pop !== '' && (int)$pop > 0): ?>
-		<div class="fcast-pop"><?php echo intval($pop); ?>% rain</div>
-		<?php endif; ?>
-	</div>
-	<?php endforeach; ?>
-	<div class="fcast-more">
-		<a href="wx5.php" title="5-Day Local Forecast and Maps">Full forecast &amp; maps &rarr;</a>
-		<span class="fcast-src"> · data <a href="https://www.yr.no/en/forecast/daily-table/2-2647553/" title="Yr.no forecast for Hampstead" rel="noopener">Yr.no</a></span>
+<div class="wx-cards home-fcast" id="fcast-wrap">
+	<div class="wx-card wx-card-fcast">
+		<div class="wx-card-head"><span class="wx-card-label">Forecast</span></div>
+		<?php Forecast::renderHomeHeadline(); ?>
+		<div class="home-forecast">
+			<?php foreach ($forecast as $day): ?>
+			<div class="fcast-day">
+				<img src="<?php echo Site::IMG_ROOT . $day['icon']; ?>_lg.png" width="60" alt="<?php echo htmlspecialchars($day['desc']); ?>" title="<?php echo htmlspecialchars($day['desc']); ?>" />
+				<div class="fcast-label"><?php echo htmlspecialchars($day['label']); ?></div>
+				<?php if (!empty($day['desc'])): ?>
+				<div class="fcast-desc"><?php echo htmlspecialchars($day['desc']); ?></div>
+				<?php endif; ?>
+				<div class="fcast-temps"><b><?php echo Wx::conv($day['tmax'], Wx::Temperature, true, false, -1); ?></b> / <?php echo Wx::conv($day['tmin'], Wx::Temperature, true, false, -1); ?></div>
+				<?php
+				$precip = isset($day['precip']) ? $day['precip'] : null;
+				$pop = isset($day['pop']) ? $day['pop'] : null;
+				if ($precip !== null && $precip !== '' && (float)$precip > 0): ?>
+				<div class="fcast-pop"><?php echo Wx::conv($precip, Wx::Rain, true); ?></div>
+				<?php elseif ($pop !== null && $pop !== '' && (int)$pop > 0): ?>
+				<div class="fcast-pop"><?php echo intval($pop); ?>% rain</div>
+				<?php endif; ?>
+			</div>
+			<?php endforeach; ?>
+			<div class="fcast-more">
+				<a href="wx5.php" title="5-Day Local Forecast and Maps">Full forecast &amp; maps &rarr;</a>
+				<span class="fcast-src"> · data <a href="https://www.yr.no/en/forecast/daily-table/2-2647553/" title="Yr.no forecast for Hampstead" rel="noopener">Yr.no</a></span>
+			</div>
+		</div>
 	</div>
 </div>
 <?php endif; ?>

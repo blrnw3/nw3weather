@@ -1771,6 +1771,22 @@ div.charts.detail-chart-pair {
 .fcast-src a {
 	color: #666;
 }
+.wx-cards.home-fcast {
+	margin-top: 0.8rem;
+}
+.wx-card-fcast {
+	grid-column: 1 / -1;
+	min-width: 0;
+	border-top-color: #2554c7;
+}
+.wx-card-fcast .wx-card-head { color: #2554c7; }
+.wx-card-fcast .fc-credit { margin: 0 0 0.7rem; }
+.fcast-headline {
+	font-size: 1.05rem;
+	font-weight: 600;
+	color: #1f303a;
+	margin: 0.1rem 0 0.35rem;
+}
 
 /****************** Forecast page (wx5) ***************************/
 .fc-table-wrap {
@@ -1858,18 +1874,51 @@ div.charts.detail-chart-pair {
 	margin: 0.5rem 0 1rem;
 	flex: 1 1 100%;
 }
-.fc-pressure-grid {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 0.75rem 1rem;
-	align-items: start;
+.fc-pressure-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3rem;
+	margin: 0 0 0.6rem;
+}
+.fc-pressure-tab {
+	font: inherit;
+	font-size: 0.85rem;
+	cursor: pointer;
+	margin: 0;
+	padding: 0.25rem 0.65rem;
+	background: #fff;
+	color: #15604c;
+	border: 1px solid #d6e2d8;
+	border-radius: 5px;
+	line-height: 1.3;
+	text-align: left;
+}
+.fc-pressure-tab:hover { background: #eef5ef; }
+.fc-pressure-tab.active {
+	background: #052e24;
+	color: #fff;
+	border-color: #15866A;
+}
+.fc-pressure-scroller {
+	overflow-x: auto;
+	scroll-snap-type: x mandatory;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+}
+.fc-pressure-track {
+	display: flex;
+	align-items: flex-start;
 }
 .fc-pressure-item {
 	margin: 0;
+	flex: 0 0 100%;
+	width: 100%;
+	max-width: 100%;
+	scroll-snap-align: start;
+	scroll-snap-stop: always;
+	box-sizing: border-box;
 }
-.fc-pressure-item-analysis {
-	grid-column: 1 / -1;
-}
+.fc-pressure-item figure { margin: 0; }
 .fc-pressure-img {
 	display: block;
 	width: 100%;
@@ -1884,9 +1933,7 @@ div.charts.detail-chart-pair {
 	color: #445;
 }
 @media only screen and (max-width: 700px) {
-	.fc-pressure-grid {
-		grid-template-columns: 1fr;
-	}
+	.fc-pressure-tab { font-size: 0.78rem; padding: 0.2rem 0.45rem; }
 }
 .fc-widgets .fc-meteogram-wrap {
 	flex: 1 1 100%;
