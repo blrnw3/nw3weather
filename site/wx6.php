@@ -57,17 +57,17 @@ $moonImg .= "?" . time();
 		</div>
 		<div>
 			<div>Full Moon</div>
-			<div><img src="/static-images/fullmoon.jpg" width="87" height="75" alt="First Quarter Moon" /></div>
+			<div><img src="/static-images/fullmoon.jpg" width="87" height="75" alt="Full Moon" /></div>
 			<div><?php echo $fullmoon; ?></div>
 		</div>
 		<div>
 			<div>Last Quarter Moon</div>
-			<div><img src="/static-images/lastquartermoon.jpg" width="87" height="75" alt="First Quarter Moon" /></div>
+			<div><img src="/static-images/lastquartermoon.jpg" width="87" height="75" alt="Last Quarter Moon" /></div>
 			<div><?php echo $lastquarter; ?></div>
 		</div>
 		<div>
 			<div>New Moon</div>
-			<div><img src="/static-images/newmoon.jpg" width="87" height="75" alt="First Quarter Moon" /></div>
+			<div><img src="/static-images/newmoon.jpg" width="87" height="75" alt="New Moon" /></div>
 			<div><?php echo $nextnewmoon; ?></div>
 		</div>
 	</div>
@@ -138,7 +138,7 @@ $moonImg .= "?" . time();
 		</div>
 		<div class="rowlight">
 			<div>Next Solar Eclipse</div>
-			<div><?php echo $suneclipse; ?> </div>
+			<div><?php echo str_replace(array('Eclipse Circular', 'Eclipse Half Shadow'), array('Annular eclipse', 'Penumbral eclipse'), $suneclipse); ?> </div>
 		</div>
 	</div>
 
@@ -164,13 +164,13 @@ $moonImg .= "?" . time();
 	</div>
 	<div class="rowlight">
 		<div>Next Lunar Eclipse</div>
-		<div><?php echo $mooneclipse; ?></div>
+		<div><?php echo str_replace(array('Eclipse Circular', 'Eclipse Half Shadow'), array('Annular eclipse', 'Penumbral eclipse'), $mooneclipse); ?></div>
 	</div>
 	<div class="rowdark">
 		<div>Next Moon <abbr title="Nearest approach of Moon to Earth">Perigee</abbr></div>
 		<div><?php echo $moonperigee; ?> </div></div>
 	<div class="rowlight">
-		<div>Next Moon <abbr title="Furthest approach of Moon to Earth">Apogee</abbr></div>
+		<div>Next Moon <abbr title="Furthest distance of the Moon from Earth">Apogee</abbr></div>
 		<div><?php echo $moonapogee; ?> </div>
 	</div>
 </div>

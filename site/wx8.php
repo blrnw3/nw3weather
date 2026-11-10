@@ -273,7 +273,7 @@ class Traffic {
 		Consequently, any records from Feb 2009 to July 2010 are for East Finchley, though given the small distance involved, any data comparisons are largely valid.
 	</p>
 	<p>Data from before 2009 are mostly from the historical site at Whitestone Pond in Hampstead.
-		Where data from that record is missing, other nearby sites were used, including St James Park, Heathrow, and Kew Gardens (pre-1910).
+		Where data from that record is missing, other nearby sites were used, including St James's Park, Heathrow, and Kew Gardens (pre-1910).
 		Best efforts have been made to adjust for site differences, but uncertainties are somewhat greater for this data.
 		I am grateful to the Met Office for making this data available for free through the
 		<a href="https://data.ceda.ac.uk/badc/ukmo-midas-open/">MIDAS Open database</a>.
@@ -321,13 +321,13 @@ class Traffic {
 		<a style="display:block; margin:0.8em" href="/static-images/Sensors_to_WWW.jpg">
 			<img src="/static-images/Sensors_to_WWW.jpg" alt="Data flow chart" title="Click for full-size image" width="820" />
 		</a>
-		<br /> Each sensor wireless sends data to the base station, which transmits it to my home PC (a dedicated low-power machine running Windows 7).
+		<br /> Each sensor wirelessly sends data to the base station, which transmits it to my home PC (a dedicated low-power Windows PC).
 		Weather Display software renders and uploads this data via
 		<abbr title="file transfer protocol">FTP</abbr> to a web server -
 		which broadcasts the PHP-rendered web pages to the World Wide Web so anyone making a valid HTTP request can view them.
-		The web server runs on a Linux VM which I manage, but is provisioned by Digital Ocean.
-		All web pages and data procedures are written in PHP (inc. graphs powered by the JPGraph library),
-		with some Javascript used to provide a basic level of dynamism.
+		The web server runs on a Linux VM which I manage, but is provisioned by DigitalOcean.
+		All web pages and data procedures are written in PHP (inc. graphs powered by Highcharts),
+		with some JavaScript used to provide a basic level of dynamism.
 		Data storage is a combination of <abbr title='comma separated value'>CSV</abbr> (long-term),
 		<a href='https://en.wikipedia.org/wiki/Serialisation'>PHP-serialised</a> (short-term), and PHP variable-exported.
 	</p>
@@ -360,7 +360,7 @@ class Traffic {
 		<abbr title="PHP: Hypertext Preprocessor (processed by the server into HTML before the page loads)">PHP</abbr>, which
 		was also used extensively across the site to enable most of the new features and site-areas: obtaining all the historical data, displaying when
 		a record is set, the unit selection module, records for the current day (in the detailed pages), and a lot more besides.
-		A small amount of Javascript and AJAX were also introduced to develop the auto-updating option.<br />
+		A small amount of JavaScript and AJAX were also introduced to develop the auto-updating option.<br />
 	</p>
 
 	<p>
@@ -438,7 +438,7 @@ $traffic->prepare_annual_data_table();
 		Thanks go to TNET weather and Wildwood Weather for script ideas which helped in the development of the historical data tables.<br />
 		Thanks also to carterlake for CSS and HTML templates that I used in nw3weather's early years (pre-2013).<br />
 		Special thanks to my weather assistant Juliet, and the various other family members who have helped keep the station running over the years<br />
-		Finally, enormous thanks to any frequent visitors, and especially those have contacted me with kind words -
+		Finally, enormous thanks to any frequent visitors, and especially those who have contacted me with kind words -
 		I really appreciate this as it makes all the effort and resources I devote to building and maintaining this website especially worthwhile.
 	</p>
 
@@ -446,16 +446,12 @@ $traffic->prepare_annual_data_table();
 	<a name="Forecasting"></a>
 	<h3>Forecasting</h3>
 	<p>
-		The accuracy of the local forecast on the home page is considered to be low, since it is based entirely on pressure
-		trends - falling pressure means cloud, and if it continues to fall, then rain;
-		rising pressure signals sunny intervals then clear conditions. This is obviously very simplistic. The forecasting
-		done by national meteorological offices requires the amassing of a huge amount of data from observation sites on land (like this one),
-		on the sea, in the air and even from satellites in space. The data is then fed through supercomputers running numerical models
-		that aim to simulate extremely complex atmospheric processes.
-		The model outputs then need processing and interpreting before a forecast is produced.
-		The whole operation costs many millions of pounds to set up and run. Barometric prediction, on the other hand, is very cheap but has
-		severe limitations: it cannot offer regional guidance, it is only relevant for the next ~24-48 hours, and it breaks down
-		completely in more complex atmospheric set-ups.
+		nw3weather is an observation site, so the forecasts shown here come from external providers.
+		The homepage forecast card uses the Met Office regional headline for London &amp; South East, with daily outlook figures from Yr.no.
+		The <a href="wx5.php">forecast page</a> adds a 10-day Hampstead meteogram from Open-Meteo (falling back to Yr.no if needed),
+		the Met Office London &amp; South East discussion, and Met Office UK surface pressure charts.
+		Those products are produced by gathering observations from land sites (like this one), the sea, the air and satellites,
+		running numerical models on supercomputers, and interpreting the output.
 	</p>
 
 	<a name='data'></a>
@@ -471,7 +467,7 @@ $traffic->prepare_annual_data_table();
 		buildings (<a href='http://en.wikipedia.org/wiki/Urban_heat_island'>UHI</a> effect, turbulence).
 		Day-to-day causes are down to the localised nature of cloud and rain cells (a thunderstorm in 2009 dropped 36 mm on East Finchley, whilst Heathrow remained dry).
 		Thus, differences can be perfectly natural (though averaged out are usually small).<br />
-		At any rate, my analysis seems to support the conclusion that as far my own data is concerned, its accuracy is within
+		At any rate, my analysis seems to support the conclusion that as far as my own data is concerned, its accuracy is within
 		the deviations due to the given natural reasons in the majority of cases. The notable exception is wind speeds, which under-report by 25-50% at nw3weather. <br />
 		I will continue to strive to maintain good quality data as far as reasonably possible for a hobbyist site.
 	</p>
@@ -515,7 +511,7 @@ $traffic->prepare_annual_data_table();
 	<p>
 		For more insight into the world of a weather hobbyist,
 		<a href="news.php#post-20141116">take a look at the article on me in the local paper</a>. <br />
-		I was featured <a href="https://www.hamhigh.co.uk/news/environment/hampstead-weather-station-owner-ben-lee-rodgers-1-6192043">
+		I was featured <a href="https://www.hamhigh.co.uk/news/21352664.san-fran-man-behind-nw3-weather-station-keeps-eye-hampsteads-skies/">
 			in another article</a>, about the July 2019 heatwave, five years later.
 			And <a href="https://www.camdennewjournal.co.uk/article/you-can-see-it-from-the-heath-enthusiasts-own-weather-station-charts-record-temperatures"> again</a> for the record-breaking July 2022 heatwave.
 

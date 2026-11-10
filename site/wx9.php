@@ -13,7 +13,7 @@ Page::Start();
 	<ul>
 		<li>
 			<a href="https://aprs.fi/weather/a/GW4345" title="CWOP site for nw3weather">
-				CWOP (citizens weather observations) page - GW4345
+				CWOP (Citizen Weather Observer Program) page – GW4345
 			</a>
 		</li>
 		<li>
@@ -66,7 +66,7 @@ Page::Start();
 		<li>Proceedings of the Institution of Mechanical Engineers, 2022: <a href="https://journals.sagepub.com/doi/10.1177/09544097221148236">
 			Effects of temperature and humidity on railhead friction levels</a>
 		</li>
-		<li>Sustainable cities and societies, 2021: <a href="https://www.sciencedirect.com/science/article/abs/pii/S221067072100161X">
+		<li>Sustainable Cities and Society, 2021: <a href="https://www.sciencedirect.com/science/article/abs/pii/S221067072100161X">
 			An exploratory analysis of the trend in the demand for the London bike-sharing system: From London Olympics to Covid-19 pandemic</a>
 		</li>
 		<li>PLoS One, 2021: <a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0260969">
@@ -81,7 +81,7 @@ Page::Start();
 		<li>IEEE, 2018: <a href="https://ieeexplore.ieee.org/abstract/document/8550907">
 			Impact of Modulation Techniques for Hybrid-WDM Based FSO</a>
 		</li>
-		<li>International journal of life-cycle assesment, 2018:<a href="https://link.springer.com/article/10.1007/s11367-018-1492-2">
+		<li>International Journal of Life Cycle Assessment, 2018: <a href="https://link.springer.com/article/10.1007/s11367-018-1492-2">
 			Development of LCA Calculator to support community infrastructure co-design</a>
 		</li>
 		<li>Biology, 2018: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6023005/">
@@ -109,7 +109,7 @@ Page::Start();
 			Met Office issues UK thunderstorm warning as city set for first drops of desperately needed rain in weeks</a></li>
 		<li>Washington Post: <a href="https://www.washingtonpost.com/weather/2018/09/25/washington-has-seen-more-than-twice-much-rain-seattle-london-this-year/">
 			Washington has seen more than twice as much rain as Seattle and London this year</a></li>
-		<li>Unherd: <a href="https://unherd.com/newsroom/no-the-rain-probably-wont-affect-voter-turnout/">
+		<li>UnHerd: <a href="https://unherd.com/newsroom/no-the-rain-probably-wont-affect-voter-turnout/">
 			No, the rain probably won’t affect voter turnout</a></li>
 		<li>Total geography: <a href="https://geography.org.uk/wp-content/uploads/2024/04/Anthony-Barlow-Weather-101-GA-Conference-12.4.22.pdf">
 			Weather 101</a></li>
@@ -126,7 +126,7 @@ Page::Start();
 			<a href="https://rwcweather.com/" title="Redwood City Weather">Sister station at my home in Redwood City, California</a>
 		</li>
 		<li>
-			Decomissioned <a href="https://gc02uclblr.wordpress.com/" title="Project blog">weather comparison app for Android</a>
+			Decommissioned <a href="https://gc02uclblr.wordpress.com/" title="Project blog">weather comparison app for Android</a>
 		</li>
 	</ul>
 
@@ -140,20 +140,20 @@ Page::Start();
 		<li> <a href="http://www.wxmaps.org/pix/temp4.html"
 				title="Maps of temp and precip">
 				Next 10 days European temperatures and precipitation </a></li>
-		<li> <a href="http://www.estofex.org/"
+		<li> <a href="https://www.estofex.org/"
 				title="ESTOFEX">
 				Storm forecasts for Europe</a></li>
 	</ul>
 
 	<h3>Weather Software and Publication</h3>
 	<ul>
-		<li>	<a href="http://www.weather-display.com"
+		<li>	<a href="https://www.weather-display.com/"
 				title="Weather Station Software">
 				Weather Display</a></li>
-		<li>	<a href="http://www.weather-watch.com/smf/"
+		<li>	<a href="https://discourse.weather-watch.com/"
 				title="Weather Forums">
 				Weather Watch Forums</a></li>
-		<li>	<a href="http://www.wunderground.com/weatherstation/index.asp"
+		<li>	<a href="https://www.wunderground.com/weatherstation/index.asp"
 				title="Weather Underground">
 				Weather Underground Personal Station Signup</a></li>
 	</ul>
@@ -163,7 +163,7 @@ Page::Start();
 		<li>	<a href="https://www.davisinstruments.com/">
 				Davis Instruments</a>
 		</li>
-		<li>	<a href="http://www.weatherstations.co.uk/gooddata.htm"
+		<li>	<a href="https://www.weatherstations.co.uk/gooddata.htm"
 				title="Pro Data">
 				Tips on siting of sensors</a>
 		</li>
