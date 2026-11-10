@@ -1917,8 +1917,10 @@ div.charts.detail-chart-pair {
 	width: 100%;
 	max-width: 100%;
 	height: auto;
+	aspect-ratio: 800 / 540;
 	border: 1px solid #d5dbe0;
 	background: #fff;
+	box-sizing: content-box;
 }
 .fc-pressure-cap {
 	margin: 0.3rem 0 0;
