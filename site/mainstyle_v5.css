@@ -2153,6 +2153,27 @@ div.charts.detail-chart-pair {
 	pointer-events: none;
 }
 
+/* Rain card status pill: colour-coded by rate (site rain-rate palette), rate in tooltip */
+.rain-status {
+	display: inline-block;
+	vertical-align: 0.2em;
+	margin-left: 0.3rem;
+	padding: 0.1rem 0.5rem;
+	border-radius: 8px;
+	font-size: 0.8rem;
+	font-weight: 700;
+	white-space: nowrap;
+	cursor: help;
+}
+.rain-status-dry { background: #e2e8f0; color: #4a5568; }
+.rain-status-recent { background: #cff; color: #234e52; }
+.rain-status-slight { background: #9edffd; color: #1a365d; }
+.rain-status-light { background: #9aacff; color: #1a237e; }
+.rain-status-moderate { background: #7980ff; color: #fff; }
+.rain-status-heavy { background: #3f48f9; color: #fff; }
+.rain-status-very-heavy { background: #010efe; color: #fff; }
+.rain-status-torrential { background: #050d97; color: #fff; }
+
 /* Air-pollution DAQI status: small green/yellow/red indicator dot + label */
 .daqi-status {
 	display: inline-flex;

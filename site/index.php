@@ -343,33 +343,6 @@ Charts::dailySelectable(
 </div>
 <?php endif; ?>
 
-<div class="home-about">
-	<p><b>NW3 Weather</b> is a meteorological observation site located near Hampstead, in North London, UK.
-	The site was established with an <a href="wx8.php" title="Detailed station and website information">automatic personal weather station</a>
-	in July 2010 and runs continuously, with updates at least every 60s.</p>
-</div>
-
-<?php
-$nowStamp = Date::mkdate(Date::$dmonth, Date::$dday, Date::$dyear);
-$runYears = Date::$dyear - 2009;
-if ($nowStamp < Date::mkdate(2, 1, Date::$dyear)) { $runYears--; }
-$runDays = intval(($nowStamp - Date::mkdate(2, 1, 2009 + $runYears)) / (24 * 3600));
-$runStr = $runYears . ' year' . ($runYears === 1 ? '' : 's')
-	. ' and ' . $runDays . ' day' . ($runDays === 1 ? '' : 's');
-?>
-<p>This weather station has been recording data for
-<b><?php echo $runStr; ?></b>
-</p>
-
-<div class="home-links">
-	<b>Dive deeper:</b>
-	<a href="wx2.php">Webcam</a>
-	<a href="wx3.php">Graphs</a>
-	<a href="/wxdataday.php">Data tables</a>
-	<a href="/RankDay.php">Rankings</a>
-	<a href="wx8.php">About the station</a>
-</div>
-
 <?php
 // Written recaps (Recap.php): yesterday, month so far, year so far and last month. Falls back to the
 // generated monthly report when no written recap is fresh (or the recap storage is not set up).
@@ -470,6 +443,33 @@ Charts::ytdHomeChart(array(
 ));
 ?>
 <p class="home-chart-more"><a href="wx3.php#ytd" title="Year-to-date charts with more variables">More YTD options &rarr;</a></p>
+</div>
+
+<div class="home-about">
+	<p><b>NW3 Weather</b> is a meteorological observation site located near Hampstead, in North London, UK.
+	The site was established with an <a href="wx8.php" title="Detailed station and website information">automatic personal weather station</a>
+	in July 2010 and runs continuously, with updates at least every 60s.</p>
+</div>
+
+<?php
+$nowStamp = Date::mkdate(Date::$dmonth, Date::$dday, Date::$dyear);
+$runYears = Date::$dyear - 2009;
+if ($nowStamp < Date::mkdate(2, 1, Date::$dyear)) { $runYears--; }
+$runDays = intval(($nowStamp - Date::mkdate(2, 1, 2009 + $runYears)) / (24 * 3600));
+$runStr = $runYears . ' year' . ($runYears === 1 ? '' : 's')
+	. ' and ' . $runDays . ' day' . ($runDays === 1 ? '' : 's');
+?>
+<p>This weather station has been recording data for
+<b><?php echo $runStr; ?></b>
+</p>
+
+<div class="home-links">
+	<b>Dive deeper:</b>
+	<a href="wx2.php">Webcam</a>
+	<a href="wx3.php">Graphs</a>
+	<a href="/wxdataday.php">Data tables</a>
+	<a href="/RankDay.php">Rankings</a>
+	<a href="wx8.php">About the station</a>
 </div>
 
 <?php
