@@ -131,13 +131,15 @@ class Forecast {
 		return is_array($json) ? $json : array();
 	}
 
-	/** OGL credit line used on wx5 and the homepage forecast card (same wording). */
+	/** OGL credit line on the wx5 discussion (full attribution). */
 	private static function discussionCreditHtml($d, $srcUrl) {
 		$when = '';
 		if (!empty($d['issued'])) {
-			$when = 'Issued ' . htmlspecialchars($d['issued']);
+			$fmt = self::fmtUk($d['issued']);
+			$when = 'Issued ' . htmlspecialchars($fmt !== '' ? $fmt : $d['issued']);
 		} elseif (!empty($d['updated'])) {
-			$when = 'Cached ' . date('D j M H:i', (int)$d['updated']) . ' local';
+			$fmt = self::fmtUk((int)$d['updated']);
+			$when = 'Cached ' . htmlspecialchars($fmt !== '' ? $fmt : date('H:i D j M', (int)$d['updated']));
 		}
 		return '<p class="fc-credit">Content supplied by the Met Office'
 			. ($when !== '' ? (' · ' . $when) : '')
@@ -147,13 +149,13 @@ class Forecast {
 			. '</p>';
 	}
 
-	/** Met Office regional headline + OGL credit for the homepage forecast card. */
+	/** Met Office regional headline + short credit for the homepage forecast card. */
 	public static function renderHomeHeadline() {
 		$d = self::discussion();
 		if (empty($d['headline'])) { return; }
 		$srcUrl = 'https://weather.metoffice.gov.uk/forecast/regional/se';
 		echo '<p class="fcast-headline">' . htmlspecialchars($d['headline']) . '</p>';
-		echo self::discussionCreditHtml($d, $srcUrl);
+		echo '<p class="fcast-src">data: <a href="' . htmlspecialchars($srcUrl) . '" rel="noopener">Met Office</a></p>';
 	}
 
 	/** Expert-style regional discussion (Met Office London & South East). */
@@ -189,11 +191,20 @@ class Forecast {
 		echo '</div>';
 	}
 
-	/** Format a Met Office ISO timestamp as e.g. "12:00 UTC Tue 10 Nov". */
-	private static function fmtUtc($iso) {
-		if (!$iso) { return ''; }
-		$ts = strtotime($iso);
-		return $ts ? gmdate('H:i \U\T\C D j M', $ts) : (string)$iso;
+	/** Format a timestamp (ISO string or unix time) as UK local e.g. "16:00 Mon 9 Nov". */
+	private static function fmtUk($time) {
+		if ($time === null || $time === '') { return ''; }
+		try {
+			if (is_int($time) || (is_string($time) && ctype_digit($time))) {
+				$dt = new DateTime('@' . (string)((int)$time));
+			} else {
+				$dt = new DateTime((string)$time);
+			}
+			$dt->setTimezone(new DateTimeZone('Europe/London'));
+			return $dt->format('H:i D j M');
+		} catch (Exception $e) {
+			return is_string($time) ? (string)$time : '';
+		}
 	}
 
 	/** Current UK surface pressure: analysis plus T+24 and T+48 forecast charts. */
@@ -236,7 +247,7 @@ class Forecast {
 				$src = $c['uri'];
 			}
 			if ($src === '') { continue; }
-			$valid = self::fmtUtc(isset($c['valid']) ? $c['valid'] : '');
+			$valid = self::fmtUk(isset($c['valid']) ? $c['valid'] : '');
 			$cap = '<b>' . htmlspecialchars($label) . '</b>';
 			if ($valid !== '') { $cap .= ' · valid ' . htmlspecialchars($valid); }
 			$items[] = array(
@@ -291,7 +302,7 @@ class Forecast {
 			. 'var tmo;sc.addEventListener("scroll",function(){clearTimeout(tmo);tmo=setTimeout(fromScroll,60);},{passive:true});'
 			. 'window.NW3=window.NW3||{};window.NW3.selectPressureTab=function(i){go(i,false);};'
 			. 'go(0,false);})();</script>';
-		$issued = self::fmtUtc(isset($p['issued']) ? $p['issued'] : '');
+		$issued = self::fmtUk(isset($p['issued']) ? $p['issued'] : '');
 		echo '<p class="fc-credit">Met Office surface pressure charts'
 			. ($issued !== '' ? (' · issued ' . htmlspecialchars($issued)) : '')
 			. ' · <a href="' . $page . '" rel="noopener" target="_blank">all charts</a></p>';
