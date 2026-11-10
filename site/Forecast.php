@@ -131,6 +131,31 @@ class Forecast {
 		return is_array($json) ? $json : array();
 	}
 
+	/** OGL credit line used on wx5 and the homepage forecast card (same wording). */
+	private static function discussionCreditHtml($d, $srcUrl) {
+		$when = '';
+		if (!empty($d['issued'])) {
+			$when = 'Issued ' . htmlspecialchars($d['issued']);
+		} elseif (!empty($d['updated'])) {
+			$when = 'Cached ' . date('D j M H:i', (int)$d['updated']) . ' local';
+		}
+		return '<p class="fc-credit">Content supplied by the Met Office'
+			. ($when !== '' ? (' · ' . $when) : '')
+			. ' · <a href="' . htmlspecialchars($srcUrl) . '" rel="noopener" target="_blank">'
+			. 'Full London &amp; South East forecast</a>'
+			. ' · <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" rel="noopener" target="_blank">OGL v3</a>'
+			. '</p>';
+	}
+
+	/** Met Office regional headline + OGL credit for the homepage forecast card. */
+	public static function renderHomeHeadline() {
+		$d = self::discussion();
+		if (empty($d['headline'])) { return; }
+		$srcUrl = 'https://weather.metoffice.gov.uk/forecast/regional/se';
+		echo '<p class="fcast-headline">' . htmlspecialchars($d['headline']) . '</p>';
+		echo self::discussionCreditHtml($d, $srcUrl);
+	}
+
 	/** Expert-style regional discussion (Met Office London & South East). */
 	public static function renderDiscussion() {
 		$d = self::discussion();
@@ -155,18 +180,7 @@ class Forecast {
 				echo '</div>';
 			}
 			echo '</div>';
-			$when = '';
-			if (!empty($d['issued'])) {
-				$when = 'Issued ' . htmlspecialchars($d['issued']);
-			} elseif (!empty($d['updated'])) {
-				$when = 'Cached ' . date('D j M H:i', (int)$d['updated']) . ' local';
-			}
-			echo '<p class="fc-credit">Content supplied by the Met Office'
-				. ($when !== '' ? (' · ' . $when) : '')
-				. ' · <a href="' . htmlspecialchars($srcUrl) . '" rel="noopener" target="_blank">'
-				. 'Full London &amp; South East forecast</a>'
-				. ' · <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" rel="noopener" target="_blank">OGL v3</a>'
-				. '</p>';
+			echo self::discussionCreditHtml($d, $srcUrl);
 		} else {
 			echo '<p class="fc-discuss-fallback">Regional discussion text is temporarily unavailable. '
 				. 'Read the latest on the '
@@ -200,7 +214,7 @@ class Forecast {
 		$bust = !empty($p['issued']) ? ('?t=' . rawurlencode(preg_replace('/\W+/', '', $p['issued']))) : ('?t=' . (int)(isset($p['updated']) ? $p['updated'] : time()));
 
 		echo '<div class="fc-pressure">';
-		echo '<h2>UK surface pressure</h2>';
+		echo '<h2 id="fc-pressure-heading">UK surface pressure</h2>';
 		if (!$charts) {
 			echo '<p>Surface pressure charts temporarily unavailable. See the '
 				. '<a href="' . $page . '" rel="noopener" target="_blank">Met Office surface pressure charts</a>.</p>';
@@ -208,7 +222,7 @@ class Forecast {
 			return;
 		}
 
-		echo '<div class="fc-pressure-grid">';
+		$items = array();
 		foreach ($charts as $c) {
 			$lead = isset($c['lead']) ? (int)$c['lead'] : 0;
 			$label = isset($c['label']) ? $c['label'] : ($lead === 0 ? 'Analysis' : ('T+' . $lead . ' forecast'));
@@ -223,16 +237,60 @@ class Forecast {
 			}
 			if ($src === '') { continue; }
 			$valid = self::fmtUtc(isset($c['valid']) ? $c['valid'] : '');
-			$alt = 'Met Office UK surface pressure ' . $label . ($valid !== '' ? (' valid ' . $valid) : '');
-			$cls = 'fc-pressure-item' . ($lead === 0 ? ' fc-pressure-item-analysis' : ' fc-pressure-item-forecast');
-			echo '<figure class="' . $cls . '">';
-			echo '<a href="' . htmlspecialchars($src . $bust) . '" rel="noopener" target="_blank" title="Open full-size ' . htmlspecialchars($label) . '">';
-			echo '<img class="fc-pressure-img" src="' . htmlspecialchars($src . $bust) . '" alt="' . htmlspecialchars($alt) . '" /></a>';
-			echo '<figcaption class="fc-pressure-cap"><b>' . htmlspecialchars($label) . '</b>';
-			if ($valid !== '') { echo ' · valid ' . htmlspecialchars($valid); }
-			echo '</figcaption></figure>';
+			$cap = '<b>' . htmlspecialchars($label) . '</b>';
+			if ($valid !== '') { $cap .= ' · valid ' . htmlspecialchars($valid); }
+			$items[] = array(
+				'lead' => $lead,
+				'label' => $label,
+				'src' => $src . $bust,
+				'cap' => $cap,
+				'alt' => 'Met Office UK surface pressure ' . $label . ($valid !== '' ? (' valid ' . $valid) : ''),
+			);
+		}
+		if (!$items) {
+			echo '<p>Surface pressure charts temporarily unavailable. See the '
+				. '<a href="' . $page . '" rel="noopener" target="_blank">Met Office surface pressure charts</a>.</p>';
+			echo '</div>';
+			return;
+		}
+
+		echo '<div class="fc-pressure-tabs" role="tablist" aria-labelledby="fc-pressure-heading">';
+		foreach ($items as $i => $it) {
+			$sel = ($i === 0) ? 'true' : 'false';
+			$tabIndex = ($i === 0) ? '0' : '-1';
+			$active = ($i === 0) ? ' active' : '';
+			echo '<button type="button" class="fc-pressure-tab' . $active . '" role="tab"'
+				. ' id="fc-p-tab-' . $i . '" aria-controls="fc-p-panel-' . $i . '"'
+				. ' aria-selected="' . $sel . '" tabindex="' . $tabIndex . '" data-fc-p-index="' . $i . '">'
+				. $it['cap'] . '</button>';
 		}
 		echo '</div>';
+		echo '<div class="fc-pressure-scroller" tabindex="0">';
+		echo '<div class="fc-pressure-track">';
+		foreach ($items as $i => $it) {
+			$lead = $it['lead'];
+			$cls = 'fc-pressure-item' . ($lead === 0 ? ' fc-pressure-item-analysis' : ' fc-pressure-item-forecast');
+			echo '<div class="' . $cls . '" role="tabpanel" id="fc-p-panel-' . $i . '"'
+				. ' aria-labelledby="fc-p-tab-' . $i . '" data-fc-p-index="' . $i . '">';
+			echo '<figure>';
+			echo '<a href="' . htmlspecialchars($it['src']) . '" rel="noopener" target="_blank" title="Open full-size ' . htmlspecialchars($it['label']) . '">';
+			echo '<img class="fc-pressure-img" src="' . htmlspecialchars($it['src']) . '" alt="' . htmlspecialchars($it['alt']) . '" /></a>';
+			echo '<figcaption class="fc-pressure-cap">' . $it['cap'] . '</figcaption></figure>';
+			echo '</div>';
+		}
+		echo '</div></div>';
+		echo '<script>(function(){var r=document.currentScript&&document.currentScript.parentElement;if(!r)return;'
+			. 'var tabs=[].slice.call(r.querySelectorAll("[role=tab]")),panels=[].slice.call(r.querySelectorAll("[role=tabpanel]")),'
+			. 'sc=r.querySelector(".fc-pressure-scroller");if(!tabs.length||!sc)return;'
+			. 'function go(i,smooth){i=Math.max(0,Math.min(i,tabs.length-1));'
+			. 'tabs.forEach(function(t,n){var on=n===i;t.setAttribute("aria-selected",on?"true":"false");t.tabIndex=on?0:-1;t.classList.toggle("active",on);});'
+			. 'var p=panels[i];if(p)sc.scrollTo({left:p.offsetLeft,behavior:smooth?"smooth":"auto"});}'
+			. 'function fromScroll(){var x=sc.scrollLeft,best=0,bd=1e9;panels.forEach(function(p,n){var d=Math.abs(p.offsetLeft-x);if(d<bd){bd=d;best=n;}});go(best,false);}'
+			. 'tabs.forEach(function(t,i){t.addEventListener("click",function(){go(i,true);t.focus();});'
+			. 't.addEventListener("keydown",function(e){var n=i;if(e.key==="ArrowRight"||e.key==="ArrowDown")n=i+1;else if(e.key==="ArrowLeft"||e.key==="ArrowUp")n=i-1;else if(e.key==="Home")n=0;else if(e.key==="End")n=tabs.length-1;else return;e.preventDefault();go(n,true);tabs[n].focus();});});'
+			. 'var tmo;sc.addEventListener("scroll",function(){clearTimeout(tmo);tmo=setTimeout(fromScroll,60);},{passive:true});'
+			. 'window.NW3=window.NW3||{};window.NW3.selectPressureTab=function(i){go(i,false);};'
+			. 'go(0,false);})();</script>';
 		$issued = self::fmtUtc(isset($p['issued']) ? $p['issued'] : '');
 		echo '<p class="fc-credit">Met Office surface pressure charts'
 			. ($issued !== '' ? (' · issued ' . htmlspecialchars($issued)) : '')
