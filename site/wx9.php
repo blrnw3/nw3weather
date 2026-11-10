@@ -28,6 +28,16 @@ Page::Start();
 		</li>
 	</ul>
 
+	<h2>In the press</h2>
+	<ul>
+		<li>Ham &amp; High, 2014: <a href="https://web.archive.org/web/20161127022731/http://www.hamhigh.co.uk/news/weather/gospel_oak_storm_chaser_rivals_met_office_with_1_000_weather_station_1_3830494">
+			Gospel Oak storm chaser rivals Met Office with &pound;1,000 weather station</a></li>
+		<li>Ham &amp; High, 2019: <a href="https://www.hamhigh.co.uk/news/21352664.san-fran-man-behind-nw3-weather-station-keeps-eye-hampsteads-skies/">
+			The San Fran man behind NW3 weather station who keeps an eye on Hampstead’s skies</a></li>
+		<li>Camden New Journal, 2022: <a href="https://www.camdennewjournal.co.uk/article/you-can-see-it-from-the-heath-enthusiasts-own-weather-station-charts-record-temperatures">
+			You can see it from the Heath! Enthusiast's own weather station charts record temperatures</a></li>
+	</ul>
+
 	<h2>Journal citations and references</h2>
 	<ul>
 		<li>Ecological Solutions and Evidence, 2025: <a href="https://besjournals.onlinelibrary.wiley.com/doi/10.1002/2688-8319.70151">
