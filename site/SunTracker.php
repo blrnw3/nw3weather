@@ -249,10 +249,10 @@ JS;
 		$moonName = isset($moonphasename) ? trim($moonphasename) : 'Moon phase';
 		$moonImg = self::moonImg($moonage ?? null);
 		if ($moonImg !== null) {
-			echo '<img class="wx-card-icon wx-card-moon" src="' . Site::IMG_ROOT . $moonImg . '" alt="' . htmlspecialchars($moonName)
-				. '" title="' . htmlspecialchars($moonName) . '" width="36" height="36" />';
+			echo '<a class="sun-card-moon-link" href="wx6.php" title="Sun and moon data"><img class="wx-card-icon wx-card-moon" src="' . Site::IMG_ROOT . $moonImg . '" alt="' . htmlspecialchars($moonName)
+				. '" width="36" height="36" /></a>';
 		}
-		echo '<a class="hidden-link" href="wx6.php" title="Sun, moon and astronomy detail">Sun &amp; Moon</a></div>';
+		echo '<a class="hidden-link" href="wx11.php" title="Detailed sunshine data">Sun &amp; Moon</a></div>';
 		echo '<div class="wx-card-now"><span title="' . $hoursTitle . '">'
 			. self::fmtHours($tot['hours'] ?? null, (bool)($tot['partial'] ?? false)) . '</span>'
 			. ($badge ? ' <span class="sun-badge sun-badge-' . $badge[0] . '">' . $badge[1] . '</span>' : '') . '</div>';
@@ -283,9 +283,11 @@ JS;
 		if ($bits) {
 			$moonVal .= ' &middot; ' . implode(' ', array_map(function ($b) { return $b['html']; }, $bits));
 		}
-		$rows[] = ['<span title="' . htmlspecialchars($moonName) . '">Moon</span>', $moonVal];
+		$moonLabel = '<span title="' . htmlspecialchars($moonName) . '">Moon</span>';
 		echo '<div class="wx-card-rows">';
 		foreach ($rows as $r) { echo '<div><span class="k">' . $r[0] . '</span><span class="v">' . $r[1] . '</span></div>'; }
+		echo '<div class="sun-card-moon-line"><a class="sun-card-moon-link" href="wx6.php" title="Sun and moon data"><span class="k">'
+			. $moonLabel . '</span><span class="v">' . $moonVal . '</span></a></div>';
 		echo '</div></div>';
 	}
 
