@@ -13,8 +13,8 @@ require Site::$rareTags;
 ?>
 <h1>Latest Forecasts and Weather Maps</h1>
 
-<p><b>NB:</b> NW3 is an observation site, so detailed forecasts come from external services rather than an in-house NWP suite.
-	Proper forecasting relies on running sophisticated computer models on large supercomputers using data from a wide array of sources, including land-based observation sites like this one.
+<p><b>NB:</b> NW3 is an observation site, so detailed forecasts are gratefully pulled from external providers.
+	High-quality forecasting relies on running sophisticated computer models on large supercomputers using data from a wide array of sources, including land-based observation sites like this one.
 	A fuller discussion is on the <a href="wx8.php#Forecasting" title="Found on the about page">about page</a>.
 </p>
 
@@ -25,7 +25,7 @@ require Site::$rareTags;
 <div id="widgets" class="fc-widgets">
 	<div class="fc-meteogram-wrap">
 		<h2>Hampstead 10-day meteogram</h2>
-		<p class="hm-break-note">Stacked panels of temperature &amp; dew point, precipitation amount &amp; chance, cloud cover and wind, sharing one time axis, in this site’s variable colours. Data: Open-Meteo (falls back to Yr.no if needed).</p>
+		<p class="hm-break-note">Temperature &amp; dew point, precipitation amount &amp; chance, cloud cover and wind. Data: Open-Meteo (falls back to Yr.no if needed).</p>
 		<?php Charts::meteogram(null, ['height' => 620]); ?>
 	</div>
 
