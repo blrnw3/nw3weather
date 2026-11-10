@@ -422,6 +422,7 @@ else:
 			<?php endforeach; ?>
 			<div class="fcast-more">
 				<a href="wx5.php" title="5-Day Local Forecast and Maps">Full forecast &amp; maps &rarr;</a>
+				<?php Forecast::renderHomeSrc(); ?>
 				<span class="fcast-src"> · data <a href="https://www.yr.no/en/forecast/daily-table/2-2647553/" title="Yr.no forecast for Hampstead" rel="noopener">Yr.no</a></span>
 			</div>
 		</div>
