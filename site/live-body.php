@@ -200,16 +200,6 @@ function nw3_rain_status($rate, $rnHr) {
 		. $label . '</span>';
 }
 
-/** Signed percent vs normal-to-date, e.g. +12% / &minus;30%. */
-function nw3_pct_vs_normal($pct) {
-	if ($pct === null || !nw3_is_numeric($pct)) { return ''; }
-	$n = (int)round($pct);
-	if ($n > 0) { $s = '+' . $n . '%'; }
-	elseif ($n < 0) { $s = '&minus;' . abs($n) . '%'; }
-	else { $s = '0%'; }
-	return ' <span class="clim-anom" title="Difference from normal to date">' . $s . '</span>';
-}
-
 /**
  * Renders the per-variable dashboard cards for the home page.
  * Replaces the old single live table; refreshed via the AJAX endpoint.
@@ -273,10 +263,6 @@ function nw3_render_cards() {
 		if ($rn10 !== null) { $subParts[] = '10-min: <b>' . Wx::conv($rn10, Wx::Rain) . '</b>'; }
 		if ($rnHr !== null) { $subParts[] = 'Hour: <b>' . Wx::conv($rnHr, Wx::Rain) . '</b>'; }
 	}
-	$monthPct = (isset($rainSummary['period_summaries']['curr_month']['anom_pct'])
-		? $rainSummary['period_summaries']['curr_month']['anom_pct'] : null);
-	$yearPct = (isset($rainSummary['period_summaries']['curr_year']['anom_pct'])
-		? $rainSummary['period_summaries']['curr_year']['anom_pct'] : null);
 	$monthDays = nw3_count_rain_days((int)Date::$dyear, (int)Date::$dmonth, 1, (int)Date::$dmonth, (int)Date::$dday, Live::$rain);
 	$yearDays = nw3_count_rain_days((int)Date::$dyear, 1, 1, (int)Date::$dmonth, (int)Date::$dday, Live::$rain);
 	nw3_card('rain', 'icon-rain.svg', 'Rainfall', 'wx12.php', 'Detailed rainfall data',
@@ -284,8 +270,8 @@ function nw3_render_cards() {
 		implode(' &middot; ', $subParts),
 		array(
 			array('Yesterday', nw3_yest_val('mean', 'rain', Wx::Rain)),
-			array('Month total', (($monthrn === null) ? '-' : '<span class="wx-rain-tot"><b>' . Wx::conv($monthrn, Wx::Rain) . '</b>' . nw3_pct_vs_normal($monthPct) . '</span>')),
-			array('Annual total', (($yearrn === null) ? '-' : '<span class="wx-rain-tot"><b>' . Wx::conv($yearrn, Wx::Rain) . '</b>' . nw3_pct_vs_normal($yearPct) . '</span>')),
+			array('Month total', (($monthrn === null) ? '-' : '<b>' . Wx::conv($monthrn, Wx::Rain) . '</b>')),
+			array('Annual total', (($yearrn === null) ? '-' : '<b>' . Wx::conv($yearrn, Wx::Rain) . '</b>')),
 			array('<span title="Days with &ge;0.2 mm this month / year">Rain days</span>', '<b>' . $yearDays . '</b> (' . Date::monthfull((int)Date::$dmonth) . ': <b>' . $monthDays . '</b>)'),
 			array('Last rain', (($rnlast === null || $rnlast === '') ? '-' : $rnlast)),
 		));
