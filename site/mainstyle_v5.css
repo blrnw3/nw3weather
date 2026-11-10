@@ -2175,17 +2175,6 @@ div.charts.detail-chart-pair {
 .rain-status-torrential { background: #050d97; color: #fff; }
 
 
-/* Rain card: keep month/annual % on the same line as the total at all widths
-   (overrides the climate-table rule that sets .clim-anom { display: block } below 520px). */
-.wx-card-rain .wx-card-rows .v,
-.wx-card-rain .wx-rain-tot,
-.wx-card-rain .wx-card-rows .clim-anom {
-	white-space: nowrap;
-}
-.wx-card-rain .wx-card-rows .clim-anom {
-	display: inline;
-}
-
 /* Air-pollution DAQI status: small green/yellow/red indicator dot + label */
 .daqi-status {
 	display: inline-flex;

@@ -304,12 +304,6 @@ Charts::dailySelectable(
 	<div id="clim-slot" class="wx-live-cards"><?php nw3_render_clim_card(); ?></div>
 </div>
 
-<?php $pond = nw3_live_get($HR24, 'misc', 'pondTemp'); ?>
-<?php if ($pond !== null): ?>
-<p>Latest Hampstead Heath pond temperature: <b><?php echo Wx::conv($pond, Wx::Temperature); ?></b>
-	&nbsp; <a href="/wxdataday.php?vartype=pond">see temperature history</a></p>
-<?php endif; ?>
-
 <?php
 // Written recaps (Recap.php): yesterday, month so far, year so far and last month. Falls back to the
 // generated monthly report when no written recap is fresh (or the recap storage is not set up).
@@ -445,6 +439,12 @@ Charts::ytdHomeChart(array(
 ?>
 <p class="home-chart-more"><a href="wx3.php#ytd" title="Year-to-date charts with more variables">More YTD options &rarr;</a></p>
 </div>
+
+<?php $pond = nw3_live_get($HR24, 'misc', 'pondTemp'); ?>
+<?php if ($pond !== null): ?>
+<p>Latest Hampstead Heath pond temperature: <b><?php echo Wx::conv($pond, Wx::Temperature); ?></b>
+	&nbsp; <a href="/wxdataday.php?vartype=pond">see temperature history</a></p>
+<?php endif; ?>
 
 <div class="home-about">
 	<p><b>NW3 Weather</b> is a meteorological observation site located near Hampstead, in North London, UK.
