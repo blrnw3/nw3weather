@@ -501,7 +501,7 @@
 		var colTemp = '#d34f00', colHumi = '#1d7806', colRain = '#2554c7';
 		var title = opts.title || (timescaleLabel(spanHours(json) || 24) + ' temperature, humidity, rain');
 
-		Highcharts.chart(containerId, {
+		return Highcharts.chart(containerId, {
 			// alignTicks (default true) forces shared tick counts across axes and can
 			// push humidity past 100% so its ticks line up with temp/rain — disable it.
 			chart: { backgroundColor: '#ffffff', alignTicks: false, spacing: [10, 4, 8, 4], style: { color: TEXT } },
@@ -561,7 +561,7 @@
 		var colWind = '#c01717', colPres = '#5b3fb0';
 		var title = opts.title || (timescaleLabel(spanHours(json) || 24) + ' wind speed, gust & pressure');
 
-		Highcharts.chart(containerId, {
+		return Highcharts.chart(containerId, {
 			chart: { backgroundColor: '#ffffff', alignTicks: false, spacing: [10, 4, 8, 4], style: { color: TEXT } },
 			title: { text: title, style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
 			credits: { enabled: true, href: '', text: '\u00A9 nw3weather', style: { color: '#999', fontSize: '9px' } },
@@ -596,7 +596,8 @@
 	function multiChart(containerId, json, kind, opts) {
 		opts = opts || {};
 		if (!json || !json.time || !json.time.length) { $('#' + containerId).html('<p>No data available.</p>'); return; }
-		if (kind === 'wgp') { multiWGP(containerId, json, opts); } else { multiTHRD(containerId, json, opts); }
+		if (kind === 'wgp') { return multiWGP(containerId, json, opts); }
+		return multiTHRD(containerId, json, opts);
 	}
 
 	// Categorical chart whose variable is chosen from a <select>; `baseUrl` carries

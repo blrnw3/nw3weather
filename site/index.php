@@ -254,7 +254,8 @@ $forecast = Forecast::days(2);
 	<div class="home-chart-panel">
 		<div class="home-chart-bar">
 			<div class="home-chart-vars" role="tablist">
-				<button type="button" data-var="temp" class="active" title="Temperature"><img src="<?php echo Site::IMG_ROOT; ?>thermom8_small.png" alt="Temperature" width="26" height="26" /></button>
+				<button type="button" data-var="thrd" class="active" title="Temperature, humidity, dew point and rain"><span class="home-chart-multi-icons" aria-hidden="true"><img src="<?php echo Site::IMG_ROOT; ?>thermom8_small.png" alt="" width="15" height="15" /><img src="<?php echo Site::IMG_ROOT; ?>dewy_small.png" alt="" width="15" height="15" /><img src="<?php echo Site::IMG_ROOT; ?>humidity_small.png" alt="" width="15" height="15" /><img src="<?php echo Site::IMG_ROOT; ?>icon-rain.svg" alt="" width="15" height="15" /></span></button>
+				<button type="button" data-var="temp" title="Temperature"><img src="<?php echo Site::IMG_ROOT; ?>thermom8_small.png" alt="Temperature" width="26" height="26" /></button>
 				<button type="button" data-var="rain" title="Rainfall"><img src="<?php echo Site::IMG_ROOT; ?>icon-rain.svg" alt="Rainfall" width="26" height="26" /></button>
 				<button type="button" data-var="wind" title="Wind speed &amp; gust"><img src="<?php echo Site::IMG_ROOT; ?>icon-wind.svg" alt="Wind speed and gust" width="26" height="26" /></button>
 				<button type="button" data-var="humi" title="Humidity"><img src="<?php echo Site::IMG_ROOT; ?>humidity_small.png" alt="Humidity" width="26" height="26" /></button>
