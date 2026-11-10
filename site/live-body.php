@@ -137,6 +137,79 @@ function nw3_bft_force($mph) {
 	return '<a href="/BeaufortScale.php" title="Beaufort scale">F' . $num . '</a>';
 }
 
+
+/** Site rain-day threshold (mm): gauge resolution, same as ClimateCard::WET_MM. */
+function nw3_rain_day_mm() {
+	return 0.2;
+}
+
+/**
+ * Count rain days (>= 0.2 mm) from $monthFrom/$dayFrom through $monthTo/$dayTo
+ * in $year, using Live today's total for the current date so the count stays
+ * in step with the card's other live figures.
+ */
+function nw3_count_rain_days($year, $monthFrom, $dayFrom, $monthTo, $dayTo, $todayRain) {
+	$n = 0;
+	$ty = (int)Date::$dyear;
+	$tm = (int)Date::$dmonth;
+	$td = (int)Date::$dday;
+	$thresh = nw3_rain_day_mm();
+	for ($m = $monthFrom; $m <= $monthTo; $m++) {
+		$dim = (int)date('t', Date::mkdate($m, 1, $year));
+		$d0 = ($m === $monthFrom) ? $dayFrom : 1;
+		$d1 = ($m === $monthTo) ? min($dayTo, $dim) : $dim;
+		for ($d = $d0; $d <= $d1; $d++) {
+			if ($year === $ty && $m === $tm && $d === $td) {
+				$v = $todayRain;
+			} else {
+				$v = Data::get('rain', $year, $m, $d);
+			}
+			if (nw3_is_numeric($v) && (float)$v >= $thresh) { $n++; }
+		}
+	}
+	return $n;
+}
+
+/**
+ * Colour-coded rain status for the home card.
+ * Rate bands match the existing homepage weather-decode scale in index.php
+ * (Slight / Light / Moderate / Heavy / Very Heavy / Torrential).
+ * Recent = not raining now (rate <= 0) but rain in the last hour.
+ */
+function nw3_rain_status($rate, $rnHr) {
+	$raining = ($rate !== null && (float)$rate > 0);
+	$recentHr = ($rnHr !== null && (float)$rnHr > 0);
+	if ($raining) {
+		$r = (float)$rate;
+		if ($r < 0.5) { $label = 'Slight'; $cls = 'slight'; }
+		elseif ($r < 2) { $label = 'Light'; $cls = 'light'; }
+		elseif ($r < 8) { $label = 'Moderate'; $cls = 'moderate'; }
+		elseif ($r < 35) { $label = 'Heavy'; $cls = 'heavy'; }
+		elseif ($r < 60) { $label = 'Very Heavy'; $cls = 'very-heavy'; }
+		else { $label = 'Torrential'; $cls = 'torrential'; }
+	} elseif ($recentHr) {
+		$label = 'Recent'; $cls = 'recent';
+	} else {
+		$label = 'Dry'; $cls = 'dry';
+	}
+	$tip = ($rate === null) ? 'Rain rate unavailable' : ('Rain rate: ' . Wx::conv($rate, Wx::RainRate));
+	if ($cls === 'recent') {
+		$tip = 'Rain in the last hour. ' . $tip;
+	}
+	return '<span class="rain-status rain-status-' . $cls . '" title="' . htmlspecialchars($tip, ENT_QUOTES) . '">'
+		. $label . '</span>';
+}
+
+/** Signed percent vs normal-to-date, e.g. +12% / &minus;30%. */
+function nw3_pct_vs_normal($pct) {
+	if ($pct === null || !nw3_is_numeric($pct)) { return ''; }
+	$n = (int)round($pct);
+	if ($n > 0) { $s = '+' . $n . '%'; }
+	elseif ($n < 0) { $s = '&minus;' . abs($n) . '%'; }
+	else { $s = '0%'; }
+	return ' <span class="clim-anom" title="Difference from normal to date">' . $s . '</span>';
+}
+
 /**
  * Renders the per-variable dashboard cards for the home page.
  * Replaces the old single live table; refreshed via the AJAX endpoint.
@@ -192,18 +265,28 @@ function nw3_render_cards() {
 	if (isset($rainSummary['period_summaries']['curr_year']['sum'])) {
 		$yearrn = $rainSummary['period_summaries']['curr_year']['sum'];
 	}
-	$rained1h = ($rnHr !== null && $rnHr > 0);
+	$rained24 = ($rn24 !== null && (float)$rn24 > 0);
 	$nowHtml = '<span id="var5">' . Wx::conv(Live::$rain, Wx::Rain) . '</span> '
-		. (($rate === null) ? '' : '<span class="wx-rate">' . Wx::conv($rate, Wx::RainRate) . '</span>')
-		. ($rained1h ? ' ' . nw3_arrow('rain', 20, 45, 0.1, 1) : '');
+		. nw3_rain_status($rate, $rnHr);
+	$subParts = array();
+	if ($rained24) {
+		if ($rn10 !== null) { $subParts[] = '10-min: <b>' . Wx::conv($rn10, Wx::Rain) . '</b>'; }
+		if ($rnHr !== null) { $subParts[] = 'Hour: <b>' . Wx::conv($rnHr, Wx::Rain) . '</b>'; }
+	}
+	$monthPct = (isset($rainSummary['period_summaries']['curr_month']['anom_pct'])
+		? $rainSummary['period_summaries']['curr_month']['anom_pct'] : null);
+	$yearPct = (isset($rainSummary['period_summaries']['curr_year']['anom_pct'])
+		? $rainSummary['period_summaries']['curr_year']['anom_pct'] : null);
+	$monthDays = nw3_count_rain_days((int)Date::$dyear, (int)Date::$dmonth, 1, (int)Date::$dmonth, (int)Date::$dday, Live::$rain);
+	$yearDays = nw3_count_rain_days((int)Date::$dyear, 1, 1, (int)Date::$dmonth, (int)Date::$dday, Live::$rain);
 	nw3_card('rain', 'icon-rain.svg', 'Rainfall', 'wx12.php', 'Detailed rainfall data',
 		$nowHtml,
-		(($rained1h && $rn10 !== null) ? '10-min: <b>' . Wx::conv($rn10, Wx::Rain) . '</b>' : ''),
+		implode(' &middot; ', $subParts),
 		array(
-			array('Last hour', (($rnHr === null) ? '-' : '<b>' . Wx::conv($rnHr, Wx::Rain) . '</b>')),
 			array('Yesterday', nw3_yest_val('mean', 'rain', Wx::Rain)),
-			array('Month total', (($monthrn === null) ? '-' : '<b>' . Wx::conv($monthrn, Wx::Rain) . '</b>')),
-			array('Annual total', (($yearrn === null) ? '-' : '<b>' . Wx::conv($yearrn, Wx::Rain) . '</b>')),
+			array('Month total', (($monthrn === null) ? '-' : '<span class="wx-rain-tot"><b>' . Wx::conv($monthrn, Wx::Rain) . '</b>' . nw3_pct_vs_normal($monthPct) . '</span>')),
+			array('Annual total', (($yearrn === null) ? '-' : '<span class="wx-rain-tot"><b>' . Wx::conv($yearrn, Wx::Rain) . '</b>' . nw3_pct_vs_normal($yearPct) . '</span>')),
+			array('<span title="Days with &ge;0.2 mm this month / year">Rain days</span>', '<b>' . $yearDays . '</b> (' . Date::monthfull((int)Date::$dmonth) . ': <b>' . $monthDays . '</b>)'),
 			array('Last rain', (($rnlast === null || $rnlast === '') ? '-' : $rnlast)),
 		));
 

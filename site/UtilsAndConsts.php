@@ -16,7 +16,9 @@ class Site {
 	const IMG_ROOT = '/static-images/';
 
 	const EXEC_PATH = '/usr/bin/php -q /var/www/html/';
-	const LIVE_DATA_PATH = '/var/www/html/clientraw.txt';
+	// Follow ROOT so a local/dev docroot (and production, where ROOT is
+	// /var/www/html/) both read their own clientraw rather than a hardcoded path.
+	const LIVE_DATA_PATH = ROOT . 'clientraw.txt';
 
 	const LATITUDE = 51.556;
 	const LONGITUDE = -0.154;
@@ -28,7 +30,7 @@ class Site {
 	const GRAPH_DIMS_LARGE = ' height="1017" width="850" ';
 	const GRAPH_DIMS_SMALL = ' height="619" width="542" ';
 
-	public static $rareTags = '/var/www/html/rareTags.php';
+	public static $rareTags = ROOT . 'rareTags.php';
 
 	/**
 	* Gets the WD local system time

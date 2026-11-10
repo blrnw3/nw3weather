@@ -310,66 +310,6 @@ Charts::dailySelectable(
 	&nbsp; <a href="/wxdataday.php?vartype=pond">see temperature history</a></p>
 <?php endif; ?>
 
-<?php if ($forecast): ?>
-<div class="wx-cards home-fcast" id="fcast-wrap">
-	<div class="wx-card wx-card-fcast">
-		<div class="wx-card-head"><span class="wx-card-label">Forecast</span></div>
-		<?php Forecast::renderHomeHeadline(); ?>
-		<div class="home-forecast">
-			<?php foreach ($forecast as $day): ?>
-			<div class="fcast-day">
-				<img src="<?php echo Site::IMG_ROOT . $day['icon']; ?>_lg.png" width="60" alt="<?php echo htmlspecialchars($day['desc']); ?>" title="<?php echo htmlspecialchars($day['desc']); ?>" />
-				<div class="fcast-label"><?php echo htmlspecialchars($day['label']); ?></div>
-				<?php if (!empty($day['desc'])): ?>
-				<div class="fcast-desc"><?php echo htmlspecialchars($day['desc']); ?></div>
-				<?php endif; ?>
-				<div class="fcast-temps"><b><?php echo Wx::conv($day['tmax'], Wx::Temperature, true, false, -1); ?></b> / <?php echo Wx::conv($day['tmin'], Wx::Temperature, true, false, -1); ?></div>
-				<?php
-				$precip = isset($day['precip']) ? $day['precip'] : null;
-				$pop = isset($day['pop']) ? $day['pop'] : null;
-				if ($precip !== null && $precip !== '' && (float)$precip > 0): ?>
-				<div class="fcast-pop"><?php echo Wx::conv($precip, Wx::Rain, true); ?></div>
-				<?php elseif ($pop !== null && $pop !== '' && (int)$pop > 0): ?>
-				<div class="fcast-pop"><?php echo intval($pop); ?>% rain</div>
-				<?php endif; ?>
-			</div>
-			<?php endforeach; ?>
-			<div class="fcast-more">
-				<a href="wx5.php" title="5-Day Local Forecast and Maps">Full forecast &amp; maps &rarr;</a>
-				<span class="fcast-src"> · data <a href="https://www.yr.no/en/forecast/daily-table/2-2647553/" title="Yr.no forecast for Hampstead" rel="noopener">Yr.no</a></span>
-			</div>
-		</div>
-	</div>
-</div>
-<?php endif; ?>
-
-<div class="home-about">
-	<p><b>NW3 Weather</b> is a meteorological observation site located near Hampstead, in North London, UK.
-	The site was established with an <a href="wx8.php" title="Detailed station and website information">automatic personal weather station</a>
-	in July 2010 and runs continuously, with updates at least every 60s.</p>
-</div>
-
-<?php
-$nowStamp = Date::mkdate(Date::$dmonth, Date::$dday, Date::$dyear);
-$runYears = Date::$dyear - 2009;
-if ($nowStamp < Date::mkdate(2, 1, Date::$dyear)) { $runYears--; }
-$runDays = intval(($nowStamp - Date::mkdate(2, 1, 2009 + $runYears)) / (24 * 3600));
-$runStr = $runYears . ' year' . ($runYears === 1 ? '' : 's')
-	. ' and ' . $runDays . ' day' . ($runDays === 1 ? '' : 's');
-?>
-<p>This weather station has been recording data for
-<b><?php echo $runStr; ?></b>
-</p>
-
-<div class="home-links">
-	<b>Dive deeper:</b>
-	<a href="wx2.php">Webcam</a>
-	<a href="wx3.php">Graphs</a>
-	<a href="/wxdataday.php">Data tables</a>
-	<a href="/RankDay.php">Rankings</a>
-	<a href="wx8.php">About the station</a>
-</div>
-
 <?php
 // Written recaps (Recap.php): yesterday, month so far, year so far and last month. Falls back to the
 // generated monthly report when no written recap is fresh (or the recap storage is not set up).
@@ -461,6 +401,40 @@ else:
 </script>
 <?php endif; ?>
 
+<?php if ($forecast): ?>
+<div class="wx-cards home-fcast" id="fcast-wrap">
+	<div class="wx-card wx-card-fcast">
+		<div class="wx-card-head"><span class="wx-card-label">Forecast</span></div>
+		<?php Forecast::renderHomeHeadline(); ?>
+		<div class="home-forecast">
+			<?php foreach ($forecast as $day): ?>
+			<div class="fcast-day">
+				<img src="<?php echo Site::IMG_ROOT . $day['icon']; ?>_lg.png" width="60" alt="<?php echo htmlspecialchars($day['desc']); ?>" title="<?php echo htmlspecialchars($day['desc']); ?>" />
+				<div class="fcast-label"><?php echo htmlspecialchars($day['label']); ?></div>
+				<?php if (!empty($day['desc'])): ?>
+				<div class="fcast-desc"><?php echo htmlspecialchars($day['desc']); ?></div>
+				<?php endif; ?>
+				<div class="fcast-temps"><b><?php echo Wx::conv($day['tmax'], Wx::Temperature, true, false, -1); ?></b> / <?php echo Wx::conv($day['tmin'], Wx::Temperature, true, false, -1); ?></div>
+				<?php
+				$precip = isset($day['precip']) ? $day['precip'] : null;
+				$pop = isset($day['pop']) ? $day['pop'] : null;
+				if ($precip !== null && $precip !== '' && (float)$precip > 0): ?>
+				<div class="fcast-pop"><?php echo Wx::conv($precip, Wx::Rain, true); ?></div>
+				<?php elseif ($pop !== null && $pop !== '' && (int)$pop > 0): ?>
+				<div class="fcast-pop"><?php echo intval($pop); ?>% rain</div>
+				<?php endif; ?>
+			</div>
+			<?php endforeach; ?>
+			<div class="fcast-more">
+				<a href="wx5.php" title="5-Day Local Forecast and Maps">Full forecast &amp; maps &rarr;</a>
+				<span class="fcast-src"> · data <a href="https://www.yr.no/en/forecast/daily-table/2-2647553/" title="Yr.no forecast for Hampstead" rel="noopener">Yr.no</a></span>
+			</div>
+		</div>
+	</div>
+</div>
+<?php endif; ?>
+
+
 <h2>Year-to-date</h2>
 <div class="charts home-ytd">
 <?php
@@ -470,6 +444,33 @@ Charts::ytdHomeChart(array(
 ));
 ?>
 <p class="home-chart-more"><a href="wx3.php#ytd" title="Year-to-date charts with more variables">More YTD options &rarr;</a></p>
+</div>
+
+<div class="home-about">
+	<p><b>NW3 Weather</b> is a meteorological observation site located near Hampstead, in North London, UK.
+	The site was established with an <a href="wx8.php" title="Detailed station and website information">automatic personal weather station</a>
+	in July 2010 and runs continuously, with updates at least every 60s.</p>
+</div>
+
+<?php
+$nowStamp = Date::mkdate(Date::$dmonth, Date::$dday, Date::$dyear);
+$runYears = Date::$dyear - 2009;
+if ($nowStamp < Date::mkdate(2, 1, Date::$dyear)) { $runYears--; }
+$runDays = intval(($nowStamp - Date::mkdate(2, 1, 2009 + $runYears)) / (24 * 3600));
+$runStr = $runYears . ' year' . ($runYears === 1 ? '' : 's')
+	. ' and ' . $runDays . ' day' . ($runDays === 1 ? '' : 's');
+?>
+<p>This weather station has been recording data for
+<b><?php echo $runStr; ?></b>
+</p>
+
+<div class="home-links">
+	<b>Dive deeper:</b>
+	<a href="wx2.php">Webcam</a>
+	<a href="wx3.php">Graphs</a>
+	<a href="/wxdataday.php">Data tables</a>
+	<a href="/RankDay.php">Rankings</a>
+	<a href="wx8.php">About the station</a>
 </div>
 
 <?php
