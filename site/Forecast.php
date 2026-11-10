@@ -132,7 +132,7 @@ class Forecast {
 		$srcUrl = 'https://weather.metoffice.gov.uk/forecast/regional/se';
 		echo '<div class="fc-discuss">';
 		echo '<h2>London &amp; South East forecast discussion</h2>';
-		echo '<p class="fc-discuss-intro">Met Office regional guidance for the London area. Full text and maps on the Met Office site.</p>';
+		echo '<p class="fc-discuss-intro">Met Office regional guidance for London area. Full text and maps on Met Office site.</p>';
 		if (!empty($d['sections']) && is_array($d['sections'])) {
 			if (!empty($d['headline'])) {
 				echo '<p class="fc-discuss-headline">' . htmlspecialchars($d['headline']) . '</p>';
@@ -241,12 +241,12 @@ class Forecast {
 			array(
 				'label' => 'Netweather 7-day forecast — Hampstead',
 				'url' => 'https://www.netweather.tv/weather-forecasts/uk/7-day/13501~Hampstead',
-				'note' => 'Local model blend (redirects to their current multi-day layout)',
+				'note' => 'Local model blend',
 			),
 			array(
 				'label' => 'Met Office forecast — Hampstead',
 				'url' => 'https://weather.metoffice.gov.uk/forecast/gcpv7fnqu',
-				'note' => 'Official site-specific forecast for Hampstead (Greater London)',
+				'note' => 'Official forecast for Hampstead (Greater London)',
 			),
 			array(
 				'label' => 'Met Office — London &amp; South East regional',
