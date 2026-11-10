@@ -271,7 +271,7 @@ function nw3_render_cards() {
 	$subParts = array();
 	if ($rained24) {
 		if ($rn10 !== null) { $subParts[] = '10-min: <b>' . Wx::conv($rn10, Wx::Rain) . '</b>'; }
-		if ($rnHr !== null) { $subParts[] = 'Last hour: <b>' . Wx::conv($rnHr, Wx::Rain) . '</b>'; }
+		if ($rnHr !== null) { $subParts[] = 'Hour: <b>' . Wx::conv($rnHr, Wx::Rain) . '</b>'; }
 	}
 	$monthPct = (isset($rainSummary['period_summaries']['curr_month']['anom_pct'])
 		? $rainSummary['period_summaries']['curr_month']['anom_pct'] : null);
@@ -284,9 +284,9 @@ function nw3_render_cards() {
 		implode(' &middot; ', $subParts),
 		array(
 			array('Yesterday', nw3_yest_val('mean', 'rain', Wx::Rain)),
-			array('Month total', (($monthrn === null) ? '-' : '<b>' . Wx::conv($monthrn, Wx::Rain) . '</b>' . nw3_pct_vs_normal($monthPct))),
-			array('Annual total', (($yearrn === null) ? '-' : '<b>' . Wx::conv($yearrn, Wx::Rain) . '</b>' . nw3_pct_vs_normal($yearPct))),
-			array('<span title="Days with &ge;0.2 mm this month / year">Rain days</span>', '<b>' . $monthDays . '</b> / <b>' . $yearDays . '</b>'),
+			array('Month total', (($monthrn === null) ? '-' : '<span class="wx-rain-tot"><b>' . Wx::conv($monthrn, Wx::Rain) . '</b>' . nw3_pct_vs_normal($monthPct) . '</span>')),
+			array('Annual total', (($yearrn === null) ? '-' : '<span class="wx-rain-tot"><b>' . Wx::conv($yearrn, Wx::Rain) . '</b>' . nw3_pct_vs_normal($yearPct) . '</span>')),
+			array('<span title="Days with &ge;0.2 mm this month / year">Rain days</span>', '<b>' . $yearDays . '</b> (' . Date::monthfull((int)Date::$dmonth) . ': <b>' . $monthDays . '</b>)'),
 			array('Last rain', (($rnlast === null || $rnlast === '') ? '-' : $rnlast)),
 		));
 
