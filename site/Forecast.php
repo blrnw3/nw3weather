@@ -65,7 +65,7 @@ class Forecast {
 		$windU = Wx::getUnitsText(Wx::Wind);
 		list($hours, $updated, $src) = self::meteogramHours();
 
-		$temp = $dew = $precip = $pop = $cloud = $wind = array();
+		$temp = $dew = $precip = $pop = $cloud = $wind = $gust = array();
 		foreach ($hours as $iv) {
 			if (empty($iv['t'])) { continue; }
 			$t = (int)$iv['t'];
@@ -87,6 +87,9 @@ class Forecast {
 			if (isset($iv['wind']) && $iv['wind'] !== null) {
 				$wind[] = array($t, Wx::convNum($iv['wind'], Wx::Wind, 1));
 			}
+			if (isset($iv['gust']) && $iv['gust'] !== null) {
+				$gust[] = array($t, Wx::convNum($iv['gust'], Wx::Wind, 1));
+			}
 		}
 		return array(
 			'updated' => $updated,
@@ -100,6 +103,7 @@ class Forecast {
 				'pop' => 'rgba(37,84,199,0.28)',
 				'cloud' => '#5a7a9a',
 				'wind' => '#c01717',
+				'gust' => '#c23b86',
 			),
 			'temp' => $temp,
 			'dew' => $dew,
@@ -107,6 +111,7 @@ class Forecast {
 			'pop' => $pop,
 			'cloud' => $cloud,
 			'wind' => $wind,
+			'gust' => $gust,
 		);
 	}
 

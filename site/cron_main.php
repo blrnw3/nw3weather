@@ -317,6 +317,7 @@ if(date('i') % 30 == 12) {
 					'cloud' => isset($iv['cloudCover']['value']) ? (int)nw3_round((float)$iv['cloudCover']['value']) : null,
 					'wind' => isset($iv['wind']['speed']) ? yrMsToMph($iv['wind']['speed']) : null,
 					'windDir' => isset($iv['wind']['direction']) ? (int)nw3_round((float)$iv['wind']['direction']) : null,
+					'gust' => yrWindGustMph(isset($iv['wind']) ? $iv['wind'] : null),
 					'pressure' => isset($iv['pressure']['value']) ? nw3_round((float)$iv['pressure']['value'], 1) : null,
 					'icon' => $fcIcon,
 					'desc' => $fcDesc,
@@ -342,6 +343,7 @@ if(date('i') % 30 == 12) {
 					'precip' => isset($iv['precipitation']['value']) ? nw3_round((float)$iv['precipitation']['value'], 2) : null,
 					'wind' => isset($iv['wind']['speed']) ? yrMsToMph($iv['wind']['speed']) : null,
 					'windDir' => isset($iv['wind']['direction']) ? (int)nw3_round((float)$iv['wind']['direction']) : null,
+					'gust' => yrWindGustMph(isset($iv['wind']) ? $iv['wind'] : null),
 					'icon' => $fcIcon,
 					'desc' => $fcDesc,
 					'symbol' => $sym,
@@ -370,7 +372,7 @@ if(date('i') % 30 == 14) {
 	$omUrl = 'https://api.open-meteo.com/v1/forecast'
 		. '?latitude=' . rawurlencode((string)Site::LATITUDE)
 		. '&longitude=' . rawurlencode((string)Site::LONGITUDE)
-		. '&hourly=temperature_2m,dew_point_2m,precipitation,precipitation_probability,cloud_cover,wind_speed_10m,wind_direction_10m'
+		. '&hourly=temperature_2m,dew_point_2m,precipitation,precipitation_probability,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m'
 		. '&forecast_days=10&timezone=Europe%2FLondon&wind_speed_unit=mph';
 	$omCtx = stream_context_create(array('http' => array(
 		'header' => "User-Agent: nw3weather.co.uk/v5 (https://nw3weather.co.uk)\r\n",
@@ -394,6 +396,7 @@ if(date('i') % 30 == 14) {
 				'cloud' => isset($omH['cloud_cover'][$i]) ? (int)$omH['cloud_cover'][$i] : null,
 				'wind' => isset($omH['wind_speed_10m'][$i]) ? nw3_round((float)$omH['wind_speed_10m'][$i], 1) : null,
 				'windDir' => isset($omH['wind_direction_10m'][$i]) ? (int)nw3_round((float)$omH['wind_direction_10m'][$i]) : null,
+				'gust' => isset($omH['wind_gusts_10m'][$i]) ? nw3_round((float)$omH['wind_gusts_10m'][$i], 1) : null,
 			);
 		}
 		if(count($omHours)) {
@@ -738,6 +741,15 @@ function yrForecastIcon($symbol) {
 }
 
 /** Yr wind is m/s; site UK base unit for Wind is mph. */
+function yrWindGustMph($wind) {
+	if(!is_array($wind)) { return null; }
+	foreach(array('gust', 'gustSpeed', 'gusts') as $k) {
+		if(isset($wind[$k]) && $wind[$k] !== null && $wind[$k] !== '') {
+			return yrMsToMph($wind[$k]);
+		}
+	}
+	return null;
+}
 function yrMsToMph($ms) {
 	if($ms === null || $ms === '') { return null; }
 	return nw3_round((float)$ms * 2.236936, 1);

@@ -1303,6 +1303,7 @@
 		var cPop = cols.pop || 'rgba(37,84,199,0.28)';
 		var cCloud = cols.cloud || '#5a7a9a';
 		var cWind = cols.wind || '#c01717';
+		var cGust = cols.gust || '#c23b86';
 		var src = data.source || 'open-meteo';
 		var credit = (src === 'yr')
 			? { href: 'https://www.yr.no/en/forecast/graph/2-2647553/', text: 'Data: Yr.no / MET Norway' }
@@ -1318,18 +1319,44 @@
 			'<div class="fc-mg-panel" id="' + containerId + '-cloud"></div>' +
 			'<div class="fc-mg-panel" id="' + containerId + '-wind"></div>';
 
+		// Identical x-range and tick positions so stacked panels stay time-aligned.
+		var xMin = Infinity, xMax = -Infinity;
+		[data.temp, data.dew, data.precip, data.pop, data.cloud, data.wind, data.gust].forEach(function (series) {
+			(series || []).forEach(function (pt) {
+				if (!pt || pt[0] == null) { return; }
+				if (pt[0] < xMin) { xMin = pt[0]; }
+				if (pt[0] > xMax) { xMax = pt[0]; }
+			});
+		});
+		if (!isFinite(xMin)) { xMin = undefined; xMax = undefined; }
+		var dayMs = 24 * 3600 * 1000;
+		var tickPositions;
+		if (isFinite(xMin) && isFinite(xMax)) {
+			tickPositions = [];
+			var tick = Math.ceil(xMin / dayMs) * dayMs;
+			for (; tick <= xMax; tick += dayMs) { tickPositions.push(tick); }
+			if (!tickPositions.length) { tickPositions = [xMin]; }
+		}
+
 		var xCommon = {
 			type: 'datetime',
+			min: xMin,
+			max: xMax,
+			tickPositions: tickPositions,
+			startOnTick: false,
+			endOnTick: false,
 			crosshair: true,
 			gridLineWidth: 1,
-			gridLineColor: '#e6e6e6',
+			gridLineColor: '#cccccc',
 			dateTimeLabelFormats: { hour: '%H', day: '%a %e' },
-			labels: { style: { color: TEXT, fontSize: '0.72rem' } },
-			tickPixelInterval: 90
+			labels: { format: '{value:%a %e}', style: { color: TEXT, fontSize: '0.72rem' } }
 		};
 		var tipShared = { shared: true, xDateFormat: '%a %e %b %H:%M' };
+		// Fixed left/right gutters so plot-area edges match even when a panel has no right axis.
 		var baseChart = {
 			backgroundColor: '#ffffff',
+			marginLeft: 56,
+			marginRight: 48,
 			spacing: [6, 10, 4, 8],
 			style: { color: TEXT },
 			zoomType: 'x'
@@ -1339,6 +1366,18 @@
 			column: { borderWidth: 0, pointPadding: 0.02, groupPadding: 0.05 },
 			areaspline: { fillOpacity: 1, lineWidth: 0 }
 		};
+		function rightGutter() {
+			return {
+				opposite: true,
+				linkedTo: 0,
+				title: { text: null },
+				labels: { enabled: false },
+				gridLineWidth: 0,
+				lineWidth: 0,
+				tickWidth: 0,
+				tickLength: 0
+			};
+		}
 
 		var charts = [];
 		function syncExtremes(e) {
@@ -1359,9 +1398,12 @@
 			legend: { enabled: true, align: 'right', verticalAlign: 'top', floating: true,
 				itemStyle: { color: TEXT, fontSize: '0.75rem' }, symbolHeight: 8, symbolWidth: 12 },
 			xAxis: Highcharts.merge(xCommon, { labels: { enabled: false }, tickLength: 0 }),
-			yAxis: { title: { text: tempU, style: { color: cTemp, fontSize: '0.75rem' } },
-				labels: { style: { color: cTemp, fontSize: '0.72rem' } }, gridLineColor: '#eee',
-				softMin: undefined, softMax: undefined },
+			yAxis: [
+				{ title: { text: tempU, style: { color: cTemp, fontSize: '0.75rem' } },
+					labels: { style: { color: cTemp, fontSize: '0.72rem' } }, gridLineColor: '#eee',
+					softMin: undefined, softMax: undefined },
+				rightGutter()
+			],
 			tooltip: tipShared,
 			plotOptions: plotBase,
 			series: [
@@ -1409,8 +1451,11 @@
 			credits: { enabled: false },
 			legend: { enabled: false },
 			xAxis: Highcharts.merge(xCommon, { labels: { enabled: false }, tickLength: 0 }),
-			yAxis: { title: { text: '%', style: { color: cCloud, fontSize: '0.75rem' } },
-				labels: { style: { color: cCloud, fontSize: '0.72rem' } }, min: 0, max: 100, gridLineColor: '#eee' },
+			yAxis: [
+				{ title: { text: '%', style: { color: cCloud, fontSize: '0.75rem' } },
+					labels: { style: { color: cCloud, fontSize: '0.72rem' } }, min: 0, max: 100, gridLineColor: '#eee' },
+				rightGutter()
+			],
 			tooltip: tipShared,
 			plotOptions: plotBase,
 			series: [
@@ -1420,22 +1465,37 @@
 			]
 		}));
 
+		var hasGust = data.gust && data.gust.length;
+		var windSeries = [
+			{ name: 'Wind', type: 'spline', data: data.wind || [], color: cWind, lineWidth: 1.75,
+				tooltip: { valueSuffix: ' ' + windU, valueDecimals: 1 }, zIndex: 2 }
+		];
+		if (hasGust) {
+			windSeries.push({
+				name: 'Gust', type: 'spline', data: data.gust, color: cGust, lineWidth: 1.25,
+				tooltip: { valueSuffix: ' ' + windU, valueDecimals: 1 }, zIndex: 1
+			});
+		}
+		var windLegend = hasGust
+			? { enabled: true, align: 'right', verticalAlign: 'top', floating: true,
+				itemStyle: { color: TEXT, fontSize: '0.75rem' }, symbolHeight: 8, symbolWidth: 12 }
+			: { enabled: false };
 		charts.push(Highcharts.chart(containerId + '-wind', {
-			chart: Highcharts.merge(baseChart, { height: 130 }),
+			chart: Highcharts.merge(baseChart, { height: hasGust ? 150 : 130 }),
 			title: { text: 'Wind', align: 'left', margin: 6,
 				style: { color: TEXT, fontSize: '0.9rem', fontWeight: 'normal' } },
 			credits: { enabled: true, href: credit.href, text: credit.text,
 				style: { color: '#999', fontSize: '9px' } },
-			legend: { enabled: false },
+			legend: windLegend,
 			xAxis: xCommon,
-			yAxis: { title: { text: windU, style: { color: cWind, fontSize: '0.75rem' } },
-				labels: { style: { color: cWind, fontSize: '0.72rem' } }, min: 0, softMax: 5, gridLineColor: '#eee' },
+			yAxis: [
+				{ title: { text: windU, style: { color: cWind, fontSize: '0.75rem' } },
+					labels: { style: { color: cWind, fontSize: '0.72rem' } }, min: 0, softMax: 5, gridLineColor: '#eee' },
+				rightGutter()
+			],
 			tooltip: tipShared,
 			plotOptions: plotBase,
-			series: [
-				{ name: 'Wind', type: 'spline', data: data.wind || [], color: cWind, lineWidth: 1.75,
-					tooltip: { valueSuffix: ' ' + windU, valueDecimals: 1 } }
-			]
+			series: windSeries
 		}));
 	}
 
