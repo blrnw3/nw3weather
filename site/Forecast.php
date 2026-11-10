@@ -342,10 +342,11 @@ class Forecast {
 				. ' aria-labelledby="fc-p-tab-' . $i . '" data-fc-p-index="' . $i . '"' . $hidden . '>';
 			echo '<figure>';
 			echo '<a href="' . htmlspecialchars($it['src']) . '" rel="noopener" target="_blank" title="Open full-size ' . htmlspecialchars($it['label']) . '">';
+			$dims = ' width="800" height="540"';
 			if ($i === 0) {
-				echo '<img class="fc-pressure-img" src="' . htmlspecialchars($it['src']) . '" alt="' . htmlspecialchars($it['alt']) . '" />';
+				echo '<img class="fc-pressure-img" src="' . htmlspecialchars($it['src']) . '" alt="' . htmlspecialchars($it['alt']) . '"' . $dims . ' />';
 			} else {
-				echo '<img class="fc-pressure-img" data-src="' . htmlspecialchars($it['src']) . '" alt="' . htmlspecialchars($it['alt']) . '" />';
+				echo '<img class="fc-pressure-img" data-src="' . htmlspecialchars($it['src']) . '" alt="' . htmlspecialchars($it['alt']) . '"' . $dims . ' />';
 			}
 			echo '</a>';
 			echo '<figcaption class="fc-pressure-cap">' . $it['cap'] . '</figcaption></figure>';
@@ -362,6 +363,8 @@ class Forecast {
 			. 'tabs.forEach(function(t,i){t.addEventListener("click",function(){go(i);t.focus();});'
 			. 't.addEventListener("keydown",function(e){var n=i;if(e.key==="ArrowRight"||e.key==="ArrowDown")n=i+1;else if(e.key==="ArrowLeft"||e.key==="ArrowUp")n=i-1;else if(e.key==="Home")n=0;else if(e.key==="End")n=tabs.length-1;else return;e.preventDefault();go(n);tabs[n].focus();});});'
 			. 'window.NW3=window.NW3||{};window.NW3.selectPressureTab=function(i){go(i);};'
+			. 'function preload(){panels.forEach(showImg);}'
+			. 'if(document.readyState==="complete")preload();else window.addEventListener("load",preload);'
 			. 'go(0);})();</script>';
 		$issued = self::fmtUk(isset($p['issued']) ? $p['issued'] : '');
 		echo '<p class="fc-credit">Met Office surface pressure charts'
