@@ -1899,25 +1899,17 @@ div.charts.detail-chart-pair {
 	color: #fff;
 	border-color: #15866A;
 }
-.fc-pressure-scroller {
-	overflow-x: auto;
-	scroll-snap-type: x mandatory;
-	scroll-behavior: auto;
-	-webkit-overflow-scrolling: touch;
-	scrollbar-width: thin;
-}
-.fc-pressure-track {
-	display: flex;
-	align-items: flex-start;
+.fc-pressure-panels {
+	margin: 0;
 }
 .fc-pressure-item {
 	margin: 0;
-	flex: 0 0 100%;
 	width: 100%;
 	max-width: 100%;
-	scroll-snap-align: start;
-	scroll-snap-stop: always;
 	box-sizing: border-box;
+}
+.fc-pressure-item[hidden] {
+	display: none;
 }
 .fc-pressure-item figure { margin: 0; }
 .fc-pressure-img {
