@@ -115,6 +115,55 @@ class Forecast {
 		);
 	}
 
+	/**
+	 * Parse the Met Office London & South East regional forecast page.
+	 * The headline is taken only from the regional "Headline" section inside
+	 * #fiveDayText — never from #breaking-news-headline (a national article title).
+	 * Returns headline, issued, and sections, or null if the regional block is missing.
+	 */
+	public static function parseRegionalHtml($raw) {
+		if (!is_string($raw) || $raw === '') { return null; }
+		$sections = array();
+		$block = '';
+		if (preg_match('/id="fiveDayText"[^>]*>(.*?)<\/div>\s*<\/div>\s*<\/section>/s', $raw, $mBlock)) {
+			$block = $mBlock[1];
+			if (preg_match_all('/<div class="forecast-text-section">\s*<h4>(.*?)<\/h4>\s*<p>(.*?)<\/p>\s*<\/div>/s', $block, $mm, PREG_SET_ORDER)) {
+				foreach ($mm as $row) {
+					$title = trim(html_entity_decode(strip_tags($row[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+					$text = trim(html_entity_decode(strip_tags($row[2]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+					$text = preg_replace('/\s+/u', ' ', $text);
+					if ($title === '' && $text === '') { continue; }
+					$sections[] = array('title' => $title, 'text' => $text);
+				}
+			}
+		}
+		$headline = '';
+		foreach ($sections as $sec) {
+			$label = rtrim($sec['title'], ':');
+			if (strcasecmp($label, 'Headline') === 0) {
+				$headline = $sec['text'];
+				break;
+			}
+		}
+		// Fallback if the section wrapper markup changed but Headline is still in the regional block.
+		if ($headline === '' && $block !== '' && preg_match('/<h4>[^<]*Headline:?[^<]*<\/h4>\s*<p>(.*?)<\/p>/is', $block, $mh)) {
+			$headline = trim(html_entity_decode(strip_tags($mh[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+			$headline = preg_replace('/\s+/u', ' ', $headline);
+		}
+		$issued = '';
+		if (preg_match('/id="fiveDayText"[\s\S]{0,2500}?<time datetime="([^"]+)"/', $raw, $mt)) {
+			$issued = $mt[1];
+		}
+		if ($headline === '' && !$sections) {
+			return null;
+		}
+		return array(
+			'headline' => $headline,
+			'issued' => $issued,
+			'sections' => $sections,
+		);
+	}
+
 	/** Cached Met Office London & SE regional text (OGL / Crown copyright). */
 	public static function discussion() {
 		$path = V5_CACHE_ROOT . 'forecast_discussion.json';
@@ -164,24 +213,8 @@ class Forecast {
 		$srcUrl = 'https://weather.metoffice.gov.uk/forecast/regional/se';
 		echo '<div class="fc-discuss">';
 		echo '<h2>London &amp; South East forecast discussion</h2>';
-		echo '<p class="fc-discuss-intro">Met Office regional guidance for London area. Full text and maps on Met Office site.</p>';
-		if (!empty($d['sections']) && is_array($d['sections'])) {
-			if (!empty($d['headline'])) {
-				echo '<p class="fc-discuss-headline">' . htmlspecialchars($d['headline']) . '</p>';
-			}
-			echo '<div class="fc-discuss-body">';
-			foreach ($d['sections'] as $sec) {
-				$title = isset($sec['title']) ? $sec['title'] : '';
-				$text = isset($sec['text']) ? $sec['text'] : '';
-				if ($title === '' && $text === '') { continue; }
-				echo '<div class="fc-discuss-sec">';
-				if ($title !== '') {
-					echo '<h3>' . htmlspecialchars($title) . '</h3>';
-				}
-				echo '<p>' . htmlspecialchars($text) . '</p>';
-				echo '</div>';
-			}
-			echo '</div>';
+		if (!empty($d['headline'])) {
+			echo '<p class="fc-discuss-headline">' . htmlspecialchars($d['headline']) . '</p>';
 			echo self::discussionCreditHtml($d, $srcUrl);
 		} else {
 			echo '<p class="fc-discuss-fallback">Regional discussion text is temporarily unavailable. '
@@ -293,15 +326,15 @@ class Forecast {
 		echo '<script>(function(){var r=document.currentScript&&document.currentScript.parentElement;if(!r)return;'
 			. 'var tabs=[].slice.call(r.querySelectorAll("[role=tab]")),panels=[].slice.call(r.querySelectorAll("[role=tabpanel]")),'
 			. 'sc=r.querySelector(".fc-pressure-scroller");if(!tabs.length||!sc)return;'
-			. 'function go(i,smooth){i=Math.max(0,Math.min(i,tabs.length-1));'
+			. 'function go(i){i=Math.max(0,Math.min(i,tabs.length-1));'
 			. 'tabs.forEach(function(t,n){var on=n===i;t.setAttribute("aria-selected",on?"true":"false");t.tabIndex=on?0:-1;t.classList.toggle("active",on);});'
-			. 'var p=panels[i];if(p)sc.scrollTo({left:p.offsetLeft,behavior:smooth?"smooth":"auto"});}'
-			. 'function fromScroll(){var x=sc.scrollLeft,best=0,bd=1e9;panels.forEach(function(p,n){var d=Math.abs(p.offsetLeft-x);if(d<bd){bd=d;best=n;}});go(best,false);}'
-			. 'tabs.forEach(function(t,i){t.addEventListener("click",function(){go(i,true);t.focus();});'
-			. 't.addEventListener("keydown",function(e){var n=i;if(e.key==="ArrowRight"||e.key==="ArrowDown")n=i+1;else if(e.key==="ArrowLeft"||e.key==="ArrowUp")n=i-1;else if(e.key==="Home")n=0;else if(e.key==="End")n=tabs.length-1;else return;e.preventDefault();go(n,true);tabs[n].focus();});});'
+			. 'var p=panels[i];if(p){var left=p.getBoundingClientRect().left-sc.getBoundingClientRect().left+sc.scrollLeft;sc.scrollTo({left:left,behavior:"auto"});}}'
+			. 'function fromScroll(){var x=sc.scrollLeft,best=0,bd=1e9;panels.forEach(function(p,n){var d=Math.abs(p.offsetLeft-x);if(d<bd){bd=d;best=n;}});go(best);}'
+			. 'tabs.forEach(function(t,i){t.addEventListener("click",function(){go(i);t.focus();});'
+			. 't.addEventListener("keydown",function(e){var n=i;if(e.key==="ArrowRight"||e.key==="ArrowDown")n=i+1;else if(e.key==="ArrowLeft"||e.key==="ArrowUp")n=i-1;else if(e.key==="Home")n=0;else if(e.key==="End")n=tabs.length-1;else return;e.preventDefault();go(n);tabs[n].focus();});});'
 			. 'var tmo;sc.addEventListener("scroll",function(){clearTimeout(tmo);tmo=setTimeout(fromScroll,60);},{passive:true});'
-			. 'window.NW3=window.NW3||{};window.NW3.selectPressureTab=function(i){go(i,false);};'
-			. 'go(0,false);})();</script>';
+			. 'window.NW3=window.NW3||{};window.NW3.selectPressureTab=function(i){go(i);};'
+			. 'go(0);})();</script>';
 		$issued = self::fmtUk(isset($p['issued']) ? $p['issued'] : '');
 		echo '<p class="fc-credit">Met Office surface pressure charts'
 			. ($issued !== '' ? (' · issued ' . htmlspecialchars($issued)) : '')

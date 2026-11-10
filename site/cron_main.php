@@ -423,45 +423,18 @@ if(date('i') % 60 == 18) {
 		'timeout' => 12,
 	)));
 	$moRaw = @file_get_contents($moUrl, false, $moCtx);
-	if($moRaw && preg_match('/id="fiveDayText"[^>]*>(.*?)<\/div>\s*<\/div>\s*<\/section>/s', $moRaw, $mBlock)) {
-		$block = $mBlock[1];
-		$sections = array();
-		if(preg_match_all('/<div class="forecast-text-section">\s*<h4>(.*?)<\/h4>\s*<p>(.*?)<\/p>\s*<\/div>/s', $block, $mm, PREG_SET_ORDER)) {
-			foreach($mm as $row) {
-				$title = trim(html_entity_decode(strip_tags($row[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-				$text = trim(html_entity_decode(strip_tags($row[2]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-				$text = preg_replace('/\s+/u', ' ', $text);
-				if($title === '' && $text === '') { continue; }
-				$sections[] = array('title' => $title, 'text' => $text);
-			}
-		}
-		$headline = '';
-		foreach($sections as $sec) {
-			if(strcasecmp($sec['title'], 'Headline:') === 0 || strcasecmp($sec['title'], 'Headline') === 0) {
-				$headline = $sec['text'];
-				break;
-			}
-		}
-		// Prefer the page's breaking-news headline when present.
-		if(preg_match('/id="breaking-news-headline"[^>]*>(.*?)<\/h2>/s', $moRaw, $mh)) {
-			$bn = trim(html_entity_decode(strip_tags($mh[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-			if($bn !== '') { $headline = $bn; }
-		}
-		$issued = '';
-		if(preg_match('/id="fiveDayText"[\s\S]{0,2500}?<time datetime="([^"]+)"/', $moRaw, $mt)) {
-			$issued = $mt[1];
-		}
-		if(count($sections)) {
-			nw3_atomic_write(V5_CACHE_ROOT.'forecast_discussion.json', nw3_json_encode(array(
-				'updated' => time(),
-				'source' => 'metoffice-regional-se',
-				'sourceUrl' => $moUrl,
-				'licence' => 'OGL v3 / Crown copyright — Content supplied by the Met Office',
-				'headline' => $headline,
-				'issued' => $issued,
-				'sections' => $sections,
-			)));
-		}
+	require_once ROOT.'Forecast.php';
+	$parsed = ($moRaw) ? Forecast::parseRegionalHtml($moRaw) : null;
+	if($parsed) {
+		nw3_atomic_write(V5_CACHE_ROOT.'forecast_discussion.json', nw3_json_encode(array(
+			'updated' => time(),
+			'source' => 'metoffice-regional-se',
+			'sourceUrl' => $moUrl,
+			'licence' => 'OGL v3 / Crown copyright — Content supplied by the Met Office',
+			'headline' => $parsed['headline'],
+			'issued' => $parsed['issued'],
+			'sections' => $parsed['sections'],
+		)));
 	} else {
 		Page::quick_log('forecast_discussion_bad.txt', substr((string)$moRaw, 0, 200));
 	}

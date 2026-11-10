@@ -1902,6 +1902,7 @@ div.charts.detail-chart-pair {
 .fc-pressure-scroller {
 	overflow-x: auto;
 	scroll-snap-type: x mandatory;
+	scroll-behavior: auto;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: thin;
 }
