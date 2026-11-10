@@ -5,7 +5,7 @@ require_once __DIR__ . '/Forecast.php';
 Page::init([
 	"fileNum" => 5,
 	"title" => "Forecast | Latest Maps",
-	"description" => 'London Forecast and Latest European Weather Maps courtesy of NW3 weather, provided by external weather services.'
+	"description" => 'London forecast discussion, Hampstead meteogram and latest UK weather maps from NW3 weather.'
 ]);
 Page::Start();
 
@@ -13,18 +13,20 @@ require Site::$rareTags;
 ?>
 <h1>Latest Forecasts and Weather Maps</h1>
 
-<p><b>NB:</b> NW3 is an observation site, which means it cannot provide its own detailed forecasts, and therefore uses those that are externally produced.<br />
-	Proper forecasting relies on running sophisticated computer models on large supercomputers using data from a wide array of sources, including land-based observations sites like this one.
-	A full discussion of this can be found <a href="wx8.php#Forecasting" title="Found on the about page">here</a>. 
-	Below are the latest forecasts and weather maps provided by external weather services.
+<p><b>NB:</b> NW3 is an observation site, so detailed forecasts come from external services rather than an in-house NWP suite.
+	Proper forecasting relies on running sophisticated computer models on large supercomputers using data from a wide array of sources, including land-based observation sites like this one.
+	A fuller discussion is on the <a href="wx8.php#Forecasting" title="Found on the about page">about page</a>.
 </p>
 
+<?php Forecast::renderDiscussion(); ?>
 
-<div id="widgets">
-	<div>
-		<h2>Hampstead Meteogram</h2>
-		<p class="hm-break-note">Hourly temperature, rain and wind for the next couple of days (Yr.no / MET Norway).</p>
-		<?php Charts::meteogram(null, ['height' => 420]); ?>
+<?php Forecast::renderFavouriteLinks(); ?>
+
+<div id="widgets" class="fc-widgets">
+	<div class="fc-meteogram-wrap">
+		<h2>Hampstead 10-day meteogram</h2>
+		<p class="hm-break-note">Stacked panels (temperature &amp; dew point, precipitation amount &amp; chance, cloud cover, wind) sharing one time axis — styled like a Weather Underground 10-day chart, using this site’s variable colours. Data: Open-Meteo (falls back to Yr.no if needed).</p>
+		<?php Charts::meteogram(null, ['height' => 620]); ?>
 	</div>
 
 	<div>
@@ -33,10 +35,7 @@ require Site::$rareTags;
 		<?php Forecast::renderPeriodTable(8); ?>
 	</div>
 
-	<div>
-		<h2>Surface Pressure Chart</h2>
-		<img src="https://www.weathercharts.net/noaa_ukmo_prognosis/PPVE89.gif" alt="fax" title="Surface pressure analysis chart from the Met Office" />
-	</div>
+	<?php Forecast::renderPressureChart(); ?>
 </div>
 
 <?php
