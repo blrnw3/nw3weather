@@ -2574,6 +2574,18 @@ body.cam-modal-open {
 	background: #052e24;
 	border-color: #15866A;
 }
+.home-chart-vars .home-chart-multi-icons {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	grid-template-rows: 1fr 1fr;
+	width: 30px;
+	height: 30px;
+	gap: 0;
+}
+.home-chart-vars .home-chart-multi-icons img {
+	width: 15px;
+	height: 15px;
+}
 
 /* Time-range toggle */
 .home-graph-controls {

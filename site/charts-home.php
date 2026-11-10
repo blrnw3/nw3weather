@@ -32,7 +32,7 @@
 	};
 
 	var currentRange = 12;
-	var currentVar = 'temp';
+	var currentVar = 'thrd';
 	var cache = null;
 	var chart = null;
 
@@ -146,6 +146,15 @@
 		if (!cache) { return; }
 		currentVar = key;
 		if (chart) { chart.destroy(); chart = null; }
+		if (key === 'thrd') {
+			// Reuse the wx3 / graph-viewer temp+dew+humidity+rain chart.
+			if (window.NW3 && typeof NW3.multiChart === 'function') {
+				chart = NW3.multiChart('home-chart', cache, 'thrd', {
+					title: 'Last ' + currentRange + ' hrs temperature, humidity, rain in nw3'
+				}) || null;
+			}
+			return;
+		}
 		chart = Highcharts.chart('home-chart', buildOptions(key));
 	}
 
