@@ -1796,6 +1796,105 @@ div.charts.detail-chart-pair {
 .fc-meteogram {
 	margin: 0.3rem 0 1.2rem;
 }
+.fc-meteogram-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	width: 100%;
+	max-width: 100%;
+}
+.fc-mg-panel {
+	width: 100%;
+	min-width: 0;
+}
+.fc-discuss {
+	margin: 1rem 0 1.4rem;
+	padding: 0.85rem 1rem;
+	background: #f4f7fa;
+	border: 1px solid #d5dbe0;
+	border-left: 4px solid #2554c7;
+	border-radius: 4px;
+}
+.fc-discuss-intro,
+.fc-discuss-fallback {
+	font-size: 0.92rem;
+	color: #445;
+	margin: 0.3rem 0 0.7rem;
+}
+.fc-discuss-headline {
+	font-size: 1.05rem;
+	font-weight: 600;
+	color: #1f303a;
+	margin: 0.2rem 0 0.8rem;
+}
+.fc-discuss-sec {
+	margin: 0.55rem 0;
+}
+.fc-discuss-sec h3 {
+	margin: 0 0 0.2rem;
+	font-size: 0.95rem;
+	color: #2554c7;
+}
+.fc-discuss-sec p {
+	margin: 0;
+	line-height: 1.45;
+}
+.fc-favs {
+	margin: 0.6rem 0 1.2rem;
+}
+.fc-fav-list {
+	margin: 0.3rem 0 0.6rem 1.2rem;
+	padding: 0;
+}
+.fc-fav-list li {
+	margin: 0.35rem 0;
+	line-height: 1.4;
+}
+.fc-fav-note {
+	color: #667;
+	font-size: 0.9rem;
+}
+.fc-pressure {
+	margin: 0.5rem 0 1rem;
+	flex: 1 1 100%;
+}
+.fc-pressure-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.75rem 1rem;
+	align-items: start;
+}
+.fc-pressure-item {
+	margin: 0;
+}
+.fc-pressure-item-analysis {
+	grid-column: 1 / -1;
+}
+.fc-pressure-img {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	height: auto;
+	border: 1px solid #d5dbe0;
+	background: #fff;
+}
+.fc-pressure-cap {
+	margin: 0.3rem 0 0;
+	font-size: 0.85rem;
+	color: #445;
+}
+@media only screen and (max-width: 700px) {
+	.fc-pressure-grid {
+		grid-template-columns: 1fr;
+	}
+}
+.fc-widgets .fc-meteogram-wrap {
+	flex: 1 1 100%;
+}
+@media only screen and (max-width: 700px) {
+	.fc-discuss { padding: 0.7rem 0.75rem; }
+	.fc-fav-list { margin-left: 1rem; }
+}
 
 .wx-cards {
 	display: grid;

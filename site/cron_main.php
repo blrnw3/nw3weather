@@ -312,9 +312,12 @@ if(date('i') % 30 == 12) {
 				$fcHourly[] = array(
 					't' => isset($iv['start']) ? (strtotime($iv['start']) * 1000) : null,
 					'temp' => isset($iv['temperature']['value']) ? nw3_round((float)$iv['temperature']['value'], 1) : null,
+					'dew' => isset($iv['dewPoint']['value']) ? nw3_round((float)$iv['dewPoint']['value'], 1) : null,
 					'precip' => isset($iv['precipitation']['value']) ? nw3_round((float)$iv['precipitation']['value'], 2) : null,
+					'cloud' => isset($iv['cloudCover']['value']) ? (int)nw3_round((float)$iv['cloudCover']['value']) : null,
 					'wind' => isset($iv['wind']['speed']) ? yrMsToMph($iv['wind']['speed']) : null,
 					'windDir' => isset($iv['wind']['direction']) ? (int)nw3_round((float)$iv['wind']['direction']) : null,
+					'gust' => yrWindGustMph(isset($iv['wind']) ? $iv['wind'] : null),
 					'pressure' => isset($iv['pressure']['value']) ? nw3_round((float)$iv['pressure']['value'], 1) : null,
 					'icon' => $fcIcon,
 					'desc' => $fcDesc,
@@ -340,6 +343,7 @@ if(date('i') % 30 == 12) {
 					'precip' => isset($iv['precipitation']['value']) ? nw3_round((float)$iv['precipitation']['value'], 2) : null,
 					'wind' => isset($iv['wind']['speed']) ? yrMsToMph($iv['wind']['speed']) : null,
 					'windDir' => isset($iv['wind']['direction']) ? (int)nw3_round((float)$iv['wind']['direction']) : null,
+					'gust' => yrWindGustMph(isset($iv['wind']) ? $iv['wind'] : null),
 					'icon' => $fcIcon,
 					'desc' => $fcDesc,
 					'symbol' => $sym,
@@ -359,6 +363,177 @@ if(date('i') % 30 == 12) {
 		}
 	} else {
 		Page::quick_log('forecast_bad.txt', substr((string)$fcRaw, 0, 200));
+	}
+}
+
+// 10-day meteogram from Open-Meteo (temp, dew point, precip, POP, cloud, wind).
+// Yr shortIntervals only cover ~2.5 days and have no precipitation probability.
+if(date('i') % 30 == 14) {
+	$omUrl = 'https://api.open-meteo.com/v1/forecast'
+		. '?latitude=' . rawurlencode((string)Site::LATITUDE)
+		. '&longitude=' . rawurlencode((string)Site::LONGITUDE)
+		. '&hourly=temperature_2m,dew_point_2m,precipitation,precipitation_probability,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m'
+		. '&forecast_days=10&timezone=Europe%2FLondon&wind_speed_unit=mph';
+	$omCtx = stream_context_create(array('http' => array(
+		'header' => "User-Agent: nw3weather.co.uk/v5 (https://nw3weather.co.uk)\r\n",
+		'timeout' => 10,
+	)));
+	$omRaw = @file_get_contents($omUrl, false, $omCtx);
+	$omJson = $omRaw ? json_decode($omRaw, true) : null;
+	$omH = (isset($omJson['hourly']) && is_array($omJson['hourly'])) ? $omJson['hourly'] : null;
+	if($omH && !empty($omH['time']) && is_array($omH['time'])) {
+		$omHours = array();
+		$n = count($omH['time']);
+		for($i = 0; $i < $n; $i++) {
+			$ts = strtotime($omH['time'][$i]);
+			if($ts === false) { continue; }
+			$omHours[] = array(
+				't' => $ts * 1000,
+				'temp' => isset($omH['temperature_2m'][$i]) ? nw3_round((float)$omH['temperature_2m'][$i], 1) : null,
+				'dew' => isset($omH['dew_point_2m'][$i]) ? nw3_round((float)$omH['dew_point_2m'][$i], 1) : null,
+				'precip' => isset($omH['precipitation'][$i]) ? nw3_round((float)$omH['precipitation'][$i], 2) : null,
+				'pop' => isset($omH['precipitation_probability'][$i]) ? (int)$omH['precipitation_probability'][$i] : null,
+				'cloud' => isset($omH['cloud_cover'][$i]) ? (int)$omH['cloud_cover'][$i] : null,
+				'wind' => isset($omH['wind_speed_10m'][$i]) ? nw3_round((float)$omH['wind_speed_10m'][$i], 1) : null,
+				'windDir' => isset($omH['wind_direction_10m'][$i]) ? (int)nw3_round((float)$omH['wind_direction_10m'][$i]) : null,
+				'gust' => isset($omH['wind_gusts_10m'][$i]) ? nw3_round((float)$omH['wind_gusts_10m'][$i], 1) : null,
+			);
+		}
+		if(count($omHours)) {
+			nw3_atomic_write(V5_CACHE_ROOT.'forecast_meteogram.json', nw3_json_encode(array(
+				'updated' => time(),
+				'source' => 'open-meteo',
+				'lat' => Site::LATITUDE,
+				'lon' => Site::LONGITUDE,
+				'hourly' => $omHours,
+			)));
+		}
+	} else {
+		Page::quick_log('forecast_meteogram_bad.txt', substr((string)$omRaw, 0, 200));
+	}
+}
+
+// Met Office London & South East regional text (website content under OGL with attribution).
+// DataPoint regional-text API was retired Dec 2025; this is the public regional page.
+if(date('i') % 60 == 18) {
+	$moUrl = 'https://weather.metoffice.gov.uk/forecast/regional/se';
+	$moCtx = stream_context_create(array('http' => array(
+		'header' => "User-Agent: nw3weather.co.uk/v5 (https://nw3weather.co.uk)\r\n"
+			. "Accept: text/html\r\n",
+		'timeout' => 12,
+	)));
+	$moRaw = @file_get_contents($moUrl, false, $moCtx);
+	if($moRaw && preg_match('/id="fiveDayText"[^>]*>(.*?)<\/div>\s*<\/div>\s*<\/section>/s', $moRaw, $mBlock)) {
+		$block = $mBlock[1];
+		$sections = array();
+		if(preg_match_all('/<div class="forecast-text-section">\s*<h4>(.*?)<\/h4>\s*<p>(.*?)<\/p>\s*<\/div>/s', $block, $mm, PREG_SET_ORDER)) {
+			foreach($mm as $row) {
+				$title = trim(html_entity_decode(strip_tags($row[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+				$text = trim(html_entity_decode(strip_tags($row[2]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+				$text = preg_replace('/\s+/u', ' ', $text);
+				if($title === '' && $text === '') { continue; }
+				$sections[] = array('title' => $title, 'text' => $text);
+			}
+		}
+		$headline = '';
+		foreach($sections as $sec) {
+			if(strcasecmp($sec['title'], 'Headline:') === 0 || strcasecmp($sec['title'], 'Headline') === 0) {
+				$headline = $sec['text'];
+				break;
+			}
+		}
+		// Prefer the page's breaking-news headline when present.
+		if(preg_match('/id="breaking-news-headline"[^>]*>(.*?)<\/h2>/s', $moRaw, $mh)) {
+			$bn = trim(html_entity_decode(strip_tags($mh[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+			if($bn !== '') { $headline = $bn; }
+		}
+		$issued = '';
+		if(preg_match('/id="fiveDayText"[\s\S]{0,2500}?<time datetime="([^"]+)"/', $moRaw, $mt)) {
+			$issued = $mt[1];
+		}
+		if(count($sections)) {
+			nw3_atomic_write(V5_CACHE_ROOT.'forecast_discussion.json', nw3_json_encode(array(
+				'updated' => time(),
+				'source' => 'metoffice-regional-se',
+				'sourceUrl' => $moUrl,
+				'licence' => 'OGL v3 / Crown copyright — Content supplied by the Met Office',
+				'headline' => $headline,
+				'issued' => $issued,
+				'sections' => $sections,
+			)));
+		}
+	} else {
+		Page::quick_log('forecast_discussion_bad.txt', substr((string)$moRaw, 0, 200));
+	}
+}
+
+// Met Office UK surface pressure colour charts (analysis + T+24 + T+48).
+// Index at /v1/surface-pressure/colour always points at the current run.
+if(date('i') % 30 == 16) {
+	$spUrl = 'https://data.consumer-digital.api.metoffice.gov.uk/v1/surface-pressure/colour';
+	$spCtx = stream_context_create(array('http' => array(
+		'header' => "User-Agent: nw3weather.co.uk/v5 (https://nw3weather.co.uk)\r\n"
+			. "Accept: application/json\r\n",
+		'timeout' => 10,
+	)));
+	$spRaw = @file_get_contents($spUrl, false, $spCtx);
+	$spJson = $spRaw ? json_decode($spRaw, true) : null;
+	$spProds = (isset($spJson['products']) && is_array($spJson['products'])) ? $spJson['products'] : array();
+	if(count($spProds) && !empty($spProds[0]['uri']) && !empty($spProds[0]['data_date'])) {
+		$baseTs = strtotime($spProds[0]['data_date']);
+		$wanted = array(
+			0 => array('file' => 'surface_pressure.gif', 'label' => 'Analysis'),
+			24 => array('file' => 'surface_pressure_t24.gif', 'label' => 'T+24 forecast'),
+			48 => array('file' => 'surface_pressure_t48.gif', 'label' => 'T+48 forecast'),
+		);
+		$byLead = array();
+		foreach($spProds as $prod) {
+			if(empty($prod['data_date']) || empty($prod['uri'])) { continue; }
+			$lead = (int)round((strtotime($prod['data_date']) - $baseTs) / 3600);
+			if(isset($wanted[$lead])) { $byLead[$lead] = $prod; }
+		}
+		$gifCtx = stream_context_create(array('http' => array(
+			'header' => "User-Agent: nw3weather.co.uk/v5 (https://nw3weather.co.uk)\r\n",
+			'timeout' => 15,
+		)));
+		if(!is_dir(V5_GENERATED_ROOT)) { @mkdir(V5_GENERATED_ROOT, 0755, true); }
+		$charts = array();
+		foreach($wanted as $lead => $meta) {
+			if(empty($byLead[$lead])) { continue; }
+			$prod = $byLead[$lead];
+			$gif = @file_get_contents($prod['uri'], false, $gifCtx);
+			$localOk = false;
+			if($gif && strlen($gif) > 1000) {
+				$localOk = (bool)@file_put_contents(V5_GENERATED_ROOT . $meta['file'], $gif);
+			}
+			$charts[] = array(
+				'lead' => $lead,
+				'label' => $meta['label'],
+				'file' => $meta['file'],
+				'valid' => isset($prod['data_date']) ? $prod['data_date'] : '',
+				'uri' => $prod['uri'],
+				'local' => $localOk,
+			);
+		}
+		$t0 = null;
+		foreach($charts as $c) { if((int)$c['lead'] === 0) { $t0 = $c; break; } }
+		if(count($charts)) {
+			nw3_atomic_write(V5_CACHE_ROOT.'forecast_pressure.json', nw3_json_encode(array(
+				'updated' => time(),
+				'source' => 'metoffice-surface-pressure',
+				'issued' => isset($spJson['issued']) ? $spJson['issued'] : '',
+				'page' => 'https://weather.metoffice.gov.uk/maps-and-charts/surface-pressure',
+				'charts' => $charts,
+				// Legacy T+0 keys kept so an older render still has a pointer.
+				'valid' => $t0 ? $t0['valid'] : '',
+				'uri' => $t0 ? $t0['uri'] : '',
+				'local' => $t0 ? $t0['local'] : false,
+			)));
+		} else {
+			Page::quick_log('forecast_pressure_bad.txt', 'no lead-hour matches: ' . substr((string)$spRaw, 0, 200));
+		}
+	} else {
+		Page::quick_log('forecast_pressure_bad.txt', substr((string)$spRaw, 0, 200));
 	}
 }
 
@@ -566,6 +741,15 @@ function yrForecastIcon($symbol) {
 }
 
 /** Yr wind is m/s; site UK base unit for Wind is mph. */
+function yrWindGustMph($wind) {
+	if(!is_array($wind)) { return null; }
+	foreach(array('gust', 'gustSpeed', 'gusts') as $k) {
+		if(isset($wind[$k]) && $wind[$k] !== null && $wind[$k] !== '') {
+			return yrMsToMph($wind[$k]);
+		}
+	}
+	return null;
+}
 function yrMsToMph($ms) {
 	if($ms === null || $ms === '') { return null; }
 	return nw3_round((float)$ms * 2.236936, 1);

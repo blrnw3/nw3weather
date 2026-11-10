@@ -1284,7 +1284,8 @@
 		});
 	}
 
-	// Yr.no meteogram: temp line + precip columns + wind line (units already converted server-side).
+	// Stacked 10-day meteogram (shared time axis).
+	// Colours follow INTRA_TABS / site palette (temp, dew, rain, cloud, wind).
 	function meteogramChart(containerId, data) {
 		setLoading(containerId, false);
 		if (!data || !data.temp || !data.temp.length) {
@@ -1292,41 +1293,210 @@
 			return;
 		}
 		var units = data.units || {};
+		var cols = data.colors || {};
 		var tempU = units.temp || '\u00B0C';
 		var rainU = units.precip || 'mm';
 		var windU = units.wind || 'mph';
-		Highcharts.chart(containerId, {
-			chart: { backgroundColor: '#ffffff', spacing: [14, 14, 12, 12], zoomType: 'x',
-				style: { color: TEXT } },
-			title: { text: 'Hampstead meteogram', style: { color: TEXT, fontSize: '1.05rem', fontWeight: 'normal' } },
-			credits: { enabled: true, href: 'https://www.yr.no/en/forecast/graph/2-2647553/',
-				text: 'Data: Yr.no / MET Norway', style: { color: '#999', fontSize: '9px' } },
-			legend: { enabled: true, itemStyle: { color: TEXT } },
-			xAxis: { type: 'datetime', crosshair: true, gridLineWidth: 1, gridLineColor: '#ddd',
-				dateTimeLabelFormats: { hour: '%H:%M', day: '%a %d' }, labels: { style: { color: TEXT } } },
-			yAxis: [
-				{ title: { text: 'Temperature / ' + tempU, style: { color: '#DF7401' } },
-					labels: { style: { color: '#DF7401' } }, gridLineColor: '#eee' },
-				{ title: { text: 'Rain / ' + rainU, style: { color: '#3567EF' } },
-					labels: { style: { color: '#3567EF' } }, opposite: true, min: 0, gridLineWidth: 0 },
-				{ title: { text: 'Wind / ' + windU, style: { color: '#2D851B' } },
-					labels: { style: { color: '#2D851B' } }, opposite: true, min: 0, gridLineWidth: 0,
-					showEmpty: false }
-			],
-			tooltip: { shared: true, xDateFormat: '%a %d %b %H:%M' },
-			plotOptions: {
-				series: { animation: false, marker: { enabled: false } },
-				column: { borderWidth: 0, pointPadding: 0.05, groupPadding: 0.05 }
-			},
-			series: [
-				{ name: 'Temperature', type: 'spline', yAxis: 0, data: data.temp,
-					color: '#DF7401', tooltip: { valueSuffix: ' ' + tempU, valueDecimals: 1 }, zIndex: 3 },
-				{ name: 'Rain', type: 'column', yAxis: 1, data: data.precip,
-					color: 'rgba(53,103,239,0.55)', tooltip: { valueSuffix: ' ' + rainU, valueDecimals: 1 }, zIndex: 1 },
-				{ name: 'Wind', type: 'spline', yAxis: 2, data: data.wind,
-					color: '#2D851B', lineWidth: 1.5, tooltip: { valueSuffix: ' ' + windU, valueDecimals: 1 }, zIndex: 2 }
-			]
+		var cTemp = cols.temp || '#d34f00';
+		var cDew = cols.dew || '#0b8043';
+		var cRain = cols.precip || '#2554c7';
+		var cPop = cols.pop || 'rgba(37,84,199,0.28)';
+		var cCloud = cols.cloud || '#5a7a9a';
+		var cWind = cols.wind || '#c01717';
+		var cGust = cols.gust || '#c23b86';
+		var src = data.source || 'open-meteo';
+		var credit = (src === 'yr')
+			? { href: 'https://www.yr.no/en/forecast/graph/2-2647553/', text: 'Data: Yr.no / MET Norway' }
+			: { href: 'https://open-meteo.com/', text: 'Data: Open-Meteo' };
+
+		var el = document.getElementById(containerId);
+		if (!el) { return; }
+		el.className = (el.className || '').replace(/\bwxchart-loading\b/g, '') + ' fc-meteogram-stack';
+		el.style.minHeight = '';
+		el.innerHTML =
+			'<div class="fc-mg-panel" id="' + containerId + '-temp"></div>' +
+			'<div class="fc-mg-panel" id="' + containerId + '-precip"></div>' +
+			'<div class="fc-mg-panel" id="' + containerId + '-cloud"></div>' +
+			'<div class="fc-mg-panel" id="' + containerId + '-wind"></div>';
+
+		// Identical x-range and tick positions so stacked panels stay time-aligned.
+		var xMin = Infinity, xMax = -Infinity;
+		[data.temp, data.dew, data.precip, data.pop, data.cloud, data.wind, data.gust].forEach(function (series) {
+			(series || []).forEach(function (pt) {
+				if (!pt || pt[0] == null) { return; }
+				if (pt[0] < xMin) { xMin = pt[0]; }
+				if (pt[0] > xMax) { xMax = pt[0]; }
+			});
 		});
+		if (!isFinite(xMin)) { xMin = undefined; xMax = undefined; }
+		var dayMs = 24 * 3600 * 1000;
+		var tickPositions;
+		if (isFinite(xMin) && isFinite(xMax)) {
+			tickPositions = [];
+			var tick = Math.ceil(xMin / dayMs) * dayMs;
+			for (; tick <= xMax; tick += dayMs) { tickPositions.push(tick); }
+			if (!tickPositions.length) { tickPositions = [xMin]; }
+		}
+
+		var xCommon = {
+			type: 'datetime',
+			min: xMin,
+			max: xMax,
+			tickPositions: tickPositions,
+			startOnTick: false,
+			endOnTick: false,
+			crosshair: true,
+			gridLineWidth: 1,
+			gridLineColor: '#cccccc',
+			dateTimeLabelFormats: { hour: '%H', day: '%a %e' },
+			labels: { format: '{value:%a %e}', style: { color: TEXT, fontSize: '0.72rem' } }
+		};
+		var tipShared = { shared: true, xDateFormat: '%a %e %b %H:%M' };
+		// Fixed left/right gutters so plot-area edges match even when a panel has no right axis.
+		var baseChart = {
+			backgroundColor: '#ffffff',
+			marginLeft: 56,
+			marginRight: 48,
+			spacing: [6, 10, 4, 8],
+			style: { color: TEXT },
+			zoomType: 'x'
+		};
+		var plotBase = {
+			series: { animation: false, marker: { enabled: false }, states: { inactive: { opacity: 1 } } },
+			column: { borderWidth: 0, pointPadding: 0.02, groupPadding: 0.05 },
+			areaspline: { fillOpacity: 1, lineWidth: 0 }
+		};
+		function rightGutter() {
+			return {
+				opposite: true,
+				linkedTo: 0,
+				title: { text: null },
+				labels: { enabled: false },
+				gridLineWidth: 0,
+				lineWidth: 0,
+				tickWidth: 0,
+				tickLength: 0
+			};
+		}
+
+		var charts = [];
+		function syncExtremes(e) {
+			if (e.trigger === 'syncExtremes') { return; }
+			charts.forEach(function (c) {
+				if (c !== this && c.xAxis && c.xAxis[0]) {
+					c.xAxis[0].setExtremes(e.min, e.max, undefined, false, { trigger: 'syncExtremes' });
+				}
+			});
+		}
+		xCommon.events = { setExtremes: syncExtremes };
+
+		charts.push(Highcharts.chart(containerId + '-temp', {
+			chart: Highcharts.merge(baseChart, { height: 170 }),
+			title: { text: 'Temperature & dew point', align: 'left', margin: 6,
+				style: { color: TEXT, fontSize: '0.9rem', fontWeight: 'normal' } },
+			credits: { enabled: false },
+			legend: { enabled: true, align: 'right', verticalAlign: 'top', floating: true,
+				itemStyle: { color: TEXT, fontSize: '0.75rem' }, symbolHeight: 8, symbolWidth: 12 },
+			xAxis: Highcharts.merge(xCommon, { labels: { enabled: false }, tickLength: 0 }),
+			yAxis: [
+				{ title: { text: tempU, style: { color: cTemp, fontSize: '0.75rem' } },
+					labels: { style: { color: cTemp, fontSize: '0.72rem' } }, gridLineColor: '#eee',
+					softMin: undefined, softMax: undefined },
+				rightGutter()
+			],
+			tooltip: tipShared,
+			plotOptions: plotBase,
+			series: [
+				{ name: 'Temperature', type: 'spline', data: data.temp, color: cTemp, lineWidth: 2,
+					tooltip: { valueSuffix: ' ' + tempU, valueDecimals: 1 }, zIndex: 2 },
+				{ name: 'Dew point', type: 'spline', data: data.dew || [], color: cDew, lineWidth: 1.5,
+					dashStyle: 'ShortDash', tooltip: { valueSuffix: ' ' + tempU, valueDecimals: 1 }, zIndex: 1 }
+			]
+		}));
+
+		var precipSeries = [
+			{ name: 'Rain', type: 'column', data: data.precip || [], color: cRain, yAxis: 0,
+				tooltip: { valueSuffix: ' ' + rainU, valueDecimals: 1 }, zIndex: 2 }
+		];
+		if (data.pop && data.pop.length) {
+			precipSeries.push({
+				name: 'Precip chance', type: 'areaspline', data: data.pop, color: cPop, yAxis: 1,
+				tooltip: { valueSuffix: ' %', valueDecimals: 0 }, zIndex: 1, fillColor: cPop, lineWidth: 0
+			});
+		}
+		charts.push(Highcharts.chart(containerId + '-precip', {
+			chart: Highcharts.merge(baseChart, { height: 150 }),
+			title: { text: 'Precipitation', align: 'left', margin: 6,
+				style: { color: TEXT, fontSize: '0.9rem', fontWeight: 'normal' } },
+			credits: { enabled: false },
+			legend: { enabled: true, align: 'right', verticalAlign: 'top', floating: true,
+				itemStyle: { color: TEXT, fontSize: '0.75rem' }, symbolHeight: 8, symbolWidth: 12 },
+			xAxis: Highcharts.merge(xCommon, { labels: { enabled: false }, tickLength: 0 }),
+			yAxis: [
+				{ title: { text: rainU, style: { color: cRain, fontSize: '0.75rem' } },
+					labels: { style: { color: cRain, fontSize: '0.72rem' } }, min: 0, softMax: 0.5, gridLineColor: '#eee' },
+				{ title: { text: '%', style: { color: '#2554c7', fontSize: '0.75rem' } },
+					labels: { style: { color: '#2554c7', fontSize: '0.72rem' } }, min: 0, max: 100,
+					opposite: true, gridLineWidth: 0, showEmpty: false }
+			],
+			tooltip: tipShared,
+			plotOptions: plotBase,
+			series: precipSeries
+		}));
+
+		charts.push(Highcharts.chart(containerId + '-cloud', {
+			chart: Highcharts.merge(baseChart, { height: 120 }),
+			title: { text: 'Cloud cover', align: 'left', margin: 6,
+				style: { color: TEXT, fontSize: '0.9rem', fontWeight: 'normal' } },
+			credits: { enabled: false },
+			legend: { enabled: false },
+			xAxis: Highcharts.merge(xCommon, { labels: { enabled: false }, tickLength: 0 }),
+			yAxis: [
+				{ title: { text: '%', style: { color: cCloud, fontSize: '0.75rem' } },
+					labels: { style: { color: cCloud, fontSize: '0.72rem' } }, min: 0, max: 100, gridLineColor: '#eee' },
+				rightGutter()
+			],
+			tooltip: tipShared,
+			plotOptions: plotBase,
+			series: [
+				{ name: 'Cloud', type: 'areaspline', data: data.cloud || [], color: cCloud,
+					fillColor: 'rgba(90,122,154,0.35)', lineWidth: 1,
+					tooltip: { valueSuffix: ' %', valueDecimals: 0 } }
+			]
+		}));
+
+		var hasGust = data.gust && data.gust.length;
+		var windSeries = [
+			{ name: 'Wind', type: 'spline', data: data.wind || [], color: cWind, lineWidth: 1.75,
+				tooltip: { valueSuffix: ' ' + windU, valueDecimals: 1 }, zIndex: 2 }
+		];
+		if (hasGust) {
+			windSeries.push({
+				name: 'Gust', type: 'spline', data: data.gust, color: cGust, lineWidth: 1.25,
+				tooltip: { valueSuffix: ' ' + windU, valueDecimals: 1 }, zIndex: 1
+			});
+		}
+		var windLegend = hasGust
+			? { enabled: true, align: 'right', verticalAlign: 'top', floating: true,
+				itemStyle: { color: TEXT, fontSize: '0.75rem' }, symbolHeight: 8, symbolWidth: 12 }
+			: { enabled: false };
+		charts.push(Highcharts.chart(containerId + '-wind', {
+			chart: Highcharts.merge(baseChart, { height: hasGust ? 150 : 130 }),
+			title: { text: 'Wind', align: 'left', margin: 6,
+				style: { color: TEXT, fontSize: '0.9rem', fontWeight: 'normal' } },
+			credits: { enabled: true, href: credit.href, text: credit.text,
+				style: { color: '#999', fontSize: '9px' } },
+			legend: windLegend,
+			xAxis: xCommon,
+			yAxis: [
+				{ title: { text: windU, style: { color: cWind, fontSize: '0.75rem' } },
+					labels: { style: { color: cWind, fontSize: '0.72rem' } }, min: 0, softMax: 5, gridLineColor: '#eee' },
+				rightGutter()
+			],
+			tooltip: tipShared,
+			plotOptions: plotBase,
+			series: windSeries
+		}));
 	}
 
 	window.NW3 = window.NW3 || {};
