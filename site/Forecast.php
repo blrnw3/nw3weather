@@ -213,8 +213,24 @@ class Forecast {
 		$srcUrl = 'https://weather.metoffice.gov.uk/forecast/regional/se';
 		echo '<div class="fc-discuss">';
 		echo '<h2>London &amp; South East forecast discussion</h2>';
-		if (!empty($d['headline'])) {
-			echo '<p class="fc-discuss-headline">' . htmlspecialchars($d['headline']) . '</p>';
+		echo '<p class="fc-discuss-intro">Met Office regional guidance for London area. Full text and maps on Met Office site.</p>';
+		if (!empty($d['sections']) && is_array($d['sections'])) {
+			if (!empty($d['headline'])) {
+				echo '<p class="fc-discuss-headline">' . htmlspecialchars($d['headline']) . '</p>';
+			}
+			echo '<div class="fc-discuss-body">';
+			foreach ($d['sections'] as $sec) {
+				$title = isset($sec['title']) ? $sec['title'] : '';
+				$text = isset($sec['text']) ? $sec['text'] : '';
+				if ($title === '' && $text === '') { continue; }
+				echo '<div class="fc-discuss-sec">';
+				if ($title !== '') {
+					echo '<h3>' . htmlspecialchars($title) . '</h3>';
+				}
+				echo '<p>' . htmlspecialchars($text) . '</p>';
+				echo '</div>';
+			}
+			echo '</div>';
 			echo self::discussionCreditHtml($d, $srcUrl);
 		} else {
 			echo '<p class="fc-discuss-fallback">Regional discussion text is temporarily unavailable. '
