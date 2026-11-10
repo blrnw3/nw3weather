@@ -198,13 +198,19 @@ class Forecast {
 			. '</p>';
 	}
 
-	/** Met Office regional headline + short credit for the homepage forecast card. */
+	/** Met Office regional headline for the homepage forecast card. */
 	public static function renderHomeHeadline() {
 		$d = self::discussion();
 		if (empty($d['headline'])) { return; }
-		$srcUrl = 'https://weather.metoffice.gov.uk/forecast/regional/se';
 		echo '<p class="fcast-headline">' . htmlspecialchars($d['headline']) . '</p>';
-		echo '<p class="fcast-src">data: <a href="' . htmlspecialchars($srcUrl) . '" rel="noopener">Met Office</a></p>';
+	}
+
+	/** Short Met Office credit, same placement/styling as the card's Yr.no credit. */
+	public static function renderHomeSrc() {
+		$d = self::discussion();
+		if (empty($d['headline'])) { return; }
+		$srcUrl = 'https://weather.metoffice.gov.uk/forecast/regional/se';
+		echo '<span class="fcast-src"> · data <a href="' . htmlspecialchars($srcUrl) . '" rel="noopener">Met Office</a></span>';
 	}
 
 	/** Expert-style regional discussion (Met Office London & South East). */
@@ -223,6 +229,8 @@ class Forecast {
 				$title = isset($sec['title']) ? $sec['title'] : '';
 				$text = isset($sec['text']) ? $sec['text'] : '';
 				if ($title === '' && $text === '') { continue; }
+				// Headline is already shown unlabelled above; skip the stored "Headline:" section.
+				if (strcasecmp(rtrim($title, ':'), 'Headline') === 0) { continue; }
 				echo '<div class="fc-discuss-sec">';
 				if ($title !== '') {
 					echo '<h3>' . htmlspecialchars($title) . '</h3>';
