@@ -1856,13 +1856,37 @@ div.charts.detail-chart-pair {
 }
 .fc-pressure {
 	margin: 0.5rem 0 1rem;
+	flex: 1 1 100%;
+}
+.fc-pressure-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.75rem 1rem;
+	align-items: start;
+}
+.fc-pressure-item {
+	margin: 0;
+}
+.fc-pressure-item-analysis {
+	grid-column: 1 / -1;
 }
 .fc-pressure-img {
 	display: block;
+	width: 100%;
 	max-width: 100%;
 	height: auto;
 	border: 1px solid #d5dbe0;
 	background: #fff;
+}
+.fc-pressure-cap {
+	margin: 0.3rem 0 0;
+	font-size: 0.85rem;
+	color: #445;
+}
+@media only screen and (max-width: 700px) {
+	.fc-pressure-grid {
+		grid-template-columns: 1fr;
+	}
 }
 .fc-widgets .fc-meteogram-wrap {
 	flex: 1 1 100%;

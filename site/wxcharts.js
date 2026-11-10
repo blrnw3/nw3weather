@@ -1284,7 +1284,7 @@
 		});
 	}
 
-	// Stacked 10-day meteogram (WU-style panels, shared time axis).
+	// Stacked 10-day meteogram (shared time axis).
 	// Colours follow INTRA_TABS / site palette (temp, dew, rain, cloud, wind).
 	function meteogramChart(containerId, data) {
 		setLoading(containerId, false);

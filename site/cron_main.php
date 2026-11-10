@@ -464,7 +464,8 @@ if(date('i') % 60 == 18) {
 	}
 }
 
-// Met Office UK surface pressure analysis (colour). Index always points at the current run.
+// Met Office UK surface pressure colour charts (analysis + T+24 + T+48).
+// Index at /v1/surface-pressure/colour always points at the current run.
 if(date('i') % 30 == 16) {
 	$spUrl = 'https://data.consumer-digital.api.metoffice.gov.uk/v1/surface-pressure/colour';
 	$spCtx = stream_context_create(array('http' => array(
@@ -474,27 +475,60 @@ if(date('i') % 30 == 16) {
 	)));
 	$spRaw = @file_get_contents($spUrl, false, $spCtx);
 	$spJson = $spRaw ? json_decode($spRaw, true) : null;
-	if($spJson && !empty($spJson['products'][0]['uri'])) {
-		$prod = $spJson['products'][0]; // analysis / T+0
+	$spProds = (isset($spJson['products']) && is_array($spJson['products'])) ? $spJson['products'] : array();
+	if(count($spProds) && !empty($spProds[0]['uri']) && !empty($spProds[0]['data_date'])) {
+		$baseTs = strtotime($spProds[0]['data_date']);
+		$wanted = array(
+			0 => array('file' => 'surface_pressure.gif', 'label' => 'Analysis'),
+			24 => array('file' => 'surface_pressure_t24.gif', 'label' => 'T+24 forecast'),
+			48 => array('file' => 'surface_pressure_t48.gif', 'label' => 'T+48 forecast'),
+		);
+		$byLead = array();
+		foreach($spProds as $prod) {
+			if(empty($prod['data_date']) || empty($prod['uri'])) { continue; }
+			$lead = (int)round((strtotime($prod['data_date']) - $baseTs) / 3600);
+			if(isset($wanted[$lead])) { $byLead[$lead] = $prod; }
+		}
 		$gifCtx = stream_context_create(array('http' => array(
 			'header' => "User-Agent: nw3weather.co.uk/v5 (https://nw3weather.co.uk)\r\n",
 			'timeout' => 15,
 		)));
-		$gif = @file_get_contents($prod['uri'], false, $gifCtx);
-		$localOk = false;
-		if($gif && strlen($gif) > 1000) {
-			if(!is_dir(V5_GENERATED_ROOT)) { @mkdir(V5_GENERATED_ROOT, 0755, true); }
-			$localOk = (bool)@file_put_contents(V5_GENERATED_ROOT.'surface_pressure.gif', $gif);
+		if(!is_dir(V5_GENERATED_ROOT)) { @mkdir(V5_GENERATED_ROOT, 0755, true); }
+		$charts = array();
+		foreach($wanted as $lead => $meta) {
+			if(empty($byLead[$lead])) { continue; }
+			$prod = $byLead[$lead];
+			$gif = @file_get_contents($prod['uri'], false, $gifCtx);
+			$localOk = false;
+			if($gif && strlen($gif) > 1000) {
+				$localOk = (bool)@file_put_contents(V5_GENERATED_ROOT . $meta['file'], $gif);
+			}
+			$charts[] = array(
+				'lead' => $lead,
+				'label' => $meta['label'],
+				'file' => $meta['file'],
+				'valid' => isset($prod['data_date']) ? $prod['data_date'] : '',
+				'uri' => $prod['uri'],
+				'local' => $localOk,
+			);
 		}
-		nw3_atomic_write(V5_CACHE_ROOT.'forecast_pressure.json', nw3_json_encode(array(
-			'updated' => time(),
-			'source' => 'metoffice-surface-pressure',
-			'issued' => isset($spJson['issued']) ? $spJson['issued'] : '',
-			'valid' => isset($prod['data_date']) ? $prod['data_date'] : '',
-			'uri' => $prod['uri'],
-			'local' => $localOk,
-			'page' => 'https://weather.metoffice.gov.uk/maps-and-charts/surface-pressure',
-		)));
+		$t0 = null;
+		foreach($charts as $c) { if((int)$c['lead'] === 0) { $t0 = $c; break; } }
+		if(count($charts)) {
+			nw3_atomic_write(V5_CACHE_ROOT.'forecast_pressure.json', nw3_json_encode(array(
+				'updated' => time(),
+				'source' => 'metoffice-surface-pressure',
+				'issued' => isset($spJson['issued']) ? $spJson['issued'] : '',
+				'page' => 'https://weather.metoffice.gov.uk/maps-and-charts/surface-pressure',
+				'charts' => $charts,
+				// Legacy T+0 keys kept so an older render still has a pointer.
+				'valid' => $t0 ? $t0['valid'] : '',
+				'uri' => $t0 ? $t0['uri'] : '',
+				'local' => $t0 ? $t0['local'] : false,
+			)));
+		} else {
+			Page::quick_log('forecast_pressure_bad.txt', 'no lead-hour matches: ' . substr((string)$spRaw, 0, 200));
+		}
 	} else {
 		Page::quick_log('forecast_pressure_bad.txt', substr((string)$spRaw, 0, 200));
 	}

@@ -25,7 +25,7 @@ require Site::$rareTags;
 <div id="widgets" class="fc-widgets">
 	<div class="fc-meteogram-wrap">
 		<h2>Hampstead 10-day meteogram</h2>
-		<p class="hm-break-note">Stacked panels (temperature &amp; dew point, precipitation amount &amp; chance, cloud cover, wind) sharing one time axis — styled like a Weather Underground 10-day chart, using this site’s variable colours. Data: Open-Meteo (falls back to Yr.no if needed).</p>
+		<p class="hm-break-note">Stacked panels of temperature &amp; dew point, precipitation amount &amp; chance, cloud cover and wind, sharing one time axis, in this site’s variable colours. Data: Open-Meteo (falls back to Yr.no if needed).</p>
 		<?php Charts::meteogram(null, ['height' => 620]); ?>
 	</div>
 

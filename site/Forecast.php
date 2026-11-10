@@ -56,7 +56,7 @@ class Forecast {
 	}
 
 	/**
-	 * Unit-converted series for the stacked meteogram (WU-style panels).
+	 * Unit-converted series for the stacked 10-day meteogram.
 	 * Open-Meteo supplies 10-day temp/dew/precip/POP/cloud/wind; Yr fallback has no POP.
 	 */
 	public static function meteogramSeries() {
@@ -132,8 +132,7 @@ class Forecast {
 		$srcUrl = 'https://weather.metoffice.gov.uk/forecast/regional/se';
 		echo '<div class="fc-discuss">';
 		echo '<h2>London &amp; South East forecast discussion</h2>';
-		echo '<p class="fc-discuss-intro">Met Office regional guidance for the London area '
-			. '(similar in role to an NWS Area Forecast Discussion). Full text and maps on the Met Office site.</p>';
+		echo '<p class="fc-discuss-intro">Met Office regional guidance for the London area. Full text and maps on the Met Office site.</p>';
 		if (!empty($d['sections']) && is_array($d['sections'])) {
 			if (!empty($d['headline'])) {
 				echo '<p class="fc-discuss-headline">' . htmlspecialchars($d['headline']) . '</p>';
@@ -171,32 +170,68 @@ class Forecast {
 		echo '</div>';
 	}
 
-	/** Current UK surface pressure analysis (Met Office colour chart). */
+	/** Format a Met Office ISO timestamp as e.g. "12:00 UTC Tue 10 Nov". */
+	private static function fmtUtc($iso) {
+		if (!$iso) { return ''; }
+		$ts = strtotime($iso);
+		return $ts ? gmdate('H:i \U\T\C D j M', $ts) : (string)$iso;
+	}
+
+	/** Current UK surface pressure: analysis plus T+24 and T+48 forecast charts. */
 	public static function renderPressureChart() {
 		$p = self::pressureChart();
-		$local = '/surface_pressure.gif';
-		$img = !empty($p['local']) ? $local : (isset($p['uri']) ? $p['uri'] : '');
-		if ($img === '' && is_file(V5_GENERATED_ROOT . 'surface_pressure.gif')) {
-			$img = $local;
+		$charts = (isset($p['charts']) && is_array($p['charts'])) ? $p['charts'] : array();
+		if (!$charts && (!empty($p['local']) || !empty($p['uri']) || is_file(V5_GENERATED_ROOT . 'surface_pressure.gif'))) {
+			$charts[] = array(
+				'lead' => 0,
+				'label' => 'Analysis',
+				'file' => 'surface_pressure.gif',
+				'valid' => isset($p['valid']) ? $p['valid'] : '',
+				'uri' => isset($p['uri']) ? $p['uri'] : '',
+				'local' => !empty($p['local']) || is_file(V5_GENERATED_ROOT . 'surface_pressure.gif'),
+			);
 		}
+		$page = 'https://weather.metoffice.gov.uk/maps-and-charts/surface-pressure';
+		$bust = !empty($p['issued']) ? ('?t=' . rawurlencode(preg_replace('/\W+/', '', $p['issued']))) : ('?t=' . (int)(isset($p['updated']) ? $p['updated'] : time()));
+
 		echo '<div class="fc-pressure">';
 		echo '<h2>UK surface pressure</h2>';
-		if ($img !== '') {
-			$bust = !empty($p['issued']) ? ('?t=' . rawurlencode(preg_replace('/\W+/', '', $p['issued']))) : ('?t=' . (int)(isset($p['updated']) ? $p['updated'] : time()));
-			$alt = 'Met Office UK surface pressure analysis';
-			if (!empty($p['valid'])) { $alt .= ' valid ' . $p['valid']; }
-			echo '<a href="https://weather.metoffice.gov.uk/maps-and-charts/surface-pressure" rel="noopener" target="_blank" title="Met Office surface pressure charts">';
-			echo '<img class="fc-pressure-img" src="' . htmlspecialchars($img . $bust) . '" alt="' . htmlspecialchars($alt) . '" /></a>';
-			$meta = array();
-			if (!empty($p['valid'])) { $meta[] = 'Valid ' . htmlspecialchars($p['valid']); }
-			if (!empty($p['issued'])) { $meta[] = 'issued ' . htmlspecialchars($p['issued']); }
-			echo '<p class="fc-credit">Met Office surface pressure analysis'
-				. ($meta ? (' · ' . implode(' · ', $meta)) : '')
-				. ' · <a href="https://weather.metoffice.gov.uk/maps-and-charts/surface-pressure" rel="noopener" target="_blank">all charts</a></p>';
-		} else {
-			echo '<p>Surface pressure chart temporarily unavailable. See the '
-				. '<a href="https://weather.metoffice.gov.uk/maps-and-charts/surface-pressure" rel="noopener" target="_blank">Met Office surface pressure charts</a>.</p>';
+		if (!$charts) {
+			echo '<p>Surface pressure charts temporarily unavailable. See the '
+				. '<a href="' . $page . '" rel="noopener" target="_blank">Met Office surface pressure charts</a>.</p>';
+			echo '</div>';
+			return;
 		}
+
+		echo '<div class="fc-pressure-grid">';
+		foreach ($charts as $c) {
+			$lead = isset($c['lead']) ? (int)$c['lead'] : 0;
+			$label = isset($c['label']) ? $c['label'] : ($lead === 0 ? 'Analysis' : ('T+' . $lead . ' forecast'));
+			$file = isset($c['file']) ? $c['file'] : '';
+			$src = '';
+			if (!empty($c['local']) && $file !== '' && is_file(V5_GENERATED_ROOT . $file)) {
+				$src = '/' . $file;
+			} elseif ($file !== '' && is_file(V5_GENERATED_ROOT . $file)) {
+				$src = '/' . $file;
+			} elseif (!empty($c['uri'])) {
+				$src = $c['uri'];
+			}
+			if ($src === '') { continue; }
+			$valid = self::fmtUtc(isset($c['valid']) ? $c['valid'] : '');
+			$alt = 'Met Office UK surface pressure ' . $label . ($valid !== '' ? (' valid ' . $valid) : '');
+			$cls = 'fc-pressure-item' . ($lead === 0 ? ' fc-pressure-item-analysis' : ' fc-pressure-item-forecast');
+			echo '<figure class="' . $cls . '">';
+			echo '<a href="' . htmlspecialchars($src . $bust) . '" rel="noopener" target="_blank" title="Open full-size ' . htmlspecialchars($label) . '">';
+			echo '<img class="fc-pressure-img" src="' . htmlspecialchars($src . $bust) . '" alt="' . htmlspecialchars($alt) . '" /></a>';
+			echo '<figcaption class="fc-pressure-cap"><b>' . htmlspecialchars($label) . '</b>';
+			if ($valid !== '') { echo ' · valid ' . htmlspecialchars($valid); }
+			echo '</figcaption></figure>';
+		}
+		echo '</div>';
+		$issued = self::fmtUtc(isset($p['issued']) ? $p['issued'] : '');
+		echo '<p class="fc-credit">Met Office surface pressure charts'
+			. ($issued !== '' ? (' · issued ' . htmlspecialchars($issued)) : '')
+			. ' · <a href="' . $page . '" rel="noopener" target="_blank">all charts</a></p>';
 		echo '</div>';
 	}
 
