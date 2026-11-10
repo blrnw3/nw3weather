@@ -333,30 +333,34 @@ class Forecast {
 				. $it['cap'] . '</button>';
 		}
 		echo '</div>';
-		echo '<div class="fc-pressure-scroller" tabindex="0">';
-		echo '<div class="fc-pressure-track">';
+		echo '<div class="fc-pressure-panels">';
 		foreach ($items as $i => $it) {
 			$lead = $it['lead'];
 			$cls = 'fc-pressure-item' . ($lead === 0 ? ' fc-pressure-item-analysis' : ' fc-pressure-item-forecast');
+			$hidden = ($i === 0) ? '' : ' hidden';
 			echo '<div class="' . $cls . '" role="tabpanel" id="fc-p-panel-' . $i . '"'
-				. ' aria-labelledby="fc-p-tab-' . $i . '" data-fc-p-index="' . $i . '">';
+				. ' aria-labelledby="fc-p-tab-' . $i . '" data-fc-p-index="' . $i . '"' . $hidden . '>';
 			echo '<figure>';
 			echo '<a href="' . htmlspecialchars($it['src']) . '" rel="noopener" target="_blank" title="Open full-size ' . htmlspecialchars($it['label']) . '">';
-			echo '<img class="fc-pressure-img" src="' . htmlspecialchars($it['src']) . '" alt="' . htmlspecialchars($it['alt']) . '" /></a>';
+			if ($i === 0) {
+				echo '<img class="fc-pressure-img" src="' . htmlspecialchars($it['src']) . '" alt="' . htmlspecialchars($it['alt']) . '" />';
+			} else {
+				echo '<img class="fc-pressure-img" data-src="' . htmlspecialchars($it['src']) . '" alt="' . htmlspecialchars($it['alt']) . '" />';
+			}
+			echo '</a>';
 			echo '<figcaption class="fc-pressure-cap">' . $it['cap'] . '</figcaption></figure>';
 			echo '</div>';
 		}
-		echo '</div></div>';
+		echo '</div>';
 		echo '<script>(function(){var r=document.currentScript&&document.currentScript.parentElement;if(!r)return;'
-			. 'var tabs=[].slice.call(r.querySelectorAll("[role=tab]")),panels=[].slice.call(r.querySelectorAll("[role=tabpanel]")),'
-			. 'sc=r.querySelector(".fc-pressure-scroller");if(!tabs.length||!sc)return;'
+			. 'var tabs=[].slice.call(r.querySelectorAll("[role=tab]")),panels=[].slice.call(r.querySelectorAll("[role=tabpanel]"));'
+			. 'if(!tabs.length||!panels.length)return;'
+			. 'function showImg(p){var img=p.querySelector("img.fc-pressure-img");if(img&&img.getAttribute("data-src")&&!img.getAttribute("src")){img.src=img.getAttribute("data-src");}}'
 			. 'function go(i){i=Math.max(0,Math.min(i,tabs.length-1));'
 			. 'tabs.forEach(function(t,n){var on=n===i;t.setAttribute("aria-selected",on?"true":"false");t.tabIndex=on?0:-1;t.classList.toggle("active",on);});'
-			. 'var p=panels[i];if(p){var left=p.getBoundingClientRect().left-sc.getBoundingClientRect().left+sc.scrollLeft;sc.scrollTo({left:left,behavior:"auto"});}}'
-			. 'function fromScroll(){var x=sc.scrollLeft,best=0,bd=1e9;panels.forEach(function(p,n){var d=Math.abs(p.offsetLeft-x);if(d<bd){bd=d;best=n;}});go(best);}'
+			. 'panels.forEach(function(p,n){var on=n===i;p.hidden=!on;if(on)showImg(p);});}'
 			. 'tabs.forEach(function(t,i){t.addEventListener("click",function(){go(i);t.focus();});'
 			. 't.addEventListener("keydown",function(e){var n=i;if(e.key==="ArrowRight"||e.key==="ArrowDown")n=i+1;else if(e.key==="ArrowLeft"||e.key==="ArrowUp")n=i-1;else if(e.key==="Home")n=0;else if(e.key==="End")n=tabs.length-1;else return;e.preventDefault();go(n);tabs[n].focus();});});'
-			. 'var tmo;sc.addEventListener("scroll",function(){clearTimeout(tmo);tmo=setTimeout(fromScroll,60);},{passive:true});'
 			. 'window.NW3=window.NW3||{};window.NW3.selectPressureTab=function(i){go(i);};'
 			. 'go(0);})();</script>';
 		$issued = self::fmtUk(isset($p['issued']) ? $p['issued'] : '');
