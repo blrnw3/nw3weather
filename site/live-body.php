@@ -260,8 +260,8 @@ function nw3_render_cards() {
 		. nw3_rain_status($rate, $rnHr);
 	$subParts = array();
 	if ($rained24) {
-		if ($rn10 !== null) { $subParts[] = '10-min: <b>' . Wx::conv($rn10, Wx::Rain) . '</b>'; }
-		if ($rnHr !== null) { $subParts[] = 'Hour: <b>' . Wx::conv($rnHr, Wx::Rain) . '</b>'; }
+		if ($rn10 !== null) { $subParts[] = '10-min: <b>' . Wx::conv($rn10, Wx::Rain, false) . '</b>'; }
+		if ($rnHr !== null) { $subParts[] = 'Hour: <b>' . Wx::conv($rnHr, Wx::Rain, false) . '</b>'; }
 	}
 	$monthDays = nw3_count_rain_days((int)Date::$dyear, (int)Date::$dmonth, 1, (int)Date::$dmonth, (int)Date::$dday, Live::$rain);
 	$yearDays = nw3_count_rain_days((int)Date::$dyear, 1, 1, (int)Date::$dmonth, (int)Date::$dday, Live::$rain);
