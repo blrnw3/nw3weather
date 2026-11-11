@@ -72,6 +72,7 @@ foreach ($METARcloudTypes as $i => $cloudSrch) {
 
 // ----- 2-day forecast (Yr.no / same source as wx5, refreshed by cron into forecast_v5.json) -----
 require_once __DIR__ . '/Forecast.php';
+require_once __DIR__ . '/Nearby.php';
 $forecast = Forecast::days(2);
 ?>
 
@@ -430,6 +431,7 @@ else:
 </div>
 <?php endif; ?>
 
+<?php Nearby::renderHomeCard(); ?>
 
 <h2>Year-to-date</h2>
 <div class="charts home-ytd">

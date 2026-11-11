@@ -253,6 +253,17 @@ if(date('i') % 30 == 28) {
 	if($noaaMetar !== false) file_put_contents(ROOT."METAR.txt", $noaaMetar[1]);
 }
 
+// Weather nearby card: official London observations into cache/v5/nearby.json.
+// Homepage reads that file only (no per-page-view API calls). Failures are isolated.
+if(date('i') % 10 == 3) {
+	try {
+		require_once ROOT.'Nearby.php';
+		Nearby::refresh();
+	} catch (Throwable $e) {
+		Page::quick_log('nearby_refresh_error.txt', $e->getMessage());
+	}
+}
+
 //WU forecast retrieve
 // API key is dead
 // New URL: https://api.weather.com/v3/wx/forecast/daily/5day?postalKey=NW3%202:GB&units=h&language=en-US&format=json&apiKey=d5fedde5c6ae4eabbedde5c6aeaeab51
