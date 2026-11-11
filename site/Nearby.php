@@ -20,8 +20,6 @@ class Nearby {
 	const AW_METAR = 'https://aviationweather.gov/api/data/metar';
 	const OGIMET_SYNOP = 'https://www.ogimet.com/cgi-bin/getsynop';
 	const OGIMET_PAGE = 'https://www.ogimet.com/cgi-bin/gsynres';
-	const WOW_TABLE = 'https://wow.metoffice.gov.uk/observations/details/tableviewdata';
-	const WOW_PAGE = 'https://wow.metoffice.gov.uk/observations/details/';
 
 	/** Official / airport stations (this station is added at render time from live data). */
 	public static function catalog() {
@@ -34,17 +32,7 @@ class Nearby {
 				'elev_m' => 5,
 				'elev_source' => 'published',
 				'url' => self::OGIMET_PAGE . '?lang=en&ind=03770',
-				'sources' => array('synop' => '03770', 'wow' => null),
-			),
-			'kew' => array(
-				'id' => 'kew',
-				'name' => 'Kew Gardens',
-				'lat' => 51.48186,
-				'lon' => -0.29435,
-				'elev_m' => 6,
-				'elev_source' => 'published',
-				'url' => self::WOW_PAGE . '?site_id=961266001',
-				'sources' => array('wow' => '961266001', 'synop' => null),
+				'sources' => array('synop' => '03770'),
 			),
 			'heathrow' => array(
 				'id' => 'heathrow',
@@ -271,20 +259,50 @@ class Nearby {
 		if (!is_string($raw) || $raw === '') {
 			return null;
 		}
-		// Stop at section 3 (333) so 1sTTT max-temp groups there are not used as current temp.
+		// Section 1 only: section 3 1sTxTxTx is a 12-hour maximum, not the dry bulb.
 		$sec1 = $raw;
 		$pos = strpos($raw, ' 333');
 		if ($pos !== false) {
 			$sec1 = substr($raw, 0, $pos);
 		}
-		if (!preg_match('/\b1([01])(\d{3})\b/', $sec1, $m)) {
+		// Drop AAXX YYGGiw so that e.g. 11234 is not treated as a station/temp group.
+		$sec1 = preg_replace('/\bAAXX\s+\d{4}[0-9\/]\s+/', '', $sec1, 1);
+		// Whitespace tokens:  does not match before groups that start with '/'.
+		$g = array();
+		foreach (preg_split('/\s+/', trim($sec1)) as $tok) {
+			$tok = rtrim($tok, '=');
+			if (preg_match('/^[0-9\/]{5}$/', $tok)) {
+				$g[] = $tok;
+			}
+		}
+		if (!$g) {
 			return null;
 		}
-		$val = ((int)$m[2]) / 10.0;
-		if ($m[1] === '1') {
-			$val = -$val;
+		$i = 0;
+		// IIiii, irIxhVV, Nddff (Nddff can start with 1 and is not 1sTTT), optional 00fff.
+		if ($i < count($g) && preg_match('/^\d{5}$/', $g[$i])) {
+			$i++;
 		}
-		return $val;
+		if ($i < count($g)) {
+			$i++;
+		}
+		if ($i < count($g)) {
+			$i++;
+		}
+		if ($i < count($g) && preg_match('/^00\d{3}$/', $g[$i])) {
+			$i++;
+		}
+		for (; $i < count($g); $i++) {
+			if (!preg_match('/^1([01])(\d{3})$/', $g[$i], $tm)) {
+				continue;
+			}
+			$val = ((int)$tm[2]) / 10.0;
+			if ($tm[1] === '1') {
+				$val = -$val;
+			}
+			return $val;
+		}
+		return null;
 	}
 
 	/**
@@ -330,9 +348,167 @@ class Nearby {
 	/**
 	 * Build an observation from today's (Europe/London) SYNOP samples:
 	 * latest temperature, lo–hi from the day's temps once a sample exists
-	 * at or before 06:00 local, rain left unused (SYNOP 6-groups are period
-	 * totals, not a reliable calendar-day accumulator).
+	 * at or before 06:00 local, and rain since 00:00 local from 6RRRtR groups.
 	 */
+	/** WMO 3590: RRR in 6RRRtR → mm (990 = trace). */
+	public static function synopRrrMm($rrr) {
+		$n = (int)$rrr;
+		if ($n === 990) {
+			return 0.0;
+		}
+		if ($n >= 991 && $n <= 999) {
+			return ($n - 990) / 10.0;
+		}
+		if ($n >= 0 && $n <= 989) {
+			return (float)$n;
+		}
+		return null;
+	}
+
+	/** WMO 4019: tR in 6RRRtR → period length in hours. */
+	public static function synopTrHours($tr) {
+		$map = array(1 => 6, 2 => 12, 3 => 18, 4 => 24, 5 => 1, 6 => 2, 7 => 3, 8 => 9, 9 => 15);
+		$k = (int)$tr;
+		return isset($map[$k]) ? $map[$k] : null;
+	}
+
+	/**
+	 * All 6RRRtR groups in a SYNOP message (sections 1, 3 and 5).
+	 * Each item is array(hours, mm).
+	 */
+	public static function parseSynopRainGroups($raw) {
+		$out = array();
+		if (!is_string($raw) || $raw === '') {
+			return $out;
+		}
+		if (!preg_match_all('/\b6(\d{3})(\d)\b/', $raw, $m, PREG_SET_ORDER)) {
+			return $out;
+		}
+		foreach ($m as $g) {
+			$mm = self::synopRrrMm($g[1]);
+			$hrs = self::synopTrHours($g[2]);
+			if ($mm === null || $hrs === null) {
+				continue;
+			}
+			$out[] = array('hours' => $hrs, 'mm' => $mm);
+		}
+		return $out;
+	}
+
+	private static function synopPeriodMm($periods, $endTs, $hours) {
+		foreach ($periods as $p) {
+			if ((int)$p['hours'] === (int)$hours && abs((int)$p['end'] - (int)$endTs) <= 300) {
+				return $p['mm'];
+			}
+		}
+		return null;
+	}
+
+	/** 6-hour amount ending at $endTs, or null if it cannot be derived cleanly. */
+	private static function synopSixHourMm($periods, $h1, $endTs) {
+		$direct = self::synopPeriodMm($periods, $endTs, 6);
+		if ($direct !== null) {
+			return $direct;
+		}
+		$h12 = self::synopPeriodMm($periods, $endTs, 12);
+		$prev6 = self::synopPeriodMm($periods, $endTs - 6 * 3600, 6);
+		if ($h12 !== null && $prev6 !== null) {
+			return max(0.0, $h12 - $prev6);
+		}
+		$sum = 0.0;
+		for ($t = $endTs - 5 * 3600; $t <= $endTs; $t += 3600) {
+			if (!isset($h1[$t])) {
+				return null;
+			}
+			$sum += $h1[$t];
+		}
+		return $sum;
+	}
+
+	/**
+	 * Rain since 00:00 Europe/London, not the 09–09 climate day.
+	 * Prefers a complete series of 1-hour (tR=5) groups; falls back to
+	 * 6-hour main-hour totals (or 12h minus the preceding 6h) plus leftover hours.
+	 * Only :00 UTC SYNOP reports are used (airport 10-minute AAXX are ignored).
+	 */
+	public static function synopRainToday($samples, $startTs, $nowTs) {
+		$periods = array();
+		$h1 = array();
+		foreach ($samples as $s) {
+			$ts = (int)$s['ts'];
+			if (($ts % 3600) !== 0) {
+				continue;
+			}
+			foreach (self::parseSynopRainGroups(isset($s['raw']) ? $s['raw'] : '') as $g) {
+				$periods[] = array(
+					'start' => $ts - $g['hours'] * 3600,
+					'end' => $ts,
+					'hours' => $g['hours'],
+					'mm' => $g['mm'],
+				);
+				if ((int)$g['hours'] === 1) {
+					$h1[$ts] = $g['mm'];
+				}
+			}
+		}
+		if (!$periods) {
+			return null;
+		}
+
+		$last1 = null;
+		foreach ($h1 as $ts => $mm) {
+			if ($ts > $startTs && $ts <= $nowTs + 600) {
+				if ($last1 === null || $ts > $last1) {
+					$last1 = $ts;
+				}
+			}
+		}
+		if ($last1) {
+			$missing = false;
+			$sum = 0.0;
+			for ($t = $startTs + 3600; $t <= $last1; $t += 3600) {
+				if (!isset($h1[$t])) {
+					$missing = true;
+					break;
+				}
+				$sum += $h1[$t];
+			}
+			if (!$missing) {
+				return round($sum, 1);
+			}
+		}
+
+		// UTC-aligned 6h blocks that lie entirely after local midnight, then leftover 1h.
+		$total = 0.0;
+		$cursor = $startTs;
+		// 6h SYNOP blocks end at 00/06/12/18 UTC. Keep those whose period starts at/after local midnight.
+		$ends = array();
+		for ($t = $startTs - ($startTs % (6 * 3600)) + 6 * 3600; $t <= $nowTs + 600; $t += 6 * 3600) {
+			if (($t - 6 * 3600) >= $startTs - 1) {
+				$ends[] = $t;
+			}
+		}
+		foreach ($ends as $endTs) {
+			$mm = self::synopSixHourMm($periods, $h1, $endTs);
+			if ($mm === null) {
+				return null;
+			}
+			$total += $mm;
+			$cursor = $endTs;
+		}
+		if ($last1 && $last1 > $cursor) {
+			for ($t = $cursor + 3600; $t <= $last1; $t += 3600) {
+				if (!isset($h1[$t])) {
+					return null;
+				}
+				$total += $h1[$t];
+			}
+		} elseif (!$ends && $last1 === null) {
+			return null;
+		}
+		return round($total, 1);
+	}
+
 	public static function summariseSynop($samples, $nowTs = null) {
 		if (!$samples) {
 			return null;
@@ -385,108 +561,12 @@ class Nearby {
 			'temp_c' => $latest['temp_c'],
 			'temp_min_c' => $min,
 			'temp_max_c' => $max,
-			'rain_today_mm' => null,
+			'rain_today_mm' => self::synopRainToday($samples, $startTs, $now->getTimestamp()),
 			'observed_at' => self::isoZ($latest['ts']),
 			'source' => 'ogimet-synop',
 		);
 	}
 
-	public static function parseWowTable($data) {
-		if (!is_array($data) || empty($data['Observations']) || !is_array($data['Observations'])) {
-			return null;
-		}
-		$obs = $data['Observations'];
-		if (!$obs) {
-			return null;
-		}
-		// Prefer the latest row with a dry-bulb temperature.
-		$best = null;
-		$temps = array();
-		$rain = null;
-		$tz = new DateTimeZone('Europe/London');
-		$now = new DateTime('now', $tz);
-		$dayStart = clone $now;
-		$dayStart->setTime(0, 0, 0);
-		$coverEnd = clone $dayStart;
-		$coverEnd->setTime(self::HILO_COVER_HOUR, 0, 0);
-		$hasCover = false;
-		foreach ($obs as $row) {
-			$ts = null;
-			foreach (array('Date', 'ObservationDate', 'Time', 'ReportDateTime', 'DateTimeUtc', 'DateTime') as $k) {
-				if (!empty($row[$k])) {
-					$ts = self::ts($row[$k]);
-					if ($ts) {
-						break;
-					}
-				}
-			}
-			$temp = null;
-			foreach (array('DryBulbTemperature_Celsius', 'AirTemperature_Celsius', 'AirIntakeTemperature_Celsius') as $k) {
-				if (isset($row[$k]) && $row[$k] !== null && $row[$k] !== '') {
-					$temp = self::num($row[$k]);
-					break;
-				}
-			}
-			// WOW sometimes nests values.
-			if ($temp === null && isset($row['Parameters']) && is_array($row['Parameters'])) {
-				foreach (array('DryBulbTemperature_Celsius', 'AirTemperature_Celsius') as $k) {
-					if (isset($row['Parameters'][$k])) {
-						$v = $row['Parameters'][$k];
-						$temp = is_array($v) ? self::num(isset($v['Value']) ? $v['Value'] : null) : self::num($v);
-						if ($temp !== null) {
-							break;
-						}
-					}
-				}
-			}
-			$dayRain = null;
-			foreach (array('Rainfall_Millimetre', 'RainfallAmount_Millimetre') as $k) {
-				if (isset($row[$k]) && $row[$k] !== null && $row[$k] !== '') {
-					$dayRain = self::num($row[$k]);
-					break;
-				}
-			}
-			if ($temp === null && $dayRain === null) {
-				continue;
-			}
-			if ($ts && $temp !== null && $ts >= $dayStart->getTimestamp() && $ts <= $now->getTimestamp() + 600) {
-				$temps[] = $temp;
-				if ($ts <= $coverEnd->getTimestamp()) {
-					$hasCover = true;
-				}
-			}
-			if ($dayRain !== null) {
-				$rain = $dayRain;
-			}
-			if ($best === null || ($ts && $ts >= $best['ts'])) {
-				$best = array('ts' => $ts, 'temp_c' => $temp, 'rain' => $dayRain);
-			}
-		}
-		if ($best === null) {
-			return null;
-		}
-		$min = $max = null;
-		if ($hasCover && $temps) {
-			$min = min($temps);
-			$max = max($temps);
-		}
-		// Prefer published daily min/max from the latest row if present.
-		$last = $obs[count($obs) - 1];
-		$pubMin = self::num(isset($last['AirTemperatureMin_Celsius']) ? $last['AirTemperatureMin_Celsius'] : null);
-		$pubMax = self::num(isset($last['AirTemperatureMax_Celsius']) ? $last['AirTemperatureMax_Celsius'] : null);
-		if ($pubMin !== null && $pubMax !== null) {
-			$min = $pubMin;
-			$max = $pubMax;
-		}
-		return array(
-			'temp_c' => $best['temp_c'],
-			'temp_min_c' => $min,
-			'temp_max_c' => $max,
-			'rain_today_mm' => ($best['rain'] !== null) ? $best['rain'] : $rain,
-			'observed_at' => self::isoZ($best['ts']),
-			'source' => 'wow',
-		);
-	}
 
 	private static function mergeObs($rec, $obs) {
 		if (!$obs) {
@@ -533,11 +613,6 @@ class Nearby {
 		return self::summariseSynop(self::parseOgimetSynop($text, $block), $now);
 	}
 
-	private static function fetchWow($siteId) {
-		$day = (new DateTime('now', new DateTimeZone('Europe/London')))->format('Y-m-d');
-		$url = self::WOW_TABLE . '/' . rawurlencode($siteId) . '/details/' . $day;
-		return self::parseWowTable(self::httpJson($url));
-	}
 
 	/**
 	 * Fetch all stations and write cache/v5/nearby.json.
@@ -578,8 +653,8 @@ class Nearby {
 						$obs = $awMap[$st['sources']['iem']];
 					}
 				}
-				// SYNOP fills gaps (St James current + lo–hi; airport rain is usually
-				// absent from METAR/IEM, and SYNOP 6-groups are not used as "today").
+				// SYNOP fills St James current + lo–hi, and rain since midnight
+				// local for any station that has a WMO block (airports included).
 				if (!empty($st['sources']['synop'])) {
 					$syn = self::fetchSynop($st['sources']['synop']);
 					if ($syn) {
@@ -594,11 +669,11 @@ class Nearby {
 								$obs['temp_min_c'] = $syn['temp_min_c'];
 								$obs['temp_max_c'] = $syn['temp_max_c'];
 							}
+							if ($obs['rain_today_mm'] === null && $syn['rain_today_mm'] !== null) {
+								$obs['rain_today_mm'] = $syn['rain_today_mm'];
+							}
 						}
 					}
-				}
-				if (!$obs && !empty($st['sources']['wow'])) {
-					$obs = self::fetchWow($st['sources']['wow']);
 				}
 			} catch (Exception $e) {
 				$obs = null;
@@ -731,7 +806,7 @@ class Nearby {
 				self::renderRow($s, $now);
 			}
 			echo '</div>';
-			echo '<p class="nearby-note">Airport readings from the Iowa Environmental Mesonet and NOAA Aviation Weather; St James’s Park from Ogimet SYNOP. Kew Gardens is a Met Office climate station and may not have a current public observation.</p>';
+			echo '<p class="nearby-note">Airport temperatures from the Iowa Environmental Mesonet and NOAA Aviation Weather; St James’s Park and daily rainfall from Ogimet SYNOP (rain since midnight local time).</p>';
 		}
 		echo '</div></div>';
 	}
