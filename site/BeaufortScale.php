@@ -15,7 +15,7 @@ $bftword = array(
 );
 $bftdescrip = array(
 	'Calm. Smoke rises vertically.',
-	'Smoke drift indicates wind direction and wind vanes not moved.',
+	'Smoke drift indicates wind direction and wind vanes are at rest.',
 	'Wind felt on exposed skin. Leaves rustle and wind vanes begin to move.',
 	'Leaves and small twigs constantly moving, light flags extended.',
 	'Dust and loose paper raised. Small branches begin to move.',

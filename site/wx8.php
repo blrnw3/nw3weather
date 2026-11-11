@@ -326,8 +326,8 @@ class Traffic {
 		<abbr title="file transfer protocol">FTP</abbr> to a web server -
 		which broadcasts the PHP-rendered web pages to the World Wide Web so anyone making a valid HTTP request can view them.
 		The web server runs on a Linux VM which I manage, but is provisioned by DigitalOcean.
-		All web pages and data procedures are written in PHP (inc. graphs powered by Highcharts),
-		with some JavaScript used to provide a basic level of dynamism.
+		All web pages and data procedures are written in PHP,
+		with some JavaScript (inc. graphs powered by Highcharts) used to provide a basic level of dynamism.
 		Data storage is a combination of <abbr title='comma separated value'>CSV</abbr> (long-term),
 		<a href='https://en.wikipedia.org/wiki/Serialisation'>PHP-serialised</a> (short-term), and PHP variable-exported.
 	</p>
