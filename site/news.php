@@ -22,7 +22,7 @@ Page::Start();
 		</p>
 
 		<p>
-			But first a brief bit of history. This site launched in ~2009 and quickly went through a series of iterations in the years following.
+			But first a brief bit of history. This site launched in 2010 (with a precursor site in 2009) and quickly went through a series of iterations in the years following.
 			V3 launched in 2013, then I began on Site <b>v4</b> in 2014, which was meant to be the successor: a complete rewrite
 			of the data model and backend. But after getting a long way into it, life happened. I moved country, married, 
 			built a whole <a href="https://rwcweather.com" title="RWC weather">new weather website</a>, etc.
@@ -38,7 +38,7 @@ Page::Start();
 				menu drawer; wide data tables scroll horizontally with a sticky first column; charts reflow on resize.
 				The old ultra-basic mobile page is retained as a <a href="mob.php">Lite view</a> if you want the bare essentials.</li>
 			<li><b>Charts and graphs</b> — rebuilt with interactive Highcharts in place of the old static JPGraph images.
-				Live 24-hour panels, selectable trends, wind roses, and historical charting are all nicer to richer and easier to use</li>
+				Live 24-hour panels, selectable trends, wind roses, and historical charting are all nicer, richer and easier to use</li>
 			<li><b>Homepage</b> — redesigned around live weather cards (rwcweather-like), sun/moon, a short local forecast,
 				and recent charts. The forecast now comes from Yr.no rather than the old pressure-trend heuristic.</li>
 			<li><b>Air pollution</b> — a new data stream: PM2.5 from nearby sensors, shown as UK DAQI on the homepage,
@@ -50,7 +50,7 @@ Page::Start();
 
 		<p>
 			Most of the familiar pages and features are still here just with some new style.
-			Site v3 remains available and updated under <a href="/oldSites/sitev3/">oldSites/sitev3</a> for nostalgia or comparison,
+			Site v3 remains available under <a href="/oldSites/sitev3/">oldSites/sitev3</a> for nostalgia or comparison,
 			but it is no longer maintained. The same goes for even older versions.
 			More background on the station and site history is on the <a href="wx8.php">About</a> page.
 		</p>
@@ -68,8 +68,8 @@ Page::Start();
 
 		<p>
 			Last week during a trip back home to London I took the opportunity to upgrade my weather webcam.
-			I bought a Hikvision DS-2CD2055FWD-I IP camera (4mm focal length), which has an enormous resolution of 3072*2048 compared to
-			the meager 640*480 of my current 8-year old webcams. This is an incredible 20 times more pixels (6MP vs 0.3MP).
+			I bought a Hikvision DS-2CD2055FWD-I IP camera (4mm focal length), which has an enormous resolution of 2560*1920 compared to
+			the meagre 640*480 of my current 8-year-old webcams. This is an incredible 16 times more pixels (5MP vs 0.3MP).
 			In fact, the resolution is so high, I've had to scale the images down to fit on the website.
 			I'm incredibly pleased with the quality of the images too, and the camera also gives very good nighttime images.
 			<br />
@@ -267,10 +267,10 @@ Page::Start();
 			someone at the local paper, the Ham and High, for an interview about the significance
 			of the event. Pictures of me looking silly with my manual rain gauge were taken and
 			the interview was done, but they ended up not using my contribution for that piece.
-			They did, however, run a entirely different piece just about me and the weather station,
+			They did, however, run an entirely different piece just about me and the weather station,
 			following a further, more personal, interview some days later.
 			<a href="/static-images/me_hnh.pdf" title="full-page pdf">Here it is!</a>
-			<br />The article is now <a href="http://www.hamhigh.co.uk/news/weather/gospel_oak_storm_chaser_rivals_met_office_with_1_000_weather_station_1_3830494">available online</a> too.
+			<br />The article is now <a href="https://web.archive.org/web/20161127022731/http://www.hamhigh.co.uk/news/weather/gospel_oak_storm_chaser_rivals_met_office_with_1_000_weather_station_1_3830494">available online</a> too.
 		</p>
 		<img src="/static-images/me_hnh.png" title="Me in the Ham and High" alt="me" /> <br />
 		<p>I thought they were stretching it a bit thin calling me a storm chaser...<p>
@@ -323,9 +323,8 @@ Page::Start();
 			This next iteration of nw3weather will initially involve entirely back-end upgrades, of the data model and major refactoring of the source code.
 			Following the completion of this upgrade in approx. mid-2014, further features will be worked on and test releases to the live site will be
 			performed before a full live release in 2015, probably.<br />
-			I have now moved to <a href="https://www.pivotaltracker.com/s/projects/943352">using PivotalTracker</a> as a project management tool for nw3weather development.
-			This enables easy management of bugs, features and chores throughout the development process, and this is the best place for nw3weather users to
-			follow the latest goings on.
+			I have now moved to using Pivotal Tracker as a project management tool for nw3weather development (service closed in 2025).
+			This enabled easy management of bugs, features and chores throughout the development process.
 		</p>
 
 		<p>P.S. I will be performing some minor weather station maintenance and upgrades in the spring;
@@ -345,7 +344,7 @@ Page::Start();
 				<li>Data control - almost all processing of images and raw data is now done on the server (rather than local PC);
 					this makes it much easier to correct glitches, add features, and reduce inconsistencies and errors</li>
 				<li>Rankings - It's now possible to view ranked data in a number of places</li>
-				<li>Javascript - This is increasingly being used to improve usability, but I'm aware that a lot more needs to be done in this area.</li>
+				<li>JavaScript - This is increasingly being used to improve usability, but I'm aware that a lot more needs to be done in this area.</li>
 			</ul>
 		<p>
 			On account of these fairly significant changes, the loss of a few of the site v2 features, and given that I no longer have any interest in supporting
@@ -419,7 +418,7 @@ Page::Start();
 		</p>
 		<p>
 		On a related note, site v.3 uses new values for the long-term-average rainfall to reflect recent analysis
-		(see post from 7th Jan below and the <a href="/Rainfall-adjustments2.xls" title="Analysis of rainfall at NW3 and nearby sites">updated xls</a>).
+		(see post from 7th Jan below and the <a href="/Rainfall-comparison.xls" title="Analysis of rainfall at NW3 and nearby sites">updated xls</a>).
 		Updated values found <a href="/wxaverages.php">here</a>. The rest of the climate averages will be updated soon to reflect the newly available 1981-2010
 		standard averaging period.
 		</p>

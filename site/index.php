@@ -95,7 +95,7 @@ $forecast = Forecast::days(2);
 		<?php nw3_render_cards(); ?>
 	</div>
 </div>
-<noscript><p><b>Note:</b> Javascript must be enabled for live updates to function</p></noscript>
+<noscript><p><b>Note:</b> JavaScript must be enabled for live updates to function</p></noscript>
 
 <script type="text/javascript">
 	//<![CDATA[
@@ -423,7 +423,7 @@ else:
 			<div class="fcast-more">
 				<a href="wx5.php" title="5-Day Local Forecast and Maps">Full forecast &amp; maps &rarr;</a>
 				<?php Forecast::renderHomeSrc(); ?>
-				<span class="fcast-src"> · data <a href="https://www.yr.no/en/forecast/daily-table/2-2647553/" title="Yr.no forecast for Hampstead" rel="noopener">Yr.no</a></span>
+				<span class="fcast-src"> · <a href="https://www.yr.no/en/forecast/daily-table/2-2647553/" title="Yr.no forecast for Hampstead" rel="noopener">Yr.no</a></span>
 			</div>
 		</div>
 	</div>
@@ -450,8 +450,8 @@ Charts::ytdHomeChart(array(
 
 <div class="home-about">
 	<p><b>NW3 Weather</b> is a meteorological observation site located near Hampstead, in North London, UK.
-	The site was established with an <a href="wx8.php" title="Detailed station and website information">automatic personal weather station</a>
-	in July 2010 and runs continuously, with updates at least every 60s.</p>
+	The site was established with an <a href="wx8.php" title="Detailed station and website information">automatic personal weather station in July 2010
+	(station record starts in February 2009 from East Finchley)</a>. It runs continuously, with updates every 5-60s.</p>
 </div>
 
 <?php

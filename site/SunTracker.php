@@ -6,12 +6,10 @@
 class SunTracker {
 	const LABELS = ['sun' => 'Sunny', 'nosun' => 'Not sunny', 'unknown' => 'No data', 'future' => 'Not yet'];
 
-	// Same position and sunrise convention as sun_model/solar.py (NOAA, sun centre at -0.833 degrees), so the strip
-	// covers exactly the minutes the model classifies.
-	const LAT = 51.556;
-	const LON = -0.177;
-	const RISE_EL = -0.833;
-	const CIVIL_EL = -6.0;
+	// Rise/set times use the same Site::LATITUDE / LONGITUDE and Site::ZENITH method as wx6
+	// (Date::$sunrise / Date::$sunset via nw3_sunrise / nw3_sunset), so both pages agree.
+	// elevation() still uses a NOAA-style solar-position port; its horizon matches Site::ZENITH.
+	const CIVIL_EL = -6.0; // civil twilight, same 96-degree zenith as wx6
 
 	/** Solar elevation (degrees) at a unix time: port of sun_model/solar.py solar_pos. */
 	public static function elevation(float $unix): float {
@@ -29,9 +27,9 @@ class SunTracker {
 		$eot = 4 * rad2deg($y * sin(2 * $l) - 2 * $ecc * sin($gma) + 4 * $ecc * $y * sin($gma) * cos(2 * $l)
 			- 0.5 * $y * $y * sin(4 * $l) - 1.25 * $ecc * $ecc * sin(2 * $gma));
 		$mins = fmod($unix, 86400) / 60;
-		$tst = fmod(fmod($mins + $eot + 4 * self::LON, 1440) + 1440, 1440);
+		$tst = fmod(fmod($mins + $eot + 4 * Site::LONGITUDE, 1440) + 1440, 1440);
 		$ha = deg2rad($tst / 4 < 0 ? $tst / 4 + 180 : $tst / 4 - 180);
-		$lat = deg2rad(self::LAT);
+		$lat = deg2rad(Site::LATITUDE);
 		$cz = sin($lat) * sin($dec) + cos($lat) * cos($dec) * cos($ha);
 		return 90 - rad2deg(acos(max(-1.0, min(1.0, $cz))));
 	}
@@ -64,8 +62,9 @@ class SunTracker {
 		static $memo = [];
 		$k = date('Ymd', $unix);
 		if (!array_key_exists($k, $memo)) {
-			[$r, $s] = self::crossings($unix, self::RISE_EL);
-			$memo[$k] = ($r !== null && $s !== null && $s > $r) ? [$r, $s] : null;
+			$r = nw3_sunrise($unix, NW3_SUN_TIMESTAMP, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $unix));
+			$s = nw3_sunset($unix, NW3_SUN_TIMESTAMP, Site::LATITUDE, Site::LONGITUDE, Site::ZENITH, date('I', $unix));
+			$memo[$k] = ($r !== false && $s !== false && (int)$s > (int)$r) ? [(int)$r, (int)$s] : null;
 		}
 		return $memo[$k];
 	}
@@ -75,7 +74,7 @@ class SunTracker {
 		$rs = self::riseSet($now);
 		if ($rs !== null && $now >= $rs[0] && $now < $rs[1]) { return null; }
 		$el = self::elevation($now);
-		if ($el > self::RISE_EL) { return null; }   // polar day safety; never in London
+		if ($el > (90 - Site::ZENITH)) { return null; }   // polar day safety; never in London
 		return $el > self::CIVIL_EL ? 'twilight' : 'dark';
 	}
 

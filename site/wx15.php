@@ -164,7 +164,7 @@ Site owner and administrator: Ben Lee-Rodgers (2010 - 2015), Ben Masschelein-Rod
 
 <h2>Raw METAR from EGLL (Heathrow)</h2>
 <?php echo file_exists(ROOT . 'METAR.txt') ? file_get_contents(ROOT . 'METAR.txt') : ''; ?> <br />
-<a href="http://aviationweather.gov/data/metar/?ids=EGLL">Source</a>
+<a href="https://aviationweather.gov/data/metar/?ids=EGLL">Source</a>
 <br /><br />
 
 <h2>WD Screenshot</h2>

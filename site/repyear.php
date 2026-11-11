@@ -1117,7 +1117,7 @@ Your browser does not support the video tag.
 		<li>It was significantly the most anomalous for temperature in 84 months on record, at +6.0C. Previous record was +4.7C in Apr 2011</li>
 	</ul>
 	It's perhaps hard to justify the hype when the record spans only seven years, but the 367-year CET (Central England)
-	series reproduces these results: it had its <a href="http://www.metoffice.gov.uk/hadobs/hadcet/mly_cet_mean_sort.txt">warmest December on record</a>,
+	series reproduces these results: it had its <a href="https://www.metoffice.gov.uk/hadobs/hadcet/data/download.html">warmest December on record</a>,
 	besting its previous result by 1.6C. It was also warmer than 366 out of 367 past Novembers.
 </p>
 <p>

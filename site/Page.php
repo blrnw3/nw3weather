@@ -493,7 +493,7 @@ END;
 				],
 				[
 					"title" => "Monthly",
-					"text" => "Tables of monthly data by weather variabl",
+					"text" => "Tables of monthly data by weather variable",
 					"page" => "TablesDataMonth",
 					"num" => 40.1,
 					"subhead" => true,
