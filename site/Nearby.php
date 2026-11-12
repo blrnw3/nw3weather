@@ -787,11 +787,13 @@ class Nearby {
 		return $rows;
 	}
 
-	public static function renderHomeCard() {
+	public static function renderHomeCard($innerOnly = false) {
 		$rows = self::rows();
 		$cache = self::readCache();
 		$hasCache = ($cache && !empty($cache['stations']));
-		echo '<div class="wx-cards home-nearby" id="nearby-wrap">';
+		if (!$innerOnly) {
+			echo '<div class="wx-cards home-nearby" id="nearby-wrap">';
+		}
 		echo '<div class="wx-card wx-card-nearby" id="nearby-card">';
 		echo '<div class="wx-card-head"><span class="wx-card-label">Weather nearby</span></div>';
 		if (!$hasCache) {
@@ -808,7 +810,10 @@ class Nearby {
 			echo '</div>';
 			echo '<p class="nearby-note">Airport temperatures from the Iowa Environmental Mesonet and NOAA Aviation Weather; St James’s Park and daily rainfall from Ogimet SYNOP.</p>';
 		}
-		echo '</div></div>';
+		echo '</div>'; // #nearby-card
+		if (!$innerOnly) {
+			echo '</div>'; // #nearby-wrap
+		}
 	}
 
 	private static function renderRow($s, $now) {
@@ -826,18 +831,23 @@ class Nearby {
 		}
 		$meta = array();
 		if (!empty($s['id']) && $s['id'] === 'nw3') {
-			$meta[] = 'this station';
+			$meta[] = htmlspecialchars('this station', ENT_QUOTES);
 		} elseif (isset($s['dist_km']) && $s['dist_km'] !== null) {
-			$meta[] = number_format((float)$s['dist_km'], 1) . ' km';
+			$meta[] = htmlspecialchars(number_format((float)$s['dist_km'], 1) . ' km', ENT_QUOTES);
 		}
 		$age = self::ageLabel(isset($s['observed_at']) ? $s['observed_at'] : null, $now);
 		if ($age) {
-			$meta[] = $age;
+			$obsIso = ($ts) ? self::isoZ($ts) : '';
+			$meta[] = '<span class="nearby-age"'
+				. ($obsIso ? ' data-observed-at="' . htmlspecialchars($obsIso, ENT_QUOTES) . '"' : '')
+				. '>' . htmlspecialchars($age, ENT_QUOTES) . '</span>';
 		}
-		$sub = $meta ? htmlspecialchars(implode(' · ', $meta), ENT_QUOTES) : '';
+		$sub = $meta ? implode(' · ', $meta) : '';
 		$ageClass = $stale ? ' nearby-age-stale' : '';
 
-		echo '<div class="nearby-row' . (empty($s['available']) ? ' nearby-missing' : '') . '">';
+		$sid = isset($s['id']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', (string)$s['id']) : '';
+		echo '<div class="nearby-row' . (empty($s['available']) ? ' nearby-missing' : '')
+			. '"' . ($sid !== '' ? ' data-station="' . htmlspecialchars($sid, ENT_QUOTES) . '"' : '') . '>';
 		echo '<div class="nearby-name"><div class="nearby-title">' . $nameHtml . '</div>';
 		if ($sub) {
 			echo '<div class="nearby-meta' . $ageClass . '">' . $sub . '</div>';

@@ -164,6 +164,14 @@ $forecast = Forecast::days(2);
 						if (climSlot) { climSlot.innerHTML = climNext.innerHTML; }
 						climNext.parentNode.removeChild(climNext);
 					}
+					// Same pattern: the nearby card is appended to the payload and moved
+					// into #nearby-wrap (further down the page) so it refreshes in place.
+					var nearbyNext = document.getElementById('nearby-next');
+					var nearbyWrap = document.getElementById('nearby-wrap');
+					if (nearbyNext) {
+						if (nearbyWrap) { nearbyWrap.innerHTML = nearbyNext.innerHTML; }
+						nearbyNext.parentNode.removeChild(nearbyNext);
+					}
 					flashLiveChanges(oldData, readLiveData());
 					tick(); // reflect the fresh reading time/age immediately
 				})
@@ -213,9 +221,46 @@ $forecast = Forecast::days(2);
 			return h + 'h ' + (m < 10 ? '0' : '') + m + 'm ago';
 		}
 
+		// Observation ages on the nearby card, matching Nearby::ageLabel().
+		function fmtNearbyAge(sec) {
+			if (sec < 45) { return 'just now'; }
+			if (sec < 120) { return '1 min ago'; }
+			if (sec < 3600) { return Math.round(sec / 60) + ' min ago'; }
+			if (sec < 90 * 60) { return '1 h ago'; }
+			if (sec < 36 * 3600) { return Math.round(sec / 3600) + ' h ago'; }
+			try {
+				var parts = new Intl.DateTimeFormat('en-GB', {
+					timeZone: 'Europe/London', day: 'numeric', month: 'short',
+					hour: '2-digit', minute: '2-digit', hour12: false
+				}).formatToParts(new Date((Date.now() / 1000 - sec) * 1000));
+				var get = function (t) {
+					for (var i = 0; i < parts.length; i++) { if (parts[i].type === t) { return parts[i].value; } }
+					return '';
+				};
+				return get('day') + ' ' + get('month') + ' ' + get('hour') + ':' + get('minute');
+			} catch (e) { return ''; }
+		}
+		function tickNearbyAges() {
+			var els = document.querySelectorAll('#nearby-card .nearby-age[data-observed-at]');
+			var now = Date.now() / 1000;
+			for (var i = 0; i < els.length; i++) {
+				var ms = Date.parse(els[i].getAttribute('data-observed-at'));
+				if (isNaN(ms)) { continue; }
+				var sec = Math.max(0, now - ms / 1000);
+				var label = fmtNearbyAge(sec);
+				if (label) { els[i].textContent = label; }
+				var meta = els[i].parentNode;
+				if (meta && meta.classList && meta.classList.contains('nearby-meta')) {
+					if (sec > 2 * 3600) { meta.classList.add('nearby-age-stale'); }
+					else { meta.classList.remove('nearby-age-stale'); }
+				}
+			}
+		}
+
 		// Live-data freshness: count up the age of the latest reading and flag if stale.
 		function tick() {
 			sync();
+			tickNearbyAges();
 			if (!wdTime || !ageEl) { return; }
 			var age = baseServer + (Date.now() - t0) / 1000 - wdTime;
 			ageEl.textContent = fmtAge(age);
@@ -448,7 +493,9 @@ Charts::ytdHomeChart(array(
 	&nbsp; <a href="/wxdataday.php?vartype=pond">see temperature history</a></p>
 <?php endif; ?>
 
-<?php Nearby::renderHomeCard(); ?>
+<div class="wx-cards home-nearby" id="nearby-wrap">
+	<?php Nearby::renderHomeCard(true); ?>
+</div>
 
 <div class="home-about">
 	<p><b>NW3 Weather</b> is a meteorological observation site located near Hampstead, in North London, UK.

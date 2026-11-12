@@ -9,9 +9,14 @@ Page::init([
 ]);
 require __DIR__ . '/live-body.php';
 nw3_render_cards();
-// The home page also refreshes its climate card, which sits further down the page.
+// The home page also refreshes its climate card and nearby-stations card,
+// which sit further down the page. Included in the same payload (no extra endpoint).
 if (isset($_GET['clim'])) {
 	echo '<div id="clim-next" hidden>';
 	nw3_render_clim_card();
+	echo '</div>';
+	require_once __DIR__ . '/Nearby.php';
+	echo '<div id="nearby-next" hidden>';
+	Nearby::renderHomeCard(true);
 	echo '</div>';
 }
