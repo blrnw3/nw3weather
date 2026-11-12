@@ -466,7 +466,7 @@ class Charts {
 				'options' => array(
 					'tmean' => 'Mean', 'tmin' => 'Min', 'tmax' => 'Max',
 					'trange' => 'Range',
-					'tminanom' => 'Min anom.', 'tmaxanom' => 'Max anom.', 'tmeananom' => 'Mean anom.',
+					'tminanom' => 'Min anom', 'tmaxanom' => 'Max anom', 'tmeananom' => 'Mean anom',
 					'nightmin' => 'Night min', 'daymax' => 'Day max',
 					'fmean' => 'Feels mean', 'fmin' => 'Feels min', 'fmax' => 'Feels max',
 				),
