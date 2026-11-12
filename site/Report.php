@@ -572,6 +572,231 @@ class Report {
 		return ($anom === '' || $anom === null) ? '' : '<br />(' . $anom . ')';
 	}
 
+	/** Daily/monthly/annual reports are available from 2009 (monthly from Feb 2009). */
+	const HIST_REPORT_YEAR = 2009;
+	/** Periods this long (or longer) link to daily data tables instead of start/end daily reports. */
+	const LONG_RANGE_DAYS = 32;
+
+	public static function reportDayUrl($year, $month, $day) {
+		$year = (int)$year; $month = (int)$month; $day = (int)$day;
+		if ($year < self::HIST_REPORT_YEAR || $month < 1 || $month > 12 || $day < 1 || $day > 31) {
+			return null;
+		}
+		return '/wxhistday.php?year=' . $year . '&month=' . $month . '&day=' . $day;
+	}
+
+	public static function reportMonthUrl($year, $month) {
+		$year = (int)$year; $month = (int)$month;
+		if ($month < 1 || $month > 12) { return null; }
+		if ($year < self::HIST_REPORT_YEAR || ($year === self::HIST_REPORT_YEAR && $month < 2)) {
+			return null;
+		}
+		return '/wxhistmonth.php?year=' . $year . '&month=' . $month;
+	}
+
+	public static function reportYearUrl($year) {
+		$year = (int)$year;
+		if ($year < self::HIST_REPORT_YEAR) { return null; }
+		return '/wxhistyear.php?year=' . $year;
+	}
+
+	public static function dataDayTableUrl($type, $year) {
+		return '/wxdataday.php?vartype=' . rawurlencode((string)$type) . '&year=' . (int)$year;
+	}
+
+	/**
+	 * @param string $href
+	 * @param string $text already-safe visible text (no user HTML)
+	 * @param string $title
+	 * @param bool $bold
+	 * @return string
+	 */
+	public static function hiddenDateLink($href, $text, $title, $bold = false) {
+		if ($href) {
+			$html = '<a class="hidden-link" href="' . htmlspecialchars($href)
+				. '" title="' . htmlspecialchars($title) . '">' . $text . '</a>';
+		} else {
+			$html = $text;
+		}
+		return $bold ? ('<b>' . $html . '</b>') : $html;
+	}
+
+	/** Clickable single-day label for ranking tables. */
+	public static function dayDateHtml($ts, $format = 'd M Y') {
+		$y = (int)date('Y', $ts);
+		$m = (int)date('n', $ts);
+		$d = (int)date('j', $ts);
+		$star = ($y < Site::BASE_YEAR) ? '*' : '';
+		$bold = ((Date::$dtstamp - $ts) < 86400 * 365);
+		$label = date($format, $ts) . $star;
+		$url = self::reportDayUrl($y, $m, $d);
+		return self::hiddenDateLink($url, $label, 'View daily report for ' . date('j M Y', $ts), $bold);
+	}
+
+	/** Clickable month label (e.g. "Nov 2025") for ranking tables. */
+	public static function monthDateHtml($ts) {
+		$y = (int)date('Y', $ts);
+		$m = (int)date('n', $ts);
+		$star = ($y < Site::BASE_YEAR) ? '*' : '';
+		$bold = ((Date::$dtstamp - $ts) < 86400 * 365);
+		$label = date('M Y', $ts) . $star;
+		$url = self::reportMonthUrl($y, $m);
+		return self::hiddenDateLink($url, $label, 'View monthly report for ' . date('F Y', $ts), $bold);
+	}
+
+	/**
+	 * Clickable year label. 2009+ goes to the annual report; earlier years
+	 * fall back to the daily data table for that year (no annual report exists).
+	 */
+	public static function yearDateHtml($ts, $type = 'rain') {
+		$y = (int)date('Y', $ts);
+		$star = ($y < Site::BASE_YEAR) ? '*' : '';
+		$bold = ((Date::$dtstamp - $ts) < 86400 * 365);
+		$label = (string)$y . $star;
+		$url = self::reportYearUrl($y);
+		if ($url) {
+			return self::hiddenDateLink($url, $label, 'View annual report for ' . $y, $bold);
+		}
+		return self::hiddenDateLink(self::dataDayTableUrl($type, $y), $label, 'View daily data for ' . $y, $bold);
+	}
+
+	/**
+	 * Clickable start–end range for spell and period rankings.
+	 * Short ranges: start and end each link to their daily report (2009+).
+	 * Ranges of LONG_RANGE_DAYS or more: link to the daily data table for the
+	 * year (or start and end years if the window crosses a year boundary).
+	 * @param int $startTs
+	 * @param int $endTs
+	 * @param string $type variable name for daily-table links
+	 * @param array $opts ongoing?: bool (end label "Current")
+	 * @return string
+	 */
+	public static function rangeDateHtml($startTs, $endTs, $type = 'rain', $opts = []) {
+		$ongoing = !empty($opts['ongoing']);
+		if (!$startTs) { return ''; }
+		if (!$endTs) { $endTs = $startTs; }
+		$sy = (int)date('Y', $startTs); $sm = (int)date('n', $startTs); $sd = (int)date('j', $startTs);
+		$ey = (int)date('Y', $endTs); $em = (int)date('n', $endTs); $ed = (int)date('j', $endTs);
+		$days = (int)round(($endTs - $startTs) / 86400) + 1;
+		$star = ($sy < Site::BASE_YEAR) ? '*' : '';
+		$bold = ((Date::$dtstamp - $endTs) < 86400 * 365);
+		$long = ($days >= self::LONG_RANGE_DAYS);
+
+		if ($sy === $ey && $sm === $em) {
+			$startText = date('d', $startTs);
+			$endText = date('d M Y', $endTs);
+			$plain = $startText . '–' . $endText . $star;
+		} elseif ($sy === $ey) {
+			$startText = date('d M', $startTs);
+			$endText = date('d M Y', $endTs);
+			$plain = $startText . ' – ' . $endText . $star;
+		} else {
+			$startText = date('d M Y', $startTs);
+			$endText = date('d M Y', $endTs);
+			$plain = $startText . ' – ' . $endText . $star;
+		}
+		if ($ongoing) {
+			$endText = 'Current';
+			$plain = date('d M Y', $startTs) . ' – Current' . $star;
+		}
+
+		if ($long) {
+			$startUrl = self::dataDayTableUrl($type, $sy);
+			if ($sy === $ey && !$ongoing) {
+				return self::hiddenDateLink($startUrl, $plain, 'View daily data for ' . $sy, $bold);
+			}
+			$endUrl = $ongoing ? self::reportDayUrl((int)Date::$dyear, (int)Date::$dmonth, (int)Date::$dday) : self::dataDayTableUrl($type, $ey);
+			$startTitle = 'View daily data for ' . $sy;
+			$endTitle = $ongoing ? 'View daily report for today' : ('View daily data for ' . $ey);
+			$html = self::hiddenDateLink($startUrl, $startText, $startTitle)
+				. ($sy === $ey && $sm === $em && !$ongoing ? '–' : ' – ')
+				. self::hiddenDateLink($endUrl, $endText, $endTitle) . $star;
+			return $bold ? ('<b>' . $html . '</b>') : $html;
+		}
+
+		$startUrl = self::reportDayUrl($sy, $sm, $sd);
+		$endUrl = $ongoing
+			? self::reportDayUrl((int)Date::$dyear, (int)Date::$dmonth, (int)Date::$dday)
+			: self::reportDayUrl($ey, $em, $ed);
+		$sep = ($sy === $ey && $sm === $em && !$ongoing) ? '–' : ' – ';
+		$html = self::hiddenDateLink($startUrl, $startText, 'View daily report for ' . date('j M Y', $startTs))
+			. $sep
+			. self::hiddenDateLink($endUrl, $endText, $ongoing ? 'View daily report for today' : ('View daily report for ' . date('j M Y', $endTs)))
+			. $star;
+		return $bold ? ('<b>' . $html . '</b>') : $html;
+	}
+
+	/**
+	 * Linked MTD/YTD span text (no year prefix), following the short/long range rule.
+	 * MTD: "1–12 Nov". YTD: "1 Jan–12 Nov".
+	 * $endTextExtra is appended to the end label (e.g. " 2025" for month-row MTD).
+	 */
+	public static function spanRangeLinkedHtml($span, $year, $endMonth, $endDay, $type, $endTextExtra = '') {
+		$year = (int)$year;
+		$endMonth = (int)$endMonth;
+		$endDay = Data::clampDay($year, $endMonth, $endDay);
+		if ($span === 'mtd') {
+			$startTs = Date::mkdate($endMonth, 1, $year);
+			$endTs = Date::mkdate($endMonth, $endDay, $year);
+			$startText = '1';
+			$sep = '–';
+		} else {
+			$startTs = Date::mkdate(1, 1, $year);
+			$endTs = Date::mkdate($endMonth, $endDay, $year);
+			$startText = '1 Jan';
+			$sep = '–';
+		}
+		$endText = $endDay . ' ' . Date::$months3[$endMonth - 1] . $endTextExtra;
+		$days = (int)round(($endTs - $startTs) / 86400) + 1;
+		$plain = $startText . $sep . $endText;
+		if ($days >= self::LONG_RANGE_DAYS) {
+			return self::hiddenDateLink(self::dataDayTableUrl($type, $year), $plain, 'View daily data for ' . $year);
+		}
+		$sm = ($span === 'mtd') ? $endMonth : 1;
+		$startUrl = self::reportDayUrl($year, $sm, 1);
+		$endUrl = self::reportDayUrl($year, $endMonth, $endDay);
+		return self::hiddenDateLink($startUrl, $startText, 'View daily report for ' . date('j M Y', $startTs))
+			. $sep
+			. self::hiddenDateLink($endUrl, $endText, 'View daily report for ' . date('j M Y', $endTs));
+	}
+
+	/** Month ranking date, including an MTD/YTD span when selected. */
+	public static function monthSpanDateHtml($ts, $span, $endMonth, $endDay, $type = 'rain') {
+		if ($span !== 'mtd' && $span !== 'ytd') {
+			return self::monthDateHtml($ts);
+		}
+		$y = (int)date('Y', $ts);
+		$m = (int)date('n', $ts);
+		$star = ($y < Site::BASE_YEAR) ? '*' : '';
+		$bold = ((Date::$dtstamp - $ts) < 86400 * 365);
+		if ($span === 'mtd') {
+			$html = self::spanRangeLinkedHtml('mtd', $y, $m, $endDay, $type, ' ' . $y) . $star;
+		} else {
+			$yearUrl = self::reportYearUrl($y);
+			$yearHtml = $yearUrl
+				? self::hiddenDateLink($yearUrl, (string)$y, 'View annual report for ' . $y)
+				: self::hiddenDateLink(self::dataDayTableUrl($type, $y), (string)$y, 'View daily data for ' . $y);
+			$html = $yearHtml . $star . ' (' . self::spanRangeLinkedHtml('ytd', $y, $m, $endDay, $type) . ')';
+		}
+		return $bold ? ('<b>' . $html . '</b>') : $html;
+	}
+
+	/** Annual ranking date, including an MTD/YTD span when selected. */
+	public static function yearSpanDateHtml($ts, $span, $endMonth, $endDay, $type = 'rain') {
+		if ($span !== 'mtd' && $span !== 'ytd') {
+			return self::yearDateHtml($ts, $type);
+		}
+		$y = (int)date('Y', $ts);
+		$star = ($y < Site::BASE_YEAR) ? '*' : '';
+		$bold = ((Date::$dtstamp - $ts) < 86400 * 365);
+		$yearUrl = self::reportYearUrl($y);
+		$yearHtml = $yearUrl
+			? self::hiddenDateLink($yearUrl, (string)$y, 'View annual report for ' . $y)
+			: self::hiddenDateLink(self::dataDayTableUrl($type, $y), (string)$y, 'View daily data for ' . $y);
+		$html = $yearHtml . $star . ' (' . self::spanRangeLinkedHtml($span, $y, (int)$endMonth, $endDay, $type) . ')';
+		return $bold ? ('<b>' . $html . '</b>') : $html;
+	}
+
 	// ---- Navigation / controls ----
 
 	/**
@@ -1468,13 +1693,9 @@ class Report {
 			$n = (int)$spell['length'];
 			$startTs = strtotime($spell['startDate']);
 			$endTs = strtotime($spell['endDate']);
-			$startLbl = $startTs ? date('d M Y', $startTs) : $spell['startDate'];
-			$endLbl = !empty($spell['ongoing']) ? 'Current' : ($endTs ? date('d M Y', $endTs) : $spell['endDate']);
-			$pre2009 = $startTs && (int)date('Y', $startTs) < Site::BASE_YEAR;
-			$period = $startLbl . ' – ' . $endLbl . ($pre2009 ? '*' : '');
-			if ($startTs && (Date::$dtstamp - $startTs) < $yearSecs) {
-				$period = '<b>' . $period . '</b>';
-			}
+			$period = ($startTs)
+				? self::rangeDateHtml($startTs, $endTs ? $endTs : $startTs, $this->type, array('ongoing' => !empty($spell['ongoing'])))
+				: (htmlspecialchars((string)$spell['startDate']) . ' – ' . htmlspecialchars((string)$spell['endDate']));
 			$cur = !empty($spell['ongoing']);
 			echo '<div class="rk-row' . ($cur ? ' rk-current' : '') . '"'
 				. ($cur ? ' title="Current spell (so far)"' : '') . '>';
@@ -1500,7 +1721,12 @@ class Report {
 					echo '<div class="rk-val rk-peakval ' . $this->rankClass($pv, false, 1) . '">'
 						. $this->rankVal($pv, false)
 						. ' <span class="rk-anom-peak rk-peak-anom" title="Peak anomaly">(' . htmlspecialchars(Spells::anomText($peak)) . ')</span>'
-						. ($pd ? ' <span class="rk-anom-peak rk-peak-date">' . date('d M', $pd) . '</span>' : '') . '</div>';
+						. ($pd ? ' <span class="rk-anom-peak rk-peak-date">'
+						. self::hiddenDateLink(
+							self::reportDayUrl((int)date('Y', $pd), (int)date('n', $pd), (int)date('j', $pd)),
+							date('d M', $pd),
+							'View daily report for ' . date('j M Y', $pd)
+						) . '</span>' : '') . '</div>';
 				} else {
 					echo '<div class="rk-val"></div>';
 				}

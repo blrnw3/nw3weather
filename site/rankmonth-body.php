@@ -71,19 +71,8 @@ function nw3_rankmonth_render(Report $report) {
 		$limit = ($sortLen / 2 < $report->rankLimit) ? 1 + (int)($sortLen / 2) : $report->rankLimit;
 
 		$highest = $lowest = $highestDay = $lowestDay = [];
-		$fmtMon = function ($ts) use ($yearSecs, $span, $endM, $endD, $isYtd) {
-			$y = (int)date('Y', $ts);
-			$m = (int)date('n', $ts);
-			$star = ($y < 2009) ? '*' : '';
-			if ($isYtd) {
-				$s = (string)$y . $star . ' (' . Data::spanRangeText('ytd', $m, $endD, $y) . ')';
-			} elseif ($span === 'mtd') {
-				$s = Data::spanRangeText('mtd', $m, $endD, $y) . ' ' . $y . $star;
-			} else {
-				$s = date('M Y', $ts) . $star;
-			}
-			if ((Date::$dtstamp - $ts) < $yearSecs) { $s = "<b>$s</b>"; }
-			return $s;
+		$fmtMon = function ($ts) use ($span, $endD, $type) {
+			return Report::monthSpanDateHtml($ts, $span, (int)date('n', $ts), $endD, $type);
 		};
 		$keyFn = $isYtd
 			? function ($ts) { return date('Y', $ts); }
