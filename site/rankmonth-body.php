@@ -50,10 +50,8 @@ function nw3_rankmonth_render(Report $report) {
 		$limit = ($sortLen / 2 < $report->rankLimit) ? 1 + (int)($sortLen / 2) : $report->rankLimit;
 
 		$highest = $lowest = $highestDay = $lowestDay = [];
-		$fmtMon = function ($ts) use ($yearSecs) {
-			$s = date('M Y', $ts) . (date('Y', $ts) < 2009 ? '*' : '');
-			if ((Date::$dtstamp - $ts) < $yearSecs) { $s = "<b>$s</b>"; }
-			return $s;
+		$fmtMon = function ($ts) {
+			return Report::monthDateHtml($ts);
 		};
 		$monKey = function ($ts) { return date('Y-m', $ts); };
 		$hiKeys = $loKeys = [];

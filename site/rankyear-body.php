@@ -46,13 +46,8 @@ function nw3_rankyear_render(Report $report) {
 		$limit = $sortLen;
 
 		$highest = $lowest = $highestDay = $lowestDay = [];
-		$fmtYr = function ($ts) use ($yearSecs, $type) {
-			$y = (int)date('Y', $ts);
-			$label = (string)$y . ($y < Site::BASE_YEAR ? '*' : '');
-			if ((Date::$dtstamp - $ts) < $yearSecs) { $label = '<b>' . $label . '</b>'; }
-			$href = '/wxdataday.php?vartype=' . rawurlencode($type) . '&year=' . $y;
-			return '<a class="hidden-link" href="' . htmlspecialchars($href)
-				. '" title="View full data for year">' . $label . '</a>';
+		$fmtYr = function ($ts) use ($type) {
+			return Report::yearDateHtml($ts, $type);
 		};
 		$yrKey = function ($ts) { return date('Y', $ts); };
 		$hiKeys = $loKeys = [];

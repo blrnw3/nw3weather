@@ -31,10 +31,8 @@ function nw3_rankday_render(Report $report) {
 	$fmat = isset($_GET['withdayofweek']) ? 'D d M Y' : 'd M Y';
 	$yearSecs = 86400 * 365;
 
-	$fmtDay = function ($ts) use ($fmat, $yearSecs) {
-		$s = date($fmat, $ts) . (date('Y', $ts) < 2009 ? '*' : '');
-		if ((Date::$dtstamp - $ts) < $yearSecs) { $s = "<b>$s</b>"; }
-		return $s;
+	$fmtDay = function ($ts) use ($fmat) {
+		return Report::dayDateHtml($ts, $fmat);
 	};
 
 	$highest = $lowest = $highestDay = $lowestDay = [];

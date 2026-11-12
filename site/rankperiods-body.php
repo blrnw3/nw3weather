@@ -9,23 +9,8 @@
  * @param int $endTs
  * @return string
  */
-function nw3_period_date_label($startTs, $endTs) {
-	$startY = (int)date('Y', $startTs);
-	$endY = (int)date('Y', $endTs);
-	$star = ($startY < Site::BASE_YEAR) ? '*' : '';
-	if ($startY === $endY && date('n', $startTs) === date('n', $endTs)) {
-		// Same month: "1–5 Jul 2024"
-		$s = date('d', $startTs) . '–' . date('d M Y', $endTs) . $star;
-	} elseif ($startY === $endY) {
-		$s = date('d M', $startTs) . ' – ' . date('d M Y', $endTs) . $star;
-	} else {
-		$s = date('d M Y', $startTs) . ' – ' . date('d M Y', $endTs) . $star;
-	}
-	$yearSecs = 86400 * 365;
-	if ((Date::$dtstamp - $endTs) < $yearSecs) {
-		$s = '<b>' . $s . '</b>';
-	}
-	return $s;
+function nw3_period_date_label($startTs, $endTs, $type = 'rain') {
+	return Report::rangeDateHtml($startTs, $endTs, $type);
 }
 
 /**
@@ -72,7 +57,7 @@ function nw3_period_pick($ranked, $limit, $fromHigh, $noOverlap) {
  */
 function nw3_period_anom_status(Report $report, $length, $x, $row, $startTs, $endTs) {
 	$xTxt = Wx::plainText(Wx::conv(abs((float)$x), Wx::AbsTemp, true));
-	$when = 'Latest ' . (int)$length . '-day period (' . strip_tags(nw3_period_date_label($startTs, $endTs)) . ')';
+	$when = 'Latest ' . (int)$length . '-day period (' . strip_tags(nw3_period_date_label($startTs, $endTs, $report->type)) . ')';
 	if ($row === null) {
 		return '<p class="rk-status rk-status-off">' . htmlspecialchars($when) . ': incomplete data.</p>';
 	}
@@ -149,12 +134,12 @@ function nw3_rankperiods_render(Report $report) {
 		$highest = $lowest = $highestDay = $lowestDay = [];
 		for ($i = 1; $i <= $limitTop; $i++) {
 			$highest[$i] = $topRows[$i - 1][0];
-			$highestDay[$i] = nw3_period_date_label($topRows[$i - 1][1], $topRows[$i - 1][2])
+			$highestDay[$i] = nw3_period_date_label($topRows[$i - 1][1], $topRows[$i - 1][2], $type)
 				. (($isAnom && !empty($topRows[$i - 1][3])) ? $hotTag : '');
 		}
 		for ($i = 1; $i <= $limitBot; $i++) {
 			$lowest[$i] = $botRows[$i - 1][0];
-			$lowestDay[$i] = nw3_period_date_label($botRows[$i - 1][1], $botRows[$i - 1][2])
+			$lowestDay[$i] = nw3_period_date_label($botRows[$i - 1][1], $botRows[$i - 1][2], $type)
 				. (($isAnom && !empty($botRows[$i - 1][4])) ? $coldTag : '');
 		}
 		// Window timestamps are noon-based; match the latest window by date.
@@ -172,8 +157,8 @@ function nw3_rankperiods_render(Report $report) {
 		$hiKeys = $loKeys = array();
 		for ($i = 1; $i <= $limitTop; $i++) { $hiKeys[$i] = $perKey($topRows[$i - 1][1]); }
 		for ($i = 1; $i <= $limitBot; $i++) { $loKeys[$i] = $perKey($botRows[$i - 1][1]); }
-		$latestLbl = 'Latest (' . strip_tags(nw3_period_date_label($latestStart, $latestEnd)) . ')';
-		$prevLbl = 'Previous (' . strip_tags(nw3_period_date_label($prevStart, $prevEnd)) . ')';
+		$latestLbl = 'Latest (' . strip_tags(nw3_period_date_label($latestStart, $latestEnd, $type)) . ')';
+		$prevLbl = 'Previous (' . strip_tags(nw3_period_date_label($prevStart, $prevEnd, $type)) . ')';
 		$labels = array('todayLabel' => $latestLbl, 'yestLabel' => $prevLbl);
 		$ctxHi = Report::rankCtx($cur, $hiKeys, $keys, true, $highest, $labels);
 		$ctxLo = Report::rankCtx($cur, $loKeys, $keys, false, $lowest, $labels);
