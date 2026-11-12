@@ -342,6 +342,7 @@ class ClimateCard {
 
 		// Projected 24h mean: flag only if the conservative (margin-adjusted)
 		// projection still beats the record. Status uses the projection itself.
+		$isProjected = false;
 		if (is_array($rule) && ($rule['project'] ?? null) === 'tmean') {
 			$curr = $ctx['currentTemp'] ?? null;
 			$month = $ctx['month'] ?? null;
@@ -354,6 +355,8 @@ class ClimateCard {
 			$conservative = ($dir === 'lo') ? ($proj + $margin) : ($proj - $margin);
 			$compare = $proj;
 			$today = $proj; // so rounding below is on the projection
+			$minsUsed = ($mins !== null) ? (int)$mins : ((int)$hour * 60 + $minute);
+			$isProjected = (1440 - $minsUsed) > 0;
 		} else {
 			$conservative = null;
 		}
@@ -370,10 +373,10 @@ class ClimateCard {
 			}
 			$diff = ($t - $rec['v']) * ($dir === 'hi' ? 1 : -1);
 			if ($diff > 0.00001) {
-				return array('status' => self::RECORD, 'scope' => $scope, 'soFar' => $soFar, 'rec' => $rec, 'value' => $t);
+				return array('status' => self::RECORD, 'scope' => $scope, 'soFar' => $soFar, 'rec' => $rec, 'value' => $t) + ($isProjected ? array('projected' => true) : array());
 			}
 			if (abs($diff) <= 0.00001) {
-				return array('status' => self::TIE, 'scope' => $scope, 'soFar' => $soFar, 'rec' => $rec, 'value' => $t);
+				return array('status' => self::TIE, 'scope' => $scope, 'soFar' => $soFar, 'rec' => $rec, 'value' => $t) + ($isProjected ? array('projected' => true) : array());
 			}
 		}
 		return null;
@@ -525,8 +528,10 @@ class ClimateCard {
 					: (($f['scope'] === 'month') ? $monthLabel . ' record ' . $name : 'Record ' . $name . ' for ' . $dateLabel);
 				$prev = $f['rec'];
 				$shown = $f['value'] ?? $tv;
+				$fig = '<b>' . self::fmt($shown, $unit, true) . '</b>'
+					. (!empty($f['projected']) ? ' (projected)' : '');
 				$text = ($f['status'] === self::TIE ? 'Equals ' . lcfirst($what) : $what)
-					. ($f['soFar'] ? ' so far' : '') . ': <b>' . self::fmt($shown, $unit, true) . '</b> '
+					. ($f['soFar'] ? ' so far' : '') . ': ' . $fig . ' '
 					. ($f['status'] === self::TIE ? '' : 'beats ' . self::fmt($prev['v'], $unit, true) . ' ')
 					. '(' . self::prevWhen($prev, $f['scope']) . ')';
 				$rank = array('all' => 0, 'month' => 1, 'day' => 2);
