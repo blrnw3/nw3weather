@@ -859,7 +859,7 @@ class DataPage extends Page {
 	 * @return string a query string beginning with '&'
 	 */
 	static function buildSlug($key, $val, $defaults = []) {
-		$keys = ["vartype", "year", "month", "summary_type", "start_year_rep", "rankLimit", "spell_dir", "threshold", "period", "no_overlap"];
+		$keys = ["vartype", "year", "month", "summary_type", "start_year_rep", "rankLimit", "spell_dir", "threshold", "period", "no_overlap", "span"];
 		$slug = "";
 		foreach ($keys as $k) {
 			if($k === $key) {
