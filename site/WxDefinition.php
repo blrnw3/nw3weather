@@ -639,7 +639,7 @@ class Wx {
 			'start_year' => 1881,
 		],
 		'tminanom' => [
-			'description' => 'Min Temp Anomaly',
+			'description' => 'Min Temp Anom.',
 			'unit' => Wx::AbsTemp,
 			'colour' => '#5b8def',
 			'start_year' => 1881,
@@ -648,7 +648,7 @@ class Wx {
 			'anom_of' => 'tmin',
 		],
 		'tmaxanom' => [
-			'description' => 'Max Temp Anomaly',
+			'description' => 'Max Temp Anom.',
 			'unit' => Wx::AbsTemp,
 			'colour' => '#e07b2e',
 			'start_year' => 1881,
@@ -657,7 +657,7 @@ class Wx {
 			'anom_of' => 'tmax',
 		],
 		'tmeananom' => [
-			'description' => 'Mean Temp Anomaly',
+			'description' => 'Mean Temp Anom.',
 			'unit' => Wx::AbsTemp,
 			'colour' => '#c4a35a',
 			'start_year' => 1881,
