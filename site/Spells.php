@@ -15,7 +15,7 @@ class Spells {
 	public static $anomVars = ['tmin', 'tmax', 'tmean'];
 
 	/** Anomaly threshold presets (°C above / below the daily normal). */
-	public static $anomPresets = [2, 3, 4, 5, 6, 8];
+	public static $anomPresets = [0, 1, 2, 3, 4, 5, 6, 8];
 	const ANOM_DEFAULT = 5;
 
 	private static $normCache = [];
