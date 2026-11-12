@@ -464,7 +464,9 @@ class Charts {
 			array(
 				'id' => 'temp', 'label' => 'Temp', 'icon' => $img . 'thermom8_small.png',
 				'options' => array(
-					'tmean' => 'Mean', 'tmin' => 'Min', 'tmax' => 'Max', 'trange' => 'Range',
+					'tmean' => 'Mean', 'tmin' => 'Min', 'tmax' => 'Max',
+					'tminanom' => 'Min anomaly', 'tmaxanom' => 'Max anomaly', 'tmeananom' => 'Mean anomaly',
+					'trange' => 'Range',
 					'nightmin' => 'Night min', 'daymax' => 'Day max',
 					'fmean' => 'Feels mean', 'fmin' => 'Feels min', 'fmax' => 'Feels max',
 				),

@@ -111,6 +111,7 @@ class RankFlags {
 		'tc10min' => 'hi', 'tchrmin' => 'hi', 'hchrmin' => 'hi',   // largest falls (positive)
 		'tmin' => 'lo', 'hmin' => 'lo', 'pmin' => 'lo', 'dmin' => 'lo', 'fmin' => 'lo',
 		'nightmin' => 'lo',
+		'tmaxanom' => 'hi', 'tminanom' => 'lo',
 	];
 
 	public static function monotoneDir($var) {
@@ -210,7 +211,8 @@ class RankFlags {
 				}
 				sort($ranked);
 				$common['since'] = self::firstYear($ranked, $start);
-				$hasToday = !in_array($var, self::$manualVars, true) && empty($meta['derived'])
+				$hasToday = !in_array($var, self::$manualVars, true)
+					&& (empty($meta['derived']) || !empty($meta['anom_of']))
 					&& !in_array($var, self::$noToday, true);
 				$cur = Report::currentRanks($ranked, ['today' => $hasToday ? $todayKey : null, 'yest' => $yestKey], $dayKey);
 				$dayUrl = self::url('RankDay.php', ['vartype' => $var, 'month' => 0, 'start_year_rep' => $start, 'rankLimit' => 25]);

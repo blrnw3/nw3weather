@@ -26,7 +26,7 @@ function dm_fmt($report, $val, $st) {
 		return (string)nw3_round($val, 1);
 	}
 	$unit = $report->summaryDisplayUnit($st);
-	$out = Wx::conv($val, $unit, false);
+	$out = Wx::conv($val, $unit, false, !empty($report->meta['signed']));
 	if ($unit === Wx::Pm25 && in_array($st, [Data::SUMMARY_MEAN, Data::SUMMARY_MIN, Data::SUMMARY_MAX], true)) {
 		$out = Wx::aqSpan($val, $out, Wx::aqAvg($report->type));
 	}

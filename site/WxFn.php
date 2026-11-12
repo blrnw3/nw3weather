@@ -400,7 +400,7 @@ class DataSummarizer {
 	 */
 	public static function detailGroupVars() {
 		return array(
-			'temp' => array('tmin', 'tmax', 'tmean', 'nightmin', 'daymax'),
+			'temp' => array('tmin', 'tmax', 'tmean', 'tminanom', 'tmaxanom', 'tmeananom', 'nightmin', 'daymax'),
 			'baro' => array('pmin', 'pmax', 'pmean'),
 			'wind' => array('gust', 'wmax', 'wmean', 'w10max'),
 			'rain' => array('10max', 'hrmax', 'rain', 'wethr'),
@@ -1320,10 +1320,16 @@ class Data {
 		return self::$CACHE_DAT[$name];
 	}
 	public static function getYearlyData($name, $year) {
-		return self::getAllData($name)[$year];
+		if (!empty(Wx::$daily[$name]['derived'])) {
+			$all = self::varToDatArray($name, $year);
+			return isset($all[$year]) ? $all[$year] : array();
+		}
+		$all = self::getAllData($name);
+		return isset($all[$year]) ? $all[$year] : array();
 	}
 	public static function getMonthlyData($name, $year, $month) {
-		return self::getYearlyData($name, $year)[$month];
+		$yr = self::getYearlyData($name, $year);
+		return isset($yr[$month]) ? $yr[$month] : array();
 	}
 	public static function get($name, $year, $month, $day) {
 		// Derived series (sunhrp, wethrp, ranges, ratemean) have no serialised file,
@@ -1340,8 +1346,36 @@ class Data {
 		return isset($all[$year][$month][$day]) ? $all[$year][$month][$day] : null;
 	}
 
+	/** Source variable for a daily temperature-anomaly series, or null. */
+	public static function anomSource($name) {
+		$meta = isset(Wx::$daily[$name]) ? Wx::$daily[$name] : array();
+		return (!empty($meta['anom_of'])) ? $meta['anom_of'] : null;
+	}
+
+	/** Observed minus the 1991-2020 daily normal, or null when either is missing. */
+	private static function dayAnomalyValue($src, $obs, $year, $month, $day) {
+		if (!nw3_is_numeric($obs)) {
+			return null;
+		}
+		LTA::init();
+		$norm = LTA::getDailyAnom($src, (int)$month, (int)$day, (int)$year);
+		if (!nw3_is_numeric($norm)) {
+			return null;
+		}
+		return (float)$obs - (float)$norm;
+	}
+
+	/** Observed minus the 1991-2020 daily normal, or null when either is missing. */
+	private static function dayAnomaly($src, $year, $month, $day) {
+		return self::dayAnomalyValue($src, self::getStoredDay($src, $year, $month, $day), $year, $month, $day);
+	}
+
 	/** One day of a derived series, computed from its source variables. */
 	private static function getDerivedDay($name, $year, $month, $day) {
+		$anomSrc = self::anomSource($name);
+		if ($anomSrc !== null) {
+			return self::dayAnomaly($anomSrc, $year, $month, $day);
+		}
 		if ($name === 'sunhrp' || $name === 'wethrp') {
 			$src = ($name === 'sunhrp') ? 'sunhr' : 'wethr';
 			return self::percentOfMaxDay(
@@ -1375,6 +1409,20 @@ class Data {
 	}
 
 	public static function datDerived($varName, $include_historic) {
+		$anomSrc = self::anomSource($varName);
+		if ($anomSrc !== null) {
+			LTA::init();
+			$source = self::varToDatArray($anomSrc, $include_historic);
+			$res = [];
+			foreach ($source as $year => $months) {
+				foreach ($months as $month => $days) {
+					foreach ($days as $day => $v) {
+						$res[$year][$month][$day] = self::dayAnomalyValue($anomSrc, $v, $year, $month, $day);
+					}
+				}
+			}
+			return $res;
+		}
 		// Percent-of-climate / percent-of-day series (legacy Anomalies group).
 		if ($varName === 'sunhrp' || $varName === 'wethrp') {
 			return self::datAnomPercent($varName, $include_historic);

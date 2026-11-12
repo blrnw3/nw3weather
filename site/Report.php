@@ -65,6 +65,7 @@ class Report {
 	 */
 	private static $valcolMap = [
 		'tmin' => 0, 'tmax' => 0, 'tmean' => 0,
+		'tminanom' => 15, 'tmaxanom' => 15, 'tmeananom' => 15,
 		'hmin' => 1, 'hmax' => 1, 'hmean' => 1,
 		'pmin' => 2, 'pmax' => 2, 'pmean' => 2,
 		'wmean' => 3, 'wmax' => 3, 'gust' => 3, 'wdir' => 4,
@@ -92,7 +93,7 @@ class Report {
 
 	/** Variable grouping for the colgroup drop-down (legacy $categories). */
 	public static $categories = [
-		'Temperature' => ['tmin', 'tmax', 'tmean'],
+		'Temperature' => ['tmin', 'tmax', 'tmean', 'tminanom', 'tmaxanom', 'tmeananom'],
 		'Rainfall' => ['rain', 'hrmax', '10max', 'ratemax'],
 		'Wind' => ['wmean', 'wmax', 'gust', 'wdir'],
 		'Humidity' => ['hmin', 'hmax', 'hmean'],
@@ -1263,13 +1264,24 @@ class Report {
 		return $ctx;
 	}
 
+	/** True when this variable is a signed difference (temperature anomaly). */
+	public function isSigned() {
+		return !empty($this->meta['signed']);
+	}
+
+	/** Format a value, showing a sign for anomaly series. */
+	public function convVal($v, $showUnit = true, $unit = null) {
+		$u = ($unit !== null) ? $unit : $this->unit;
+		return Wx::conv($v, $u, $showUnit, $this->isSigned());
+	}
+
 	/** Formatted value as shown in rank tables (public wrapper). */
 	public function rankValueText($v, $isCount = false, $unit = null) {
 		if ($isCount) { return (int)$v . ' day' . ((int)$v === 1 ? '' : 's'); }
 		if ($this->valcolIdxOverride === 15) { return Spells::anomText($v); }
 		$u = ($unit !== null) ? $unit : $this->unit;
 		if ($u === Wx::Pm25) { return $this->rankVal($v, $isCount, $unit); }
-		return Wx::conv($v, $u, true);
+		return $this->convVal($v, true, $u);
 	}
 
 	/**
@@ -1352,7 +1364,7 @@ class Report {
 		if ($this->valcolIdxOverride === 15) { return Spells::anomText($v); }
 		$u = ($unit !== null) ? $unit : $this->unit;
 		if ($u === Wx::Pm25) { return Wx::aqSpan($v, Wx::conv($v, $u, false), Wx::aqAvg($this->type)); }
-		return Wx::conv($v, $u, false);
+		return $this->convVal($v, false, $u);
 	}
 
 	private function rankClass($v, $isCount, $sumOff, $unit = null) {
