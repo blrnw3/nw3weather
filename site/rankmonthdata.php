@@ -38,6 +38,7 @@ echo '<div id="rm-fragment"'
 	. ' data-thresholds="' . htmlspecialchars(implode(',', $thresholds)) . '"'
 	. ' data-threshold-labels="' . htmlspecialchars(implode('|', $thLabels)) . '"'
 	. ' data-title="' . htmlspecialchars($meta['title']) . '"'
+	. ' data-span="' . htmlspecialchars(isset($meta['span']) ? $meta['span'] : 'full') . '"'
 	. '>';
 echo $html;
 echo '</div>';

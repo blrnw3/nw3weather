@@ -400,7 +400,7 @@ class DataSummarizer {
 	 */
 	public static function detailGroupVars() {
 		return array(
-			'temp' => array('tmin', 'tmax', 'tmean', 'nightmin', 'daymax'),
+			'temp' => array('tmin', 'tmax', 'tmean', 'tminanom', 'tmaxanom', 'tmeananom', 'nightmin', 'daymax'),
 			'baro' => array('pmin', 'pmax', 'pmean'),
 			'wind' => array('gust', 'wmax', 'wmean', 'w10max'),
 			'rain' => array('10max', 'hrmax', 'rain', 'wethr'),
@@ -1320,10 +1320,16 @@ class Data {
 		return self::$CACHE_DAT[$name];
 	}
 	public static function getYearlyData($name, $year) {
-		return self::getAllData($name)[$year];
+		if (!empty(Wx::$daily[$name]['derived'])) {
+			$all = self::varToDatArray($name, $year);
+			return isset($all[$year]) ? $all[$year] : array();
+		}
+		$all = self::getAllData($name);
+		return isset($all[$year]) ? $all[$year] : array();
 	}
 	public static function getMonthlyData($name, $year, $month) {
-		return self::getYearlyData($name, $year)[$month];
+		$yr = self::getYearlyData($name, $year);
+		return isset($yr[$month]) ? $yr[$month] : array();
 	}
 	public static function get($name, $year, $month, $day) {
 		// Derived series (sunhrp, wethrp, ranges, ratemean) have no serialised file,
@@ -1340,8 +1346,36 @@ class Data {
 		return isset($all[$year][$month][$day]) ? $all[$year][$month][$day] : null;
 	}
 
+	/** Source variable for a daily temperature-anomaly series, or null. */
+	public static function anomSource($name) {
+		$meta = isset(Wx::$daily[$name]) ? Wx::$daily[$name] : array();
+		return (!empty($meta['anom_of'])) ? $meta['anom_of'] : null;
+	}
+
+	/** Observed minus the 1991-2020 daily normal, or null when either is missing. */
+	private static function dayAnomalyValue($src, $obs, $year, $month, $day) {
+		if (!nw3_is_numeric($obs)) {
+			return null;
+		}
+		LTA::init();
+		$norm = LTA::getDailyAnom($src, (int)$month, (int)$day, (int)$year);
+		if (!nw3_is_numeric($norm)) {
+			return null;
+		}
+		return (float)$obs - (float)$norm;
+	}
+
+	/** Observed minus the 1991-2020 daily normal, or null when either is missing. */
+	private static function dayAnomaly($src, $year, $month, $day) {
+		return self::dayAnomalyValue($src, self::getStoredDay($src, $year, $month, $day), $year, $month, $day);
+	}
+
 	/** One day of a derived series, computed from its source variables. */
 	private static function getDerivedDay($name, $year, $month, $day) {
+		$anomSrc = self::anomSource($name);
+		if ($anomSrc !== null) {
+			return self::dayAnomaly($anomSrc, $year, $month, $day);
+		}
 		if ($name === 'sunhrp' || $name === 'wethrp') {
 			$src = ($name === 'sunhrp') ? 'sunhr' : 'wethr';
 			return self::percentOfMaxDay(
@@ -1375,6 +1409,20 @@ class Data {
 	}
 
 	public static function datDerived($varName, $include_historic) {
+		$anomSrc = self::anomSource($varName);
+		if ($anomSrc !== null) {
+			LTA::init();
+			$source = self::varToDatArray($anomSrc, $include_historic);
+			$res = [];
+			foreach ($source as $year => $months) {
+				foreach ($months as $month => $days) {
+					foreach ($days as $day => $v) {
+						$res[$year][$month][$day] = self::dayAnomalyValue($anomSrc, $v, $year, $month, $day);
+					}
+				}
+			}
+			return $res;
+		}
 		// Percent-of-climate / percent-of-day series (legacy Anomalies group).
 		if ($varName === 'sunhrp' || $varName === 'wethrp') {
 			return self::datAnomPercent($varName, $include_historic);
@@ -1577,6 +1625,93 @@ class Data {
 		return $summary;
 	}
 
+	/** Calendar end used for MTD/YTD spans: today's month and day (site-local). */
+	public static function spanEndMd() {
+		return [(int)Date::$dmonth, (int)Date::$dday];
+	}
+
+	/**
+	 * Last valid day of $month in $year that does not exceed $day.
+	 * 29 Feb in a non-leap year (and 31-day ends in 30-day months) clamp down.
+	 */
+	public static function clampDay($year, $month, $day) {
+		$dim = (int)Date::get_days_in_month((int)$month, (int)$year);
+		if ($dim < 1) { $dim = 31; }
+		$day = (int)$day;
+		if ($day < 1) { $day = 1; }
+		return ($day > $dim) ? $dim : $day;
+	}
+
+	/** True if the calendar date is after today (site-local). */
+	public static function dateIsFuture($year, $month, $day) {
+		$day = self::clampDay($year, $month, $day);
+		$ts = Date::mkdate((int)$month, $day, (int)$year);
+		$today = Date::mkdate((int)Date::$dmonth, (int)Date::$dday, (int)Date::$dyear);
+		return ($ts !== false && $today !== false && $ts > $today);
+	}
+
+	/**
+	 * Short label for an MTD/YTD span, e.g. "1–12 Nov" or "1 Jan–12 Nov".
+	 * When $year is set, the end day is clamped for that year/month.
+	 */
+	public static function spanRangeText($span, $endMonth = null, $endDay = null, $year = null) {
+		if ($endMonth === null || $endDay === null) {
+			list($endMonth, $endDay) = self::spanEndMd();
+		}
+		$endMonth = (int)$endMonth;
+		$endDay = (int)$endDay;
+		if ($year !== null) {
+			$endDay = self::clampDay($year, $endMonth, $endDay);
+		}
+		$mon = Date::$months3[$endMonth - 1];
+		if ($span === 'mtd') {
+			return '1–' . $endDay . ' ' . $mon;
+		}
+		if ($span === 'ytd') {
+			return '1 Jan–' . $endDay . ' ' . $mon;
+		}
+		return '';
+	}
+
+	/**
+	 * Slice a year's [month][day] values to an MTD or YTD window.
+	 * MTD: each month keeps days 1..clamp(endDay).
+	 * YTD: January through $endMonth, with $endMonth itself cut at clamp(endDay).
+	 * @return array [month][day]
+	 */
+	public static function sliceYearDays($months, $span, $year, $endMonth, $endDay) {
+		if (!is_array($months)) { return []; }
+		if ($span !== 'mtd' && $span !== 'ytd') { return $months; }
+		$out = [];
+		$endMonth = (int)$endMonth;
+		$endDay = (int)$endDay;
+		if ($span === 'mtd') {
+			foreach ($months as $m => $days) {
+				if (!is_array($days)) { continue; }
+				$m = (int)$m;
+				$last = self::clampDay($year, $m, $endDay);
+				$kept = [];
+				foreach ($days as $d => $v) {
+					if ((int)$d >= 1 && (int)$d <= $last) { $kept[$d] = $v; }
+				}
+				$out[$m] = $kept;
+			}
+			return $out;
+		}
+		$last = self::clampDay($year, $endMonth, $endDay);
+		foreach ($months as $m => $days) {
+			$m = (int)$m;
+			if ($m < 1 || $m > $endMonth || !is_array($days)) { continue; }
+			$cut = ($m < $endMonth) ? self::clampDay($year, $m, 31) : $last;
+			$kept = [];
+			foreach ($days as $d => $v) {
+				if ((int)$d >= 1 && (int)$d <= $cut) { $kept[$d] = $v; }
+			}
+			$out[$m] = $kept;
+		}
+		return $out;
+	}
+
 
 	// GLOBAL DATA ACCESS FUNCTIONS
 	/**
@@ -1651,11 +1786,15 @@ class Data {
 	 * @param float|null $threshold for COUNT_ABOVE / COUNT_BELOW
 	 * @return array
 	 */
-	public static function getMonthlySummary($var, $summary_type, $start_year, $end_year, $threshold = null) {
+	public static function getMonthlySummary($var, $summary_type, $start_year, $end_year, $threshold = null, $span = 'full') {
 		$data = [];
+		list($endMonth, $endDay) = self::spanEndMd();
 		foreach (self::varToDatArray($var, $start_year) as $year => $months) {
 			if($year >= $start_year && $year <= $end_year) {
-				$data[$year] = self::summarize2D($months, $summary_type, $threshold, $var);
+				$use = ($span === 'mtd' || $span === 'ytd')
+					? self::sliceYearDays($months, $span, $year, $endMonth, $endDay)
+					: $months;
+				$data[$year] = self::summarize2D($use, $summary_type, $threshold, $var);
 			}
 		}
 		return $data;
@@ -1670,11 +1809,21 @@ class Data {
 	 * @param float|null $threshold for COUNT_ABOVE / COUNT_BELOW
 	 * @return array
 	 */
-	public static function getAnnualData($var, $summary_type, $start_year, $end_year, $threshold = null) {
+	public static function getAnnualData($var, $summary_type, $start_year, $end_year, $threshold = null, $span = 'full') {
 		$data = [];
+		list($endMonth, $endDay) = self::spanEndMd();
 		foreach (self::varToDatArray($var, $start_year) as $year => $months) {
 			if($year >= $start_year && $year <= $end_year) {
-				$data[$year] = self::summarize(self::MDtoZ($months), $summary_type, $threshold, $var);
+				if ($span === 'mtd') {
+					$use = self::sliceYearDays($months, 'mtd', $year, $endMonth, $endDay);
+					$days = isset($use[$endMonth]) ? $use[$endMonth] : [];
+					$data[$year] = self::summarize($days, $summary_type, $threshold, $var);
+				} elseif ($span === 'ytd') {
+					$use = self::sliceYearDays($months, 'ytd', $year, $endMonth, $endDay);
+					$data[$year] = self::summarize(self::MDtoZ($use), $summary_type, $threshold, $var);
+				} else {
+					$data[$year] = self::summarize(self::MDtoZ($months), $summary_type, $threshold, $var);
+				}
 			}
 		}
 		return $data;

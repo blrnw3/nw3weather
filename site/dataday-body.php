@@ -87,7 +87,7 @@ function nw3_dataday_payload(Report $report) {
 				$cumcnts[$m]++;
 				$num = $report->valcolConvert ? Wx::convNum($val, $unit) : (float)$val;
 				$cells[] = array(
-					't' => Wx::conv($val, $unit, false),
+					't' => Wx::conv($val, $unit, false, !empty($report->meta['signed']) ? true : false),
 					'pm' => ($unit === Wx::Pm25) ? $val : null, 'avg' => Wx::aqAvg($report->type),
 					'c' => $report->valcolr($num),
 				);
@@ -120,7 +120,7 @@ function nw3_dataday_payload(Report $report) {
 				}
 				$num = $report->valcolConvert ? Wx::convNum($put, $unit) : (float)$put;
 				$cell = array(
-					't' => Wx::conv($put, $unit, false),
+					't' => Wx::conv($put, $unit, false, !empty($report->meta['signed']) ? true : false),
 					'pm' => ($unit === Wx::Pm25) ? $put : null, 'avg' => Wx::aqAvg($report->type),
 					'c' => $report->valcolr($num / $sumfix),
 				);
@@ -171,7 +171,7 @@ function nw3_dataday_payload(Report $report) {
 			}
 			$num = $report->valcolConvert ? Wx::convNum($put, $unit) : (float)$put;
 			$cell = array(
-				't' => Wx::conv($put, $unit, false),
+				't' => Wx::conv($put, $unit, false, !empty($report->meta['signed']) ? true : false),
 					'pm' => ($unit === Wx::Pm25) ? $put : null, 'avg' => Wx::aqAvg($report->type),
 				'c' => $report->valcolr($num / $sumfix),
 			);

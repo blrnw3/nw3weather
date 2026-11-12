@@ -638,6 +638,33 @@ class Wx {
 			'anomaly' => true,
 			'start_year' => 1881,
 		],
+		'tminanom' => [
+			'description' => 'Min Temp Anom',
+			'unit' => Wx::AbsTemp,
+			'colour' => '#5b8def',
+			'start_year' => 1881,
+			'derived' => true,
+			'signed' => true,
+			'anom_of' => 'tmin',
+		],
+		'tmaxanom' => [
+			'description' => 'Max Temp Anom',
+			'unit' => Wx::AbsTemp,
+			'colour' => '#e07b2e',
+			'start_year' => 1881,
+			'derived' => true,
+			'signed' => true,
+			'anom_of' => 'tmax',
+		],
+		'tmeananom' => [
+			'description' => 'Mean Temp Anom',
+			'unit' => Wx::AbsTemp,
+			'colour' => '#c4a35a',
+			'start_year' => 1881,
+			'derived' => true,
+			'signed' => true,
+			'anom_of' => 'tmean',
+		],
 		'hmin' => [
 			'description' => 'Minimum Humidity',
 			'unit' => Wx::Humidity,
@@ -1045,6 +1072,9 @@ class Wx {
 			'tmin' => 'Lowest air temperature recorded during the day (midnight to midnight, local time).',
 			'tmax' => 'Highest air temperature recorded during the day (midnight to midnight, local time).',
 			'tmean' => 'Mean air temperature for the day (midnight to midnight, local time), averaged from the logged readings.',
+			'tminanom' => 'Difference between the day\'s minimum temperature and the 1991-2020 normal minimum for that date.',
+			'tmaxanom' => 'Difference between the day\'s maximum temperature and the 1991-2020 normal maximum for that date.',
+			'tmeananom' => 'Difference between the day\'s mean temperature and the 1991-2020 normal mean for that date (the mid-point of the normal min and max).',
 			'hmin' => 'Lowest relative humidity recorded during the day (midnight to midnight, local time).',
 			'hmax' => 'Highest relative humidity recorded during the day (midnight to midnight, local time).',
 			'hmean' => 'Mean relative humidity for the day (midnight to midnight, local time).',
@@ -1330,6 +1360,70 @@ class LTA {
 		}
 		$key = (isset(Wx::$daily[$type]["summable"]) && Wx::$daily[$type]["summable"]) ? "season_sum" : "season_mean";
 		return isset(self::$vars[$type][$key][$season]) ? self::$vars[$type][$key][$season] : null;
+	}
+
+	/**
+	 * Climate normal for an inclusive calendar span in $year.
+	 * Summable variables: sum of daily normals. Others: mean of daily normals.
+	 * Falls back to prorated monthly normals when no daily series exists.
+	 * @return float|null
+	 */
+	public static function getSpanAnom($type, $startMonth, $startDay, $endMonth, $endDay, $year) {
+		$startMonth = (int)$startMonth;
+		$startDay = (int)$startDay;
+		$endMonth = (int)$endMonth;
+		$endDay = Data::clampDay($year, $endMonth, $endDay);
+		if ($startMonth < 1 || $endMonth < 1 || $startMonth > 12 || $endMonth > 12) { return null; }
+		if ($startMonth > $endMonth || ($startMonth === $endMonth && $startDay > $endDay)) { return null; }
+
+		$summable = isset(Wx::$daily[$type]['summable']) && Wx::$daily[$type]['summable'];
+		$probe = self::getDailyAnom($type, $startMonth, $startDay, $year);
+		if (nw3_is_numeric($probe)) {
+			$sum = 0.0;
+			$n = 0;
+			$m = $startMonth;
+			$d = $startDay;
+			while (true) {
+				$norm = self::getDailyAnom($type, $m, $d, $year);
+				if (nw3_is_numeric($norm)) {
+					$sum += (float)$norm;
+					$n++;
+				}
+				if ($m === $endMonth && $d === $endDay) { break; }
+				$d++;
+				$dim = (int)Date::get_days_in_month($m, $year);
+				if ($d > $dim) { $d = 1; $m++; }
+				if ($m > $endMonth) { break; }
+			}
+			if ($n <= 0) { return null; }
+			return $summable ? $sum : ($sum / $n);
+		}
+
+		// Monthly fallback: full months plus a day-prorated partial end month.
+		$sum = 0.0;
+		$nMonths = 0.0;
+		for ($m = $startMonth; $m <= $endMonth; $m++) {
+			$norm = self::getMonthlyAnom($type, $m);
+			if ($norm === null || !nw3_is_numeric($norm)) { return null; }
+			$dim = (int)Date::get_days_in_month($m, $year);
+			if ($m === $startMonth && $m === $endMonth) {
+				$frac = ($endDay - $startDay + 1) / max(1, $dim);
+			} elseif ($m === $startMonth) {
+				$frac = ($dim - $startDay + 1) / max(1, $dim);
+			} elseif ($m === $endMonth) {
+				$frac = $endDay / max(1, $dim);
+			} else {
+				$frac = 1.0;
+			}
+			if ($summable) {
+				$sum += (float)$norm * $frac;
+			} else {
+				$sum += (float)$norm * $frac;
+				$nMonths += $frac;
+			}
+		}
+		if ($summable) { return $sum; }
+		return ($nMonths > 0) ? ($sum / $nMonths) : null;
 	}
 
 	/**
