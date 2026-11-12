@@ -49,11 +49,19 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 	$sumOff = ($st === Data::SUMMARY_SUM) ? $report->valcolSumOffset() : 1;
 	$yrYest = (int)Date::$yr_yest;
 	$monYest = (int)Date::$mon_yest;
+	$span = $report->span;
+	list($endM, $endD) = Data::spanEndMd();
+	$cy = (int)Date::$dyear;
+	$cm = (int)Date::$dmonth;
+	$cd = (int)Date::$dday;
 	// Never show years before this variable has data, even if an earlier Start year is selected.
 	$fromYr = max((int)$startYr, (int)$report->startYear);
+	$lastYr = ($span === 'full') ? $yrYest : max($yrYest, $cy);
 
 	echo '<div class="dm-scroll"><div class="dm-grid">';
-	echo '<div class="dm-caption">' . htmlspecialchars($heading . ' ' . $report->description) . '</div>';
+	$captionExtra = $report->spanTitleBit();
+	$caption = $heading . ' ' . $report->description . ($captionExtra !== '' ? ' · ' . $captionExtra : '');
+	echo '<div class="dm-caption">' . htmlspecialchars($caption) . '</div>';
 
 	echo '<div class="dm-row dm-head">';
 	dm_lab('');
@@ -64,22 +72,51 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 	$extreme = [];   // [year][month] and [month][year]
 	$yrAgg = [];     // [year] => annual aggregate
 
-	for ($y = $yrYest; $y >= $fromYr; $y--) {
+	for ($y = $lastYr; $y >= $fromYr; $y--) {
 		echo '<div class="dm-row">';
 		$yrLabel = $y . ($y < Site::BASE_YEAR ? '*' : '');
 		echo '<div class="dm-year"><a href="/wxdataday.php?vartype='
 			. htmlspecialchars($report->type) . '&year=' . $y
 			. '" title="View full data for year">' . $yrLabel . '</a></div>';
 
+		$yearDays = isset($DAT[$y]) && is_array($DAT[$y]) ? $DAT[$y] : [];
 		for ($m = 1; $m <= 12; $m++) {
-			$isFuture = ($y === $yrYest && $m > $monYest);
+			if ($span === 'ytd') {
+				$isFuture = ($m > $endM) || Data::dateIsFuture($y, $m, 1);
+			} elseif ($span === 'mtd') {
+				$isFuture = Data::dateIsFuture($y, $m, 1);
+			} else {
+				$isFuture = ($y === $yrYest && $m > $monYest);
+			}
 			if ($isFuture) {
 				dm_cell('', 'dm-future');
 				continue;
 			}
 
-			$days = isset($DAT[$y][$m]) && is_array($DAT[$y][$m]) ? $DAT[$y][$m] : [];
 			$anom = ''; $value = '-'; $class = 'reportday';
+			$anomStartM = $m; $anomStartD = 1; $anomEndM = $m; $anomEndD = 0;
+			if ($span === 'mtd') {
+				$last = Data::clampDay($y, $m, $endD);
+				$src = isset($yearDays[$m]) && is_array($yearDays[$m]) ? $yearDays[$m] : [];
+				$days = [];
+				foreach ($src as $d => $v) {
+					if ((int)$d >= 1 && (int)$d <= $last) { $days[$d] = $v; }
+				}
+				$anomEndD = $last;
+			} elseif ($span === 'ytd') {
+				$anomStartM = 1; $anomStartD = 1;
+				if ($m < $endM) {
+					$anomEndM = $m;
+					$anomEndD = (int)Date::get_days_in_month($m, $y);
+				} else {
+					$anomEndM = $m;
+					$anomEndD = Data::clampDay($y, $m, $endD);
+				}
+				$sliced = Data::sliceYearDays($yearDays, 'ytd', $y, $anomEndM, $anomEndD);
+				$days = Data::MDtoZ($sliced);
+			} else {
+				$days = isset($yearDays[$m]) && is_array($yearDays[$m]) ? $yearDays[$m] : [];
+			}
 			$val = Data::summarize($days, $st, $threshold, $report->type);
 
 			if ($val !== null && !Util::isBlank($val)) {
@@ -90,7 +127,13 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 				$class = $isCount
 					? Report::dayCountClass($val)
 					: $report->valcolr(($num === null ? 0 : $num) / $sumOff);
-				$anom = $isAnom ? $report->anomCell($report->anomMonth($val, $m)) : '';
+				if ($isAnom) {
+					if ($span === 'full') {
+						$anom = $report->anomCell($report->anomMonth($val, $m));
+					} else {
+						$anom = $report->anomCell($report->anomSpan($val, $anomStartM, $anomStartD, $anomEndM, $anomEndD, $y));
+					}
+				}
 			} elseif (Util::mycount($days) === 0) {
 				$value = '-';
 			} else {
@@ -103,29 +146,50 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 		}
 
 		// Annual summary cell
-		$months = isset($extreme[$y]) ? $extreme[$y] : [];
-		if (count($months) === 0) {
-			dm_cell('-', 'reportday', 'dm-yr');
-		} else {
-			if (Data::isThresholdSummary($st)) {
-				$yrVal = nw3_array_sum($months);
-			} elseif ($st === Data::SUMMARY_COUNT) {
-				$yrVal = Util::mean($months); // legacy: mean days/month
-			} elseif ($st === Data::SUMMARY_SUM) {
-				$yrVal = nw3_array_sum($months);
-			} elseif ($st === Data::SUMMARY_RANGE) {
-				$yrVal = Util::mean($months);
+		if ($span === 'ytd') {
+			if (Data::dateIsFuture($y, 1, 1)) {
+				$yrVal = null;
 			} else {
-				$yrVal = Data::summarize($months, $st);
+				$sliced = Data::sliceYearDays($yearDays, 'ytd', $y, $endM, $endD);
+				$yrVal = Data::summarize(Data::MDtoZ($sliced), $st, $threshold, $report->type);
 			}
-			$yrAgg[$y] = $yrVal;
-			$anom = $isAnom ? $report->anomCell($report->anomYear($yrVal)) : '';
-			$valyr = dm_fmt($report, $yrVal, $st);
-			$cntM = ($st === Data::SUMMARY_SUM) ? max(1, count($months)) : 1;
-			$class = $isCount
-				? Report::dayCountClass($yrVal)
-				: $report->valcolr($yrVal / $sumOff / $cntM);
-			dm_cell($valyr . $anom, $class, 'dm-yr');
+			$monthsForOff = isset($extreme[$y]) ? $extreme[$y] : [];
+			if ($yrVal === null || Util::isBlank($yrVal)) {
+				dm_cell('-', 'reportday', 'dm-yr');
+			} else {
+				$yrAgg[$y] = $yrVal;
+				$anom = $isAnom ? $report->anomCell($report->anomSpan($yrVal, 1, 1, $endM, $endD, $y)) : '';
+				$valyr = dm_fmt($report, $yrVal, $st);
+				$class = $isCount
+					? Report::dayCountClass($yrVal)
+					: $report->valcolr($yrVal / $sumOff / (($st === Data::SUMMARY_SUM) ? max(1, $endM) : 1));
+				dm_cell($valyr . $anom, $class, 'dm-yr');
+			}
+		} else {
+			$months = isset($extreme[$y]) ? $extreme[$y] : [];
+			if (count($months) === 0) {
+				dm_cell('-', 'reportday', 'dm-yr');
+			} else {
+				if (Data::isThresholdSummary($st)) {
+					$yrVal = nw3_array_sum($months);
+				} elseif ($st === Data::SUMMARY_COUNT) {
+					$yrVal = Util::mean($months); // legacy: mean days/month
+				} elseif ($st === Data::SUMMARY_SUM) {
+					$yrVal = nw3_array_sum($months);
+				} elseif ($st === Data::SUMMARY_RANGE) {
+					$yrVal = Util::mean($months);
+				} else {
+					$yrVal = Data::summarize($months, $st);
+				}
+				$yrAgg[$y] = $yrVal;
+				$anom = $isAnom ? $report->anomCell($report->anomYear($yrVal)) : '';
+				$valyr = dm_fmt($report, $yrVal, $st);
+				$cntM = ($st === Data::SUMMARY_SUM) ? max(1, count($months)) : 1;
+				$class = $isCount
+					? Report::dayCountClass($yrVal)
+					: $report->valcolr($yrVal / $sumOff / $cntM);
+				dm_cell($valyr . $anom, $class, 'dm-yr');
+			}
 		}
 		echo '</div>';
 	}
@@ -147,7 +211,17 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 			if (count($col) === 0) { dm_cell('-', 'reportday', 'dm-sum-cell'); continue; }
 			$v = Report::aggregate($col, $mm);
 			$value = dm_fmt($report, $v, $st);
-			$anom = $isAnom ? $report->anomCell($report->anomMonth($v, $m)) : '';
+			if (!$isAnom) {
+				$anom = '';
+			} elseif ($span === 'mtd') {
+				$anom = $report->anomCell($report->anomSpan($v, $m, 1, $m, Data::clampDay(2001, $m, $endD), 2001));
+			} elseif ($span === 'ytd') {
+				$em = ($m < $endM) ? $m : $m;
+				$ed = ($m < $endM) ? (int)Date::get_days_in_month($m, 2001) : Data::clampDay(2001, $m, $endD);
+				$anom = $report->anomCell($report->anomSpan($v, 1, 1, $em, $ed, 2001));
+			} else {
+				$anom = $report->anomCell($report->anomMonth($v, $m));
+			}
 			$class = $isCount
 				? Report::dayCountClass($v)
 				: $report->valcolr($v / $sumOff);
@@ -157,7 +231,13 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 		else {
 			$yv = Report::aggregate($yrAgg, $mm);
 			$valall = dm_fmt($report, $yv, $st);
-			$anom = $isAnom ? $report->anomCell($report->anomYear($yv)) : '';
+			if (!$isAnom) {
+				$anom = '';
+			} elseif ($span === 'ytd') {
+				$anom = $report->anomCell($report->anomSpan($yv, 1, 1, $endM, $endD, 2001));
+			} else {
+				$anom = $report->anomCell($report->anomYear($yv));
+			}
 			$class = $isCount
 				? Report::dayCountClass($yv)
 				: $report->valcolr($yv / $sumOff);
@@ -190,6 +270,7 @@ function nw3_datamonth_render(Report $report) {
 			'thresholdLabels' => $report->thresholdLabels(),
 			'description' => $report->description,
 			'title' => $report->summaryTitleSuffix(),
+			'span' => $report->span,
 		);
 	}
 
@@ -233,9 +314,12 @@ function nw3_datamonth_render(Report $report) {
 	}
 
 	if ($report->isAnom) {
+		$adj = ($report->span === 'full')
+			? "(the anomaly for the current month is unadjusted for the month's degree of completeness)."
+			: '(anomalies are against the 1991-2020 normal for the same date span).';
 		echo '<p>Figures in brackets refer to departure from <strong>recent</strong> '
 			. '<a href="/wxaverages.php" title="Long-term NW3 climate averages">average conditions</a> '
-			. "(the anomaly for the current month is unadjusted for the month's degree of completeness).</p>";
+			. $adj . '</p>';
 	}
 
 	$report->historicalInfo($fromYr);
@@ -253,5 +337,6 @@ function nw3_datamonth_render(Report $report) {
 		'thresholdLabels' => $report->thresholdLabels(),
 		'description' => $report->description,
 		'title' => $report->summaryTitleSuffix(),
+		'span' => $report->span,
 	);
 }

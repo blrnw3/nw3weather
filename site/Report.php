@@ -27,6 +27,7 @@ class Report {
 	public $dayAgg;             // '' | 'min' | 'max' | 'mean' (calendar-day all-years)
 	public $periodLength;       // N-day period length for RankPeriods
 	public $periodNoOverlap;    // true = skip overlapping windows in period rankings
+	public $span;               // 'full' | 'mtd' | 'ytd' for monthly tables and month/year rankings
 	public $periodAnom = false; // Ranked Periods offers the anomaly summary (temperature)
 	public $valcolIdxOverride = null; // colour scheme override (e.g. anomaly tables)
 
@@ -53,6 +54,7 @@ class Report {
 	// ---- Option lists ----
 	public static $ranknumOptions = [10, 25, 50, 100, 250];
 	public static $periodLengthOptions = [3, 5, 7, 14, 30, 90, 365];
+	public static $spanOptions = ['full', 'mtd', 'ytd'];
 	public $startYearOptions;
 	public $availSummaryTypes;
 
@@ -147,6 +149,9 @@ class Report {
 				$bits[] = 'threshold=' . $this->spellThreshold;
 			}
 		}
+		if ($kind === 'month' || $kind === 'year' || $kind === 'datamonth') {
+			$bits[] = 'span=' . $this->span;
+		}
 		if ($kind === 'spells') {
 			$bits[] = 'dir=' . $this->spellDir;
 			$bits[] = 'threshold=' . $this->spellThreshold;
@@ -193,9 +198,33 @@ class Report {
 	public function summaryTitleSuffix($summaryType = null) {
 		$st = ($summaryType === null) ? $this->summaryType : (int)$summaryType;
 		if (Data::isThresholdSummary($st)) {
-			return $this->description . ' · days ' . $this->summaryThresholdPhrase($st);
+			$base = $this->description . ' · days ' . $this->summaryThresholdPhrase($st);
+		} else {
+			$base = $this->description . ' / ' . Wx::getUnitsText($this->summaryDisplayUnit($st));
 		}
-		return $this->description . ' / ' . Wx::getUnitsText($this->summaryDisplayUnit($st));
+		$spanBit = $this->spanTitleBit();
+		return ($spanBit === '') ? $base : $base . ' · ' . $spanBit;
+	}
+
+	/** "month-to-date (1–12 Nov)" etc., or empty for a full period. */
+	public function spanTitleBit() {
+		if ($this->span === 'mtd') {
+			return 'month-to-date (' . Data::spanRangeText('mtd') . ')';
+		}
+		if ($this->span === 'ytd') {
+			return 'year-to-date (' . Data::spanRangeText('ytd') . ')';
+		}
+		return '';
+	}
+
+	/** Anomaly of $value vs the climate normal for an inclusive calendar span. */
+	public function anomSpan($value, $startMonth, $startDay, $endMonth, $endDay, $year) {
+		$norm = LTA::getSpanAnom($this->type, $startMonth, $startDay, $endMonth, $endDay, $year);
+		if ($norm === null) { return ''; }
+		if ($this->isSum) {
+			return Util::percent($value, $norm, 0, true, false);
+		}
+		return Wx::conv($value - $norm, Wx::AbsTemp, 0, 1);
 	}
 
 	/** Title suffix including period length for RankPeriods. */
@@ -377,6 +406,9 @@ class Report {
 		$this->periodLength = $plen;
 		// Hide-overlapping defaults to ON (disallow overlaps).
 		$this->periodNoOverlap = isset($_GET['no_overlap']) ? (int)$_GET['no_overlap'] !== 0 : true;
+
+		$spanIn = isset($_GET['span']) ? strtolower((string)$_GET['span']) : 'full';
+		$this->span = in_array($spanIn, self::$spanOptions, true) ? $spanIn : 'full';
 
 		$this->badCats = $badCats;
 	}
@@ -738,6 +770,7 @@ class Report {
 			} elseif ($mode === 'monthly') {
 				$params['start_year_rep'] = $this->startYrReport;
 				$params['summary_type'] = $this->summaryType;
+				$params['span'] = $this->span;
 				if ($this->needsThreshold()) {
 					$params['threshold'] = $this->spellThreshold;
 				}
@@ -754,6 +787,9 @@ class Report {
 					if ($this->needsThreshold()) {
 						$params['threshold'] = $this->spellThreshold;
 					}
+				}
+				if ($mode === 'rank-monthly' || $mode === 'rank-annual') {
+					$params['span'] = $this->span;
 				}
 				if ($mode === 'rank-periods') {
 					$params['period'] = $this->periodLength;
@@ -786,6 +822,7 @@ class Report {
 			. ' data-threshold="' . htmlspecialchars((string)$this->spellThreshold) . '"'
 			. ' data-period="' . (int)$this->periodLength . '"'
 			. ' data-no-overlap="' . ($this->periodNoOverlap ? '1' : '0') . '"'
+			. ' data-span="' . htmlspecialchars($this->span) . '"'
 			. ' data-body="' . htmlspecialchars($ajaxBodyId) . '"'
 			. ($ajaxFragment !== '' ? ' data-fragment="' . htmlspecialchars($ajaxFragment) . '"' : '')
 			. ' data-heading="' . htmlspecialchars($heading) . '">';
@@ -891,6 +928,25 @@ class Report {
 				. $selUrl(array('no_overlap' => 0)) . '">Allow</a>';
 			echo '<a class="wxsel-chip' . $hideActive . '" data-no-overlap="1" href="'
 				. $selUrl(array('no_overlap' => 1)) . '">Hide</a>';
+			echo '</div></div>';
+		}
+
+		$showSpan = !empty($o['showSpan']) || ($mode === 'monthly' || $mode === 'rank-monthly' || $mode === 'rank-annual');
+		if ($showSpan) {
+			$spanLabels = array(
+				'full' => array('Full', 'Full period'),
+				'mtd' => array('MTD', 'Month-to-date (' . Data::spanRangeText('mtd') . ')'),
+				'ytd' => array('YTD', 'Year-to-date (' . Data::spanRangeText('ytd') . ')'),
+			);
+			echo '<div class="report-sel-row report-sel-labelled">';
+			echo '<div class="wxsel-label">Period</div>';
+			echo '<div class="wxsel-scale wxsel-span" role="tablist">';
+			foreach ($spanLabels as $key => $pair) {
+				$active = ($key === $this->span) ? ' active' : '';
+				echo '<a class="wxsel-chip' . $active . '" data-span="' . $key
+					. '" href="' . $selUrl(array('span' => $key)) . '" title="'
+					. htmlspecialchars($pair[1]) . '">' . $pair[0] . '</a>';
+			}
 			echo '</div></div>';
 		}
 
@@ -1052,6 +1108,7 @@ class Report {
 			'periodLength' => (int)$this->periodLength,
 			'periodLengthOptions' => self::$periodLengthOptions,
 			'periodNoOverlap' => $this->periodNoOverlap ? 1 : 0,
+			'span' => $this->span,
 			'unit' => (int)$this->unit,
 			'page' => Page::$pageName,
 			'fragment' => $ajaxFragment !== '' ? $ajaxFragment : null,

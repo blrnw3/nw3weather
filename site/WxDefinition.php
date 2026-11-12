@@ -1333,6 +1333,70 @@ class LTA {
 	}
 
 	/**
+	 * Climate normal for an inclusive calendar span in $year.
+	 * Summable variables: sum of daily normals. Others: mean of daily normals.
+	 * Falls back to prorated monthly normals when no daily series exists.
+	 * @return float|null
+	 */
+	public static function getSpanAnom($type, $startMonth, $startDay, $endMonth, $endDay, $year) {
+		$startMonth = (int)$startMonth;
+		$startDay = (int)$startDay;
+		$endMonth = (int)$endMonth;
+		$endDay = Data::clampDay($year, $endMonth, $endDay);
+		if ($startMonth < 1 || $endMonth < 1 || $startMonth > 12 || $endMonth > 12) { return null; }
+		if ($startMonth > $endMonth || ($startMonth === $endMonth && $startDay > $endDay)) { return null; }
+
+		$summable = isset(Wx::$daily[$type]['summable']) && Wx::$daily[$type]['summable'];
+		$probe = self::getDailyAnom($type, $startMonth, $startDay, $year);
+		if (nw3_is_numeric($probe)) {
+			$sum = 0.0;
+			$n = 0;
+			$m = $startMonth;
+			$d = $startDay;
+			while (true) {
+				$norm = self::getDailyAnom($type, $m, $d, $year);
+				if (nw3_is_numeric($norm)) {
+					$sum += (float)$norm;
+					$n++;
+				}
+				if ($m === $endMonth && $d === $endDay) { break; }
+				$d++;
+				$dim = (int)Date::get_days_in_month($m, $year);
+				if ($d > $dim) { $d = 1; $m++; }
+				if ($m > $endMonth) { break; }
+			}
+			if ($n <= 0) { return null; }
+			return $summable ? $sum : ($sum / $n);
+		}
+
+		// Monthly fallback: full months plus a day-prorated partial end month.
+		$sum = 0.0;
+		$nMonths = 0.0;
+		for ($m = $startMonth; $m <= $endMonth; $m++) {
+			$norm = self::getMonthlyAnom($type, $m);
+			if ($norm === null || !nw3_is_numeric($norm)) { return null; }
+			$dim = (int)Date::get_days_in_month($m, $year);
+			if ($m === $startMonth && $m === $endMonth) {
+				$frac = ($endDay - $startDay + 1) / max(1, $dim);
+			} elseif ($m === $startMonth) {
+				$frac = ($dim - $startDay + 1) / max(1, $dim);
+			} elseif ($m === $endMonth) {
+				$frac = $endDay / max(1, $dim);
+			} else {
+				$frac = 1.0;
+			}
+			if ($summable) {
+				$sum += (float)$norm * $frac;
+			} else {
+				$sum += (float)$norm * $frac;
+				$nMonths += $frac;
+			}
+		}
+		if ($summable) { return $sum; }
+		return ($nMonths > 0) ? ($sum / $nMonths) : null;
+	}
+
+	/**
 	 * Climate normal for the last $days days ending today.
 	 * Mean variables: mean of daily normals. Summable variables (rain, etc.): sum of daily normals.
 	 */
