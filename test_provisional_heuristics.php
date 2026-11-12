@@ -173,5 +173,20 @@ $tight['all']['hi'] = array('v' => 30.0, 'n' => 1, 'at' => array());
 $f = ClimateCard::flag($tmCfg, 'hi', 23.75577777777778, $tight, 15, array('currentTemp' => 35.8, 'month' => 7, 'minute' => 0));
 check('tmean hi is held when projected-0.5 does not beat the record', $f === null);
 
+echo "\nProjected-value marker\n";
+$f = ClimateCard::flag($dmCfg, 'lo', 7.3, $recs, 16, $ctx16);
+check('daymax flag is not marked projected', is_array($f) && empty($f['projected']));
+
+$f = ClimateCard::flag($tmCfg, 'lo', 5.454351851851852, $tmRecs, 18, array('currentTemp' => 4.2, 'month' => 11, 'minute' => 0));
+check('tmean provisional flag is marked projected',
+	is_array($f) && !empty($f['projected']) && $f['value'] === 4.9);
+
+// Completed day: remaining minutes 0, value is the running mean, not a projection
+$f = ClimateCard::flag($tmCfg, 'lo', 5.2, $tmRecs, 23, array(
+	'currentTemp' => 4.2, 'month' => 11, 'minute' => 0, 'minutesSoFar' => 1440,
+));
+check('completed-day tmean flag is not marked projected',
+	is_array($f) && $f['status'] === ClimateCard::RECORD && empty($f['projected']) && $f['value'] === 5.2);
+
 echo "\n$passed passed, $failed failed\n";
 exit($failed ? 1 : 0);
