@@ -11,14 +11,15 @@ function nw3_rankmonth_render(Report $report) {
 	$t0 = microtime(true);
 	$type = $report->type;
 	$month = $report->month;
+	$report->normalizeSpanFor('rank-monthly');
 	$span = $report->span;
 	$startY = max((int)$report->startYrReport, (int)$report->startYear);
 	$endY = (int)Date::$dyear;
 	$threshold = $report->spellThreshold;
 	list($endM, $endD) = Data::spanEndMd();
 
-	$isYtd = ($span === 'ytd');
-	$footCond = $isYtd ? true : ($month === 0 || $month == (int)Date::$dmonth);
+	$isHalf = Data::isHalfSpan($span);
+	$footCond = ($month === 0 || $month == (int)Date::$dmonth);
 	$yearSecs = 86400 * 365;
 	$curMonthTs = Date::mkdate((int)Date::$dmonth, 1, (int)Date::$dyear);
 	$lastMonthTs = Date::mkdate((int)Date::$dmonth - 1, 1, (int)Date::$dyear);
@@ -43,26 +44,13 @@ function nw3_rankmonth_render(Report $report) {
 		}
 		$th = Data::isThresholdSummary($st) ? $threshold : null;
 		$ranked = [];
-		if ($isYtd) {
-			$throughM = ($month > 0) ? $month : $endM;
-			foreach (Data::getDailyData($type, $startY) as $y => $months) {
-				if ($y < $startY || $y > $endY) { continue; }
-				$last = Data::clampDay($y, $throughM, $endD);
-				if (Data::dateIsFuture($y, $throughM, $last)) { continue; }
-				$sliced = Data::sliceYearDays($months, 'ytd', $y, $throughM, $endD);
-				$v = Data::summarize(Data::MDtoZ($sliced), $st, $th, $type);
-				if (!Util::isBlank($v)) {
-					$ranked[] = [(float)$v, Date::mkdate($throughM, $last, $y)];
-				}
-			}
-		} else {
-			$sumSpan = ($span === 'mtd') ? 'mtd' : 'full';
-			foreach (Data::getMonthlySummary($type, $st, $startY, $endY, $th, $sumSpan) as $y => $months) {
-				foreach ($months as $m => $v) {
-					if (($month === 0 || $m === $month) && !Util::isBlank($v)) {
-						if ($span === 'mtd' && Data::dateIsFuture($y, $m, 1)) { continue; }
-						$ranked[] = [(float)$v, Date::mkdate($m, 1, $y)];
-					}
+		$sumSpan = ($span === 'mtd' || $span === 'h1' || $span === 'h2') ? $span : 'full';
+		foreach (Data::getMonthlySummary($type, $st, $startY, $endY, $th, $sumSpan) as $y => $months) {
+			foreach ($months as $m => $v) {
+				if (($month === 0 || $m === $month) && !Util::isBlank($v)) {
+					if ($span === 'mtd' && Data::dateIsFuture($y, $m, 1)) { continue; }
+					if ($isHalf && Data::halfBounds($span, $y, $m, true) === null) { continue; }
+					$ranked[] = [(float)$v, Date::mkdate($m, 1, $y)];
 				}
 			}
 		}
@@ -74,9 +62,7 @@ function nw3_rankmonth_render(Report $report) {
 		$fmtMon = function ($ts) use ($span, $endD, $type) {
 			return Report::monthSpanDateHtml($ts, $span, (int)date('n', $ts), $endD, $type);
 		};
-		$keyFn = $isYtd
-			? function ($ts) { return date('Y', $ts); }
-			: function ($ts) { return date('Y-m', $ts); };
+		$keyFn = function ($ts) { return date('Y-m', $ts); };
 		$hiKeys = $loKeys = [];
 		for ($i = 1; $i <= $limit; $i++) {
 			if ($sortLen < $i) { break; }
@@ -88,15 +74,26 @@ function nw3_rankmonth_render(Report $report) {
 			$loKeys[$i] = $keyFn($ranked[$i - 1][1]);
 		}
 
-		if ($isYtd) {
-			$keys = array('today' => date('Y', $curYearTs), 'yest' => date('Y', $lastYearTs));
-			$labels = array('todayLabel' => 'Current year (so far)', 'yestLabel' => 'Last year (same period)');
+		$keys = array('today' => date('Y-m', $curMonthTs), 'yest' => date('Y-m', $lastMonthTs));
+		if ($span === 'mtd') {
+			$labels = array('todayLabel' => 'Current month (so far)', 'yestLabel' => 'Last month (same period)');
 			$curLine = array(
-				'today' => date('Y', $curYearTs) . ' (so far)',
-				'yest' => date('Y', $lastYearTs) . ' (same period)',
+				'today' => date('M Y', $curMonthTs) . ' (so far)',
+				'yest' => date('M Y', $lastMonthTs) . ' (same period)',
 			);
+		} elseif ($span === 'h1' || $span === 'h2') {
+			$halfName = ($span === 'h1') ? '1st half' : '2nd half';
+			$curHalfStarted = Data::halfBounds($span, (int)Date::$dyear, (int)Date::$dmonth, true) !== null;
+			$labels = array(
+				'todayLabel' => $curHalfStarted ? ('Current ' . $halfName . ' (so far)') : ('Current ' . $halfName),
+				'yestLabel' => 'Last month (' . $halfName . ')',
+			);
+			$curLine = array();
+			if ($curHalfStarted && ($month === 0 || $month == (int)Date::$dmonth)) {
+				$curLine['today'] = date('M Y', $curMonthTs) . ' ' . $halfName . ' (so far)';
+			}
+			$curLine['yest'] = date('M Y', $lastMonthTs) . ' ' . $halfName;
 		} else {
-			$keys = array('today' => date('Y-m', $curMonthTs), 'yest' => date('Y-m', $lastMonthTs));
 			$labels = array('todayLabel' => 'Current month (so far)', 'yestLabel' => 'Last month');
 			$curLine = array(
 				'today' => date('M Y', $curMonthTs) . ' (so far)',
@@ -120,7 +117,10 @@ function nw3_rankmonth_render(Report $report) {
 				}
 			}
 		}
-		$topKind = $isYtd ? 'year-to-date ' : (($span === 'mtd') ? 'month-to-date ' : 'monthly ');
+		if ($span === 'mtd') { $topKind = 'month-to-date '; }
+		elseif ($span === 'h1') { $topKind = '1st-half '; }
+		elseif ($span === 'h2') { $topKind = '2nd-half '; }
+		else { $topKind = 'monthly '; }
 		echo '<div class="rk-pair">';
 		$report->rankTable($highest, $highestDay, $limit, 'Top ' . $topKind . $name, true, true, $footCond, false, $isCount, $sumOff, $displayUnit, $ctxHi);
 		$report->rankTable($lowest, $lowestDay, $limit, 'Bottom ' . $topKind . $name, false, true, $footCond, false, $isCount, $sumOff, $displayUnit, $ctxLo);
@@ -129,7 +129,7 @@ function nw3_rankmonth_render(Report $report) {
 		$extraTh = Data::isThresholdSummary($st) ? (' (' . $report->summaryThresholdPhrase($st) . ')') : '';
 		$spanNote = $report->spanTitleBit();
 		$spanNote = ($spanNote === '') ? '' : (' ' . $spanNote);
-		$itemWord = $isYtd ? 'years' : 'months';
+		$itemWord = 'months';
 		echo '<p class="rk-blurb">' . $report->description . ' monthly extremes: ' . $explain[$st] . $extraTh . $spanNote . '.<br />'
 			. 'There are <b>' . $sortLen . '</b> valid ' . $itemWord . ' for the chosen period from ' . $startY
 			. ' to present' . $extraMon . ' in London, NW3. Data for ' . $report->description

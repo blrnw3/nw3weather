@@ -10,6 +10,7 @@
 function nw3_rankyear_render(Report $report) {
 	$t0 = microtime(true);
 	$type = $report->type;
+	$report->normalizeSpanFor('rank-annual');
 	$span = $report->span;
 	$startY = max((int)$report->startYrReport, (int)$report->startYear);
 	$endY = (int)Date::$dyear;
@@ -39,7 +40,7 @@ function nw3_rankyear_render(Report $report) {
 		$th = Data::isThresholdSummary($st) ? $threshold : null;
 		$ranked = [];
 		foreach (Data::getAnnualData($type, $st, $startY, $endY, $th, $span) as $y => $v) {
-			if ($span !== 'full' && Data::dateIsFuture($y, ($span === 'mtd') ? $endM : 1, ($span === 'mtd') ? 1 : $endD)) {
+			if ($span === 'ytd' && Data::dateIsFuture($y, 1, $endD)) {
 				continue;
 			}
 			if (!Util::isBlank($v)) {
@@ -66,37 +67,74 @@ function nw3_rankyear_render(Report $report) {
 			$loKeys[$i] = $yrKey($ranked[$i - 1][1]);
 		}
 
-		// Current year is partial (so far); last year is complete.
-		$keys = array('today' => $yrKey($curYearTs), 'yest' => $yrKey($lastYearTs));
+		$isSeason = Data::isSeasonSpan($span);
+		$samePeriod = ($span === 'ytd');
+		$seasonInProgress = $isSeason
+			&& (Data::seasonIndex($span) === ((int)Date::$season - 1));
+		if ($isSeason) {
+			$labelY = Data::seasonLabelYear((int)Date::$dyear, (int)Date::$dmonth);
+			if ($seasonInProgress) {
+				$keys = array('today' => (string)$labelY, 'yest' => (string)($labelY - 1));
+			} else {
+				$finishedThisCycle = Data::seasonBounds($span, $labelY, false);
+				$latest = ($finishedThisCycle !== null
+					&& !Data::dateIsFuture($finishedThisCycle['ey'], $finishedThisCycle['em'], $finishedThisCycle['ed']))
+					? $labelY : ($labelY - 1);
+				$keys = array('today' => (string)$latest, 'yest' => (string)($latest - 1));
+			}
+		} else {
+			$keys = array('today' => $yrKey($curYearTs), 'yest' => $yrKey($lastYearTs));
+		}
 		$cur = Report::currentRanks($ranked, $keys, $yrKey);
-		$samePeriod = ($span === 'mtd' || $span === 'ytd');
-		$labels = array(
-			'todayLabel' => 'Current year (so far)',
-			'yestLabel' => $samePeriod ? 'Last year (same period)' : 'Last year',
-		);
+		if ($isSeason) {
+			$labels = array(
+				'todayLabel' => $seasonInProgress ? 'Current season (so far)' : 'Current season',
+				'yestLabel' => 'Last year',
+			);
+		} else {
+			$labels = array(
+				'todayLabel' => 'Current year (so far)',
+				'yestLabel' => $samePeriod ? 'Last year (same period)' : 'Last year',
+			);
+		}
 		$ctxHi = Report::rankCtx($cur, $hiKeys, $keys, true, $highest, $labels);
 		$ctxLo = Report::rankCtx($cur, $loKeys, $keys, false, $lowest, $labels);
 
 		// Annual totals are ~12× monthly; scale colour divisor for MTD/YTD length.
 		if ($st !== Data::SUMMARY_SUM) {
 			$sumOff = 1;
-		} elseif ($span === 'mtd') {
-			$sumOff = $report->valcolSumOffset();
 		} elseif ($span === 'ytd') {
 			$doy = (int)date('z', Date::mkdate($endM, $endD, 2001)) + 1;
 			$sumOff = $report->valcolSumOffset() * 12 * $doy / 365.0;
+		} elseif (Data::isSeasonSpan($span)) {
+			$sumOff = $report->valcolSumOffset() * 3;
 		} else {
 			$sumOff = $report->valcolSumOffset() * 12;
 		}
 		$isCount = Data::isCountSummary($st);
 		$displayUnit = $report->summaryDisplayUnit($st);
 		$name = $report->summaryCaptionName($st);
-		$topKind = ($span === 'ytd') ? 'year-to-date ' : (($span === 'mtd') ? 'month-to-date ' : 'annual ');
+		if ($span === 'ytd') { $topKind = 'year-to-date '; }
+		elseif ($isSeason) { $topKind = Date::$snames[Data::seasonIndex($span)] . ' '; }
+		else { $topKind = 'annual '; }
 		echo "<div id='rank-$st' class='rank-tab'>";
-		foreach (array(
-			'today' => date('Y', $curYearTs) . ' (so far)',
-			'yest' => date('Y', $lastYearTs) . ($samePeriod ? ' (same period)' : ''),
-		) as $k => $lbl) {
+		if ($isSeason) {
+			$sName = Date::$snames[Data::seasonIndex($span)];
+			$curLines = array(
+				'today' => $sName . ' ' . $keys['today'] . ($seasonInProgress ? ' (so far)' : ''),
+				'yest' => $sName . ' ' . $keys['yest'],
+			);
+			if (!$seasonInProgress) {
+				# Completed current season already appears in the table — no banner.
+				unset($curLines['today'], $cur['today']);
+			}
+		} else {
+			$curLines = array(
+				'today' => date('Y', $curYearTs) . ' (so far)',
+				'yest' => date('Y', $lastYearTs) . ($samePeriod ? ' (same period)' : ''),
+			);
+		}
+		foreach ($curLines as $k => $lbl) {
 			if (isset($cur[$k])) {
 				echo Report::currentRankLine($lbl, $cur[$k]['hi'], $cur[$k]['lo'],
 					$report->rankValueText($cur[$k]['v'], $isCount, $displayUnit), 'highest', 'lowest');

@@ -27,7 +27,7 @@ class Report {
 	public $dayAgg;             // '' | 'min' | 'max' | 'mean' (calendar-day all-years)
 	public $periodLength;       // N-day period length for RankPeriods
 	public $periodNoOverlap;    // true = skip overlapping windows in period rankings
-	public $span;               // 'full' | 'mtd' | 'ytd' for monthly tables and month/year rankings
+	public $span;               // period key: full, mtd, ytd, winter/spring/summer/autumn, h1/h2
 	public $periodAnom = false; // Ranked Periods offers the anomaly summary (temperature)
 	public $valcolIdxOverride = null; // colour scheme override (e.g. anomaly tables)
 
@@ -54,7 +54,7 @@ class Report {
 	// ---- Option lists ----
 	public static $ranknumOptions = [10, 25, 50, 100, 250];
 	public static $periodLengthOptions = [3, 5, 7, 14, 30, 90, 365];
-	public static $spanOptions = ['full', 'mtd', 'ytd'];
+	public static $spanOptions = ['full', 'mtd', 'ytd', 'winter', 'spring', 'summer', 'autumn', 'h1', 'h2'];
 	public $startYearOptions;
 	public $availSummaryTypes;
 
@@ -215,7 +215,79 @@ class Report {
 		if ($this->span === 'ytd') {
 			return 'year-to-date (' . Data::spanRangeText('ytd') . ')';
 		}
+		if (Data::isSeasonSpan($this->span)) {
+			return Data::seasonRangeText($this->span);
+		}
+		if ($this->span === 'h1') {
+			if ((int)$this->month === 0) { return '1st half (days 1–15)'; }
+			return '1st half (' . Data::halfRangeText('h1', (int)Date::$dyear, (int)$this->month) . ')';
+		}
+		if ($this->span === 'h2') {
+			if ((int)$this->month === 0) { return '2nd half (day 16–end of month)'; }
+			return '2nd half (' . Data::halfRangeText('h2', (int)Date::$dyear, (int)$this->month) . ')';
+		}
 		return '';
+	}
+
+	/** Valid period chips for a report page mode (and selected month, for RankMonth MTD). */
+	public static function spanOptionsFor($mode, $month = 0) {
+		if ($mode === 'rank-annual') {
+			return ['full', 'ytd', 'winter', 'spring', 'summer', 'autumn'];
+		}
+		if ($mode === 'rank-monthly') {
+			$opts = ['full', 'h1', 'h2'];
+			if ((int)$month === (int)Date::$dmonth) {
+				array_splice($opts, 1, 0, ['mtd']);
+			}
+			return $opts;
+		}
+		if ($mode === 'monthly') {
+			return ['full', 'mtd', 'ytd', 'winter', 'spring', 'summer', 'autumn'];
+		}
+		return ['full'];
+	}
+
+	public static function spanChipLabels($mode, $month = 0) {
+		$all = array(
+			'full' => array('Full', 'Full period'),
+			'mtd' => array('MTD', 'Month-to-date (' . Data::spanRangeText('mtd') . ')'),
+			'ytd' => array('YTD', 'Year-to-date (' . Data::spanRangeText('ytd') . ')'),
+			'winter' => array('Winter', 'Winter (Dec–Feb)'),
+			'spring' => array('Spring', 'Spring (Mar–May)'),
+			'summer' => array('Summer', 'Summer (Jun–Aug)'),
+			'autumn' => array('Autumn', 'Autumn (Sep–Nov)'),
+			'h1' => array('1st half', '1st half (days 1–15)'),
+			'h2' => array('2nd half', '2nd half (day 16–end of month)'),
+		);
+		$out = array();
+		# Rank-monthly always lists MTD (hidden in the DOM when not the current month) so JS can toggle it.
+		$keys = self::spanOptionsFor($mode, $month);
+		if ($mode === 'rank-monthly' && !in_array('mtd', $keys, true)) {
+			array_splice($keys, 1, 0, ['mtd']);
+		}
+		foreach ($keys as $k) {
+			if (isset($all[$k])) { $out[$k] = $all[$k]; }
+		}
+		return $out;
+	}
+
+	/** Coerce $this->span to a value allowed on this page. */
+	public function normalizeSpanFor($mode) {
+		$allowed = self::spanOptionsFor($mode, $this->month);
+		if (!in_array($this->span, $allowed, true)) {
+			$this->span = 'full';
+		}
+	}
+
+	/** Anomaly vs the climate normal for a (possibly year-crossing) bounds array. */
+	public function anomBounds($value, $b) {
+		if (!is_array($b)) { return ''; }
+		$norm = LTA::getRangeAnom($this->type, $b['sy'], $b['sm'], $b['sd'], $b['ey'], $b['em'], $b['ed']);
+		if ($norm === null) { return ''; }
+		if ($this->isSum) {
+			return Util::percent($value, $norm, 0, true, false);
+		}
+		return Wx::conv($value - $norm, Wx::AbsTemp, 0, 1);
 	}
 
 	/** Anomaly of $value vs the climate normal for an inclusive calendar span. */
@@ -760,8 +832,67 @@ class Report {
 			. self::hiddenDateLink($endUrl, $endText, 'View daily report for ' . date('j M Y', $endTs));
 	}
 
-	/** Month ranking date, including an MTD/YTD span when selected. */
+	/** Linked start–end text for an inclusive day range, following the short/long range rule. */
+	public static function boundsRangeLinkedHtml($b, $type, $startText, $endText, $sep = '–') {
+		$startTs = Date::mkdate($b['sm'], $b['sd'], $b['sy']);
+		$endTs = Date::mkdate($b['em'], $b['ed'], $b['ey']);
+		$days = Data::boundsDayCount($b);
+		$plain = $startText . $sep . $endText;
+		if ($days >= self::LONG_RANGE_DAYS) {
+			if ($b['sy'] === $b['ey']) {
+				return self::hiddenDateLink(self::dataDayTableUrl($type, $b['sy']), $plain, 'View daily data for ' . $b['sy']);
+			}
+			return self::hiddenDateLink(self::dataDayTableUrl($type, $b['sy']), $startText, 'View daily data for ' . $b['sy'])
+				. $sep
+				. self::hiddenDateLink(self::dataDayTableUrl($type, $b['ey']), $endText, 'View daily data for ' . $b['ey']);
+		}
+		$startUrl = self::reportDayUrl($b['sy'], $b['sm'], $b['sd']);
+		$endUrl = self::reportDayUrl($b['ey'], $b['em'], $b['ed']);
+		return self::hiddenDateLink($startUrl, $startText, 'View daily report for ' . date('j M Y', $startTs))
+			. $sep
+			. self::hiddenDateLink($endUrl, $endText, 'View daily report for ' . date('j M Y', $endTs));
+	}
+
+	/** Seasonal ranking date, e.g. "Winter 2026 (1 Dec 2025–28 Feb 2026)". */
+	public static function seasonDateHtml($year, $span, $type = 'rain') {
+		$year = (int)$year;
+		$si = Data::seasonIndex($span);
+		$b = Data::seasonBounds($span, $year, true);
+		if ($si === null || $b === null) { return (string)$year; }
+		$name = Date::$snames[$si];
+		$star = ($b['sy'] < Site::BASE_YEAR) ? '*' : '';
+		$endTs = Date::mkdate($b['em'], $b['ed'], $b['ey']);
+		$bold = ((Date::$dtstamp - $endTs) < 86400 * 365);
+		if ($b['sy'] === $b['ey']) {
+			$startText = $b['sd'] . ' ' . Date::$months3[$b['sm'] - 1];
+			$endText = $b['ed'] . ' ' . Date::$months3[$b['em'] - 1];
+		} else {
+			$startText = $b['sd'] . ' ' . Date::$months3[$b['sm'] - 1] . ' ' . $b['sy'];
+			$endText = $b['ed'] . ' ' . Date::$months3[$b['em'] - 1] . ' ' . $b['ey'];
+		}
+		$html = $name . ' ' . $year . $star . ' (' . self::boundsRangeLinkedHtml($b, $type, $startText, $endText) . ')';
+		return $bold ? ('<b>' . $html . '</b>') : $html;
+	}
+
+	/** Half-month ranking date, e.g. "1–15 Nov 2024", start/end daily reports. */
+	public static function halfDateHtml($ts, $span, $type = 'rain') {
+		$y = (int)date('Y', $ts);
+		$m = (int)date('n', $ts);
+		$b = Data::halfBounds($span, $y, $m, true);
+		if ($b === null) { return self::monthDateHtml($ts); }
+		$star = ($y < Site::BASE_YEAR) ? '*' : '';
+		$bold = ((Date::$dtstamp - $ts) < 86400 * 365);
+		$startText = (string)$b['sd'];
+		$endText = $b['ed'] . ' ' . Date::$months3[$m - 1] . ' ' . $y;
+		$html = self::boundsRangeLinkedHtml($b, $type, $startText, $endText) . $star;
+		return $bold ? ('<b>' . $html . '</b>') : $html;
+	}
+
+	/** Month ranking date, including an MTD/YTD or half-month span when selected. */
 	public static function monthSpanDateHtml($ts, $span, $endMonth, $endDay, $type = 'rain') {
+		if ($span === 'h1' || $span === 'h2') {
+			return self::halfDateHtml($ts, $span, $type);
+		}
 		if ($span !== 'mtd' && $span !== 'ytd') {
 			return self::monthDateHtml($ts);
 		}
@@ -781,8 +912,11 @@ class Report {
 		return $bold ? ('<b>' . $html . '</b>') : $html;
 	}
 
-	/** Annual ranking date, including an MTD/YTD span when selected. */
+	/** Annual ranking date, including a YTD or season span when selected. */
 	public static function yearSpanDateHtml($ts, $span, $endMonth, $endDay, $type = 'rain') {
+		if (Data::isSeasonSpan($span)) {
+			return self::seasonDateHtml((int)date('Y', $ts), $span, $type);
+		}
 		if ($span !== 'mtd' && $span !== 'ytd') {
 			return self::yearDateHtml($ts, $type);
 		}
@@ -946,6 +1080,9 @@ class Report {
 			$mode = 'daily';
 		}
 		$isRank = ($mode === 'rank-daily' || $mode === 'rank-monthly' || $mode === 'rank-annual' || $mode === 'rank-spells' || $mode === 'rank-periods');
+		if ($mode === 'monthly' || $mode === 'rank-monthly' || $mode === 'rank-annual') {
+			$this->normalizeSpanFor($mode);
+		}
 
 		$titleSuffix = $this->description . ' / ' . Wx::getUnitsText($this->unit);
 		if ($mode === 'daily' && $this->dayAgg !== '') {
@@ -1159,19 +1296,17 @@ class Report {
 
 		$showSpan = !empty($o['showSpan']) || ($mode === 'monthly' || $mode === 'rank-monthly' || $mode === 'rank-annual');
 		if ($showSpan) {
-			$spanLabels = array(
-				'full' => array('Full', 'Full period'),
-				'mtd' => array('MTD', 'Month-to-date (' . Data::spanRangeText('mtd') . ')'),
-				'ytd' => array('YTD', 'Year-to-date (' . Data::spanRangeText('ytd') . ')'),
-			);
+			$spanLabels = self::spanChipLabels($mode, $this->month);
+			$mtdVisible = ($mode !== 'rank-monthly') || ((int)$this->month === (int)Date::$dmonth);
 			echo '<div class="report-sel-row report-sel-labelled">';
 			echo '<div class="wxsel-label">Period</div>';
 			echo '<div class="wxsel-scale wxsel-span" role="tablist">';
 			foreach ($spanLabels as $key => $pair) {
 				$active = ($key === $this->span) ? ' active' : '';
+				$hide = ($key === 'mtd' && !$mtdVisible) ? ' hidden' : '';
 				echo '<a class="wxsel-chip' . $active . '" data-span="' . $key
 					. '" href="' . $selUrl(array('span' => $key)) . '" title="'
-					. htmlspecialchars($pair[1]) . '">' . $pair[0] . '</a>';
+					. htmlspecialchars($pair[1]) . '"' . $hide . '>' . $pair[0] . '</a>';
 			}
 			echo '</div></div>';
 		}
@@ -1335,6 +1470,7 @@ class Report {
 			'periodLengthOptions' => self::$periodLengthOptions,
 			'periodNoOverlap' => $this->periodNoOverlap ? 1 : 0,
 			'span' => $this->span,
+			'currentMonth' => (int)Date::$dmonth,
 			'unit' => (int)$this->unit,
 			'page' => Page::$pageName,
 			'fragment' => $ajaxFragment !== '' ? $ajaxFragment : null,

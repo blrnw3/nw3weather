@@ -42,6 +42,47 @@ function dm_fmt($report, $val, $st) {
  * @param int $startYr
  * @param float|null $threshold
  */
+function dm_span_layout($span) {
+	if (Data::isSeasonSpan($span)) {
+		$si = Data::seasonIndex($span);
+		$cols = [];
+		# Winter in seasonal order (Dec of the previous year, then Jan–Feb).
+		$monthIdxs = ($si === 0) ? [11, 0, 1] : Date::$snums[$si];
+		foreach ($monthIdxs as $mi) {
+			$cols[] = array(
+				'm' => $mi + 1,
+				'lab' => Date::$months3[$mi],
+				'prevYear' => ($si === 0 && $mi === 11),
+			);
+		}
+		return array(
+			'cols' => $cols,
+			'totalLab' => 'Season',
+			'rowClass' => 'dm-cols-5',
+			'gridClass' => 'dm-grid-season',
+		);
+	}
+	if ($span === 'mtd') {
+		$cm = (int)Date::$dmonth;
+		return array(
+			'cols' => array(array('m' => $cm, 'lab' => Date::$months3[$cm - 1], 'prevYear' => false)),
+			'totalLab' => null,
+			'rowClass' => 'dm-cols-2',
+			'gridClass' => 'dm-grid-narrow',
+		);
+	}
+	$cols = [];
+	for ($m = 1; $m <= 12; $m++) {
+		$cols[] = array('m' => $m, 'lab' => Date::$months3[$m - 1], 'prevYear' => false);
+	}
+	return array(
+		'cols' => $cols,
+		'totalLab' => 'Year',
+		'rowClass' => '',
+		'gridClass' => '',
+	);
+}
+
 function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null) {
 	$unit = $report->summaryDisplayUnit($st);
 	$isCount = Data::isCountSummary($st);
@@ -53,40 +94,67 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 	list($endM, $endD) = Data::spanEndMd();
 	$cy = (int)Date::$dyear;
 	$cm = (int)Date::$dmonth;
-	$cd = (int)Date::$dday;
-	// Never show years before this variable has data, even if an earlier Start year is selected.
+	$layout = dm_span_layout($span);
+	$cols = $layout['cols'];
+	$totalLab = $layout['totalLab'];
+	$rowClass = $layout['rowClass'] ? (' ' . $layout['rowClass']) : '';
+	$gridClass = $layout['gridClass'] ? (' ' . $layout['gridClass']) : '';
 	$fromYr = max((int)$startYr, (int)$report->startYear);
-	$lastYr = ($span === 'full') ? $yrYest : max($yrYest, $cy);
+	if ($span === 'full') {
+		$lastYr = $yrYest;
+	} elseif (Data::isSeasonSpan($span)) {
+		$labelY = Data::seasonLabelYear($cy, $cm);
+		$bNow = Data::seasonBounds($span, $labelY, true);
+		$lastYr = ($bNow !== null) ? $labelY : ($labelY - 1);
+	} else {
+		$lastYr = max($yrYest, $cy);
+	}
 
-	echo '<div class="dm-scroll"><div class="dm-grid">';
+	echo '<div class="dm-scroll"><div class="dm-grid' . $gridClass . '">';
 	$captionExtra = $report->spanTitleBit();
 	$caption = $heading . ' ' . $report->description . ($captionExtra !== '' ? ' · ' . $captionExtra : '');
 	echo '<div class="dm-caption">' . htmlspecialchars($caption) . '</div>';
 
-	echo '<div class="dm-row dm-head">';
-	dm_lab('');
-	for ($m = 1; $m <= 12; $m++) { dm_lab(Date::$months3[$m - 1]); }
-	dm_lab('Year', 'dm-yr');
-	echo '</div>';
+	$head = function () use ($cols, $totalLab, $rowClass) {
+		echo '<div class="dm-row dm-head' . $rowClass . '">';
+		dm_lab('');
+		foreach ($cols as $col) {
+			$title = !empty($col['prevYear']) ? ' title="December of the previous year"' : '';
+			$lab = $col['lab'] . (!empty($col['prevYear']) ? '*' : '');
+			echo '<div class="dm-lab"' . $title . '>' . $lab . '</div>';
+		}
+		if ($totalLab !== null) { dm_lab($totalLab, 'dm-yr'); }
+		echo '</div>';
+	};
+	$head();
 
-	$extreme = [];   // [year][month] and [month][year]
-	$yrAgg = [];     // [year] => annual aggregate
+	$extreme = [];   // [year][colKey] and [colKey][year]
+	$yrAgg = [];
 
 	for ($y = $lastYr; $y >= $fromYr; $y--) {
-		echo '<div class="dm-row">';
+		if (Data::isSeasonSpan($span) && !Data::seasonStartDataExists($DAT, $span, $y)) {
+			continue;
+		}
+		echo '<div class="dm-row' . $rowClass . '">';
 		$yrLabel = $y . ($y < Site::BASE_YEAR ? '*' : '');
 		echo '<div class="dm-year"><a href="/wxdataday.php?vartype='
 			. htmlspecialchars($report->type) . '&year=' . $y
 			. '" title="View full data for year">' . $yrLabel . '</a></div>';
 
-		$yearDays = isset($DAT[$y]) && is_array($DAT[$y]) ? $DAT[$y] : [];
-		for ($m = 1; $m <= 12; $m++) {
+		foreach ($cols as $ci => $col) {
+			$m = (int)$col['m'];
+			$srcY = !empty($col['prevYear']) ? ($y - 1) : $y;
+			$yearDays = isset($DAT[$srcY]) && is_array($DAT[$srcY]) ? $DAT[$srcY] : [];
+
 			if ($span === 'ytd') {
-				$isFuture = ($m > $endM) || Data::dateIsFuture($y, $m, 1);
+				$isFuture = ($m > $endM) || Data::dateIsFuture($srcY, $m, 1);
 			} elseif ($span === 'mtd') {
-				$isFuture = Data::dateIsFuture($y, $m, 1);
+				$isFuture = Data::dateIsFuture($srcY, $m, 1);
+			} elseif (Data::isSeasonSpan($span)) {
+				$b = Data::seasonBounds($span, $y, true);
+				$isFuture = ($b === null) || Data::dateIsFuture($srcY, $m, 1);
 			} else {
-				$isFuture = ($y === $yrYest && $m > $monYest);
+				$isFuture = ($srcY === $yrYest && $m > $monYest) || Data::dateIsFuture($srcY, $m, 1);
 			}
 			if ($isFuture) {
 				dm_cell('', 'dm-future');
@@ -96,7 +164,7 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 			$anom = ''; $value = '-'; $class = 'reportday';
 			$anomStartM = $m; $anomStartD = 1; $anomEndM = $m; $anomEndD = 0;
 			if ($span === 'mtd') {
-				$last = Data::clampDay($y, $m, $endD);
+				$last = Data::clampDay($srcY, $m, $endD);
 				$src = isset($yearDays[$m]) && is_array($yearDays[$m]) ? $yearDays[$m] : [];
 				$days = [];
 				foreach ($src as $d => $v) {
@@ -104,6 +172,7 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 				}
 				$anomEndD = $last;
 			} elseif ($span === 'ytd') {
+				$fullDays = isset($DAT[$y]) && is_array($DAT[$y]) ? $DAT[$y] : [];
 				$anomStartM = 1; $anomStartD = 1;
 				if ($m < $endM) {
 					$anomEndM = $m;
@@ -112,26 +181,43 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 					$anomEndM = $m;
 					$anomEndD = Data::clampDay($y, $m, $endD);
 				}
-				$sliced = Data::sliceYearDays($yearDays, 'ytd', $y, $anomEndM, $anomEndD);
+				$sliced = Data::sliceYearDays($fullDays, 'ytd', $y, $anomEndM, $anomEndD);
 				$days = Data::MDtoZ($sliced);
+			} elseif (Data::isSeasonSpan($span)) {
+				$b = Data::seasonBounds($span, $y, true);
+				$src = isset($yearDays[$m]) && is_array($yearDays[$m]) ? $yearDays[$m] : [];
+				# Truncate the current end month of an in-progress season.
+				if ($b && $srcY === (int)$b['ey'] && $m === (int)$b['em'] && $b['ed'] < (int)Date::get_days_in_month($m, $srcY)) {
+					$days = [];
+					foreach ($src as $d => $v) {
+						if ((int)$d >= 1 && (int)$d <= $b['ed']) { $days[$d] = $v; }
+					}
+					$anomEndD = $b['ed'];
+				} else {
+					$days = $src;
+					$anomEndD = (int)Date::get_days_in_month($m, $srcY);
+				}
 			} else {
 				$days = isset($yearDays[$m]) && is_array($yearDays[$m]) ? $yearDays[$m] : [];
 			}
 			$val = Data::summarize($days, $st, $threshold, $report->type);
 
+			$colKey = (!empty($col['prevYear']) ? 'prev-' : '') . $m;
 			if ($val !== null && !Util::isBlank($val)) {
-				$extreme[$y][$m] = $val;
-				$extreme[$m][$y] = $val;
+				$extreme[$y][$colKey] = $val;
+				$extreme[$colKey][$y] = $val;
 				$value = dm_fmt($report, $val, $st);
 				$num = $report->valcolConvert ? Wx::convNum($val, $unit) : (float)$val;
 				$class = $isCount
 					? Report::dayCountClass($val)
 					: $report->valcolr(($num === null ? 0 : $num) / $sumOff);
 				if ($isAnom) {
-					if ($span === 'full') {
+					if ($span === 'full' && $anomEndD === 0) {
+						$anom = $report->anomCell($report->anomMonth($val, $m));
+					} elseif ($span === 'full' || (Data::isSeasonSpan($span) && $anomEndD === (int)Date::get_days_in_month($m, $srcY))) {
 						$anom = $report->anomCell($report->anomMonth($val, $m));
 					} else {
-						$anom = $report->anomCell($report->anomSpan($val, $anomStartM, $anomStartD, $anomEndM, $anomEndD, $y));
+						$anom = $report->anomCell($report->anomSpan($val, $anomStartM, $anomStartD, $anomEndM, $anomEndD, $srcY));
 					}
 				}
 			} elseif (Util::mycount($days) === 0) {
@@ -139,21 +225,25 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 			} else {
 				$value = ''; $class = 'invalid';
 			}
-			$lnk = "/wxhistmonth.php?year=$y&month=$m";
-			$linked = ($y >= 2009) ?
+			$lnk = "/wxhistmonth.php?year=$srcY&month=$m";
+			$linked = ($srcY >= 2009) ?
 				'<a class="hidden-link" href="' . $lnk . '" title="View detailed report for month">' . $value . '</a>' : $value;
 			dm_cell($linked . $anom, $class);
 		}
 
-		// Annual summary cell
+		if ($totalLab === null) {
+			echo '</div>';
+			continue;
+		}
+
 		if ($span === 'ytd') {
+			$yearDays = isset($DAT[$y]) && is_array($DAT[$y]) ? $DAT[$y] : [];
 			if (Data::dateIsFuture($y, 1, 1)) {
 				$yrVal = null;
 			} else {
 				$sliced = Data::sliceYearDays($yearDays, 'ytd', $y, $endM, $endD);
 				$yrVal = Data::summarize(Data::MDtoZ($sliced), $st, $threshold, $report->type);
 			}
-			$monthsForOff = isset($extreme[$y]) ? $extreme[$y] : [];
 			if ($yrVal === null || Util::isBlank($yrVal)) {
 				dm_cell('-', 'reportday', 'dm-yr');
 			} else {
@@ -165,6 +255,26 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 					: $report->valcolr($yrVal / $sumOff / (($st === Data::SUMMARY_SUM) ? max(1, $endM) : 1));
 				dm_cell($valyr . $anom, $class, 'dm-yr');
 			}
+		} elseif (Data::isSeasonSpan($span)) {
+			$b = Data::seasonBounds($span, $y, true);
+			if ($b === null) {
+				dm_cell('-', 'reportday', 'dm-yr');
+			} else {
+				$days = Data::MDtoZ(Data::mergeYearMonths(Data::sliceSeasonDays($DAT, $span, $y)));
+				$yrVal = Data::summarize($days, $st, $threshold, $report->type);
+				if ($yrVal === null || Util::isBlank($yrVal)) {
+					dm_cell('-', 'reportday', 'dm-yr');
+				} else {
+					$yrAgg[$y] = $yrVal;
+					$anom = $isAnom ? $report->anomCell($report->anomBounds($yrVal, $b)) : '';
+					$valyr = dm_fmt($report, $yrVal, $st);
+					$cntM = ($st === Data::SUMMARY_SUM) ? 3 : 1;
+					$class = $isCount
+						? Report::dayCountClass($yrVal)
+						: $report->valcolr($yrVal / $sumOff / $cntM);
+					dm_cell($valyr . $anom, $class, 'dm-yr');
+				}
+			}
 		} else {
 			$months = isset($extreme[$y]) ? $extreme[$y] : [];
 			if (count($months) === 0) {
@@ -173,7 +283,7 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 				if (Data::isThresholdSummary($st)) {
 					$yrVal = nw3_array_sum($months);
 				} elseif ($st === Data::SUMMARY_COUNT) {
-					$yrVal = Util::mean($months); // legacy: mean days/month
+					$yrVal = Util::mean($months);
 				} elseif ($st === Data::SUMMARY_SUM) {
 					$yrVal = nw3_array_sum($months);
 				} elseif ($st === Data::SUMMARY_RANGE) {
@@ -194,29 +304,32 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 		echo '</div>';
 	}
 
-	// Repeat month header
-	echo '<div class="dm-row dm-head dm-sep">';
+	echo '<div class="dm-row dm-head dm-sep' . $rowClass . '">';
 	dm_lab('');
-	for ($m = 1; $m <= 12; $m++) { dm_lab(Date::$months3[$m - 1]); }
-	dm_lab('Year', 'dm-yr');
+	foreach ($cols as $col) {
+		$lab = $col['lab'] . (!empty($col['prevYear']) ? '*' : '');
+		dm_lab($lab);
+	}
+	if ($totalLab !== null) { dm_lab($totalLab, 'dm-yr'); }
 	echo '</div>';
 
-	// All-time summary rows across years: Lowest / Highest / Mean
 	$labels = ['Lowest', 'Highest', 'Mean'];
 	for ($mm = 0; $mm < 3; $mm++) {
-		echo '<div class="dm-row dm-sum">';
+		echo '<div class="dm-row dm-sum' . $rowClass . '">';
 		dm_lab($labels[$mm], 'dm-sum-lab');
-		for ($m = 1; $m <= 12; $m++) {
-			$col = isset($extreme[$m]) ? $extreme[$m] : [];
-			if (count($col) === 0) { dm_cell('-', 'reportday', 'dm-sum-cell'); continue; }
-			$v = Report::aggregate($col, $mm);
+		foreach ($cols as $col) {
+			$colKey = (!empty($col['prevYear']) ? 'prev-' : '') . $col['m'];
+			$m = (int)$col['m'];
+			$c = isset($extreme[$colKey]) ? $extreme[$colKey] : [];
+			if (count($c) === 0) { dm_cell('-', 'reportday', 'dm-sum-cell'); continue; }
+			$v = Report::aggregate($c, $mm);
 			$value = dm_fmt($report, $v, $st);
 			if (!$isAnom) {
 				$anom = '';
 			} elseif ($span === 'mtd') {
 				$anom = $report->anomCell($report->anomSpan($v, $m, 1, $m, Data::clampDay(2001, $m, $endD), 2001));
 			} elseif ($span === 'ytd') {
-				$em = ($m < $endM) ? $m : $m;
+				$em = $m;
 				$ed = ($m < $endM) ? (int)Date::get_days_in_month($m, 2001) : Data::clampDay(2001, $m, $endD);
 				$anom = $report->anomCell($report->anomSpan($v, 1, 1, $em, $ed, 2001));
 			} else {
@@ -227,23 +340,32 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 				: $report->valcolr($v / $sumOff);
 			dm_cell($value . $anom, $class, 'dm-sum-cell');
 		}
-		if (count($yrAgg) === 0) { dm_cell('-', 'reportday', 'dm-sum-cell dm-yr'); }
-		else {
-			$yv = Report::aggregate($yrAgg, $mm);
-			$valall = dm_fmt($report, $yv, $st);
-			if (!$isAnom) {
-				$anom = '';
-			} elseif ($span === 'ytd') {
-				$anom = $report->anomCell($report->anomSpan($yv, 1, 1, $endM, $endD, 2001));
-			} else {
-				$anom = $report->anomCell($report->anomYear($yv));
+		if ($totalLab !== null) {
+			if (count($yrAgg) === 0) { dm_cell('-', 'reportday', 'dm-sum-cell dm-yr'); }
+			else {
+				$yv = Report::aggregate($yrAgg, $mm);
+				$valall = dm_fmt($report, $yv, $st);
+				if (!$isAnom) {
+					$anom = '';
+				} elseif ($span === 'ytd') {
+					$anom = $report->anomCell($report->anomSpan($yv, 1, 1, $endM, $endD, 2001));
+				} elseif (Data::isSeasonSpan($span)) {
+					$b = Data::seasonBounds($span, 2001, false);
+					$anom = ($b === null) ? '' : $report->anomCell($report->anomBounds($yv, $b));
+				} else {
+					$anom = $report->anomCell($report->anomYear($yv));
+				}
+				$class = $isCount
+					? Report::dayCountClass($yv)
+					: $report->valcolr($yv / $sumOff);
+				dm_cell($valall . $anom, $class, 'dm-sum-cell dm-yr');
 			}
-			$class = $isCount
-				? Report::dayCountClass($yv)
-				: $report->valcolr($yv / $sumOff);
-			dm_cell($valall . $anom, $class, 'dm-sum-cell dm-yr');
 		}
 		echo '</div>';
+	}
+
+	if (Data::isSeasonSpan($span) && Data::seasonIndex($span) === 0) {
+		echo '<p class="rk-blurb">* December is from the previous year (Winter YYYY = Dec of YYYY−1 + Jan–Feb of YYYY).</p>';
 	}
 
 	echo '</div></div>'; // .dm-grid + .dm-scroll
@@ -255,6 +377,7 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
  */
 function nw3_datamonth_render(Report $report) {
 	$t0 = microtime(true);
+	$report->normalizeSpanFor('monthly');
 	if ($report->isNotSummarisable) {
 		echo '<p>' . htmlspecialchars($report->description) . ' has no meaningful monthly summary.</p>';
 		$report->echoVarAbout();
@@ -274,7 +397,10 @@ function nw3_datamonth_render(Report $report) {
 		);
 	}
 
-	$DAT = Data::getDailyData($report->type, $report->startYrReport);
+	$loadFrom = ($report->span === 'winter')
+		? max(1, (int)$report->startYrReport - 1)
+		: (int)$report->startYrReport;
+	$DAT = Data::getDailyData($report->type, $loadFrom);
 	$threshold = $report->spellThreshold;
 
 	$explain = [

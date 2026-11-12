@@ -3062,6 +3062,20 @@ body.cam-modal-open {
 	row-gap: 0;
 	margin: 0;
 }
+.dm-row.dm-cols-2 {
+	grid-template-columns: minmax(3.4rem, 0.85fr) minmax(0, 1fr);
+}
+.dm-row.dm-cols-5 {
+	grid-template-columns: minmax(3.4rem, 0.85fr) repeat(3, minmax(0, 1fr)) minmax(3.6rem, 1fr);
+}
+.dm-grid.dm-grid-narrow {
+	min-width: 0;
+	max-width: 22rem;
+}
+.dm-grid.dm-grid-season {
+	min-width: 0;
+	max-width: 40rem;
+}
 .dm-lab,
 .dm-year,
 .dm-cell {
