@@ -54,7 +54,7 @@ class Report {
 	// ---- Option lists ----
 	public static $ranknumOptions = [10, 25, 50, 100, 250];
 	public static $periodLengthOptions = [3, 5, 7, 14, 30, 90, 365];
-	public static $spanOptions = ['full', 'mtd', 'ytd', 'winter', 'spring', 'summer', 'autumn', 'h1', 'h2'];
+	public static $spanOptions = ['full', 'mtd', 'ytd', 'winter', 'spring', 'summer', 'autumn', 'seasonal', 'h1', 'h2'];
 	public $startYearOptions;
 	public $availSummaryTypes;
 
@@ -215,6 +215,9 @@ class Report {
 		if ($this->span === 'ytd') {
 			return 'year-to-date (' . Data::spanRangeText('ytd') . ')';
 		}
+		if ($this->span === 'seasonal') {
+			return 'seasonal';
+		}
 		if (Data::isSeasonSpan($this->span)) {
 			return Data::seasonRangeText($this->span);
 		}
@@ -242,7 +245,7 @@ class Report {
 			return $opts;
 		}
 		if ($mode === 'monthly') {
-			return ['full', 'mtd', 'ytd', 'winter', 'spring', 'summer', 'autumn'];
+			return ['full', 'mtd', 'ytd', 'seasonal'];
 		}
 		return ['full'];
 	}
@@ -252,6 +255,7 @@ class Report {
 			'full' => array('Full', 'Full period'),
 			'mtd' => array('MTD', 'Month-to-date (' . Data::spanRangeText('mtd') . ')'),
 			'ytd' => array('YTD', 'Year-to-date (' . Data::spanRangeText('ytd') . ')'),
+			'seasonal' => array('Seasonal', 'Seasonal view (Winter–Autumn)'),
 			'winter' => array('Winter', 'Winter (Dec–Feb)'),
 			'spring' => array('Spring', 'Spring (Mar–May)'),
 			'summer' => array('Summer', 'Summer (Jun–Aug)'),
@@ -273,6 +277,10 @@ class Report {
 
 	/** Coerce $this->span to a value allowed on this page. */
 	public function normalizeSpanFor($mode) {
+		if ($mode === 'monthly' && Data::isSeasonSpan($this->span)) {
+			$this->span = 'seasonal';
+			return;
+		}
 		$allowed = self::spanOptionsFor($mode, $this->month);
 		if (!in_array($this->span, $allowed, true)) {
 			$this->span = 'full';
@@ -853,7 +861,22 @@ class Report {
 			. self::hiddenDateLink($endUrl, $endText, 'View daily report for ' . date('j M Y', $endTs));
 	}
 
-	/** Seasonal ranking date, e.g. "Winter 2026 (1 Dec 2025–28 Feb 2026)". */
+	/**
+	 * Link a month-only range endpoint: monthly report when it exists,
+	 * otherwise the long-range daily data table for that year.
+	 */
+	public static function monthEndLink($year, $month, $text, $type) {
+		$year = (int)$year;
+		$month = (int)$month;
+		$url = self::reportMonthUrl($year, $month);
+		if ($url) {
+			$ts = Date::mkdate($month, 1, $year);
+			return self::hiddenDateLink($url, $text, 'View monthly report for ' . date('F Y', $ts));
+		}
+		return self::hiddenDateLink(self::dataDayTableUrl($type, $year), $text, 'View daily data for ' . $year);
+	}
+
+	/** Seasonal ranking date. Complete seasons: months only, e.g. "Winter 2026 (Dec 2025–Feb 2026)". */
 	public static function seasonDateHtml($year, $span, $type = 'rain') {
 		$year = (int)$year;
 		$si = Data::seasonIndex($span);
@@ -863,14 +886,29 @@ class Report {
 		$star = ($b['sy'] < Site::BASE_YEAR) ? '*' : '';
 		$endTs = Date::mkdate($b['em'], $b['ed'], $b['ey']);
 		$bold = ((Date::$dtstamp - $endTs) < 86400 * 365);
-		if ($b['sy'] === $b['ey']) {
-			$startText = $b['sd'] . ' ' . Date::$months3[$b['sm'] - 1];
-			$endText = $b['ed'] . ' ' . Date::$months3[$b['em'] - 1];
+		$complete = Data::seasonIsComplete($span, $year);
+		if ($complete) {
+			if ($b['sy'] === $b['ey']) {
+				$startText = Date::$months3[$b['sm'] - 1];
+				$endText = Date::$months3[$b['em'] - 1] . ' ' . $b['ey'];
+			} else {
+				$startText = Date::$months3[$b['sm'] - 1] . ' ' . $b['sy'];
+				$endText = Date::$months3[$b['em'] - 1] . ' ' . $b['ey'];
+			}
+			$range = self::monthEndLink($b['sy'], $b['sm'], $startText, $type)
+				. '–'
+				. self::monthEndLink($b['ey'], $b['em'], $endText, $type);
 		} else {
-			$startText = $b['sd'] . ' ' . Date::$months3[$b['sm'] - 1] . ' ' . $b['sy'];
-			$endText = $b['ed'] . ' ' . Date::$months3[$b['em'] - 1] . ' ' . $b['ey'];
+			if ($b['sy'] === $b['ey']) {
+				$startText = $b['sd'] . ' ' . Date::$months3[$b['sm'] - 1];
+				$endText = $b['ed'] . ' ' . Date::$months3[$b['em'] - 1];
+			} else {
+				$startText = $b['sd'] . ' ' . Date::$months3[$b['sm'] - 1] . ' ' . $b['sy'];
+				$endText = $b['ed'] . ' ' . Date::$months3[$b['em'] - 1] . ' ' . $b['ey'];
+			}
+			$range = self::boundsRangeLinkedHtml($b, $type, $startText, $endText);
 		}
-		$html = $name . ' ' . $year . $star . ' (' . self::boundsRangeLinkedHtml($b, $type, $startText, $endText) . ')';
+		$html = $name . ' ' . $year . $star . ' (' . $range . ')';
 		return $bold ? ('<b>' . $html . '</b>') : $html;
 	}
 

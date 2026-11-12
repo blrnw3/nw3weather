@@ -1824,6 +1824,14 @@ class Data {
 		);
 	}
 
+	/** True if this season instance has reached its last day (not clamped to today). */
+	public static function seasonIsComplete($span, $year) {
+		$full = self::seasonBounds($span, $year, false);
+		$clamped = self::seasonBounds($span, $year, true);
+		if ($full === null || $clamped === null) { return false; }
+		return $full['ey'] === $clamped['ey'] && $full['em'] === $clamped['em'] && $full['ed'] === $clamped['ed'];
+	}
+
 	/** True if the season's opening month has at least one non-blank value (Dec of prior year for Winter). */
 	public static function seasonStartDataExists($dailyByYear, $span, $year) {
 		$b = self::seasonBounds($span, $year, false);

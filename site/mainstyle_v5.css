@@ -3068,6 +3068,9 @@ body.cam-modal-open {
 .dm-row.dm-cols-5 {
 	grid-template-columns: minmax(3.4rem, 0.85fr) repeat(3, minmax(0, 1fr)) minmax(3.6rem, 1fr);
 }
+.dm-row.dm-cols-6 {
+	grid-template-columns: minmax(3.4rem, 0.85fr) repeat(4, minmax(0, 1fr)) minmax(3.6rem, 1fr);
+}
 .dm-grid.dm-grid-narrow {
 	min-width: 0;
 	max-width: 22rem;
@@ -3075,6 +3078,10 @@ body.cam-modal-open {
 .dm-grid.dm-grid-season {
 	min-width: 0;
 	max-width: 40rem;
+}
+.dm-grid.dm-grid-seasonal {
+	min-width: 0;
+	max-width: 44rem;
 }
 .dm-lab,
 .dm-year,
