@@ -806,7 +806,7 @@ class Nearby {
 				self::renderRow($s, $now);
 			}
 			echo '</div>';
-			echo '<p class="nearby-note">Airport temperatures from the Iowa Environmental Mesonet and NOAA Aviation Weather; St James’s Park and daily rainfall from Ogimet SYNOP (rain since midnight local time).</p>';
+			echo '<p class="nearby-note">Airport temperatures from the Iowa Environmental Mesonet and NOAA Aviation Weather; St James’s Park and daily rainfall from Ogimet SYNOP.</p>';
 		}
 		echo '</div></div>';
 	}
@@ -829,10 +829,6 @@ class Nearby {
 			$meta[] = 'this station';
 		} elseif (isset($s['dist_km']) && $s['dist_km'] !== null) {
 			$meta[] = number_format((float)$s['dist_km'], 1) . ' km';
-		}
-		if (isset($s['elev_m']) && $s['elev_m'] !== null) {
-			$approx = (isset($s['elev_source']) && $s['elev_source'] === 'estimated') ? '~' : '';
-			$meta[] = $approx . (string)round($s['elev_m']) . ' m';
 		}
 		$age = self::ageLabel(isset($s['observed_at']) ? $s['observed_at'] : null, $now);
 		if ($age) {

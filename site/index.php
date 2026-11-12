@@ -431,8 +431,6 @@ else:
 </div>
 <?php endif; ?>
 
-<?php Nearby::renderHomeCard(); ?>
-
 <h2>Year-to-date</h2>
 <div class="charts home-ytd">
 <?php
@@ -449,6 +447,8 @@ Charts::ytdHomeChart(array(
 <p>Latest Hampstead Heath pond temperature: <b><?php echo Wx::conv($pond, Wx::Temperature); ?></b>
 	&nbsp; <a href="/wxdataday.php?vartype=pond">see temperature history</a></p>
 <?php endif; ?>
+
+<?php Nearby::renderHomeCard(); ?>
 
 <div class="home-about">
 	<p><b>NW3 Weather</b> is a meteorological observation site located near Hampstead, in North London, UK.
