@@ -72,6 +72,7 @@ foreach ($METARcloudTypes as $i => $cloudSrch) {
 
 // ----- 2-day forecast (Yr.no / same source as wx5, refreshed by cron into forecast_v5.json) -----
 require_once __DIR__ . '/Forecast.php';
+require_once __DIR__ . '/Nearby.php';
 $forecast = Forecast::days(2);
 ?>
 
@@ -430,7 +431,6 @@ else:
 </div>
 <?php endif; ?>
 
-
 <h2>Year-to-date</h2>
 <div class="charts home-ytd">
 <?php
@@ -447,6 +447,8 @@ Charts::ytdHomeChart(array(
 <p>Latest Hampstead Heath pond temperature: <b><?php echo Wx::conv($pond, Wx::Temperature); ?></b>
 	&nbsp; <a href="/wxdataday.php?vartype=pond">see temperature history</a></p>
 <?php endif; ?>
+
+<?php Nearby::renderHomeCard(); ?>
 
 <div class="home-about">
 	<p><b>NW3 Weather</b> is a meteorological observation site located near Hampstead, in North London, UK.

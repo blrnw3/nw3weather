@@ -3715,3 +3715,72 @@ body.cam-modal-open {
 	.clim-wet::before { content: none; }
 	.clim-notes { font-size: 0.86rem; }
 }
+
+/* Homepage Weather nearby card (full-width like the forecast card) */
+.wx-cards.home-nearby {
+	margin-top: 0.8rem;
+}
+.wx-card-nearby {
+	grid-column: 1 / -1;
+	min-width: 0;
+	border-top-color: #4A6FA5;
+}
+.wx-card-nearby .wx-card-head {
+	color: #4A6FA5;
+}
+.nearby-table {
+	display: grid;
+	gap: 0.45rem 0.75rem;
+	font-size: 0.95rem;
+	margin-top: 0.35rem;
+	max-width: 36rem;
+}
+.nearby-row {
+	display: grid;
+	grid-template-columns: 1fr auto auto auto;
+	gap: 0.35rem 0.75rem;
+	align-items: baseline;
+}
+.nearby-head {
+	font-size: 0.8rem;
+	color: #555;
+}
+.nearby-title {
+	font-weight: 600;
+}
+.nearby-title a {
+	color: inherit;
+}
+.nearby-meta {
+	font-size: 0.8rem;
+	color: #555;
+	margin-top: 0.1rem;
+}
+.nearby-age-stale {
+	color: #9a4b00;
+}
+.nearby-temp {
+	font-weight: 600;
+	white-space: nowrap;
+}
+.nearby-hilo,
+.nearby-rain {
+	white-space: nowrap;
+	color: #333;
+}
+.nearby-nodata {
+	grid-column: span 3;
+	color: #666;
+	font-size: 0.9rem;
+}
+.nearby-note,
+.nearby-unavailable {
+	font-size: 0.8rem;
+	color: #555;
+	margin: 0.7rem 0 0;
+}
+@media only screen and (max-width: 520px) {
+	.nearby-table { font-size: 0.88rem; }
+	.nearby-row { gap: 0.3rem 0.45rem; }
+	.nearby-head { font-size: 0.75rem; }
+}
