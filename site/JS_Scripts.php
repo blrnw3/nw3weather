@@ -152,13 +152,19 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				if (span === 'winter' || span === 'spring' || span === 'summer' || span === 'autumn') {
 					return false; // coerced to seasonal below
 				}
-				return span === 'full' || span === 'mtd' || span === 'ytd' || span === 'seasonal';
+				if (span === 'mtd') {
+					return false; // coerced to ytd below
+				}
+				return span === 'full' || span === 'ytd' || span === 'seasonal';
 			}
 			return span === 'full';
 		}
 		function coerceSpan(span, month) {
 			if (mode === 'monthly' && (span === 'winter' || span === 'spring' || span === 'summer' || span === 'autumn')) {
 				return 'seasonal';
+			}
+			if (mode === 'monthly' && span === 'mtd') {
+				return 'ytd';
 			}
 			return spanAllowed(span, month) ? span : 'full';
 		}

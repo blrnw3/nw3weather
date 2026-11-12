@@ -245,7 +245,7 @@ class Report {
 			return $opts;
 		}
 		if ($mode === 'monthly') {
-			return ['full', 'mtd', 'ytd', 'seasonal'];
+			return ['full', 'ytd', 'seasonal'];
 		}
 		return ['full'];
 	}
@@ -279,6 +279,10 @@ class Report {
 	public function normalizeSpanFor($mode) {
 		if ($mode === 'monthly' && Data::isSeasonSpan($this->span)) {
 			$this->span = 'seasonal';
+			return;
+		}
+		if ($mode === 'monthly' && $this->span === 'mtd') {
+			$this->span = 'ytd';
 			return;
 		}
 		$allowed = self::spanOptionsFor($mode, $this->month);

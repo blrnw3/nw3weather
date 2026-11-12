@@ -72,47 +72,6 @@ function dm_span_layout($span) {
 	);
 }
 
-/** Year-column anomaly for MTD: full months + current month days 1..D.
- *  $includeAfter is false for the current year (later months are blank). */
-function dm_mtd_year_anom($report, $yrVal, $year, $curMonth, $endDay, $includeAfter) {
-	$year = (int)$year;
-	$curMonth = (int)$curMonth;
-	$endDay = Data::clampDay($year, $curMonth, $endDay);
-	if (!$includeAfter || $curMonth === 12) {
-		return $report->anomSpan($yrVal, 1, 1, $curMonth, $endDay, $year);
-	}
-	$ranges = [];
-	if ($curMonth > 1) {
-		$ranges[] = array(1, 1, $curMonth - 1, (int)Date::get_days_in_month($curMonth - 1, $year));
-	}
-	$ranges[] = array($curMonth, 1, $curMonth, $endDay);
-	if ($curMonth < 12) {
-		$ranges[] = array($curMonth + 1, 1, 12, (int)Date::get_days_in_month(12, $year));
-	}
-	$summable = isset(Wx::$daily[$report->type]['summable']) && Wx::$daily[$report->type]['summable'];
-	$norm = 0.0;
-	$n = 0.0;
-	$any = false;
-	foreach ($ranges as $r) {
-		$a = LTA::getSpanAnom($report->type, $r[0], $r[1], $r[2], $r[3], $year);
-		if ($a === null) { continue; }
-		$any = true;
-		$days = Data::boundsDayCount(array(
-			'sy' => $year, 'sm' => $r[0], 'sd' => $r[1],
-			'ey' => $year, 'em' => $r[2], 'ed' => $r[3],
-		));
-		if ($summable) { $norm += (float)$a; }
-		else { $norm += (float)$a * $days; $n += $days; }
-	}
-	if (!$any) { return ''; }
-	if (!$summable) {
-		if ($n <= 0) { return ''; }
-		$norm = $norm / $n;
-	}
-	if ($report->isSum) { return Util::percent($yrVal, $norm, 0, true, false); }
-	return Wx::conv($yrVal - $norm, Wx::AbsTemp, 0, 1);
-}
-
 /** Meteorological-year bounds covering the seasons present in $present (keys winter..autumn). */
 function dm_seasonal_year_bounds($year, $present = null) {
 	$start = null;
@@ -229,8 +188,6 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 
 			if ($span === 'ytd') {
 				$isFuture = ($m > $endM) || Data::dateIsFuture($srcY, $m, 1);
-			} elseif ($span === 'mtd') {
-				$isFuture = Data::dateIsFuture($srcY, $m, 1);
 			} else {
 				$isFuture = ($srcY === $yrYest && $m > $monYest) || Data::dateIsFuture($srcY, $m, 1);
 			}
@@ -241,8 +198,8 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 
 			$anom = ''; $value = '-'; $class = 'reportday';
 			$anomStartM = $m; $anomStartD = 1; $anomEndM = $m; $anomEndD = 0;
-			$mtdThis = ($span === 'mtd' && $m === $cm);
-			if ($mtdThis) {
+			$ytdThis = ($span === 'ytd' && $m === $cm);
+			if ($ytdThis) {
 				$last = Data::clampDay($srcY, $m, $endD);
 				$src = isset($yearDays[$m]) && is_array($yearDays[$m]) ? $yearDays[$m] : [];
 				$days = [];
@@ -250,18 +207,6 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 					if ((int)$d >= 1 && (int)$d <= $last) { $days[$d] = $v; }
 				}
 				$anomEndD = $last;
-			} elseif ($span === 'ytd') {
-				$fullDays = isset($DAT[$y]) && is_array($DAT[$y]) ? $DAT[$y] : [];
-				$anomStartM = 1; $anomStartD = 1;
-				if ($m < $endM) {
-					$anomEndM = $m;
-					$anomEndD = (int)Date::get_days_in_month($m, $y);
-				} else {
-					$anomEndM = $m;
-					$anomEndD = Data::clampDay($y, $m, $endD);
-				}
-				$sliced = Data::sliceYearDays($fullDays, 'ytd', $y, $anomEndM, $anomEndD);
-				$days = Data::MDtoZ($sliced);
 			} else {
 				$days = isset($yearDays[$m]) && is_array($yearDays[$m]) ? $yearDays[$m] : [];
 			}
@@ -277,9 +222,7 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 					? Report::dayCountClass($val)
 					: $report->valcolr(($num === null ? 0 : $num) / $sumOff);
 				if ($isAnom) {
-					if ($mtdThis) {
-						$anom = $report->anomCell($report->anomSpan($val, $anomStartM, $anomStartD, $anomEndM, $anomEndD, $srcY));
-					} elseif ($span === 'ytd') {
+					if ($ytdThis) {
 						$anom = $report->anomCell($report->anomSpan($val, $anomStartM, $anomStartD, $anomEndM, $anomEndD, $srcY));
 					} else {
 						$anom = $report->anomCell($report->anomMonth($val, $m));
@@ -339,9 +282,6 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 				$yrAgg[$y] = $yrVal;
 				if (!$isAnom) {
 					$anom = '';
-				} elseif ($span === 'mtd') {
-					$includeAfter = !Data::dateIsFuture($y, 12, 1);
-					$anom = $report->anomCell(dm_mtd_year_anom($report, $yrVal, $y, $cm, $endD, $includeAfter));
 				} elseif ($span === 'seasonal') {
 					$b = dm_seasonal_year_bounds($y, $months);
 					$anom = ($b === null) ? '' : $report->anomCell($report->anomBounds($yrVal, $b));
@@ -408,12 +348,8 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 			$value = dm_fmt($report, $v, $st);
 			if (!$isAnom) {
 				$anom = '';
-			} elseif ($span === 'mtd' && $m === $cm) {
+			} elseif ($span === 'ytd' && $m === $cm) {
 				$anom = $report->anomCell($report->anomSpan($v, $m, 1, $m, Data::clampDay(2001, $m, $endD), 2001));
-			} elseif ($span === 'ytd') {
-				$em = $m;
-				$ed = ($m < $endM) ? (int)Date::get_days_in_month($m, 2001) : Data::clampDay(2001, $m, $endD);
-				$anom = $report->anomCell($report->anomSpan($v, 1, 1, $em, $ed, 2001));
 			} else {
 				$anom = $report->anomCell($report->anomMonth($v, $m));
 			}
@@ -431,8 +367,6 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 					$anom = '';
 				} elseif ($span === 'ytd') {
 					$anom = $report->anomCell($report->anomSpan($yv, 1, 1, $endM, $endD, 2001));
-				} elseif ($span === 'mtd') {
-					$anom = $report->anomCell(dm_mtd_year_anom($report, $yv, 2001, $cm, $endD, true));
 				} elseif ($span === 'seasonal') {
 					$dummyY = 2001;
 					$b = dm_seasonal_year_bounds($dummyY);
