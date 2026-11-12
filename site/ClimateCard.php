@@ -11,6 +11,8 @@
  * at a time, others keep using the previous tables meanwhile). Today's row is
  * always left out of the tables, so today is compared with every earlier day.
  */
+require_once __DIR__ . '/ClimateMeanClimo.php';
+
 class ClimateCard {
 	const CACHE_FILE = 'serialised_climrec.txt';
 	const CACHE_VERSION = 5;
@@ -18,11 +20,20 @@ class ClimateCard {
 	/** First year used for records (the station record). */
 	const SINCE_YEAR = Site::BASE_YEAR;
 
-	/** Day max covers 09-21: a record low day max is provisional from 15:00 and confirmed at 21:00. */
+	/** Day max covers 09-21. A record low day max is provisional from 15:00
+	 *  if the current temperature is at least LOW_DAYMAX_DROP below the running
+	 *  day max, otherwise from 17:00, and is confirmed at 21:00. */
 	const LOW_DAYMAX_FROM_HOUR = 15;
+	const LOW_DAYMAX_FALLBACK_HOUR = 17;
+	const LOW_DAYMAX_DROP = 0.5;
 	const DAYMAX_END_HOUR = 21;
 	/** Night min covers 21-09: a record high night min is confirmed at 09:00. */
 	const NIGHTMIN_END_HOUR = 9;
+	/** Avg temp (midnight-midnight): provisional low/high from 15:00 using the
+	 *  projected 24h mean ± MEAN_MARGIN, confirmed at midnight. */
+	const MEAN_PROVISIONAL_FROM_HOUR = 15;
+	const MEAN_FINAL_HOUR = 24;
+	const MEAN_MARGIN = 0.5;
 
 	/** Wet-day threshold (mm) for the rain normal: % of years with rain on this date. */
 	const WET_MM = 0.2;
@@ -39,6 +50,10 @@ class ClimateCard {
 	 *   'now' - as soon as today passes the record (the value can only move further past it)
 	 *   ['from' => h, 'final' => h] - shown as provisional ('so far') from hour 'from'
 	 *     and as confirmed from hour 'final', when the series' period has ended.
+	 *   ['from' => h, 'final' => h, 'project' => 'tmean', 'margin' => x] - from hour
+	 *     'from', compare the projected 24h mean ± x instead of the running mean.
+	 *   Low day max also requires a LOW_DAYMAX_DROP fall from the running max
+	 *   before 17:00 (see flag()).
 	 * 'dp' is the rounding (native units) used for records and comparisons.
 	 * 'norm' is the normals series.
 	 */
@@ -46,14 +61,20 @@ class ClimateCard {
 		return array(
 			'daymax' => array('label' => 'Day max', 'title' => 'Highest temperature 09:00-21:00',
 				'unit' => Wx::Temperature, 'dp' => 1, 'norm' => 'tmax', 'lo' => true, 'hi' => true,
-				'flagHi' => 'now', 'flagLo' => array('from' => self::LOW_DAYMAX_FROM_HOUR, 'final' => self::DAYMAX_END_HOUR),
+				'flagHi' => 'now', 'flagLo' => array('from' => self::LOW_DAYMAX_FROM_HOUR, 'final' => self::DAYMAX_END_HOUR,
+					'drop' => self::LOW_DAYMAX_DROP),
 				'nameHi' => 'high day max', 'nameLo' => 'low day max'),
 			'nightmin' => array('label' => 'Night min', 'title' => 'Lowest temperature 21:00-09:00 (overnight into today)',
 				'unit' => Wx::Temperature, 'dp' => 1, 'norm' => 'tmin', 'lo' => true, 'hi' => true,
 				'flagLo' => 'now', 'flagHi' => array('from' => self::NIGHTMIN_END_HOUR, 'final' => self::NIGHTMIN_END_HOUR),
 				'nameLo' => 'low night min', 'nameHi' => 'high night min'),
 		'tmean' => array('label' => 'Avg temp', 'title' => 'Mean temperature (midnight to midnight)',
-			'unit' => Wx::Temperature, 'dp' => 1, 'norm' => 'tmean', 'lo' => true, 'hi' => true),
+			'unit' => Wx::Temperature, 'dp' => 1, 'norm' => 'tmean', 'lo' => true, 'hi' => true,
+			'flagLo' => array('from' => self::MEAN_PROVISIONAL_FROM_HOUR, 'final' => self::MEAN_FINAL_HOUR,
+				'project' => 'tmean', 'margin' => self::MEAN_MARGIN),
+			'flagHi' => array('from' => self::MEAN_PROVISIONAL_FROM_HOUR, 'final' => self::MEAN_FINAL_HOUR,
+				'project' => 'tmean', 'margin' => self::MEAN_MARGIN),
+			'nameHi' => 'high avg temp', 'nameLo' => 'low avg temp'),
 			'rain' => array('label' => 'Rain', 'unit' => Wx::Rain, 'dp' => 1, 'norm' => 'rain', 'lo' => false, 'hi' => true,
 				'flagHi' => 'now', 'nameHi' => 'daily rainfall'),
 		'sunhr' => array('label' => 'Sunshine', 'unit' => Wx::Hours, 'dp' => 1, 'norm' => 'sunhr', 'lo' => 'day', 'hi' => true,
@@ -234,30 +255,125 @@ class ClimateCard {
 	}
 
 	/**
+	 * Project today's midnight-to-midnight mean temperature (°C).
+	 *
+	 * Remaining hours follow this station's month-by-hour climatology, pinned
+	 * to $currentTemp. Evaluated at clock $hour:$minute (local). At HH:00 this
+	 * matches the historical study: samples so far are the previous $hour hours,
+	 * the pin hour is $hour-1, and remaining hours are $hour..23 (60 min each).
+	 *
+	 * @param int $month 1–12
+	 * @param int $hour 0–23
+	 * @param float $runningMean mean of samples so far
+	 * @param float $currentTemp latest temperature
+	 * @param int $minute 0–59
+	 * @param int|null $minutesSoFar defaults to $hour*60 + $minute
+	 * @return float|null
+	 */
+	public static function projectMean($month, $hour, $runningMean, $currentTemp, $minute = 0, $minutesSoFar = null) {
+		$month = (int)$month;
+		$hour = (int)$hour;
+		$minute = (int)$minute;
+		if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) { return null; }
+		if ($minutesSoFar === null) {
+			$minutesSoFar = $hour * 60 + $minute;
+		}
+		$minutesSoFar = max(0, (int)$minutesSoFar);
+		$nRem = 1440 - $minutesSoFar;
+		if ($nRem < 0) { return null; }
+		if ($nRem === 0) { return (float)$runningMean; }
+
+		// At HH:00, remaining hours are H..23, pinned to the last complete hour (H-1),
+		// as in the study. Mid-hour, pin to the current hour and weight the rest of
+		// this hour plus H+1..23.
+		if ($minute === 0) {
+			if ($hour < 1) { return null; }
+			$pinHour = $hour - 1;
+			$remHours = range($hour, 23);
+			$weights = array_fill(0, count($remHours), 60);
+		} else {
+			$pinHour = $hour;
+			$remHours = range($hour, 23);
+			$weights = array(60 - $minute);
+			for ($k = $hour + 1; $k <= 23; $k++) { $weights[] = 60; }
+		}
+		$pin = ClimateMeanClimo::at($month, $pinHour);
+		if ($pin === null) { return null; }
+		$sum = 0.0;
+		$wsum = 0;
+		foreach ($remHours as $i => $k) {
+			$ck = ClimateMeanClimo::at($month, $k);
+			if ($ck === null) { return null; }
+			$w = $weights[$i];
+			$sum += ((float)$currentTemp + ($ck - $pin)) * $w;
+			$wsum += $w;
+		}
+		if ($wsum <= 0) { return null; }
+		$projRem = $sum / $wsum;
+		return (((float)$runningMean * $minutesSoFar) + ($projRem * $nRem)) / ($minutesSoFar + $nRem);
+	}
+
+	/**
 	 * Flag for one direction of one row: null, or
 	 * ['status' => record|tie, 'scope' => day|month|all, 'soFar' => bool, 'rec' => the extreme beaten or matched].
 	 * The widest scope wins (all-time over monthly over the calendar date).
+	 *
+	 * $ctx may include currentTemp, month, minute, minutesSoFar (for mean
+	 * projection and the low day-max drop test).
 	 */
-	public static function flag($cfg, $dir, $today, $recs, $hour) {
+	public static function flag($cfg, $dir, $today, $recs, $hour, $ctx = array()) {
 		$rule = $cfg[$dir === 'hi' ? 'flagHi' : 'flagLo'] ?? null;
 		if ($rule === null || $today === null || $recs === null) { return null; }
 		$soFar = false;
 		if ($rule !== 'now') {
-			if ($hour < (int)$rule['from']) { return null; }
+			$from = (int)$rule['from'];
+			// Low day max: from 15:00 only if the temperature has already fallen
+			// at least the configured drop from the running max; otherwise from 17:00.
+			if ($dir === 'lo' && isset($rule['drop'])) {
+				$curr = $ctx['currentTemp'] ?? null;
+				$need = (float)$rule['drop'];
+				if (!nw3_is_numeric($curr) || ((float)$today - (float)$curr) < $need - 1e-12) {
+					$from = self::LOW_DAYMAX_FALLBACK_HOUR;
+				}
+			}
+			if ($hour < $from) { return null; }
 			$soFar = ($hour < (int)$rule['final']);
 		}
+
+		// Projected 24h mean: flag only if the conservative (margin-adjusted)
+		// projection still beats the record. Status uses the projection itself.
+		if (is_array($rule) && ($rule['project'] ?? null) === 'tmean') {
+			$curr = $ctx['currentTemp'] ?? null;
+			$month = $ctx['month'] ?? null;
+			if (!nw3_is_numeric($curr) || !nw3_is_numeric($month)) { return null; }
+			$minute = isset($ctx['minute']) ? (int)$ctx['minute'] : 0;
+			$mins = $ctx['minutesSoFar'] ?? null;
+			$proj = self::projectMean((int)$month, (int)$hour, (float)$today, (float)$curr, $minute, $mins);
+			if ($proj === null) { return null; }
+			$margin = isset($rule['margin']) ? (float)$rule['margin'] : self::MEAN_MARGIN;
+			$conservative = ($dir === 'lo') ? ($proj + $margin) : ($proj - $margin);
+			$compare = $proj;
+			$today = $proj; // so rounding below is on the projection
+		} else {
+			$conservative = null;
+		}
+
 		$t = round($today, $cfg['dp']);
 		// Totals that are still zero (no rain, sun or wind yet) only "tie" a record of zero.
 		if ($dir === 'hi' && $t <= 0 && in_array($cfg['unit'], array(Wx::Rain, Wx::Hours, Wx::Wind), true)) { return null; }
 		foreach (array('all', 'month', 'day') as $scope) {
 			$rec = $recs[$scope][$dir] ?? null;
 			if ($rec === null || $rec['v'] === null) { continue; }
+			if ($conservative !== null) {
+				$cDiff = ($conservative - $rec['v']) * ($dir === 'hi' ? 1 : -1);
+				if ($cDiff <= 0.00001) { continue; } // margin-adjusted value must still beat the record
+			}
 			$diff = ($t - $rec['v']) * ($dir === 'hi' ? 1 : -1);
 			if ($diff > 0.00001) {
-				return array('status' => self::RECORD, 'scope' => $scope, 'soFar' => $soFar, 'rec' => $rec);
+				return array('status' => self::RECORD, 'scope' => $scope, 'soFar' => $soFar, 'rec' => $rec, 'value' => $t);
 			}
 			if (abs($diff) <= 0.00001) {
-				return array('status' => self::TIE, 'scope' => $scope, 'soFar' => $soFar, 'rec' => $rec);
+				return array('status' => self::TIE, 'scope' => $scope, 'soFar' => $soFar, 'rec' => $rec, 'value' => $t);
 			}
 		}
 		return null;
@@ -324,6 +440,13 @@ class ClimateCard {
 		$d = (int)date('j', $now);
 		$y = (int)date('Y', $now);
 		$hour = (int)date('G', $now);
+		$minute = (int)date('i', $now);
+		$currTemp = (isset(Live::$temp) && nw3_is_numeric(Live::$temp)) ? (float)Live::$temp : null;
+		$flagCtx = array(
+			'currentTemp' => $currTemp,
+			'month' => $m,
+			'minute' => $minute,
+		);
 		$dateLabel = date('d M', $now);
 		$monthLabel = date('F', $now);
 		$scopeLabels = array('day' => $dateLabel, 'month' => $monthLabel, 'all' => 'All-time');
@@ -336,8 +459,8 @@ class ClimateCard {
 			$unit = $cfg['unit'];
 			$tv = $today[$var] ?? null;
 			$flags = array(
-				'lo' => ($r && $cfg['lo']) ? self::flag($cfg, 'lo', $tv, $r, $hour) : null,
-				'hi' => ($r && $cfg['hi']) ? self::flag($cfg, 'hi', $tv, $r, $hour) : null,
+				'lo' => ($r && $cfg['lo']) ? self::flag($cfg, 'lo', $tv, $r, $hour, $flagCtx) : null,
+				'hi' => ($r && $cfg['hi']) ? self::flag($cfg, 'hi', $tv, $r, $hour, $flagCtx) : null,
 			);
 
 			// Normal for the date
@@ -397,12 +520,13 @@ class ClimateCard {
 				$f = $flags[$dir];
 				if ($f === null) { continue; }
 				$active[$f['status'] . ($f['soFar'] ? '-sofar' : '')] = true;
-				$name = $cfg[$dir === 'hi' ? 'nameHi' : 'nameLo'];
+				$name = $cfg[$dir === 'hi' ? 'nameHi' : 'nameLo'] ?? '';
 				$what = ($f['scope'] === 'all') ? 'All-time record ' . $name
 					: (($f['scope'] === 'month') ? $monthLabel . ' record ' . $name : 'Record ' . $name . ' for ' . $dateLabel);
 				$prev = $f['rec'];
+				$shown = $f['value'] ?? $tv;
 				$text = ($f['status'] === self::TIE ? 'Equals ' . lcfirst($what) : $what)
-					. ($f['soFar'] ? ' so far' : '') . ': <b>' . self::fmt($tv, $unit, true) . '</b> '
+					. ($f['soFar'] ? ' so far' : '') . ': <b>' . self::fmt($shown, $unit, true) . '</b> '
 					. ($f['status'] === self::TIE ? '' : 'beats ' . self::fmt($prev['v'], $unit, true) . ' ')
 					. '(' . self::prevWhen($prev, $f['scope']) . ')';
 				$rank = array('all' => 0, 'month' => 1, 'day' => 2);
