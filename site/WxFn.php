@@ -1670,7 +1670,45 @@ class Data {
 		if ($span === 'ytd') {
 			return '1 Jan–' . $endDay . ' ' . $mon;
 		}
+		if (self::isSeasonSpan($span)) {
+			return self::seasonRangeText($span, $year);
+		}
+		if ($span === 'h1' || $span === 'h2') {
+			return self::halfRangeText($span, $year, $endMonth);
+		}
 		return '';
+	}
+
+	/** "Winter (Dec–Feb)" or, for the in-progress season, "Autumn (1 Sep–12 Nov)". */
+	public static function seasonRangeText($span, $year = null) {
+		$si = self::seasonIndex($span);
+		if ($si === null) { return ''; }
+		$name = Date::$snames[$si];
+		$ms = Date::$snums[$si];
+		$generic = ($si === 0)
+			? ($name . ' (Dec–Feb)')
+			: ($name . ' (' . Date::$months3[$ms[0]] . '–' . Date::$months3[$ms[2]] . ')');
+		if ($year === null) { $year = (int)Date::$dyear; }
+		$b = self::seasonBounds($span, (int)$year, true);
+		# No year, or a year whose season is complete / not the current one: generic months.
+		$curLabel = self::seasonLabelYear((int)Date::$dyear, (int)Date::$dmonth);
+		$curIdx = (int)Date::$season - 1;
+		if ($b === null || $si !== $curIdx || (int)$year !== $curLabel) {
+			return $generic;
+		}
+		$startMon = Date::$months3[$b['sm'] - 1];
+		$endMon = Date::$months3[$b['em'] - 1];
+		$start = '1 ' . $startMon . (($b['sy'] !== $b['ey']) ? (' ' . $b['sy']) : '');
+		$end = $b['ed'] . ' ' . $endMon . (($b['sy'] !== $b['ey']) ? (' ' . $b['ey']) : '');
+		$edFull = (int)Date::get_days_in_month(
+			($si === 0) ? 2 : ($ms[2] + 1),
+			($si === 0) ? (int)$year : $b['ey']
+		);
+		$completeEm = ($si === 0) ? 2 : ($ms[2] + 1);
+		if ($b['sd'] === 1 && $b['em'] === $completeEm && $b['ed'] === $edFull) {
+			return $generic;
+		}
+		return $name . ' (' . $start . '–' . $end . ')';
 	}
 
 	/**
@@ -1710,6 +1748,209 @@ class Data {
 			$out[$m] = $kept;
 		}
 		return $out;
+	}
+
+	public static $seasonSpans = ['winter', 'spring', 'summer', 'autumn'];
+
+	public static function isSeasonSpan($span) {
+		return in_array($span, self::$seasonSpans, true);
+	}
+
+	public static function isHalfSpan($span) {
+		return $span === 'h1' || $span === 'h2';
+	}
+
+	/** 0 = Winter, 1 = Spring, 2 = Summer, 3 = Autumn, or null. */
+	public static function seasonIndex($span) {
+		$i = array_search($span, self::$seasonSpans, true);
+		return ($i === false) ? null : (int)$i;
+	}
+
+	/**
+	 * Label year of the meteorological season that contains $year/$month
+	 * (Winter is labelled by the Jan/Feb year: Dec 2025 is Winter 2026).
+	 */
+	public static function seasonLabelYear($year, $month) {
+		$year = (int)$year;
+		$month = (int)$month;
+		return ($month === 12) ? ($year + 1) : $year;
+	}
+
+	/**
+	 * Inclusive calendar bounds for a meteorological season labelled by $year.
+	 * Winter YYYY = 1 Dec of YYYY-1 through the end of Feb YYYY.
+	 * When $clampCurrent, an in-progress current season ends today.
+	 * Returns null if that season has not started yet.
+	 * @return array{sy:int,sm:int,sd:int,ey:int,em:int,ed:int}|null
+	 */
+	public static function seasonBounds($span, $year, $clampCurrent = true) {
+		$si = self::seasonIndex($span);
+		if ($si === null) { return null; }
+		$year = (int)$year;
+		if ($si === 0) {
+			$sy = $year - 1;
+			$sm = 12;
+			$ey = $year;
+			$em = 2;
+		} else {
+			$months = Date::$snums[$si];
+			$sy = $year;
+			$sm = $months[0] + 1;
+			$ey = $year;
+			$em = $months[2] + 1;
+		}
+		$sd = 1;
+		$ed = (int)Date::get_days_in_month($em, $ey);
+		if (self::dateIsFuture($sy, $sm, $sd)) { return null; }
+		if ($clampCurrent) {
+			$todayY = (int)Date::$dyear;
+			$todayM = (int)Date::$dmonth;
+			$todayD = (int)Date::$dday;
+			$curLabel = self::seasonLabelYear($todayY, $todayM);
+			$curIdx = (int)Date::$season - 1;
+			if ($year === $curLabel && $si === $curIdx) {
+				$endTs = Date::mkdate($em, $ed, $ey);
+				$todayTs = Date::mkdate($todayM, $todayD, $todayY);
+				if ($endTs !== false && $todayTs !== false && $endTs > $todayTs) {
+					$ey = $todayY;
+					$em = $todayM;
+					$ed = $todayD;
+				}
+			}
+		}
+		return array(
+			'sy' => $sy, 'sm' => $sm, 'sd' => $sd,
+			'ey' => $ey, 'em' => $em, 'ed' => $ed,
+		);
+	}
+
+	/** True if this season instance has reached its last day (not clamped to today). */
+	public static function seasonIsComplete($span, $year) {
+		$full = self::seasonBounds($span, $year, false);
+		$clamped = self::seasonBounds($span, $year, true);
+		if ($full === null || $clamped === null) { return false; }
+		return $full['ey'] === $clamped['ey'] && $full['em'] === $clamped['em'] && $full['ed'] === $clamped['ed'];
+	}
+
+	/** True if the season's opening month has at least one non-blank value (Dec of prior year for Winter). */
+	public static function seasonStartDataExists($dailyByYear, $span, $year) {
+		$b = self::seasonBounds($span, $year, false);
+		if ($b === null) { return false; }
+		$days = (isset($dailyByYear[$b['sy']][$b['sm']]) && is_array($dailyByYear[$b['sy']][$b['sm']]))
+			? $dailyByYear[$b['sy']][$b['sm']] : [];
+		foreach ($days as $v) {
+			if (!Util::isBlank($v)) { return true; }
+		}
+		return false;
+	}
+
+	/**
+	 * Day values for a season labelled $year, as [year][month][day].
+	 * Winter includes December of the previous year.
+	 * @return array
+	 */
+	public static function sliceSeasonDays($dailyByYear, $span, $year) {
+		$b = self::seasonBounds($span, $year, true);
+		if ($b === null || !is_array($dailyByYear)) { return []; }
+		$out = [];
+		$y = $b['sy'];
+		$m = $b['sm'];
+		$d = $b['sd'];
+		$guard = 0;
+		while ($guard++ < 400) {
+			if (isset($dailyByYear[$y][$m]) && is_array($dailyByYear[$y][$m]) && array_key_exists($d, $dailyByYear[$y][$m])) {
+				$out[$y][$m][$d] = $dailyByYear[$y][$m][$d];
+			}
+			if ($y === $b['ey'] && $m === $b['em'] && $d === $b['ed']) { break; }
+			$d++;
+			$dim = (int)Date::get_days_in_month($m, $y);
+			if ($d > $dim) { $d = 1; $m++; }
+			if ($m > 12) { $m = 1; $y++; }
+		}
+		return $out;
+	}
+
+	/** Flatten [year][month][day] into [month][day] (winter Dec + Jan/Feb do not collide). */
+	public static function mergeYearMonths($nested) {
+		$out = [];
+		if (!is_array($nested)) { return $out; }
+		foreach ($nested as $months) {
+			if (!is_array($months)) { continue; }
+			foreach ($months as $m => $days) {
+				if (!is_array($days)) { continue; }
+				if (!isset($out[$m])) { $out[$m] = []; }
+				foreach ($days as $d => $v) { $out[$m][$d] = $v; }
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Inclusive day bounds for a 1st half (1–15) or 2nd half (16–end) of $month in $year.
+	 * Current month is clamped to today; a 2nd half that has not started returns null.
+	 * @return array{sy:int,sm:int,sd:int,ey:int,em:int,ed:int}|null
+	 */
+	public static function halfBounds($span, $year, $month, $clampCurrent = true) {
+		if ($span !== 'h1' && $span !== 'h2') { return null; }
+		$year = (int)$year;
+		$month = (int)$month;
+		if ($month < 1 || $month > 12) { return null; }
+		$dim = (int)Date::get_days_in_month($month, $year);
+		if ($span === 'h1') {
+			$sd = 1;
+			$ed = min(15, $dim);
+		} else {
+			$sd = 16;
+			$ed = $dim;
+			if ($sd > $dim) { return null; }
+		}
+		if (self::dateIsFuture($year, $month, $sd)) { return null; }
+		if ($clampCurrent) {
+			$todayY = (int)Date::$dyear;
+			$todayM = (int)Date::$dmonth;
+			$todayD = (int)Date::$dday;
+			if ($year === $todayY && $month === $todayM) {
+				$ed = min($ed, $todayD);
+			}
+		}
+		if ($ed < $sd) { return null; }
+		return array(
+			'sy' => $year, 'sm' => $month, 'sd' => $sd,
+			'ey' => $year, 'em' => $month, 'ed' => $ed,
+		);
+	}
+
+	public static function sliceHalfDays($monthDays, $span, $year, $month) {
+		$b = self::halfBounds($span, $year, $month, true);
+		if ($b === null || !is_array($monthDays)) { return []; }
+		$kept = [];
+		foreach ($monthDays as $d => $v) {
+			if ((int)$d >= $b['sd'] && (int)$d <= $b['ed']) { $kept[$d] = $v; }
+		}
+		return $kept;
+	}
+
+	/** Short half label, e.g. "1–15 Nov" or "16–30 Nov" (current month may be truncated). */
+	public static function halfRangeText($span, $year = null, $month = null) {
+		if ($year === null) { $year = (int)Date::$dyear; }
+		if ($month === null) { $month = (int)Date::$dmonth; }
+		$b = self::halfBounds($span, $year, $month, true);
+		if ($b === null) {
+			$mon = Date::$months3[(int)$month - 1];
+			$dim = (int)Date::get_days_in_month((int)$month, (int)$year);
+			return ($span === 'h1') ? ('1–15 ' . $mon) : ('16–' . $dim . ' ' . $mon);
+		}
+		$mon = Date::$months3[$b['sm'] - 1];
+		return $b['sd'] . '–' . $b['ed'] . ' ' . $mon;
+	}
+
+	/** Count of calendar days in an inclusive bounds array. */
+	public static function boundsDayCount($b) {
+		if (!is_array($b)) { return 0; }
+		$start = Date::mkdate($b['sm'], $b['sd'], $b['sy']);
+		$end = Date::mkdate($b['em'], $b['ed'], $b['ey']);
+		if ($start === false || $end === false) { return 0; }
+		return (int)round(($end - $start) / 86400) + 1;
 	}
 
 
@@ -1791,9 +2032,16 @@ class Data {
 		list($endMonth, $endDay) = self::spanEndMd();
 		foreach (self::varToDatArray($var, $start_year) as $year => $months) {
 			if($year >= $start_year && $year <= $end_year) {
-				$use = ($span === 'mtd' || $span === 'ytd')
-					? self::sliceYearDays($months, $span, $year, $endMonth, $endDay)
-					: $months;
+				if ($span === 'mtd' || $span === 'ytd') {
+					$use = self::sliceYearDays($months, $span, $year, $endMonth, $endDay);
+				} elseif ($span === 'h1' || $span === 'h2') {
+					$use = [];
+					foreach ($months as $m => $days) {
+						$use[$m] = self::sliceHalfDays($days, $span, $year, (int)$m);
+					}
+				} else {
+					$use = $months;
+				}
 				$data[$year] = self::summarize2D($use, $summary_type, $threshold, $var);
 			}
 		}
@@ -1812,6 +2060,18 @@ class Data {
 	public static function getAnnualData($var, $summary_type, $start_year, $end_year, $threshold = null, $span = 'full') {
 		$data = [];
 		list($endMonth, $endDay) = self::spanEndMd();
+		if (self::isSeasonSpan($span)) {
+			$loadFrom = ($span === 'winter') ? max(1, (int)$start_year - 1) : (int)$start_year;
+			$all = self::getDailyData($var, $loadFrom);
+			for ($year = (int)$start_year; $year <= (int)$end_year; $year++) {
+				if (!self::seasonStartDataExists($all, $span, $year)) { continue; }
+				if (self::seasonBounds($span, $year, true) === null) { continue; }
+				$days = self::MDtoZ(self::mergeYearMonths(self::sliceSeasonDays($all, $span, $year)));
+				$v = self::summarize($days, $summary_type, $threshold, $var);
+				if (!Util::isBlank($v)) { $data[$year] = $v; }
+			}
+			return $data;
+		}
 		foreach (self::varToDatArray($var, $start_year) as $year => $months) {
 			if($year >= $start_year && $year <= $end_year) {
 				if ($span === 'mtd') {

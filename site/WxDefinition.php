@@ -1427,6 +1427,39 @@ class LTA {
 	}
 
 	/**
+	 * Climate normal for an inclusive range that may cross a year boundary
+	 * (e.g. Winter: Dec of year-1 through Feb of year).
+	 * @return float|null
+	 */
+	public static function getRangeAnom($type, $startYear, $startMonth, $startDay, $endYear, $endMonth, $endDay) {
+		$startYear = (int)$startYear;
+		$endYear = (int)$endYear;
+		if ($startYear === $endYear) {
+			return self::getSpanAnom($type, $startMonth, $startDay, $endMonth, $endDay, $startYear);
+		}
+		if ($endYear !== $startYear + 1) { return null; }
+		$a = self::getSpanAnom($type, $startMonth, $startDay, 12, (int)Date::get_days_in_month(12, $startYear), $startYear);
+		$b = self::getSpanAnom($type, 1, 1, $endMonth, $endDay, $endYear);
+		if ($a === null && $b === null) { return null; }
+		$summable = isset(Wx::$daily[$type]['summable']) && Wx::$daily[$type]['summable'];
+		if ($summable) {
+			return (float)$a + (float)$b;
+		}
+		$na = Data::boundsDayCount(array(
+			'sy' => $startYear, 'sm' => (int)$startMonth, 'sd' => (int)$startDay,
+			'ey' => $startYear, 'em' => 12, 'ed' => (int)Date::get_days_in_month(12, $startYear),
+		));
+		$nb = Data::boundsDayCount(array(
+			'sy' => $endYear, 'sm' => 1, 'sd' => 1,
+			'ey' => $endYear, 'em' => (int)$endMonth, 'ed' => Data::clampDay($endYear, $endMonth, $endDay),
+		));
+		if ($na + $nb <= 0) { return null; }
+		$va = ($a === null) ? 0.0 : (float)$a;
+		$vb = ($b === null) ? 0.0 : (float)$b;
+		return (($va * $na) + ($vb * $nb)) / ($na + $nb);
+	}
+
+	/**
 	 * Climate normal for the last $days days ending today.
 	 * Mean variables: mean of daily normals. Summable variables (rain, etc.): sum of daily normals.
 	 */

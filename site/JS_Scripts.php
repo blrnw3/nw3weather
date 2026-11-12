@@ -135,7 +135,40 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		var curPeriod = parseInt(cfg.periodLength, 10) || 5;
 		var periodOpts = (cfg.periodLengthOptions || [3,5,7,14,30,90,365]).map(function (x) { return parseInt(x, 10); });
 		var curNoOverlap = !!parseInt(cfg.periodNoOverlap == null ? 0 : cfg.periodNoOverlap, 10);
-		var curSpan = (cfg.span === 'mtd' || cfg.span === 'ytd') ? cfg.span : 'full';
+		var SPAN_KNOWN = {full:1, mtd:1, ytd:1, winter:1, spring:1, summer:1, autumn:1, seasonal:1, h1:1, h2:1};
+		var currentMonth = parseInt(cfg.currentMonth, 10) || 0;
+		function spanAllowed(span, month) {
+			month = parseInt(month, 10);
+			if (!SPAN_KNOWN[span]) { return false; }
+			if (mode === 'rank-annual') {
+				return span === 'full' || span === 'ytd' || span === 'winter'
+					|| span === 'spring' || span === 'summer' || span === 'autumn';
+			}
+			if (mode === 'rank-monthly') {
+				if (span === 'mtd') { return month === currentMonth; }
+				return span === 'full' || span === 'h1' || span === 'h2';
+			}
+			if (mode === 'monthly') {
+				if (span === 'winter' || span === 'spring' || span === 'summer' || span === 'autumn') {
+					return false; // coerced to seasonal below
+				}
+				if (span === 'mtd') {
+					return false; // coerced to ytd below
+				}
+				return span === 'full' || span === 'ytd' || span === 'seasonal';
+			}
+			return span === 'full';
+		}
+		function coerceSpan(span, month) {
+			if (mode === 'monthly' && (span === 'winter' || span === 'spring' || span === 'summer' || span === 'autumn')) {
+				return 'seasonal';
+			}
+			if (mode === 'monthly' && span === 'mtd') {
+				return 'ytd';
+			}
+			return spanAllowed(span, month) ? span : 'full';
+		}
+		var curSpan = coerceSpan(cfg.span, cfg.month);
 		var hasSpan = (mode === 'monthly' || mode === 'rank-monthly' || mode === 'rank-annual');
 		var spellDirLabels = cfg.spellDirLabels || {};
 		var startYearOpts = (cfg.startYearOptions || []).map(function (x) { return parseInt(x, 10); });
@@ -381,6 +414,10 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			if (!spanEl) { return; }
 			spanEl.querySelectorAll('a.wxsel-chip[data-span]').forEach(function (a) {
 				var v = a.getAttribute('data-span');
+				if (v === 'mtd' && mode === 'rank-monthly') {
+					if (curMonth === currentMonth) { a.removeAttribute('hidden'); }
+					else { a.setAttribute('hidden', ''); }
+				}
 				a.classList.toggle('active', v === curSpan);
 				a.setAttribute('href', pageUrl({ span: v }));
 			});
@@ -505,7 +542,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			if (meta.rankLimit != null) { curRankLimit = parseInt(meta.rankLimit, 10); }
 			if (meta.periodLength != null) { curPeriod = parseInt(meta.periodLength, 10); }
 			if (meta.periodNoOverlap != null) { curNoOverlap = !!parseInt(meta.periodNoOverlap, 10); }
-			if (meta.span === 'mtd' || meta.span === 'ytd' || meta.span === 'full') { curSpan = meta.span; }
+			if (meta.span != null) { curSpan = coerceSpan(meta.span, meta.month != null ? meta.month : curMonth); }
 			if (meta.spellDir) { curSpellDir = meta.spellDir; }
 			if (meta.threshold != null) { curThreshold = parseFloat(meta.threshold); }
 			if (meta.thresholds) {
@@ -617,7 +654,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			// Rank/month pages ship only the active summary (AJAX on chip change).
 			var period = opts.period != null ? parseInt(opts.period, 10) : curPeriod;
 			var noOverlap = opts.noOverlap != null ? !!opts.noOverlap : curNoOverlap;
-			var span = (opts.span === 'mtd' || opts.span === 'ytd' || opts.span === 'full') ? opts.span : curSpan;
+			var span = coerceSpan(opts.span != null ? opts.span : curSpan, month);
 			if ((mode === 'monthly' || mode === 'rank-monthly' || mode === 'rank-annual')
 				&& type === curType && start === curStart && month === curMonth
 				&& rankLimit === curRankLimit && period === curPeriod && noOverlap === curNoOverlap
