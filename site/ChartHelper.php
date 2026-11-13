@@ -468,6 +468,7 @@ class Charts {
 					'trange' => 'Range',
 					'tminanom' => 'Min anom', 'tmaxanom' => 'Max anom', 'tmeananom' => 'Mean anom',
 					'nightmin' => 'Night min', 'daymax' => 'Day max',
+					'afhrs' => 'Air frost',
 					'fmean' => 'Feels mean', 'fmin' => 'Feels min', 'fmax' => 'Feels max',
 				),
 			),
@@ -519,7 +520,7 @@ class Charts {
 			array(
 				'id' => 'other', 'label' => 'Other',
 				'options' => array(
-					'afhrs' => 'Air frost', 'snow' => 'Falling snow', 'lysnw' => 'Lying snow',
+					'snow' => 'Falling snow', 'lysnw' => 'Lying snow',
 					'hail' => 'Hail', 'thunder' => 'Thunder', 'fog' => 'Fog', 'pond' => 'Pond temp',
 				),
 			),
