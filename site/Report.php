@@ -1702,6 +1702,33 @@ class Report {
 		return self::dayDateHtml($ts, $format);
 	}
 
+	/**
+	 * Value-colour class for a first-frost season offset (days after 1 Sep).
+	 * Reuses the site temperature scale (leveltemp_0..9): early = cold/blue,
+	 * late = warm/orange-red. 'none' / 'none yet (so far)' use the latest
+	 * (warmest) bin, since they rank as the latest outcomes.
+	 *
+	 * Bins (inclusive): mid-Oct, 16 Oct, 24 Oct, 31 Oct, 15 Nov, 30 Nov,
+	 * 15 Dec, 31 Dec, 31 Jan, then Feb–Mar / none.
+	 */
+	public static function firstFrostValClass($offset) {
+		if ($offset === null || (int)$offset >= Data::FIRST_FROST_NONE) {
+			return 'leveltemp_9';
+		}
+		$o = (int)$offset;
+		$bounds = [39, 46, 54, 61, 76, 91, 106, 122, 153];
+		foreach ($bounds as $i => $lim) {
+			if ($o <= $lim) { return 'leveltemp_' . $i; }
+		}
+		return 'leveltemp_9';
+	}
+
+	/** Date HTML wrapped in the season-lateness colour chip (for banners). */
+	public static function firstFrostValueChip($row) {
+		return '<span class="rk-frost-chip ' . self::firstFrostValClass($row['offset']) . '">'
+			. self::firstFrostValueHtml($row) . '</span>';
+	}
+
 	private function flatCats() {
 		$flat = [];
 		foreach (self::$categories as $v) {
@@ -1967,7 +1994,13 @@ class Report {
 			echo '<div class="rk-row' . $hlCls . '">';
 			echo '<div class="rk-rank">' . $i . '</div>';
 			$valOut = isset($valHtml[$i]) ? $valHtml[$i] : $this->rankVal($values[$i], $isCount, $unit);
-			$valCls = isset($valHtml[$i]) ? 'rk-val-date' : $this->rankClass($values[$i], $isCount, $sumOff, $unit);
+			if (isset($valHtml[$i]) && $this->isAnnualOnly()) {
+				$valCls = self::firstFrostValClass($values[$i]);
+			} elseif (isset($valHtml[$i])) {
+				$valCls = 'rk-val-date';
+			} else {
+				$valCls = $this->rankClass($values[$i], $isCount, $sumOff, $unit);
+			}
 			echo '<div class="rk-val ' . $valCls . '">' . $valOut . '</div>';
 			echo '<div class="rk-date">' . (isset($dates[$i]) ? $dates[$i] : '') . '</div>';
 			echo '</div>';
@@ -2002,7 +2035,13 @@ class Report {
 				echo '<div class="rk-row rk-foot' . ($key === 'today' ? ' rk-foot-today' : '') . '">';
 				echo '<div class="rk-rank">' . $rankCell . '</div>';
 				$valOut = isset($valHtml[$key]) ? $valHtml[$key] : $this->rankVal($values[$key], $isCount, $unit);
-				$valCls = isset($valHtml[$key]) ? 'rk-val-date' : $this->rankClass($values[$key], $isCount, $sumOff, $unit);
+				if (isset($valHtml[$key]) && $this->isAnnualOnly()) {
+					$valCls = self::firstFrostValClass($values[$key]);
+				} elseif (isset($valHtml[$key])) {
+					$valCls = 'rk-val-date';
+				} else {
+					$valCls = $this->rankClass($values[$key], $isCount, $sumOff, $unit);
+				}
 				echo '<div class="rk-val ' . $valCls . '">' . $valOut . '</div>';
 				echo '<div class="rk-date">' . htmlspecialchars($lbl) . $pctl . '</div>';
 				echo '</div>';

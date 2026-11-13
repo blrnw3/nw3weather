@@ -61,7 +61,7 @@ function nw3_rankyear_render_first_frost(Report $report, $t0) {
 				$lbl,
 				$cur[$k]['hi'],
 				$cur[$k]['lo'],
-				Report::firstFrostValueHtml($rows[(int)$keys[$k]]),
+				Report::firstFrostValueChip($rows[(int)$keys[$k]]),
 				'latest',
 				'earliest'
 			);
