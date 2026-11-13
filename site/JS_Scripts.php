@@ -125,6 +125,71 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		var curShowYears = cfg.showYears !== 0 && cfg.showYears !== false && cfg.showYears !== '0';
 		var curMonth = parseInt(cfg.month, 10);
 		if (isNaN(curMonth)) { curMonth = 0; }
+		var curDay = parseInt(cfg.day, 10);
+		if (isNaN(curDay) || curDay < 0) { curDay = 0; }
+		var currentDay = parseInt(cfg.currentDay, 10) || 0;
+		var curWin = parseInt(cfg.win, 10);
+		if (isNaN(curWin) || curWin < 0) { curWin = 0; }
+		function coerceWin(win, day) {
+			if (!(day > 0)) { return 0; }
+			win = parseInt(win, 10);
+			if (win === 3 || win === 5 || win === 10) { return win; }
+			return 0;
+		}
+		curWin = coerceWin(curWin, curDay);
+		function daysInMonth(month) {
+			return [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month] || 31;
+		}
+		function fillDaySelect(sel, month, day) {
+			if (!sel) { return 1; }
+			var max = daysInMonth(month);
+			var cur = parseInt(day, 10);
+			if (isNaN(cur) || cur < 1) { cur = 1; }
+			if (cur > max) { cur = max; }
+			var html = '', d;
+			for (d = 1; d <= max; d++) {
+				html += '<option value="' + d + '"' + (d === cur ? ' selected' : '') + '>' + d + '</option>';
+			}
+			sel.innerHTML = html;
+			sel.value = String(cur);
+			return cur;
+		}
+		function syncDateSel() {
+			var row = document.getElementById('report-sel-datesel');
+			if (!row || mode !== 'rank-daily') { return; }
+			var on = curDay > 0;
+			if (on) { row.removeAttribute('hidden'); }
+			else { row.setAttribute('hidden', ''); }
+			var monthSel = document.getElementById('wxsel-date-month');
+			var daySel = document.getElementById('wxsel-date-day');
+			var m = on ? curMonth : currentMonth;
+			var d = on ? curDay : currentDay;
+			if (monthSel) { monthSel.value = String(m); }
+			if (daySel) { fillDaySelect(daySel, m, d); }
+			var form = document.getElementById('wxsel-date-form');
+			if (form) {
+				var vt = form.querySelector('input[name="vartype"]');
+				var sy = form.querySelector('input[name="start_year_rep"]');
+				var rl = form.querySelector('input[name="rankLimit"]');
+				if (vt) { vt.value = curType; }
+				if (sy) { sy.value = String(curStart); }
+				if (rl) { rl.value = String(curRankLimit); }
+				var winInp = form.querySelector('input[name="win"]');
+				if (winInp) { winInp.value = String(on ? curWin : 0); }
+			}
+			syncWinChips();
+		}
+		function syncWinChips() {
+			var wrap = document.getElementById('wxsel-win');
+			if (!wrap) { return; }
+			wrap.querySelectorAll('a.wxsel-chip[data-win]').forEach(function (a) {
+				var w = parseInt(a.getAttribute('data-win'), 10) || 0;
+				a.classList.toggle('active', curDay > 0 && w === curWin);
+				var dm = curDay > 0 ? curMonth : currentMonth;
+				var dd = curDay > 0 ? curDay : currentDay;
+				a.setAttribute('href', pageUrl({ month: dm, day: dd, win: w }));
+			});
+		}
 		var curStart = parseInt(cfg.startYearRep, 10) || 0;
 		var curSummary = parseInt(cfg.summaryType, 10);
 		if (isNaN(curSummary)) { curSummary = 0; }
@@ -236,6 +301,10 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				p.start_year_rep = curStart;
 				if (mode !== 'rank-annual') { p.rankLimit = curRankLimit; }
 				if (mode === 'rank-daily' || mode === 'rank-monthly' || mode === 'rank-spells' || mode === 'rank-periods') { p.month = curMonth; }
+				if (mode === 'rank-daily' && curDay > 0) {
+					p.day = curDay;
+					if (curWin > 0) { p.win = curWin; }
+				}
 				if (mode === 'rank-monthly' || mode === 'rank-annual' || mode === 'rank-periods') {
 					p.summary_type = curSummary;
 					if (isThresholdSummary(curSummary)) { p.threshold = curThreshold; }
@@ -260,6 +329,8 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 					p[k] = overrides[k];
 				}
 			}
+			if (!p.day || parseInt(p.day, 10) <= 0) { delete p.day; delete p.win; }
+			if (!p.win || parseInt(p.win, 10) <= 0) { delete p.win; }
 			var qs = [], key;
 			for (key in p) {
 				if (Object.prototype.hasOwnProperty.call(p, key)) {
@@ -363,11 +434,23 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		}
 		function syncMonthChips() {
 			if (!monthsEl) { return; }
+			var dateSel = (mode === 'rank-daily' && curDay > 0);
 			monthsEl.querySelectorAll('a.wxsel-chip[data-month]').forEach(function (a) {
 				var m = parseInt(a.getAttribute('data-month'), 10);
-				a.classList.toggle('active', m === curMonth);
-				a.setAttribute('href', pageUrl({ month: m }));
+				var isDateChip = a.getAttribute('data-datesel');
+				if (isDateChip) {
+					a.classList.toggle('active', dateSel);
+					var dm = dateSel ? curMonth : currentMonth;
+					var dd = dateSel ? curDay : currentDay;
+					a.setAttribute('data-month', String(dm));
+					a.setAttribute('data-day', String(dd));
+					a.setAttribute('href', pageUrl({ month: dm, day: dd }));
+				} else {
+					a.classList.toggle('active', !dateSel && m === curMonth);
+					a.setAttribute('href', pageUrl({ month: m, day: 0 }));
+				}
 			});
+			syncDateSel();
 		}
 		function nearestStartYear(want, opts) {
 			if (!opts || !opts.length) { return want; }
@@ -523,7 +606,10 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				return o;
 			}
 			if (mode === 'rank-daily') {
-				return { vartype: curType, month: curMonth, start_year_rep: curStart, rankLimit: curRankLimit };
+				var od = { vartype: curType, month: curMonth, start_year_rep: curStart, rankLimit: curRankLimit };
+				if (curDay > 0) { od.day = curDay; }
+				if (curDay > 0 && curWin > 0) { od.win = curWin; }
+				return od;
 			}
 			if (mode === 'rank-monthly') {
 				var om = {
@@ -561,6 +647,15 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			if (meta.year) { curYear = parseInt(meta.year, 10); }
 			if (meta.agg != null) { curAgg = meta.agg || ''; }
 			if (meta.month != null) { curMonth = parseInt(meta.month, 10); }
+			if (meta.day != null) {
+				curDay = parseInt(meta.day, 10);
+				if (isNaN(curDay) || curDay < 0) { curDay = 0; }
+			}
+			if (meta.win != null) {
+				curWin = coerceWin(meta.win, curDay);
+			} else if (curDay <= 0) {
+				curWin = 0;
+			}
 			if (meta.startYearRep != null) { curStart = parseInt(meta.startYearRep, 10); }
 			if (meta.summaryType != null) { curSummary = parseInt(meta.summaryType, 10); }
 			if (meta.rankLimit != null) { curRankLimit = parseInt(meta.rankLimit, 10); }
@@ -593,6 +688,8 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			root.setAttribute('data-year', String(curYear));
 			root.setAttribute('data-agg', curAgg);
 			root.setAttribute('data-month', String(curMonth));
+			root.setAttribute('data-day', String(curDay));
+			root.setAttribute('data-win', String(curWin));
 			root.setAttribute('data-start-year-rep', String(curStart));
 			root.setAttribute('data-summary-type', String(curSummary));
 			root.setAttribute('data-rank-limit', String(curRankLimit));
@@ -633,7 +730,9 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				return true;
 			}
 			if (mode === 'rank-daily') {
-				return o.month === curMonth && o.start === curStart && o.rankLimit === curRankLimit;
+				return o.month === curMonth && (o.day || 0) === (curDay || 0)
+					&& (o.win || 0) === (curWin || 0)
+					&& o.start === curStart && o.rankLimit === curRankLimit;
 			}
 			if (mode === 'rank-monthly') {
 				if (o.month !== curMonth || o.start !== curStart
@@ -668,6 +767,17 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			if (opts.year != null && opts.agg == null) { agg = ''; }
 			if (opts.agg) { /* keep year for restore when leaving agg */ }
 			var month = opts.month != null ? parseInt(opts.month, 10) : curMonth;
+			var day = opts.day != null ? parseInt(opts.day, 10) : curDay;
+			if (isNaN(day) || day < 0) { day = 0; }
+			if (mode === 'rank-daily' && day > 0) {
+				if (!(month >= 1 && month <= 12)) { month = currentMonth; }
+				if (day > daysInMonth(month)) { day = daysInMonth(month); }
+			} else if (mode !== 'rank-daily') {
+				day = 0;
+			}
+			var win = opts.win != null ? parseInt(opts.win, 10) : curWin;
+			if (isNaN(win) || win < 0) { win = 0; }
+			win = coerceWin(win, day);
 			var start = opts.start != null ? parseInt(opts.start, 10) : curStart;
 			var summary = opts.summary != null ? parseInt(opts.summary, 10) : curSummary;
 			var rankLimit = opts.rankLimit != null ? parseInt(opts.rankLimit, 10) : curRankLimit;
@@ -697,7 +807,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			}
 
 			var next = {
-				type: type, year: year, agg: agg || '', month: month, start: start, summary: summary,
+				type: type, year: year, agg: agg || '', month: month, day: day, win: win, start: start, summary: summary,
 				rankLimit: rankLimit, spellDir: spellDir, threshold: threshold, period: period,
 				noOverlap: noOverlap, span: span
 			};
@@ -724,6 +834,10 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				if (mode !== 'rank-annual') { urlOverrides.rankLimit = rankLimit; }
 				if (mode === 'rank-daily' || mode === 'rank-monthly' || mode === 'rank-spells' || mode === 'rank-periods') {
 					urlOverrides.month = month;
+				}
+				if (mode === 'rank-daily') {
+					urlOverrides.day = day > 0 ? day : 0;
+					urlOverrides.win = win;
 				}
 				if (mode === 'rank-monthly' || mode === 'rank-annual' || mode === 'rank-periods') {
 					urlOverrides.summary_type = summary;
@@ -794,6 +908,8 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 							year: frag.getAttribute('data-year'),
 							agg: frag.getAttribute('data-agg') || '',
 							month: frag.getAttribute('data-month'),
+							day: frag.getAttribute('data-day'),
+							win: frag.getAttribute('data-win'),
 							startYearRep: frag.getAttribute('data-start-year-rep'),
 							startYears: syAttr ? syAttr.split(',') : startYearOpts,
 							summaryType: frag.getAttribute('data-summary-type'),
@@ -841,6 +957,9 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			var year = a.getAttribute('data-year');
 			var agg = a.getAttribute('data-agg');
 			var month = a.getAttribute('data-month');
+			var dayAttr = a.getAttribute('data-day');
+			var dateSelAttr = a.getAttribute('data-datesel');
+			var winAttr = a.getAttribute('data-win');
 			var start = a.getAttribute('data-start-year');
 			var summary = a.getAttribute('data-summary');
 			var rankLimit = a.getAttribute('data-rank-limit');
@@ -851,7 +970,8 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			var spanAttr = a.getAttribute('data-span');
 			if (type == null && year == null && agg == null && month == null && start == null
 				&& summary == null && rankLimit == null && spellDir == null && threshold == null
-				&& period == null && noOverlapAttr == null && spanAttr == null) {
+				&& period == null && noOverlapAttr == null && spanAttr == null && dateSelAttr == null
+				&& dayAttr == null && winAttr == null) {
 				return;
 			}
 			e.preventDefault();
@@ -877,6 +997,29 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			} else {
 				opts.year = curYear;
 				opts.agg = curAgg;
+			}
+			if (mode === 'rank-daily') {
+				if (winAttr != null) {
+					opts.win = parseInt(winAttr, 10) || 0;
+					if (opts.day == null) {
+						opts.day = curDay > 0 ? curDay : currentDay;
+					}
+					if (opts.month == null) {
+						opts.month = curDay > 0 ? curMonth : currentMonth;
+					}
+				} else if (dateSelAttr != null) {
+					opts.day = dayAttr != null ? parseInt(dayAttr, 10) : (curDay > 0 ? curDay : currentDay);
+					if (month == null) {
+						opts.month = curDay > 0 ? curMonth : currentMonth;
+					}
+					opts.win = curDay > 0 ? curWin : 0;
+				} else if (month != null && a.closest('.wxsel-months')) {
+					opts.day = 0;
+					opts.win = 0;
+				} else {
+					opts.day = curDay;
+					opts.win = curWin;
+				}
 			}
 			load(opts);
 		});
@@ -917,6 +1060,8 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 					year: st.year != null ? st.year : curYear,
 					agg: st.agg != null ? st.agg : '',
 					month: st.month != null ? st.month : curMonth,
+					day: st.day != null ? st.day : 0,
+					win: st.win != null ? st.win : 0,
 					start: st.start_year_rep != null ? st.start_year_rep : curStart,
 					summary: st.summary_type != null ? st.summary_type : curSummary,
 					rankLimit: st.rankLimit != null ? st.rankLimit : curRankLimit,
@@ -933,6 +1078,8 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				year: q.get('year') || curYear,
 				agg: q.get('agg') || '',
 				month: q.get('month') != null ? q.get('month') : curMonth,
+				day: q.get('day') != null ? q.get('day') : 0,
+				win: q.get('win') != null ? q.get('win') : 0,
 				start: q.get('start_year_rep') || curStart,
 				summary: q.get('summary_type') || curSummary,
 				rankLimit: q.get('rankLimit') || curRankLimit,
@@ -944,8 +1091,33 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			}, false);
 		});
 
+		function bindDateSel() {
+			if (mode !== 'rank-daily') { return; }
+			var form = document.getElementById('wxsel-date-form');
+			if (!form || form.getAttribute('data-bound')) { return; }
+			form.setAttribute('data-bound', '1');
+			var monthSel = document.getElementById('wxsel-date-month');
+			var daySel = document.getElementById('wxsel-date-day');
+			if (monthSel) {
+				monthSel.addEventListener('change', function () {
+					var d = fillDaySelect(daySel, parseInt(monthSel.value, 10), daySel ? daySel.value : 1);
+					load({ month: parseInt(monthSel.value, 10), day: d });
+				});
+			}
+			if (daySel) {
+				daySel.addEventListener('change', function () {
+					load({ month: parseInt(monthSel.value, 10), day: parseInt(daySel.value, 10) });
+				});
+			}
+			form.addEventListener('submit', function (e) {
+				e.preventDefault();
+				if (!monthSel || !daySel) { return; }
+				load({ month: parseInt(monthSel.value, 10), day: parseInt(daySel.value, 10) });
+			});
+		}
 		syncNavVartype();
 		syncMonthChips();
+		bindDateSel();
 		syncRankLimitChips();
 		syncPeriodChips();
 		syncOverlapChips();

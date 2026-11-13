@@ -2808,6 +2808,33 @@ body.cam-modal-open {
 #report-sel-threshold[hidden] {
 	display: none !important;
 }
+#report-sel-datesel[hidden] {
+	display: none !important;
+}
+.wxsel-date-wrap {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem 0.75rem;
+}
+.wxsel-date-form {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem 0.4rem;
+}
+.wxsel-date-form select {
+	font: inherit;
+	font-size: 1rem;
+	line-height: 1.2;
+	min-height: 2.4rem;
+	padding: 0.28rem 0.5rem;
+	color: #15604c;
+	background: #fff;
+	border: 1px solid #c5d6cb;
+	border-radius: 4px;
+	max-width: 100%;
+}
 
 #dd-ajax.dd-ajax-loading,
 #dm-ajax.dd-ajax-loading,
