@@ -264,7 +264,7 @@ class Report {
 			'h2' => array('2nd half', '2nd half (day 16–end of month)'),
 		);
 		$out = array();
-		# Rank-monthly always lists MTD (hidden in the DOM when not the current month) so JS can toggle it.
+		# Rank-monthly always lists MTD (visible from any month; the chip jumps to the current month).
 		$keys = self::spanOptionsFor($mode, $month);
 		if ($mode === 'rank-monthly' && !in_array('mtd', $keys, true)) {
 			array_splice($keys, 1, 0, ['mtd']);
@@ -284,6 +284,9 @@ class Report {
 		if ($mode === 'monthly' && $this->span === 'mtd') {
 			$this->span = 'ytd';
 			return;
+		}
+		if ($mode === 'rank-monthly' && $this->span === 'mtd') {
+			$this->month = (int)Date::$dmonth;
 		}
 		$allowed = self::spanOptionsFor($mode, $this->month);
 		if (!in_array($this->span, $allowed, true)) {
@@ -1339,16 +1342,21 @@ class Report {
 		$showSpan = !empty($o['showSpan']) || ($mode === 'monthly' || $mode === 'rank-monthly' || $mode === 'rank-annual');
 		if ($showSpan) {
 			$spanLabels = self::spanChipLabels($mode, $this->month);
-			$mtdVisible = ($mode !== 'rank-monthly') || ((int)$this->month === (int)Date::$dmonth);
+			$mtdMonth = (int)Date::$dmonth;
 			echo '<div class="report-sel-row report-sel-labelled">';
 			echo '<div class="wxsel-label">Period</div>';
 			echo '<div class="wxsel-scale wxsel-span" role="tablist">';
 			foreach ($spanLabels as $key => $pair) {
 				$active = ($key === $this->span) ? ' active' : '';
-				$hide = ($key === 'mtd' && !$mtdVisible) ? ' hidden' : '';
-				echo '<a class="wxsel-chip' . $active . '" data-span="' . $key
-					. '" href="' . $selUrl(array('span' => $key)) . '" title="'
-					. htmlspecialchars($pair[1]) . '"' . $hide . '>' . $pair[0] . '</a>';
+				$hrefParams = array('span' => $key);
+				$extra = '';
+				if ($mode === 'rank-monthly' && $key === 'mtd') {
+					$hrefParams['month'] = $mtdMonth;
+					$extra = ' data-month="' . $mtdMonth . '"';
+				}
+				echo '<a class="wxsel-chip' . $active . '" data-span="' . $key . '"' . $extra
+					. ' href="' . $selUrl($hrefParams) . '" title="'
+					. htmlspecialchars($pair[1]) . '">' . $pair[0] . '</a>';
 			}
 			echo '</div></div>';
 		}

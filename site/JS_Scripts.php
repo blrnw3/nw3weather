@@ -414,12 +414,14 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			if (!spanEl) { return; }
 			spanEl.querySelectorAll('a.wxsel-chip[data-span]').forEach(function (a) {
 				var v = a.getAttribute('data-span');
-				if (v === 'mtd' && mode === 'rank-monthly') {
-					if (curMonth === currentMonth) { a.removeAttribute('hidden'); }
-					else { a.setAttribute('hidden', ''); }
-				}
 				a.classList.toggle('active', v === curSpan);
-				a.setAttribute('href', pageUrl({ span: v }));
+				if (v === 'mtd' && mode === 'rank-monthly') {
+					a.removeAttribute('hidden');
+					a.setAttribute('data-month', String(currentMonth));
+					a.setAttribute('href', pageUrl({ span: v, month: currentMonth }));
+				} else {
+					a.setAttribute('href', pageUrl({ span: v }));
+				}
 			});
 		}
 		function syncSpellDirChips() {
@@ -654,7 +656,11 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			// Rank/month pages ship only the active summary (AJAX on chip change).
 			var period = opts.period != null ? parseInt(opts.period, 10) : curPeriod;
 			var noOverlap = opts.noOverlap != null ? !!opts.noOverlap : curNoOverlap;
-			var span = coerceSpan(opts.span != null ? opts.span : curSpan, month);
+			var span = opts.span != null ? opts.span : curSpan;
+			if (mode === 'rank-monthly' && span === 'mtd' && month !== currentMonth) {
+				month = currentMonth;
+			}
+			span = coerceSpan(span, month);
 			if ((mode === 'monthly' || mode === 'rank-monthly' || mode === 'rank-annual')
 				&& type === curType && start === curStart && month === curMonth
 				&& rankLimit === curRankLimit && period === curPeriod && noOverlap === curNoOverlap
