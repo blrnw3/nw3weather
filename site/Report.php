@@ -19,6 +19,8 @@ class Report {
 	public $year;               // selected year
 	public $month;              // selected month (0 = whole year)
 	public $day;                // specific calendar day for rank-daily (0 = all days in the month)
+	public $win;                // ±N days around $day on rank-daily (0 = exact date)
+	public static $dateWinOptions = [0, 3, 5, 10];
 	public $startYrReport;      // start year for multi-year reports
 	public $rankLimit;          // rows shown on ranking pages
 	public $summaryType;        // Data::SUMMARY_* chosen via the tab buttons
@@ -296,6 +298,14 @@ class Report {
 		}
 	}
 
+	/** "13 Nov" or "13 Nov ±5 days" for a rank-daily specific date. */
+	public function rankDayDateLabel() {
+		if ($this->day <= 0 || $this->month < 1 || $this->month > 12) { return ''; }
+		$lab = $this->day . ' ' . Date::$months3[$this->month - 1];
+		if ($this->win > 0) { $lab .= ' ±' . $this->win . ' days'; }
+		return $lab;
+	}
+
 	/** Anomaly vs the climate normal for a (possibly year-crossing) bounds array. */
 	public function anomBounds($value, $b) {
 		if (!is_array($b)) { return ''; }
@@ -423,6 +433,11 @@ class Report {
 			if ($this->day > $maxD) { $this->day = $maxD; }
 		} else {
 			$this->day = 0;
+		}
+		$this->win = 0;
+		if ($this->day > 0 && isset($_GET['win'])) {
+			$w = (int)$_GET['win'];
+			if (in_array($w, [3, 5, 10], true)) { $this->win = $w; }
 		}
 
 		// Ranking / multi-year selectors
@@ -1149,6 +1164,9 @@ class Report {
 			$aggTitle = array('min' => 'Min', 'max' => 'Max', 'mean' => 'Mean');
 			$titleSuffix .= ' · ' . $aggTitle[$this->dayAgg] . ' (all years)';
 		}
+		if ($mode === 'rank-daily' && $this->day > 0) {
+			$titleSuffix .= ' · ' . $this->rankDayDateLabel();
+		}
 		if ($mode === 'monthly' || $mode === 'rank-monthly' || $mode === 'rank-annual') {
 			$titleSuffix = $this->summaryTitleSuffix();
 		}
@@ -1207,6 +1225,7 @@ class Report {
 				}
 				if ($mode === 'rank-daily' && $this->day > 0) {
 					$params['day'] = $this->day;
+					if ($this->win > 0) { $params['win'] = $this->win; }
 				}
 				if ($mode === 'rank-monthly' || $mode === 'rank-annual' || $mode === 'rank-periods') {
 					$params['summary_type'] = $this->summaryType;
@@ -1227,7 +1246,10 @@ class Report {
 				}
 			}
 			foreach ($overrides as $k => $v) { $params[$k] = $v; }
-			if (isset($params['day']) && (int)$params['day'] <= 0) { unset($params['day']); }
+			if (isset($params['day']) && (int)$params['day'] <= 0) {
+				unset($params['day'], $params['win']);
+			}
+			if (isset($params['win']) && (int)$params['win'] <= 0) { unset($params['win']); }
 			if ($mode === 'daily') {
 				if (isset($overrides['year'])) {
 					unset($params['agg'], $params['start_year_rep']);
@@ -1249,6 +1271,7 @@ class Report {
 			. ' data-agg="' . htmlspecialchars($this->dayAgg) . '"'
 			. ' data-month="' . (int)$this->month . '"'
 			. ' data-day="' . (int)$this->day . '"'
+			. ' data-win="' . (int)$this->win . '"'
 			. ' data-start-year-rep="' . (int)$this->startYrReport . '"'
 			. ' data-summary-type="' . (int)$this->summaryType . '"'
 			. ' data-rank-limit="' . (int)$this->rankLimit . '"'
@@ -1421,11 +1444,13 @@ class Report {
 				$hide = $dateMode ? '' : ' hidden';
 				echo '<div class="report-sel-row report-sel-labelled" id="report-sel-datesel"' . $hide . '>';
 				echo '<div class="wxsel-label">Date</div>';
+				echo '<div class="wxsel-date-wrap">';
 				echo '<form class="wxsel-date-form" method="get" action="'
 					. htmlspecialchars(Page::$pageName) . '" id="wxsel-date-form">';
 				echo '<input type="hidden" name="vartype" value="' . htmlspecialchars($this->type) . '" />';
 				echo '<input type="hidden" name="start_year_rep" value="' . (int)$this->startYrReport . '" />';
 				echo '<input type="hidden" name="rankLimit" value="' . (int)$this->rankLimit . '" />';
+				echo '<input type="hidden" name="win" id="wxsel-date-win" value="' . (int)$this->win . '" />';
 				echo '<select name="month" id="wxsel-date-month" aria-label="Month">';
 				for ($m = 1; $m <= 12; $m++) {
 					$sel = ($m === $dm) ? ' selected="selected"' : '';
@@ -1439,7 +1464,17 @@ class Report {
 				}
 				echo '</select>';
 				echo '<button type="submit" class="wxsel-chip">Show</button>';
-				echo '</form></div>';
+				echo '</form>';
+				echo '<div class="wxsel-scale wxsel-win" id="wxsel-win" role="tablist">';
+				foreach (self::$dateWinOptions as $w) {
+					$lab = ($w === 0) ? 'Exact' : ('±' . $w);
+					$title = ($w === 0) ? 'Exact date' : ('±' . $w . ' days');
+					$active = ((int)$this->win === $w) ? ' active' : '';
+					echo '<a class="wxsel-chip' . $active . '" data-win="' . $w
+						. '" href="' . $selUrl(array('month' => $dm, 'day' => $dd, 'win' => $w))
+						. '" title="' . $title . '">' . $lab . '</a>';
+				}
+				echo '</div></div></div>';
 			}
 		}
 
@@ -1591,6 +1626,7 @@ class Report {
 			'agg' => $this->dayAgg,
 			'month' => (int)$this->month,
 			'day' => (int)$this->day,
+			'win' => (int)$this->win,
 			'currentDay' => (int)Date::$dday,
 			'startYearRep' => (int)$this->startYrReport,
 			'startYearOptions' => array_map('intval', $this->startYearOptions),

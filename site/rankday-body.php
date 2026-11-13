@@ -12,16 +12,40 @@ function nw3_rankday_render(Report $report) {
 	$type = $report->type;
 	$month = $report->month;
 	$day = (int)$report->day;
+	$win = ($day > 0) ? (int)$report->win : 0;
 	$startY = max((int)$report->startYrReport, (int)$report->startYear);
+	$DAT = Data::getDailyData($type, $startY);
 
 	$ranked = [];
-	foreach (Data::getDailyData($type, $startY) as $y => $months) {
-		foreach ($months as $m => $daily) {
-			if ($month == 0 || $m == $month) {
-				foreach ($daily as $d => $v) {
-					if ($day > 0 && (int)$d !== $day) { continue; }
-					if (!Util::isBlank($v)) {
-						$ranked[] = [(float)$v, Date::mkdate($m, $d, $y)];
+	if ($day > 0 && $win > 0) {
+		$endY = (int)Date::$dyear;
+		for ($y = $startY; $y <= $endY; $y++) {
+			$center = Date::mkdate($month, $day, $y);
+			if ($center === false
+				|| (int)date('n', $center) !== (int)$month
+				|| (int)date('j', $center) !== (int)$day) {
+				continue; # e.g. 29 Feb in a non-leap year
+			}
+			for ($off = -$win; $off <= $win; $off++) {
+				$ts = strtotime(($off >= 0 ? '+' : '') . $off . ' day', $center);
+				if ($ts === false) { continue; }
+				$yy = (int)date('Y', $ts);
+				$mm = (int)date('n', $ts);
+				$dd = (int)date('j', $ts);
+				if ($yy < $startY || Data::dateIsFuture($yy, $mm, $dd)) { continue; }
+				if (!isset($DAT[$yy][$mm][$dd]) || Util::isBlank($DAT[$yy][$mm][$dd])) { continue; }
+				$ranked[] = [(float)$DAT[$yy][$mm][$dd], Date::mkdate($mm, $dd, $yy)];
+			}
+		}
+	} else {
+		foreach ($DAT as $y => $months) {
+			foreach ($months as $m => $daily) {
+				if ($month == 0 || $m == $month) {
+					foreach ($daily as $d => $v) {
+						if ($day > 0 && (int)$d !== $day) { continue; }
+						if (!Util::isBlank($v)) {
+							$ranked[] = [(float)$v, Date::mkdate($m, $d, $y)];
+						}
 					}
 				}
 			}
@@ -62,10 +86,8 @@ function nw3_rankday_render(Report $report) {
 	$ctxLo = Report::rankCtx($cur, $loKeys, $keys, false, $lowest, $labels);
 
 	if ($day > 0) {
-		$yestM = (int)date('n', Date::$dtstamp_yest);
-		$yestD = (int)date('j', Date::$dtstamp_yest);
-		$footToday = ($month === (int)Date::$dmonth && $day === (int)Date::$dday);
-		$footYest = ($month === $yestM && $day === $yestD);
+		$footToday = isset($cur['today']);
+		$footYest = isset($cur['yest']);
 		$footCond = $footToday || $footYest;
 	} else {
 		$footCond = ($month === 0 || $month == (int)Date::$dmonth);
@@ -87,7 +109,7 @@ function nw3_rankday_render(Report $report) {
 	echo '</div>';
 
 	if ($day > 0) {
-		$extraMon = ' on ' . $day . ' ' . Date::$months3[$month - 1];
+		$extraMon = ' on ' . $report->rankDayDateLabel();
 	} else {
 		$extraMon = ($month === 0) ? '' : ' in ' . Date::$months3[$month - 1];
 	}
@@ -111,9 +133,11 @@ function nw3_rankday_render(Report $report) {
 		'type' => $type,
 		'month' => (int)$month,
 		'day' => (int)$day,
+		'win' => (int)$win,
 		'startYearRep' => (int)$report->startYrReport,
 		'startYearOptions' => array_map('intval', $report->startYearOptions),
 		'rankLimit' => (int)$report->rankLimit,
-		'title' => $report->description . ' / ' . $unitLabel,
+		'title' => $report->description . ' / ' . $unitLabel
+			. (($day > 0) ? (' · ' . $report->rankDayDateLabel()) : ''),
 	);
 }

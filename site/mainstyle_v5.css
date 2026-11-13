@@ -2811,6 +2811,12 @@ body.cam-modal-open {
 #report-sel-datesel[hidden] {
 	display: none !important;
 }
+.wxsel-date-wrap {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem 0.75rem;
+}
 .wxsel-date-form {
 	display: flex;
 	flex-wrap: wrap;
