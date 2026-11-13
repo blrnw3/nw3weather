@@ -406,7 +406,7 @@ class Charts {
 		$skip = array('comms', 'extra', 'issues', 'away', 'cloud', 'spare');
 		$vars = array();
 		foreach (Wx::$daily as $key => $meta) {
-			if (in_array($key, $skip, true)) { continue; }
+			if (in_array($key, $skip, true) || !empty($meta['annual_only'])) { continue; }
 			$vars[$key] = $meta['description'];
 		}
 		return $vars;

@@ -203,9 +203,19 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		var curNoOverlap = !!parseInt(cfg.periodNoOverlap == null ? 0 : cfg.periodNoOverlap, 10);
 		var SPAN_KNOWN = {full:1, mtd:1, ytd:1, winter:1, spring:1, summer:1, autumn:1, seasonal:1, h1:1, h2:1};
 		var currentMonth = parseInt(cfg.currentMonth, 10) || 0;
-		function spanAllowed(span, month) {
+		var annualOnlyTypes = cfg.annualOnlyTypes || [];
+		function isAnnualOnly(type) {
+			type = type || curType;
+			var i;
+			for (i = 0; i < annualOnlyTypes.length; i++) {
+				if (annualOnlyTypes[i] === type) { return true; }
+			}
+			return false;
+		}
+		function spanAllowed(span, month, type) {
 			month = parseInt(month, 10);
 			if (!SPAN_KNOWN[span]) { return false; }
+			if (isAnnualOnly(type || curType)) { return span === 'full'; }
 			if (mode === 'rank-annual') {
 				return span === 'full' || span === 'ytd' || span === 'winter'
 					|| span === 'spring' || span === 'summer' || span === 'autumn';
@@ -225,16 +235,16 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			}
 			return span === 'full';
 		}
-		function coerceSpan(span, month) {
+		function coerceSpan(span, month, type) {
 			if (mode === 'monthly' && (span === 'winter' || span === 'spring' || span === 'summer' || span === 'autumn')) {
 				return 'seasonal';
 			}
 			if (mode === 'monthly' && span === 'mtd') {
 				return 'ytd';
 			}
-			return spanAllowed(span, month) ? span : 'full';
+			return spanAllowed(span, month, type) ? span : 'full';
 		}
-		var curSpan = coerceSpan(cfg.span, cfg.month);
+		var curSpan = coerceSpan(cfg.span, cfg.month, curType);
 		var hasSpan = (mode === 'monthly' || mode === 'rank-monthly' || mode === 'rank-annual');
 		var spellDirLabels = cfg.spellDirLabels || {};
 		var startYearOpts = (cfg.startYearOptions || []).map(function (x) { return parseInt(x, 10); });
@@ -328,6 +338,9 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 					if (mode === 'daily' && (k === 'year' || k === 'agg')) { continue; }
 					p[k] = overrides[k];
 				}
+			}
+			if (p.span) {
+				p.span = coerceSpan(p.span, p.month != null ? p.month : curMonth, p.vartype || curType);
 			}
 			if (!p.day || parseInt(p.day, 10) <= 0) { delete p.day; delete p.win; }
 			if (!p.win || parseInt(p.win, 10) <= 0) { delete p.win; }
@@ -487,6 +500,11 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 					+ label + '</a>';
 			}
 			summaryEl.innerHTML = html;
+			var sumRow = summaryEl.closest ? summaryEl.closest('.report-sel-row') : summaryEl.parentNode;
+			if (sumRow) {
+				if (summaryTypes.length <= 1) { sumRow.setAttribute('hidden', ''); }
+				else { sumRow.removeAttribute('hidden'); }
+			}
 		}
 		function syncRankLimitChips() {
 			if (!limitEl) { return; }
@@ -517,17 +535,30 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		}
 		function syncSpanChips() {
 			if (!spanEl) { return; }
+			var visible = 0;
 			spanEl.querySelectorAll('a.wxsel-chip[data-span]').forEach(function (a) {
 				var v = a.getAttribute('data-span');
+				var ok = spanAllowed(v, curMonth, curType);
+				if (ok) {
+					a.removeAttribute('hidden');
+					visible++;
+				} else {
+					a.setAttribute('hidden', '');
+				}
 				a.classList.toggle('active', v === curSpan);
 				if (v === 'mtd' && mode === 'rank-monthly') {
-					a.removeAttribute('hidden');
+					if (ok) { a.removeAttribute('hidden'); }
 					a.setAttribute('data-month', String(currentMonth));
 					a.setAttribute('href', pageUrl({ span: v, month: currentMonth }));
 				} else {
 					a.setAttribute('href', pageUrl({ span: v }));
 				}
 			});
+			var spanRow = spanEl.closest ? spanEl.closest('.report-sel-row') : spanEl.parentNode;
+			if (spanRow) {
+				if (visible <= 1) { spanRow.setAttribute('hidden', ''); }
+				else { spanRow.removeAttribute('hidden'); }
+			}
 		}
 		function syncSpellDirChips() {
 			if (!spellDirEl) { return; }
@@ -661,7 +692,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			if (meta.rankLimit != null) { curRankLimit = parseInt(meta.rankLimit, 10); }
 			if (meta.periodLength != null) { curPeriod = parseInt(meta.periodLength, 10); }
 			if (meta.periodNoOverlap != null) { curNoOverlap = !!parseInt(meta.periodNoOverlap, 10); }
-			if (meta.span != null) { curSpan = coerceSpan(meta.span, meta.month != null ? meta.month : curMonth); }
+			if (meta.span != null) { curSpan = coerceSpan(meta.span, meta.month != null ? meta.month : curMonth, curType); }
 			if (meta.spellDir) { curSpellDir = meta.spellDir; }
 			if (meta.threshold != null) { curThreshold = parseFloat(meta.threshold); }
 			if (meta.thresholds) {
@@ -792,7 +823,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			if (mode === 'rank-monthly' && span === 'mtd' && month !== currentMonth) {
 				month = currentMonth;
 			}
-			span = coerceSpan(span, month);
+			span = coerceSpan(span, month, type);
 			if ((mode === 'monthly' || mode === 'rank-monthly' || mode === 'rank-annual')
 				&& type === curType && start === curStart && month === curMonth
 				&& rankLimit === curRankLimit && period === curPeriod && noOverlap === curNoOverlap

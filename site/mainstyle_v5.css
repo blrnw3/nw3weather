@@ -2808,6 +2808,9 @@ body.cam-modal-open {
 #report-sel-threshold[hidden] {
 	display: none !important;
 }
+.report-sel-row[hidden] {
+	display: none !important;
+}
 #report-sel-datesel[hidden] {
 	display: none !important;
 }

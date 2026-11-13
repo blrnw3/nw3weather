@@ -2078,6 +2078,97 @@ class Data {
 	 * @param float|null $threshold for COUNT_ABOVE / COUNT_BELOW
 	 * @return array
 	 */
+	/** Sort key for a season with no air frost (after 31 Mar). */
+	const FIRST_FROST_NONE = 1000;
+
+	/**
+	 * First air frost of each autumn/winter season, for annual rankings.
+	 *
+	 * Definition matches the site's air-frost day count (wx14 / afdays): the
+	 * overnight (21:00–09:00) minimum (nightmin) is strictly below 0.0 °C.
+	 * Season is 1 Sep of year Y through 31 Mar of year Y+1, so a first frost
+	 * in January–March is attributed to the preceding autumn's year. Years
+	 * with no frost in that window rank as none (latest). The current season,
+	 * if it has not yet had a frost, is returned as provisional "none yet".
+	 *
+	 * @return array year => [
+	 *   'offset' => int,   // days after 1 Sep; FIRST_FROST_NONE if none
+	 *   'year' => int, 'month' => int, 'day' => int, // frost date if any
+	 *   'none' => bool, 'provisional' => bool,
+	 * ]
+	 */
+	public static function getFirstAirFrost($start_year, $end_year) {
+		$all = self::getDailyData('nightmin', $start_year);
+		$out = [];
+		$todayY = (int)Date::$dyear;
+		$todayM = (int)Date::$dmonth;
+		$todayD = (int)Date::$dday;
+		for ($y = (int)$start_year; $y <= (int)$end_year; $y++) {
+			if (self::dateIsFuture($y, 9, 1)) { continue; }
+			$endY = $y + 1;
+			$endM = 3;
+			$endD = 31;
+			$inProgress = self::dateIsFuture($endY, $endM, $endD);
+			$scanY = $endY;
+			$scanM = $endM;
+			$scanD = $endD;
+			if ($inProgress) {
+				$scanY = $todayY;
+				$scanM = $todayM;
+				$scanD = $todayD;
+			}
+			$present = 0;
+			$found = null;
+			$yy = $y;
+			$mm = 9;
+			$dd = 1;
+			while ($yy < $scanY || ($yy === $scanY && ($mm < $scanM || ($mm === $scanM && $dd <= $scanD)))) {
+				$dim = Date::get_days_in_month($mm, $yy);
+				if ($dd > $dim) {
+					$dd = 1;
+					$mm++;
+					if ($mm > 12) { $mm = 1; $yy++; }
+					continue;
+				}
+				if (isset($all[$yy][$mm][$dd]) && !Util::isBlank($all[$yy][$mm][$dd])) {
+					$present++;
+					if ($found === null && (float)$all[$yy][$mm][$dd] < 0.0) {
+						$found = [$yy, $mm, $dd];
+					}
+				}
+				$dd++;
+				if ($dd > Date::get_days_in_month($mm, $yy)) {
+					$dd = 1;
+					$mm++;
+					if ($mm > 12) { $mm = 1; $yy++; }
+				}
+			}
+			if ($present < 30) { continue; }
+			if ($found !== null) {
+				$out[$y] = [
+					'offset' => (int)(gregoriantojd($found[1], $found[2], $found[0]) - gregoriantojd(9, 1, $y)),
+					'year' => $found[0],
+					'month' => $found[1],
+					'day' => $found[2],
+					'seasonYear' => $y,
+					'none' => false,
+					'provisional' => false,
+				];
+			} else {
+				$out[$y] = [
+					'offset' => self::FIRST_FROST_NONE,
+					'year' => null,
+					'month' => null,
+					'day' => null,
+					'seasonYear' => $y,
+					'none' => true,
+					'provisional' => $inProgress,
+				];
+			}
+		}
+		return $out;
+	}
+
 	public static function getAnnualData($var, $summary_type, $start_year, $end_year, $threshold = null, $span = 'full') {
 		$data = [];
 		list($endMonth, $endDay) = self::spanEndMd();

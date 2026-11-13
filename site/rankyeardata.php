@@ -14,7 +14,7 @@ Page::init([
 Page::requireNw3Ajax();
 
 
-$report = new Report(['default' => 'rain', 'badCats' => ['cloud']]);
+$report = new Report(['default' => 'rain', 'badCats' => ['cloud'], 'allowAnnualOnly' => true]);
 
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-store');

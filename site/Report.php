@@ -204,8 +204,11 @@ class Report {
 		$st = ($summaryType === null) ? $this->summaryType : (int)$summaryType;
 		if (Data::isThresholdSummary($st)) {
 			$base = $this->description . ' · days ' . $this->summaryThresholdPhrase($st);
+		} elseif (!empty($this->meta['annual_only'])) {
+			$base = $this->description;
 		} else {
-			$base = $this->description . ' / ' . Wx::getUnitsText($this->summaryDisplayUnit($st));
+			$unitTxt = Wx::getUnitsText($this->summaryDisplayUnit($st));
+			$base = ($unitTxt === '') ? $this->description : ($this->description . ' / ' . $unitTxt);
 		}
 		$spanBit = $this->spanTitleBit();
 		return ($spanBit === '') ? $base : $base . ' · ' . $spanBit;
@@ -237,7 +240,7 @@ class Report {
 	}
 
 	/** Valid period chips for a report page mode (and selected month, for RankMonth MTD). */
-	public static function spanOptionsFor($mode, $month = 0) {
+	public static function spanOptionsFor($mode, $month = 0, $type = null) {
 		if ($mode === 'rank-annual') {
 			return ['full', 'ytd', 'winter', 'spring', 'summer', 'autumn'];
 		}
@@ -254,7 +257,7 @@ class Report {
 		return ['full'];
 	}
 
-	public static function spanChipLabels($mode, $month = 0) {
+	public static function spanChipLabels($mode, $month = 0, $type = null) {
 		$all = array(
 			'full' => array('Full', 'Full period'),
 			'mtd' => array('MTD', 'Month-to-date (' . Data::spanRangeText('mtd') . ')'),
@@ -269,7 +272,7 @@ class Report {
 		);
 		$out = array();
 		# Rank-monthly always lists MTD (visible from any month; the chip jumps to the current month).
-		$keys = self::spanOptionsFor($mode, $month);
+		$keys = self::spanOptionsFor($mode, $month, $type);
 		if ($mode === 'rank-monthly' && !in_array('mtd', $keys, true)) {
 			array_splice($keys, 1, 0, ['mtd']);
 		}
@@ -281,6 +284,10 @@ class Report {
 
 	/** Coerce $this->span to a value allowed on this page. */
 	public function normalizeSpanFor($mode) {
+		if ($this->isAnnualOnly()) {
+			$this->span = 'full';
+			return;
+		}
 		if ($mode === 'monthly' && Data::isSeasonSpan($this->span)) {
 			$this->span = 'seasonal';
 			return;
@@ -292,7 +299,7 @@ class Report {
 		if ($mode === 'rank-monthly' && $this->span === 'mtd') {
 			$this->month = (int)Date::$dmonth;
 		}
-		$allowed = self::spanOptionsFor($mode, $this->month);
+		$allowed = self::spanOptionsFor($mode, $this->month, $this->type);
 		if (!in_array($this->span, $allowed, true)) {
 			$this->span = 'full';
 		}
@@ -385,6 +392,9 @@ class Report {
 		$badCats = isset($opts['badCats']) ? $opts['badCats'] : [];
 
 		$gType = isset($_GET['vartype']) ? $_GET['vartype'] : $default;
+		if (isset(Wx::$daily[$gType]) && !empty(Wx::$daily[$gType]['annual_only']) && empty($opts['allowAnnualOnly'])) {
+			$gType = $default;
+		}
 		$this->type = isset(Wx::$daily[$gType]) ? $gType : $default;
 
 		$this->meta = Wx::$daily[$this->type];
@@ -500,6 +510,10 @@ class Report {
 
 		// Available monthly-summary tab types. Non-zero "Count" is omitted —
 		// use Count ≥ / Count < with threshold 0 (or the variable default) instead.
+		// Annual-only date variables (e.g. first air frost) have a single implicit view.
+		if (!empty($this->meta['annual_only'])) {
+			$this->availSummaryTypes = [Data::SUMMARY_MEAN];
+		} else {
 		$this->availSummaryTypes = [(int)$this->isSum];
 		array_push($this->availSummaryTypes, Data::SUMMARY_MIN, Data::SUMMARY_MAX);
 		if (!$this->isNotSummarisable) {
@@ -511,6 +525,7 @@ class Report {
 		}
 		if ($this->periodAnom) {
 			$this->availSummaryTypes[] = Data::SUMMARY_ANOM;
+		}
 		}
 
 		$g = isset($_GET['summary_type']) ? (int)$_GET['summary_type'] : 0;
@@ -1159,7 +1174,8 @@ class Report {
 			$this->normalizeSpanFor($mode);
 		}
 
-		$titleSuffix = $this->description . ' / ' . Wx::getUnitsText($this->unit);
+		$unitTxt0 = Wx::getUnitsText($this->unit);
+		$titleSuffix = ($unitTxt0 === '') ? $this->description : ($this->description . ' / ' . $unitTxt0);
 		if ($mode === 'daily' && $this->dayAgg !== '') {
 			$aggTitle = array('min' => 'Min', 'max' => 'Max', 'mean' => 'Mean');
 			$titleSuffix .= ' · ' . $aggTitle[$this->dayAgg] . ' (all years)';
@@ -1181,7 +1197,7 @@ class Report {
 		echo '<h1 id="report-sel-heading">' . htmlspecialchars($heading) . ' - '
 			. htmlspecialchars($titleSuffix) . '</h1>';
 
-		$groups = self::buttonSelectorGroups();
+		$groups = self::buttonSelectorGroups($mode);
 		foreach ($groups as &$g) {
 			foreach (array_keys($g['options']) as $optType) {
 				if (in_array($optType, $this->badCats, true) && $optType !== $this->type) {
@@ -1330,7 +1346,8 @@ class Report {
 			elseif ($mode === 'rank-monthly' || $mode === 'monthly') { $sumLabel = 'Monthly'; }
 			elseif ($mode === 'rank-periods') { $sumLabel = 'Aggregate'; }
 			else { $sumLabel = 'Summary'; }
-			echo '<div class="report-sel-row report-sel-labelled">';
+			$sumRowHidden = (count($this->availSummaryTypes) <= 1) ? ' hidden' : '';
+			echo '<div class="report-sel-row report-sel-labelled"' . $sumRowHidden . '>';
 			echo '<div class="wxsel-label">' . htmlspecialchars($sumLabel) . '</div>';
 			echo '<div class="wxsel-scale wxsel-summary" role="tablist">';
 			foreach ($this->availSummaryTypes as $st) {
@@ -1390,9 +1407,10 @@ class Report {
 
 		$showSpan = !empty($o['showSpan']) || ($mode === 'monthly' || $mode === 'rank-monthly' || $mode === 'rank-annual');
 		if ($showSpan) {
-			$spanLabels = self::spanChipLabels($mode, $this->month);
+			$spanLabels = self::spanChipLabels($mode, $this->month, $this->type);
 			$mtdMonth = (int)Date::$dmonth;
-			echo '<div class="report-sel-row report-sel-labelled">';
+			$spanRowHidden = ($mode === 'rank-annual' && $this->isAnnualOnly()) ? ' hidden' : '';
+			echo '<div class="report-sel-row report-sel-labelled"' . $spanRowHidden . '>';
 			echo '<div class="wxsel-label">Period</div>';
 			echo '<div class="wxsel-scale wxsel-span" role="tablist">';
 			foreach ($spanLabels as $key => $pair) {
@@ -1651,8 +1669,37 @@ class Report {
 			'headingPrefix' => $heading,
 			'fragId' => isset($fragIds[$mode]) ? $fragIds[$mode] : 'dd-fragment',
 			'showYears' => $this->showRecordYears ? 1 : 0,
+			'annualOnlyTypes' => self::annualOnlyTypes(),
 		);
 		echo '<script>NW3_reportSel(' . nw3_json_encode($cfg) . ');</script>';
+	}
+
+
+	/** Variable names that exist only on annual rankings (not daily/monthly/charts). */
+	public static function annualOnlyTypes() {
+		$out = [];
+		foreach (Wx::$daily as $k => $meta) {
+			if (!empty($meta['annual_only'])) { $out[] = $k; }
+		}
+		return $out;
+	}
+
+	public function isAnnualOnly() {
+		return !empty($this->meta['annual_only']);
+	}
+
+	/** Linked "14 Nov" / "17 Mar 1975", or "none" / "none yet (so far)". */
+	public static function firstFrostValueHtml($row) {
+		if (!empty($row['none'])) {
+			return !empty($row['provisional']) ? 'none yet (so far)' : 'none';
+		}
+		$y = (int)$row['year'];
+		$m = (int)$row['month'];
+		$d = (int)$row['day'];
+		$ts = Date::mkdate($m, $d, $y);
+		$crossYear = ($y !== (int)$row['seasonYear']);
+		$format = $crossYear ? 'j M Y' : 'j M';
+		return self::dayDateHtml($ts, $format);
 	}
 
 	private function flatCats() {
@@ -1670,9 +1717,21 @@ class Report {
 	 * Full variable/measure groups for button selectors: chart selectableGroups
 	 * plus any daily-table variables from $categories that those omit (e.g. Change).
 	 */
-	private static function buttonSelectorGroups() {
+	private static function buttonSelectorGroups($mode = '') {
 		require_once __DIR__ . '/ChartHelper.php';
 		$groups = Charts::selectableGroups();
+		if ($mode === 'rank-annual') {
+			foreach ($groups as &$grp) {
+				if ($grp['id'] !== 'temp' || empty($grp['options']['daymax'])) { continue; }
+				$opts = [];
+				foreach ($grp['options'] as $k => $lab) {
+					$opts[$k] = $lab;
+					if ($k === 'daymax') { $opts['affirst'] = 'First frost'; }
+				}
+				$grp['options'] = $opts;
+			}
+			unset($grp);
+		}
 		$covered = [];
 		foreach ($groups as $g) {
 			foreach (array_keys($g['options']) as $type) {
@@ -1890,7 +1949,7 @@ class Report {
 	 * @param bool $isCount   values are plain counts (no unit conversion)
 	 * @param float $sumfix   divisor applied before colour lookup
 	 */
-	public function rankTable($values, $dates, $rankNum, $title, $alignLeft, $showToday, $showFoot, $isDaily = true, $isCount = false, $sumOff = 1, $unitOverride = null, $ctx = array()) {
+	public function rankTable($values, $dates, $rankNum, $title, $alignLeft, $showToday, $showFoot, $isDaily = true, $isCount = false, $sumOff = 1, $unitOverride = null, $ctx = array(), $valHtml = array()) {
 		// $ctx: 'today' / 'yest' => rankStats() for footer rows; 'hl' => [rowIdx => 'today'|'yest'];
 		//       'todayLabel' / 'yestLabel' override the footer labels.
 		$hl = isset($ctx['hl']) ? $ctx['hl'] : array();
@@ -1907,8 +1966,9 @@ class Report {
 			$hlCls = isset($hl[$i]) ? (($hl[$i] === 'today') ? ' rk-current' : ' rk-current-prev') : '';
 			echo '<div class="rk-row' . $hlCls . '">';
 			echo '<div class="rk-rank">' . $i . '</div>';
-			echo '<div class="rk-val ' . $this->rankClass($values[$i], $isCount, $sumOff, $unit) . '">'
-				. $this->rankVal($values[$i], $isCount, $unit) . '</div>';
+			$valOut = isset($valHtml[$i]) ? $valHtml[$i] : $this->rankVal($values[$i], $isCount, $unit);
+			$valCls = isset($valHtml[$i]) ? 'rk-val-date' : $this->rankClass($values[$i], $isCount, $sumOff, $unit);
+			echo '<div class="rk-val ' . $valCls . '">' . $valOut . '</div>';
 			echo '<div class="rk-date">' . (isset($dates[$i]) ? $dates[$i] : '') . '</div>';
 			echo '</div>';
 		}
@@ -1941,8 +2001,9 @@ class Report {
 				$pctl = $st ? ('<span class="rk-pctl">' . htmlspecialchars(self::rankStatsText($st, '')) . '</span>') : '';
 				echo '<div class="rk-row rk-foot' . ($key === 'today' ? ' rk-foot-today' : '') . '">';
 				echo '<div class="rk-rank">' . $rankCell . '</div>';
-				echo '<div class="rk-val ' . $this->rankClass($values[$key], $isCount, $sumOff, $unit) . '">'
-					. $this->rankVal($values[$key], $isCount, $unit) . '</div>';
+				$valOut = isset($valHtml[$key]) ? $valHtml[$key] : $this->rankVal($values[$key], $isCount, $unit);
+				$valCls = isset($valHtml[$key]) ? 'rk-val-date' : $this->rankClass($values[$key], $isCount, $sumOff, $unit);
+				echo '<div class="rk-val ' . $valCls . '">' . $valOut . '</div>';
 				echo '<div class="rk-date">' . htmlspecialchars($lbl) . $pctl . '</div>';
 				echo '</div>';
 			}
