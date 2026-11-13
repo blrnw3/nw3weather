@@ -10,8 +10,8 @@
 function nw3_rankmonth_render(Report $report) {
 	$t0 = microtime(true);
 	$type = $report->type;
-	$month = $report->month;
 	$report->normalizeSpanFor('rank-monthly');
+	$month = $report->month;
 	$span = $report->span;
 	$startY = max((int)$report->startYrReport, (int)$report->startYear);
 	$endY = (int)Date::$dyear;
