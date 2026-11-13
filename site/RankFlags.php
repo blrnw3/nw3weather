@@ -5,8 +5,9 @@
  * elapsed) the month-to-date or year-to-date, rank near the top or bottom of
  * the station's all-time rankings for any variable?
  *
- * Built by warm_rank_flags.php (cron_main, every 5 minutes, in the background)
- * into CACHE_ROOT/rank_flags.json; the home page only reads that file.
+ * Built by warm_rank_flags.php (cron_main, every 15 minutes, in the background)
+ * into CACHE_ROOT/rank_flags.json; the home page only reads that file. The card
+ * shows a curated top 10 (RankFlagsCurate), classified once a day.
  *
  * Qualifies: percentile >= PCT, or rank <= TOP_N with percentile >= TOP_N_PCT
  * (so a top-10 inside a big tie, e.g. one of 200 frost-free Octobers, or in a
@@ -23,6 +24,8 @@
  *
  * Each item carries the first year of the data it was ranked against ("since").
  */
+require_once __DIR__ . '/RankFlagsCurate.php';
+
 class RankFlags {
 
 	const TOP_N = 10;
@@ -372,10 +375,11 @@ class RankFlags {
 		return ['version' => self::CACHE_VERSION, 'generated' => time(), 'items' => $items, 'ms' => (int)round((microtime(true) - $t0) * 1000)];
 	}
 
-	/** Write the cache (atomic). */
+	/** Write the cache (atomic) and refresh the curated top-10 plan. */
 	public static function warm() {
 		$data = self::build();
 		nw3_atomic_write(self::file(), json_encode($data));
+		RankFlagsCurate::refresh($data);
 		return $data;
 	}
 
@@ -423,14 +427,13 @@ class RankFlags {
 		$data = ($data === null) ? self::load() : $data;
 		if (!$data || empty($data['items'])) { return; }
 		if (!class_exists('Report', false)) { require_once __DIR__ . '/Report.php'; }
-		$items = $data['items'];
+		if (!class_exists('RankFlagsCurate', false)) { require_once __DIR__ . '/RankFlagsCurate.php'; }
+		$plan = RankFlagsCurate::loadPlan();
+		$groups = RankFlagsCurate::apply($plan, $data['items']);
+		if (!$groups) { return; }
 		$li = [];
-		foreach ($items as $i => $it) {
-			list($what, $rank) = self::itemText($it);
-			$top = ($it['rank'] === 1 && !$it['tied']) ? ' rkf-record' : '';
-			$li[] = '<li class="clim-note rkf-item' . $top . '"><span class="rkf-dot rkf-dot-' . htmlspecialchars($it['dir']) . '"></span>'
-				. '<a href="' . htmlspecialchars($it['url']) . '" title="Open the ranking">' . htmlspecialchars($what) . '</a> '
-				. '&middot; <b>' . htmlspecialchars($rank) . '</b>' . ($it['soFar'] ? ' <span class="rkf-prov">provisional</span>' : '') . '</li>';
+		foreach ($groups as $g) {
+			$li[] = RankFlagsCurate::renderItem($g);
 		}
 		echo '<div class="wx-card wx-card-clim wx-card-rkf" id="rkf-card">';
 		echo '<div class="wx-card-head"><span class="wx-card-label">Notable in the rankings</span></div>';
