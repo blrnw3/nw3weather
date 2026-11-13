@@ -2802,6 +2802,9 @@ body.cam-modal-open {
 #report-sel-start-year[hidden] {
 	display: none !important;
 }
+#report-sel-show-years[hidden] {
+	display: none !important;
+}
 #report-sel-threshold[hidden] {
 	display: none !important;
 }
@@ -2947,6 +2950,44 @@ body.cam-modal-open {
 }
 .dd-grid .invalid {
 	background-color: #ececec;
+}
+.dd-years-form {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.45rem;
+	margin: 0;
+}
+.dd-years-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	margin: 0;
+	font-size: 0.88rem;
+	font-weight: 500;
+	color: #333;
+	cursor: pointer;
+	user-select: none;
+}
+.dd-years-label input {
+	margin: 0;
+}
+.dd-year {
+	display: block;
+	font-size: 0.7em;
+	font-weight: 400;
+	line-height: 1.15;
+	color: inherit;
+	opacity: 0.72;
+	margin-top: 0.04em;
+}
+.dd-grid.dd-years-off .dd-year {
+	display: none;
+}
+.dd-grid.dd-has-years:not(.dd-years-off) .dd-row:not(.dd-sum):not(.dd-head) .dd-cell:not(.noday):not(.dd-future) {
+	line-height: 1.2;
+	min-height: 2.35em;
+	padding: 0.12em 0 0.18em;
 }
 
 /****************** Monthly report day breakdown ***************************/

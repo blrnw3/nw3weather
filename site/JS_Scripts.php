@@ -122,6 +122,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		var curType = cfg.type;
 		var curYear = parseInt(cfg.year, 10) || 0;
 		var curAgg = cfg.agg || '';
+		var curShowYears = cfg.showYears !== 0 && cfg.showYears !== false && cfg.showYears !== '0';
 		var curMonth = parseInt(cfg.month, 10);
 		if (isNaN(curMonth)) { curMonth = 0; }
 		var curStart = parseInt(cfg.startYearRep, 10) || 0;
@@ -225,6 +226,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				} else {
 					p.year = year;
 				}
+				if (!curShowYears) { p.years = 0; }
 			} else if (mode === 'monthly') {
 				p.start_year_rep = curStart;
 				p.summary_type = curSummary;
@@ -335,9 +337,29 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		}
 		function syncStartYearVisibility() {
 			var row = document.getElementById('report-sel-start-year');
-			if (!row || mode !== 'daily') { return; }
-			if (curAgg) { row.removeAttribute('hidden'); }
-			else { row.setAttribute('hidden', ''); }
+			if (row && mode === 'daily') {
+				if (curAgg) { row.removeAttribute('hidden'); }
+				else { row.setAttribute('hidden', ''); }
+			}
+			syncYearsToggle();
+		}
+		function applyYearsClass() {
+			var grid = document.querySelector('#dd-ajax .dd-grid');
+			if (!grid) { return; }
+			var record = (curAgg === 'min' || curAgg === 'max');
+			grid.classList.toggle('dd-has-years', record);
+			grid.classList.toggle('dd-years-off', record && !curShowYears);
+		}
+		function syncYearsToggle() {
+			if (mode !== 'daily') { return; }
+			var row = document.getElementById('report-sel-show-years');
+			if (row) {
+				if (curAgg === 'min' || curAgg === 'max') { row.removeAttribute('hidden'); }
+				else { row.setAttribute('hidden', ''); }
+			}
+			var box = document.getElementById('dd-show-years');
+			if (box) { box.checked = !!curShowYears; }
+			applyYearsClass();
 		}
 		function syncMonthChips() {
 			if (!monthsEl) { return; }
@@ -531,7 +553,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 					rankLimit: curRankLimit, spell_dir: curSpellDir, threshold: curThreshold
 				};
 			}
-			return { vartype: curType, year: curYear, agg: curAgg, start_year_rep: curStart };
+			return { vartype: curType, year: curYear, agg: curAgg, start_year_rep: curStart, years: curShowYears ? 1 : 0 };
 		}
 		function applyMeta(meta) {
 			if (!meta) { return; }
@@ -745,6 +767,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 							throw new Error('bad json');
 						}
 						NW3.hydrateDaily(data, body);
+						applyYearsClass();
 						applyMeta({
 							type: data.meta.type,
 							year: data.meta.year,
@@ -857,9 +880,37 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			}
 			load(opts);
 		});
+		var yearsForm = document.getElementById('dd-years-form');
+		var yearsBox = document.getElementById('dd-show-years');
+		if (yearsForm) {
+			yearsForm.addEventListener('submit', function (e) {
+				if (!window.history || !history.replaceState) { return; }
+				e.preventDefault();
+				curShowYears = !!(yearsBox && yearsBox.checked);
+				applyYearsClass();
+				history.replaceState(stateObj(), '', pageUrl());
+			});
+		}
+		if (yearsBox) {
+			yearsBox.addEventListener('change', function () {
+				curShowYears = !!yearsBox.checked;
+				applyYearsClass();
+				if (window.history && history.replaceState) {
+					history.replaceState(stateObj(), '', pageUrl());
+				}
+			});
+		}
+
 		window.addEventListener('popstate', function (e) {
 			var st = e.state;
 			var q = new URL(location.href).searchParams;
+			if (mode === 'daily') {
+				if (st && st.years != null) {
+					curShowYears = st.years !== 0 && st.years !== '0';
+				} else {
+					curShowYears = q.get('years') !== '0';
+				}
+			}
 			if (st && st.vartype) {
 				load({
 					type: st.vartype,

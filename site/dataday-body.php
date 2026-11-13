@@ -39,8 +39,10 @@ function nw3_dataday_payload(Report $report) {
 	$isAgg = ($dayAgg !== '');
 
 	$aggFromYear = max((int)$report->startYrReport, (int)$report->startYear);
+	$recordYears = [];
+	$hasRecordYears = ($isAgg && ($dayAgg === 'min' || $dayAgg === 'max'));
 	if ($isAgg) {
-		$data = Data::getDailyCalendarAgg($type, $dayAgg, $aggFromYear);
+		$data = Data::getDailyCalendarAgg($type, $dayAgg, $aggFromYear, $recordYears);
 	} else {
 		$data = Data::getDailyDataForYear($type, $year);
 	}
@@ -86,11 +88,15 @@ function nw3_dataday_payload(Report $report) {
 				$cumuls[$m] += nw3_to_number($val); // non-numeric codes count as 0, as on PHP 5
 				$cumcnts[$m]++;
 				$num = $report->valcolConvert ? Wx::convNum($val, $unit) : (float)$val;
-				$cells[] = array(
+				$cell = array(
 					't' => Wx::conv($val, $unit, false, !empty($report->meta['signed']) ? true : false),
 					'pm' => ($unit === Wx::Pm25) ? $val : null, 'avg' => Wx::aqAvg($report->type),
 					'c' => $report->valcolr($num),
 				);
+				if ($hasRecordYears && isset($recordYears[$m][$day]) && (int)$recordYears[$m][$day] > 0) {
+					$cell['y'] = (int)$recordYears[$m][$day];
+				}
+				$cells[] = $cell;
 			}
 		}
 		$rows[] = array('day' => $day, 'cells' => $cells);
@@ -232,10 +238,14 @@ function nw3_dataday_payload(Report $report) {
 			'description' => $report->description,
 			'unit' => $unitLabel,
 			'title' => $title,
+			'hasRecordYears' => $hasRecordYears,
+			'showYears' => !empty($report->showRecordYears),
 		),
 		'grid' => array(
 			'year' => $year,
 			'dayLinks' => !$isAgg,
+			'hasRecordYears' => $hasRecordYears,
+			'showYears' => !empty($report->showRecordYears),
 			'months' => $months,
 			'rows' => $rows,
 			'sums' => $sums,
@@ -269,6 +279,9 @@ function nw3_dataday_echo_cell($cell, $year, $day, $month, $dayLinks, $extraClas
 	if (isset($cell['a']) && $cell['a'] !== '') {
 		$html .= '<br />(' . $cell['a'] . ')';
 	}
+	if (isset($cell['y']) && (int)$cell['y'] > 0) {
+		$html .= '<span class="dd-year">' . (int)$cell['y'] . '</span>';
+	}
 	dd_cell($html, $class, $extraClass);
 }
 
@@ -282,7 +295,12 @@ function nw3_dataday_echo(array $payload) {
 	$dayLinks = !empty($grid['dayLinks']);
 	$months = $grid['months'];
 
-	echo '<div class="dd-scroll"><div class="dd-grid">';
+	$gridClass = 'dd-grid';
+	if (!empty($grid['hasRecordYears'])) {
+		$gridClass .= ' dd-has-years';
+		if (empty($grid['showYears'])) { $gridClass .= ' dd-years-off'; }
+	}
+	echo '<div class="dd-scroll"><div class="' . $gridClass . '">';
 
 	echo '<div class="dd-row dd-head">';
 	dd_lab('Day');
