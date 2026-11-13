@@ -1463,7 +1463,7 @@ class Report {
 					echo '<option value="' . $d . '"' . $sel . '>' . $d . '</option>';
 				}
 				echo '</select>';
-				echo '<button type="submit" class="wxsel-chip">Show</button>';
+				echo '<noscript><button type="submit" class="wxsel-chip">Show</button></noscript>';
 				echo '</form>';
 				echo '<div class="wxsel-scale wxsel-win" id="wxsel-win" role="tablist">';
 				foreach (self::$dateWinOptions as $w) {
