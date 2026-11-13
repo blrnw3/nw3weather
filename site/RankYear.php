@@ -10,7 +10,7 @@ Page::init([
 ]);
 Page::Start();
 
-$report = new Report(["default" => "rain", "badCats" => ["cloud"]]);
+$report = new Report(["default" => "rain", "badCats" => ["cloud"], "allowAnnualOnly" => true]);
 $report->controls([
 	"heading" => "Historical Ranked Annual Data",
 	"mode" => "rank-annual",

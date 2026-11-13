@@ -2808,6 +2808,9 @@ body.cam-modal-open {
 #report-sel-threshold[hidden] {
 	display: none !important;
 }
+.report-sel-row[hidden] {
+	display: none !important;
+}
 #report-sel-datesel[hidden] {
 	display: none !important;
 }
@@ -3392,6 +3395,19 @@ body.cam-modal-open {
 	padding: 0.25rem 0.6rem;
 	border-left: 4px solid #e0c25a;
 	background: #fff8d9;
+}
+/* First-frost date chip in the current-year banner; table cells use leveltemp_* directly. */
+.rk-frost-chip {
+	display: inline-block;
+	padding: 0.05em 0.45em;
+	border-radius: 3px;
+	font-weight: 600;
+	line-height: 1.35;
+}
+.rk-val[class*="leveltemp_"] a.hidden-link,
+.rk-frost-chip a.hidden-link {
+	color: inherit;
+	padding: 0;
 }
 .rk-status {
 	max-width: 42rem;

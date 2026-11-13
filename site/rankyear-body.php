@@ -1,4 +1,103 @@
 <?php
+
+/**
+ * First air frost annual rankings (earliest / latest date of season).
+ */
+function nw3_rankyear_render_first_frost(Report $report, $t0) {
+	$type = $report->type;
+	$startY = max((int)$report->startYrReport, (int)$report->startYear);
+	$endY = (int)Date::$dyear;
+	$rows = Data::getFirstAirFrost($startY, $endY);
+
+	$ranked = [];
+	foreach ($rows as $y => $row) {
+		$ranked[] = [(int)$row['offset'], Date::mkdate(1, 1, $y), $row];
+	}
+	sort($ranked);
+	$sortLen = count($ranked);
+	$limit = $sortLen;
+
+	$highest = $lowest = $highestDay = $lowestDay = $hiValHtml = $loValHtml = [];
+	$hiKeys = $loKeys = [];
+	$yrKey = function ($ts) { return date('Y', $ts); };
+	for ($i = 1; $i <= $limit; $i++) {
+		if ($sortLen < $i) { break; }
+		// Earliest = smallest offset; latest = largest (none / none yet last).
+		$highest[$i] = $ranked[$i - 1][0];
+		$highestDay[$i] = Report::yearDateHtml($ranked[$i - 1][1], 'nightmin');
+		$hiValHtml[$i] = Report::firstFrostValueHtml($ranked[$i - 1][2]);
+		$hiKeys[$i] = $yrKey($ranked[$i - 1][1]);
+		$lowest[$i] = $ranked[$sortLen - $i][0];
+		$lowestDay[$i] = Report::yearDateHtml($ranked[$sortLen - $i][1], 'nightmin');
+		$loValHtml[$i] = Report::firstFrostValueHtml($ranked[$sortLen - $i][2]);
+		$loKeys[$i] = $yrKey($ranked[$sortLen - $i][1]);
+	}
+
+	$curYearTs = Date::mkdate(1, 1, (int)Date::$dyear);
+	$lastYearTs = Date::mkdate(1, 1, (int)Date::$dyear - 1);
+	$keys = array('today' => $yrKey($curYearTs), 'yest' => $yrKey($lastYearTs));
+	$labels = array(
+		'todayLabel' => 'Current year (so far)',
+		'yestLabel' => 'Last year',
+	);
+	$cur = Report::currentRanks($ranked, $keys, $yrKey);
+	// Earliest = smaller offset is better (fromHigh false); latest = larger offset.
+	$ctxHi = Report::rankCtx($cur, $hiKeys, $keys, false, $highest, $labels);
+	$ctxLo = Report::rankCtx($cur, $loKeys, $keys, true, $lowest, $labels);
+	if (isset($ctxHi['today'])) { $hiValHtml['today'] = Report::firstFrostValueHtml($rows[(int)$keys['today']]); }
+	if (isset($ctxHi['yest'])) { $hiValHtml['yest'] = Report::firstFrostValueHtml($rows[(int)$keys['yest']]); }
+	if (isset($ctxLo['today'])) { $loValHtml['today'] = $hiValHtml['today']; }
+	if (isset($ctxLo['yest'])) { $loValHtml['yest'] = $hiValHtml['yest']; }
+
+	$st = (int)$report->summaryType;
+	echo "<div id='rank-$st' class='rank-tab'>";
+	$curLines = array(
+		'today' => date('Y', $curYearTs) . ' (so far)',
+		'yest' => date('Y', $lastYearTs),
+	);
+	foreach ($curLines as $k => $lbl) {
+		if (isset($cur[$k]) && isset($rows[(int)$keys[$k]])) {
+			echo Report::currentRankLine(
+				$lbl,
+				$cur[$k]['hi'],
+				$cur[$k]['lo'],
+				Report::firstFrostValueChip($rows[(int)$keys[$k]]),
+				'latest',
+				'earliest'
+			);
+		}
+	}
+	echo '<div class="rk-pair">';
+	$report->rankTable($highest, $highestDay, $limit, 'Earliest first air frost', true, true, true, 'annual', false, 1, Wx::None, $ctxHi, $hiValHtml);
+	$report->rankTable($lowest, $lowestDay, $limit, 'Latest first air frost', false, true, true, 'annual', false, 1, Wx::None, $ctxLo, $loValHtml);
+	echo '</div>';
+	echo '<p class="rk-blurb">' . $report->description
+		. ' of the season (1 September to 31 March): earliest and latest dates, ranked by day of the season. '
+		. 'An air frost is a night (21:00–09:00) when the overnight minimum is below 0 °C. '
+		. 'Years with no air frost in that window are ranked latest as none. The current season is provisional until a frost occurs or 31 March passes.<br />'
+		. 'There are <b>' . $sortLen . '</b> valid years from ' . $startY
+		. ' to present in London, NW3. Data for Night Minimum begins in ' . (int)$report->startYear . '.</p>';
+	echo '</div>';
+
+	$report->historicalInfo($startY);
+	$report->echoVarAbout();
+	$report->logRankRuntime($t0, 'year');
+
+	return array(
+		'type' => $type,
+		'startYearRep' => (int)$report->startYrReport,
+		'startYearOptions' => array_map('intval', $report->startYearOptions),
+		'summaryType' => (int)$report->summaryType,
+		'summaryTypes' => $report->availSummaryTypes,
+		'rankLimit' => (int)$report->rankLimit,
+		'threshold' => $report->spellThreshold,
+		'thresholds' => $report->spellThresholds,
+		'thresholdLabels' => $report->thresholdLabels(),
+		'title' => $report->summaryTitleSuffix(),
+		'span' => 'full',
+	);
+}
+
 /**
  * Shared renderer for ranked annual data (RankYear / rankyeardata).
  */
@@ -12,6 +111,9 @@ function nw3_rankyear_render(Report $report) {
 	$type = $report->type;
 	$report->normalizeSpanFor('rank-annual');
 	$span = $report->span;
+	if ($report->isAnnualOnly() && $type === 'affirst') {
+		return nw3_rankyear_render_first_frost($report, $t0);
+	}
 	$startY = max((int)$report->startYrReport, (int)$report->startYear);
 	$endY = (int)Date::$dyear;
 	$threshold = $report->spellThreshold;

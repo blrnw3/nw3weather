@@ -788,6 +788,13 @@ class Wx {
 			'colour' => 'darkgoldenrod1',
 			'start_year' => 1881,
 		],
+		'affirst' => [
+			'description' => 'First air frost',
+			'unit' => Wx::None,
+			'colour' => 'lightskyblue',
+			'start_year' => 1881,
+			'annual_only' => true,
+		],
 		'tc10max' => [
 			'description' => 'Max 10m Temp Rise',
 			'unit' => Wx::AbsTemp,
@@ -1094,6 +1101,7 @@ class Wx {
 			'dmean' => 'Mean dew point for the day (midnight to midnight, local time). Dew point is derived from temperature and humidity.',
 			'nightmin' => 'Lowest air temperature overnight, from 21:00 to 09:00 local time.',
 			'daymax' => 'Highest air temperature during the daytime window 09:00 to 21:00 local time.',
+			'affirst' => 'Date of the first air frost of the season, from 1 September to 31 March. An air frost is a night (21:00–09:00) when the overnight minimum is below 0 °C, the same definition as the site\'s air-frost day counts. Years with no frost in that window are shown as none; the current season is provisional until a frost occurs or 31 March passes.',
 			'tc10max' => 'Largest temperature rise over any 10-minute period during the day (midnight to midnight, local time).',
 			'tchrmax' => 'Largest temperature rise over any one-hour period during the day (midnight to midnight, local time).',
 			'hchrmax' => 'Largest humidity rise over any one-hour period during the day (midnight to midnight, local time).',
