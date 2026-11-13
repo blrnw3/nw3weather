@@ -22,3 +22,10 @@ define('ADMIN_POND_PASSWORD', 'CHANGE_ME_PLACEHOLDER');
 // Bearer token for api_recap.php (written weather recaps). At least 32 random characters; the ingest answers
 // 503 while this is missing, empty or a placeholder.
 define('NW3_RECAP_TOKEN', '');
+
+// Optional LLM for the daily notable-rankings curation on the home page
+// (RankFlagsCurate). OpenAI-compatible Chat Completions API. Leave empty to
+// use the deterministic fallback (the default). Never commit a real key.
+define('NW3_LLM_API_KEY', '');
+define('NW3_LLM_API_URL', 'https://api.openai.com/v1/chat/completions');
+define('NW3_LLM_MODEL', 'gpt-4o-mini');

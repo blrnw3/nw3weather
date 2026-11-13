@@ -1,11 +1,13 @@
 <?php
 /**
  * Home-page "notable rankings" flag: does today, the current month / year,
- * the latest N-day period or a current spell rank near the top or bottom of
+ * the latest N-day period, a current spell, or (once enough of the period has
+ * elapsed) the month-to-date or year-to-date, rank near the top or bottom of
  * the station's all-time rankings for any variable?
  *
- * Built by warm_rank_flags.php (cron_main, every 5 minutes, in the background)
- * into CACHE_ROOT/rank_flags.json; the home page only reads that file.
+ * Built by warm_rank_flags.php (cron_main, every 15 minutes, in the background)
+ * into CACHE_ROOT/rank_flags.json; the home page only reads that file. The card
+ * shows a curated top 10 (RankFlagsCurate), classified once a day.
  *
  * Qualifies: percentile >= PCT, or rank <= TOP_N with percentile >= TOP_N_PCT
  * (so a top-10 inside a big tie, e.g. one of 200 frost-free Octobers, or in a
@@ -22,16 +24,20 @@
  *
  * Each item carries the first year of the data it was ranked against ("since").
  */
+require_once __DIR__ . '/RankFlagsCurate.php';
+
 class RankFlags {
 
 	const TOP_N = 10;
 	const PCT = 99.0;
 	const TOP_N_PCT = 90.0;
 	const FILE = 'rank_flags.json';
-	const CACHE_VERSION = 3; // bump to invalidate cache when logic changes
+	const CACHE_VERSION = 4; // bump to invalidate cache when logic changes
 	const MAX_AGE = 3600;     // ignore a cache older than this (cron stalled)
 	const SHOW = 4;           // items shown before "more"
 	const COMPLETE_FRAC = 0.90; // partial periods this complete rank in both directions
+	const MTD_MIN_DAYS = 10;  // month-to-date eligible from this day of the month
+	const YTD_MIN_MONTH = 4;  // year-to-date eligible from 1 April
 
 	/** Variables never ranked here (directions, notes, manual flags, pond). */
 	private static $skip = ['wdir', 'cloud', 'comms', 'extra', 'issues', 'away', 'spare', 'pond'];
@@ -261,6 +267,61 @@ class RankFlags {
 			if (isset($cur['yest']) && $doy <= 14) {
 				self::consider($items, $cur['yest'], self::windMaxBoring($var) ? ['hi'] : ['hi', 'lo'], $common + ['kind' => 'year', 'label' => (string)($endY - 1), 'agg' => $sumWord, 'soFar' => false, 'url' => $yrUrl]);
 			}
+
+			// Month-to-date: current month days 1..today vs the same span in prior years.
+			// Eligible once at least MTD_MIN_DAYS of the month have passed.
+			if ($dom >= self::MTD_MIN_DAYS) {
+				$mtdRanked = [];
+				$curM = (int)Date::$dmonth;
+				foreach (Data::getMonthlySummary($var, $st, $start, $endY, null, 'mtd') as $y => $months) {
+					if (!isset($months[$curM]) || Util::isBlank($months[$curM])) { continue; }
+					if (Data::dateIsFuture($y, $curM, 1)) { continue; }
+					$mtdRanked[] = [(float)$months[$curM], Date::mkdate($curM, 1, $y)];
+				}
+				sort($mtdRanked);
+				$common['since'] = self::firstYear($mtdRanked, $start);
+				$cur = Report::currentRanks($mtdRanked, ['today' => $monKey($curMonTs)], $monKey);
+				$mtdUrl = self::url('RankMonth.php', [
+					'vartype' => $var, 'month' => $curM, 'start_year_rep' => $start,
+					'summary_type' => $st, 'rankLimit' => 25, 'span' => 'mtd',
+				]);
+				$mtdFrac = ($dom > 0) ? (($dom - 1 + $dayFrac) / $dom) : 0.0;
+				$mtdDirs = self::partialDirs($isSum ? 'hi' : null, $mtdFrac, self::windMaxBoring($var));
+				if (isset($cur['today']) && count($mtdDirs)) {
+					self::consider($items, $cur['today'], $mtdDirs, $common + [
+						'kind' => 'month',
+						'label' => 'month-to-date (' . Data::spanRangeText('mtd') . ')',
+						'agg' => $sumWord, 'soFar' => true, 'url' => $mtdUrl,
+					]);
+				}
+			}
+
+			// Year-to-date: 1 Jan..today vs the same span each year.
+			// Eligible once three full months have passed (from 1 April).
+			if ((int)Date::$dmonth >= self::YTD_MIN_MONTH) {
+				$ytdRanked = [];
+				list($ytdEndM, $ytdEndD) = Data::spanEndMd();
+				foreach (Data::getAnnualData($var, $st, $start, $endY, null, 'ytd') as $y => $v) {
+					if (Data::dateIsFuture($y, 1, $ytdEndD)) { continue; }
+					if (!Util::isBlank($v)) { $ytdRanked[] = [(float)$v, Date::mkdate(1, 1, $y)]; }
+				}
+				sort($ytdRanked);
+				$common['since'] = self::firstYear($ytdRanked, $start);
+				$cur = Report::currentRanks($ytdRanked, ['today' => (string)$endY], $yrKey);
+				$ytdUrl = self::url('RankYear.php', [
+					'vartype' => $var, 'start_year_rep' => $start,
+					'summary_type' => $st, 'span' => 'ytd',
+				]);
+				$ytdFrac = ($doy > 0) ? (($doy - 1 + $dayFrac) / $doy) : 0.0;
+				$ytdDirs = self::partialDirs($isSum ? 'hi' : null, $ytdFrac, self::windMaxBoring($var));
+				if (isset($cur['today']) && count($ytdDirs)) {
+					self::consider($items, $cur['today'], $ytdDirs, $common + [
+						'kind' => 'year',
+						'label' => 'year-to-date (' . Data::spanRangeText('ytd') . ')',
+						'agg' => $sumWord, 'soFar' => true, 'url' => $ytdUrl,
+					]);
+				}
+			}
 		}
 
 		// Latest complete N-day periods (ending yesterday).
@@ -314,10 +375,11 @@ class RankFlags {
 		return ['version' => self::CACHE_VERSION, 'generated' => time(), 'items' => $items, 'ms' => (int)round((microtime(true) - $t0) * 1000)];
 	}
 
-	/** Write the cache (atomic). */
+	/** Write the cache (atomic) and refresh the curated top-10 plan. */
 	public static function warm() {
 		$data = self::build();
 		nw3_atomic_write(self::file(), json_encode($data));
+		RankFlagsCurate::refresh($data);
 		return $data;
 	}
 
@@ -365,14 +427,13 @@ class RankFlags {
 		$data = ($data === null) ? self::load() : $data;
 		if (!$data || empty($data['items'])) { return; }
 		if (!class_exists('Report', false)) { require_once __DIR__ . '/Report.php'; }
-		$items = $data['items'];
+		if (!class_exists('RankFlagsCurate', false)) { require_once __DIR__ . '/RankFlagsCurate.php'; }
+		$plan = RankFlagsCurate::loadPlan();
+		$groups = RankFlagsCurate::apply($plan, $data['items']);
+		if (!$groups) { return; }
 		$li = [];
-		foreach ($items as $i => $it) {
-			list($what, $rank) = self::itemText($it);
-			$top = ($it['rank'] === 1 && !$it['tied']) ? ' rkf-record' : '';
-			$li[] = '<li class="clim-note rkf-item' . $top . '"><span class="rkf-dot rkf-dot-' . htmlspecialchars($it['dir']) . '"></span>'
-				. '<a href="' . htmlspecialchars($it['url']) . '" title="Open the ranking">' . htmlspecialchars($what) . '</a> '
-				. '&middot; <b>' . htmlspecialchars($rank) . '</b>' . ($it['soFar'] ? ' <span class="rkf-prov">provisional</span>' : '') . '</li>';
+		foreach ($groups as $g) {
+			$li[] = RankFlagsCurate::renderItem($g);
 		}
 		echo '<div class="wx-card wx-card-clim wx-card-rkf" id="rkf-card">';
 		echo '<div class="wx-card-head"><span class="wx-card-label">Notable in the rankings</span></div>';
