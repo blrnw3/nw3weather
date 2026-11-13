@@ -2825,15 +2825,18 @@ body.cam-modal-open {
 }
 .wxsel-date-form select {
 	font: inherit;
-	font-size: 1rem;
-	line-height: 1.2;
-	min-height: 2.4rem;
-	padding: 0.28rem 0.5rem;
+	font-size: 0.88rem;
+	font-weight: 500;
+	line-height: 1.15;
+	min-height: 0;
+	height: calc(0.88rem * 1.15 + 0.56rem + 2px);
+	padding: 0.28rem 0.55rem;
 	color: #15604c;
 	background: #fff;
 	border: 1px solid #c5d6cb;
 	border-radius: 4px;
 	max-width: 100%;
+	box-sizing: border-box;
 }
 
 #dd-ajax.dd-ajax-loading,
