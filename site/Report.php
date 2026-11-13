@@ -25,6 +25,7 @@ class Report {
 	public $spellThreshold;     // numeric threshold for spell rankings
 	public $spellThresholds;    // preset chips for the current variable
 	public $dayAgg;             // '' | 'min' | 'max' | 'mean' (calendar-day all-years)
+	public $showRecordYears = true; // daily min/max: show the year each record was set
 	public $periodLength;       // N-day period length for RankPeriods
 	public $periodNoOverlap;    // true = skip overlapping windows in period rankings
 	public $span;               // period key: full, mtd, ytd, winter/spring/summer/autumn, h1/h2
@@ -392,6 +393,8 @@ class Report {
 		// Calendar-day all-years aggregation (daily tables): min | max | mean
 		$agg = isset($_GET['agg']) ? $_GET['agg'] : '';
 		$this->dayAgg = in_array($agg, array('min', 'max', 'mean'), true) ? $agg : '';
+		$yearsParam = isset($_GET['years']) ? strtolower(trim((string)$_GET['years'])) : '';
+		$this->showRecordYears = !in_array($yearsParam, array('0', 'off', 'false', 'no'), true);
 
 		// Year / month selection
 		$this->year = isset($_GET['year']) ? (int)$_GET['year'] : (int)Date::$yr_yest;
@@ -1214,6 +1217,12 @@ class Report {
 					unset($params['agg'], $params['start_year_rep']);
 				}
 				if (isset($overrides['agg'])) { unset($params['year']); }
+				$showY = $this->showRecordYears;
+				if (array_key_exists('years', $overrides)) {
+					$showY = ((string)$overrides['years'] !== '0');
+				}
+				if ($showY) { unset($params['years']); }
+				else { $params['years'] = 0; }
 			}
 			return htmlspecialchars(Page::$pageName . '?' . http_build_query($params));
 		};
@@ -1453,6 +1462,28 @@ class Report {
 			echo '</div></div>';
 		}
 
+		if ($mode === 'daily') {
+			$yearsOn = !empty($this->showRecordYears);
+			$yearsRowHidden = ($this->dayAgg === 'min' || $this->dayAgg === 'max') ? '' : ' hidden';
+			echo '<div class="report-sel-row report-sel-labelled" id="report-sel-show-years"'
+				. $yearsRowHidden . '>';
+			echo '<form class="dd-years-form" id="dd-years-form" method="get" action="'
+				. htmlspecialchars(Page::$pageName) . '">';
+			echo '<input type="hidden" name="vartype" value="' . htmlspecialchars($this->type) . '" />';
+			if ($this->dayAgg !== '') {
+				echo '<input type="hidden" name="agg" value="' . htmlspecialchars($this->dayAgg) . '" />';
+				echo '<input type="hidden" name="start_year_rep" value="' . (int)$this->startYrReport . '" />';
+			} else {
+				echo '<input type="hidden" name="year" value="' . (int)$this->year . '" />';
+			}
+			echo '<input type="hidden" name="years" value="0" />';
+			echo '<label class="dd-years-label"><input type="checkbox" id="dd-show-years" name="years" value="1"'
+				. ($yearsOn ? ' checked="checked"' : '') . ' /> Show years</label>';
+			echo '<noscript><button type="submit" class="wxsel-chip">Update</button></noscript>';
+			echo '</form>';
+			echo '</div>';
+		}
+
 		if ($showRankLimit) {
 			echo '<div class="report-sel-row report-sel-labelled">';
 			echo '<div class="wxsel-label">Show</div>';
@@ -1527,6 +1558,7 @@ class Report {
 			'bodyId' => $ajaxBodyId,
 			'headingPrefix' => $heading,
 			'fragId' => isset($fragIds[$mode]) ? $fragIds[$mode] : 'dd-fragment',
+			'showYears' => $this->showRecordYears ? 1 : 0,
 		);
 		echo '<script>NW3_reportSel(' . nw3_json_encode($cfg) . ');</script>';
 	}

@@ -49,6 +49,10 @@
 			node.appendChild(document.createElement('br'));
 			node.appendChild(document.createTextNode('(' + cell.a + ')'));
 		}
+		if (cell.y) {
+			var yr = el('span', 'dd-year', String(cell.y));
+			node.appendChild(yr);
+		}
 		return node;
 	}
 
@@ -103,7 +107,12 @@
 		var frag = document.createDocumentFragment();
 
 		var scroll = el('div', 'dd-scroll');
-		var table = el('div', 'dd-grid');
+		var tableClass = 'dd-grid';
+		if (payload.meta && payload.meta.hasRecordYears) {
+			tableClass += ' dd-has-years';
+			if (!payload.meta.showYears) { tableClass += ' dd-years-off'; }
+		}
+		var table = el('div', tableClass);
 
 		var head = el('div', 'dd-row dd-head');
 		head.appendChild(ddLab('Day'));

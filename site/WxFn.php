@@ -1989,21 +1989,39 @@ class Data {
 	 * @param string $var variable name
 	 * @param string $agg 'min' | 'max' | 'mean'
 	 * @param int $start_year earliest year to include
+	 * @param array|null $recordYears filled for min/max as [month][day] = most recent year the record was set
 	 * @return array [month][day] = aggregated value
 	 */
-	public static function getDailyCalendarAgg($var, $agg, $start_year) {
+	public static function getDailyCalendarAgg($var, $agg, $start_year, &$recordYears = null) {
 		$all = self::getDailyData($var, $start_year);
+		ksort($all, SORT_NUMERIC);
+		$recordYears = [];
 		$out = [];
+		$wantYears = ($agg === 'min' || $agg === 'max');
 		for ($m = 1; $m <= 12; $m++) {
 			$out[$m] = [];
 			$maxd = Date::get_days_in_month($m, 2000); // leap year → include 29 Feb
 			for ($d = 1; $d <= $maxd; $d++) {
 				$vals = [];
-				foreach ($all as $md) {
+				$bestYear = null;
+				$bestVal = null;
+				foreach ($all as $y => $md) {
+					if (!is_numeric($y) || (int)$y <= 0) { continue; }
+					$y = (int)$y;
 					if (!isset($md[$m][$d])) { continue; }
 					$v = $md[$m][$d];
 					if (Util::isBlank($v)) { continue; }
 					$vals[] = $v;
+					if ($wantYears) {
+						$fv = floatval($v);
+						if ($bestVal === null
+							|| ($agg === 'min' && $fv < $bestVal)
+							|| ($agg === 'max' && $fv > $bestVal)
+							|| ($fv == $bestVal && $y > $bestYear)) {
+							$bestVal = $fv;
+							$bestYear = $y;
+						}
+					}
 				}
 				if (count($vals) === 0) { continue; }
 				if ($agg === 'min') {
@@ -2012,6 +2030,9 @@ class Data {
 					$out[$m][$d] = Util::mymax($vals);
 				} else {
 					$out[$m][$d] = Util::mean($vals);
+				}
+				if ($bestYear !== null) {
+					$recordYears[$m][$d] = $bestYear;
 				}
 			}
 		}
