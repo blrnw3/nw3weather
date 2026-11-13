@@ -11,6 +11,7 @@ function nw3_rankday_render(Report $report) {
 	$t0 = microtime(true);
 	$type = $report->type;
 	$month = $report->month;
+	$day = (int)$report->day;
 	$startY = max((int)$report->startYrReport, (int)$report->startYear);
 
 	$ranked = [];
@@ -18,6 +19,7 @@ function nw3_rankday_render(Report $report) {
 		foreach ($months as $m => $daily) {
 			if ($month == 0 || $m == $month) {
 				foreach ($daily as $d => $v) {
+					if ($day > 0 && (int)$d !== $day) { continue; }
 					if (!Util::isBlank($v)) {
 						$ranked[] = [(float)$v, Date::mkdate($m, $d, $y)];
 					}
@@ -59,9 +61,21 @@ function nw3_rankday_render(Report $report) {
 	$ctxHi = Report::rankCtx($cur, $hiKeys, $keys, true, $highest, $labels);
 	$ctxLo = Report::rankCtx($cur, $loKeys, $keys, false, $lowest, $labels);
 
-	$footCond = ($month === 0 || $month == (int)Date::$dmonth);
+	if ($day > 0) {
+		$yestM = (int)date('n', Date::$dtstamp_yest);
+		$yestD = (int)date('j', Date::$dtstamp_yest);
+		$footToday = ($month === (int)Date::$dmonth && $day === (int)Date::$dday);
+		$footYest = ($month === $yestM && $day === $yestD);
+		$footCond = $footToday || $footYest;
+	} else {
+		$footCond = ($month === 0 || $month == (int)Date::$dmonth);
+		$footToday = $footCond;
+		$footYest = $footCond;
+	}
 	if ($footCond) {
 		foreach (array('today' => 'Today (so far)', 'yest' => 'Yesterday') as $k => $lbl) {
+			if ($k === 'today' && !$footToday) { continue; }
+			if ($k === 'yest' && !$footYest) { continue; }
 			if (isset($cur[$k])) {
 				echo Report::currentRankLine($lbl, $cur[$k]['hi'], $cur[$k]['lo'], $report->rankValueText($cur[$k]['v']));
 			}
@@ -72,7 +86,11 @@ function nw3_rankday_render(Report $report) {
 	$report->rankTable($lowest, $lowestDay, $limit, 'Lowest', false, $report->hasToday, $footCond, true, false, 1, null, $ctxLo);
 	echo '</div>';
 
-	$extraMon = ($month === 0) ? '' : ' in ' . Date::$months3[$month - 1];
+	if ($day > 0) {
+		$extraMon = ' on ' . $day . ' ' . Date::$months3[$month - 1];
+	} else {
+		$extraMon = ($month === 0) ? '' : ' in ' . Date::$months3[$month - 1];
+	}
 	$extraCount = '';
 	if ($report->isSum) {
 		$c = 0;
@@ -92,6 +110,7 @@ function nw3_rankday_render(Report $report) {
 	return array(
 		'type' => $type,
 		'month' => (int)$month,
+		'day' => (int)$day,
 		'startYearRep' => (int)$report->startYrReport,
 		'startYearOptions' => array_map('intval', $report->startYearOptions),
 		'rankLimit' => (int)$report->rankLimit,
