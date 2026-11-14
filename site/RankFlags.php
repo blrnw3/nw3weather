@@ -43,7 +43,7 @@ class RankFlags {
 	private static $skip = ['wdir', 'cloud', 'comms', 'extra', 'issues', 'away', 'spare', 'pond'];
 
 	/** Skip daily (today/yesterday) flags only; monthly/annual/period/spell still allowed. */
-	private static $skipDaily = ['fog'];
+	private static $skipDaily = ['fog', 'sunhrp'];
 
 	/** Day definitions differ from midnight-midnight: no "today so far" for these. */
 	private static $noToday = ['nightmin', 'daymax'];
@@ -205,7 +205,8 @@ class RankFlags {
 			$common = ['var' => $var, 'desc' => isset($meta['description']) ? $meta['description'] : $var,
 				'unit' => $unit, 'count' => !empty($meta['count-only'])];
 
-			// Days (fog excluded: a 0/1 observation does not rank usefully day-by-day)
+			// Days: fog is a 0/1 observation that does not rank usefully day-by-day;
+			// sunhrp (sun % of possible) is excluded because many days hit 100%.
 			if (!in_array($var, self::$skipDaily, true)) {
 				$ranked = [];
 				foreach (Data::getDailyData($var, $start) as $y => $months) {
@@ -384,6 +385,20 @@ class RankFlags {
 	}
 
 	/** Read the cache; null when missing, stale, or wrong version. */
+	/** Remove daily flags for variables in $skipDaily (today / yesterday only). */
+	public static function dropSkippedDaily($items) {
+		if (!is_array($items)) { return []; }
+		$out = [];
+		foreach ($items as $it) {
+			if (!is_array($it)) { continue; }
+			$kind = isset($it['kind']) ? $it['kind'] : '';
+			$var = isset($it['var']) ? $it['var'] : '';
+			if ($kind === 'day' && in_array($var, self::$skipDaily, true)) { continue; }
+			$out[] = $it;
+		}
+		return $out;
+	}
+
 	public static function load() {
 		$f = self::file();
 		if (!is_readable($f)) { return null; }
@@ -392,6 +407,9 @@ class RankFlags {
 		// Reject cache if version is absent or mismatched
 		if (!isset($data['version']) || (int)$data['version'] !== self::CACHE_VERSION) { return null; }
 		if (time() - (int)$data['generated'] > self::MAX_AGE) { return null; }
+		// Drop daily items later added to $skipDaily so a still-valid cache
+		// (e.g. yesterday's sun % of possible) is hidden immediately.
+		$data['items'] = self::dropSkippedDaily($data['items']);
 		return $data;
 	}
 
