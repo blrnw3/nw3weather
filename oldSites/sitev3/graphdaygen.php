@@ -119,12 +119,12 @@ $baroSmoothConst = 5;
 $baroSmoothDiff = ($imperial ? 0.02 : 0.5) * pow($num, 0.5) / $baroSmoothConst;
 
 $cnt1 = count($data[1]);
+$data['af'] = array_fill(0, $cnt1, $lineAF);
 for($i = 1; $i < $cnt1; $i++) {
 	if($data[7][$i] == 98) { $data[7][$i] = 97.8; }
 	if($data[3][$i] < 0.1) { $data[3][$i] = 0.1; }
 	$data[10][$i] += $rnShamt;
 	if($num > 48) { $data['lab'][$i] = date('d M',mkdate(substr($procday,4,2),substr($procday,6,2)-nw3_round((1440-$i)*$num/1440))); }
-	$data['af'][$i] = $lineAF;
 
 	//essential to prevent spiky baro line
 	// NO LONGER NEEDED WITH VP2 SENSOR
