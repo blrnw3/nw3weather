@@ -148,11 +148,19 @@ $forecast = Forecast::days(2);
 			if (refreshBtn) { refreshBtn.classList.toggle('live-refresh-busy', busy); }
 		}
 
+		function rkfMoreEl() {
+			return document.querySelector('#clim-slot details.rkf-more');
+		}
+
 		function doFetch() {
 			if (inFlight || !window.fetch || !body) { return; }
 			inFlight = true;
 			setBusy(true);
 			var oldData = readLiveData();
+			// The notable-rankings "more" <details> lives in #clim-slot, which is
+			// replaced when the AJAX payload's #clim-next is swapped in. Remember
+			// whether it was open so a refresh does not collapse it again.
+			var rkfOpen = (function () { var el = rkfMoreEl(); return !!(el && el.open); })();
 			fetch('/ajaxwxbody.php?clim=1', { cache: 'no-store' })
 				.then(function (r) { return r.text(); })
 				.then(function (html) {
@@ -163,6 +171,10 @@ $forecast = Forecast::days(2);
 					if (climNext) {
 						if (climSlot) { climSlot.innerHTML = climNext.innerHTML; }
 						climNext.parentNode.removeChild(climNext);
+					}
+					if (rkfOpen) {
+						var rkf = rkfMoreEl();
+						if (rkf) { rkf.open = true; }
 					}
 					// Same pattern: the nearby card is appended to the payload and moved
 					// into #nearby-wrap (further down the page) so it refreshes in place.
