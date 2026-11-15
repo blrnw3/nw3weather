@@ -317,8 +317,10 @@ class ClimateCard {
 
 	/**
 	 * Flag the current MTD value against same-window (day-scope) records only.
-	 * Summable highs are confirmed as soon as they pass the record; other
-	 * comparisons stay provisional while today is still in progress.
+	 * Markers are always solid: an MTD comparison is still in progress for
+	 * most of the day, so a hollow provisional marker is not informative.
+	 * The header still says "so far" when the value can still move (everything
+	 * except summable highs, which can only increase).
 	 */
 	public static function flagPeriod($dir, $today, $recs, $hour, $summable) {
 		if ($today === null || $recs === null) { return null; }
@@ -334,8 +336,8 @@ class ClimateCard {
 		} else {
 			return null;
 		}
-		$soFar = !($summable && $dir === 'hi') && ((int)$hour < 24);
-		return array('status' => $status, 'scope' => 'day', 'soFar' => $soFar, 'rec' => $rec, 'value' => $t);
+		$pending = !($summable && $dir === 'hi') && ((int)$hour < 24);
+		return array('status' => $status, 'scope' => 'day', 'soFar' => false, 'pending' => $pending, 'rec' => $rec, 'value' => $t);
 	}
 
 	/** Tooltip date for a period record stored as Y-m-d. */
@@ -713,6 +715,13 @@ class ClimateCard {
 					$pNormal = '&ndash;';
 				} else {
 					$pNormal = '<span title="' . $pNormTitle . '">' . self::fmt($pNormV, $unit) . '</span>';
+					// Rain and sun: MTD as a percentage of the same-window normal,
+					// styled like the daily rain row's wet-day share.
+					if ($summable && $pv !== null && (float)$pNormV != 0.0) {
+						$pct = (int)round(100 * $pv / $pNormV);
+						$pNormal .= ' <span class="clim-wet" title="' . $pct . '% of the ' . $rangeText . ' normal">'
+							. $pct . '%</span>';
+					}
 				}
 				// Rain (and sun) keep the same no-anomaly Today style as the daily row.
 				$pToday = '<b>' . self::fmt($pv, $unit, true) . '</b>' . self::dot($pflags['hi'] ?? $pflags['lo']);
@@ -744,14 +753,14 @@ class ClimateCard {
 				foreach (array('hi', 'lo') as $dir) {
 					$f = $pflags[$dir];
 					if ($f === null) { continue; }
-					$active[$f['status'] . ($f['soFar'] ? '-sofar' : '')] = true;
+					$active[$f['status']] = true;
 					$name = $cfg[$dir === 'hi' ? 'periodNameHi' : 'periodNameLo'] ?? '';
 					$what = 'Record ' . $name . ' for ' . $rangeText;
 					$prev = $f['rec'];
 					$shown = $f['value'] ?? $pv;
 					$fig = '<b>' . self::fmt($shown, $unit, true) . '</b>';
 					$text = ($f['status'] === self::TIE ? 'Equals ' . lcfirst($what) : $what)
-						. ($f['soFar'] ? ' so far' : '') . ': ' . $fig . ' '
+						. (!empty($f['pending']) ? ' so far' : '') . ': ' . $fig . ' '
 						. ($f['status'] === self::TIE ? '' : 'beats ' . self::fmt($prev['v'], $unit, true) . ' ')
 						. '(' . self::prevWhenPeriod($prev, $f['scope'], $monthLabel, $rangeText) . ')';
 					$notes[] = array(2, '<li class="clim-note">' . self::dot($f) . $text . '</li>');
