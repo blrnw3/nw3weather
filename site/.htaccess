@@ -7,12 +7,12 @@ ErrorDocument 404 /404.php
 
 # Country geofence. Env var is set by mod_maxminddb
 # (see /etc/httpd/conf.d/z-geofence.conf). Harmless no-op if the module is off.
-# AR BD BR CN CO HK ID IN IQ MA PH PK RU SG VE VN
+# CN RU
 # Skip ErrorDocument subrequests or [F] on 403.html loops until 500.
 <IfModule mod_maxminddb.c>
 RewriteCond %{ENV:REDIRECT_STATUS} ^$
 RewriteCond %{REQUEST_URI} !^/(400|401|403|404|500)\.html$
-RewriteCond %{ENV:MM_COUNTRY_CODE} ^(AR|BD|BR|CN|CO|HK|ID|IN|IQ|MA|PH|PK|RU|SG|VE|VN)$
+RewriteCond %{ENV:MM_COUNTRY_CODE} ^(CN|RU)$
 RewriteRule ^ - [F,L]
 </IfModule>
 
