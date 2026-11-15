@@ -650,14 +650,8 @@ class ClimateCard {
 				$normV = nw3_is_numeric($normV) ? (float)$normV : null;
 			}
 			if ($var === 'rain') {
-				$n = $r['dayYears'] ?? 0;
 				$normal = '<span title="Average daily rainfall for ' . $dateLabel . ' (1991-2020)">' . self::fmt($normV, $unit) . '</span>';
-				if ($n) {
-					$normal .= ' <span class="clim-wet" title="Rain (&ge;' . self::WET_MM . ' mm) fell on ' . $dateLabel . ' in '
-						. $r['dayWet'] . ' of ' . $n . ' years since ' . self::SINCE_YEAR . '">'
-						. (int)round(100 * $r['dayWet'] / $n) . '%</span>';
-				}
-				$normV = null; // no difference-from-normal for rain
+				$normV = null; // no difference-from-normal for daily rain
 			} elseif ($normV === null) {
 				$normal = '&ndash;';
 			} else {
@@ -715,19 +709,17 @@ class ClimateCard {
 					$pNormal = '&ndash;';
 				} else {
 					$pNormal = '<span title="' . $pNormTitle . '">' . self::fmt($pNormV, $unit) . '</span>';
-					// Rain and sun: MTD as a percentage of the same-window normal,
-					// styled like the daily rain row's wet-day share.
-					if ($summable && $pv !== null && (float)$pNormV != 0.0) {
-						$pct = (int)round(100 * $pv / $pNormV);
-						$pNormal .= ' <span class="clim-wet" title="' . $pct . '% of the ' . $rangeText . ' normal">'
-							. $pct . '%</span>';
-					}
 				}
-				// Rain (and sun) keep the same no-anomaly Today style as the daily row.
 				$pToday = '<b>' . self::fmt($pv, $unit, true) . '</b>' . self::dot($pflags['hi'] ?? $pflags['lo']);
 				if ($pv !== null && $pNormV !== null && $unit === Wx::Temperature) {
 					$pToday .= ' <span class="clim-anom" title="Difference from normal">'
 						. Wx::conv($pv - $pNormV, Wx::AbsTemp, false, true) . '</span>';
+				} elseif ($summable && $pv !== null && $pNormV !== null && (float)$pNormV != 0.0) {
+					$pct = (int)round(100 * ($pv - $pNormV) / $pNormV);
+					if ($pct > 0) { $pctStr = '+' . $pct . '%'; }
+					elseif ($pct < 0) { $pctStr = '&minus;' . abs($pct) . '%'; }
+					else { $pctStr = '0%'; }
+					$pToday .= ' <span class="clim-anom" title="Difference from normal">' . $pctStr . '</span>';
 				}
 				$pLabel = '<span class="clim-sub-lab" title="Month to date (' . $rangeText
 					. '), compared with previous ' . $monthLabel . 's to this date. '
@@ -828,8 +820,7 @@ class ClimateCard {
 			. ($key !== '' ? $key . '&middot; ' : '')
 			. 'Records since ' . $since . ' (ties show most recent year) &middot; '
 			. 'day max 09-21, night min 21-09 &middot; '
-			. '<a href="/wxaverages.php" title="Long-term NW3 climate averages">normals</a> 1991-2020; '
-			. 'rain normal is average total and share of years with &ge;' . self::WET_MM . ' mm on this date &middot; '
+			. '<a href="/wxaverages.php" title="Long-term NW3 climate averages">normals</a> 1991-2020 &middot; '
 			. '<a href="/RankDay.php" title="Daily records and rankings">more records</a></div>';
 		echo '</div>';
 	}
