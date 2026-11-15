@@ -545,22 +545,6 @@ if(PURPLEAIR_SENSOR && (date('i') % 5 == 2) && defined('PURPLEAIR_KEY') && PURPL
 	}
 }
 
-// Windy.app map widget (wx5): their windy_map_async.js loader fetches manifest.json
-// cross-origin, but that response carries no CORS header, so the browser blocks it and
-// the widget never loads. Resolve the hashed bundle name here instead and cache it for
-// the page to script-src directly (classic scripts aren't CORS-checked).
-if(date('i') % 30 == 13) {
-	$wmRaw = @file_get_contents('https://windy.app/widget3/manifest.json', false,
-		stream_context_create(array('http' => array('timeout' => 6))));
-	$wmJson = $wmRaw ? json_decode($wmRaw, true) : null;
-	$wmFile = isset($wmJson['js'][0]) ? $wmJson['js'][0] : null;
-	if($wmFile !== null && preg_match('/^windy_map\.[a-z0-9]+\.js$/i', $wmFile)) {
-		nw3_atomic_write(V5_CACHE_ROOT.'windy_widget.txt', $wmFile);
-	} else {
-		Page::quick_log('windy_widget_bad.txt', substr((string)$wmRaw, 0, 200));
-	}
-}
-
 // External clientraw grab and save
 if(false) {
 	$path = 'http://www.harpendenweather.co.uk/live/clientraw.txt';

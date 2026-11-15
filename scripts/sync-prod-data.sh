@@ -41,7 +41,6 @@ DATA_FILTERS=(
   --include='METAR.txt'
   --include='WUforecast.txt'
   --include='pm25_latest.txt'
-  --include='windy_widget.txt'
   --include='lastrn'
   --include='*.json'
   --include='cache/'
@@ -74,7 +73,6 @@ DATA_FILTERS=(
 #   pm25_latest.txt        : latest air-quality reading
 #   METAR.txt              : current-conditions decode line
 #   forecast_v5.json       : Yr.no cache (days + hourly + periods) for home strip + wx5
-#   windy_widget.txt       : hashed Windy map bundle name for wx5
 #   *Tags.php              : RainTags (month/year rain) + rareTags (console text)
 #   skycam_home.jpg        : v5 home-page webcam (auto-refreshed every 10s)
 #   skycam_wx2.jpg         : v5 wx2 near-full-width webcam
@@ -93,7 +91,6 @@ HOME_LIVE_FILTERS=(
   --include='pm25_latest.txt'
   --include='METAR.txt'
   --include='forecast_v5.json'
-  --include='windy_widget.txt'
   --include='*Tags.php'
   --include='cache/'
   --include='cache/v5/'
@@ -102,7 +99,6 @@ HOME_LIVE_FILTERS=(
   --include='cache/v5/serialised_datYest.txt'
   --include='cache/v5/pm25_latest.txt'
   --include='cache/v5/forecast_v5.json'
-  --include='cache/v5/windy_widget.txt'
   --include='cache/legacy/'
   --include='cache/legacy/*Tags.php'
   --include='generated/'

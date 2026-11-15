@@ -1389,22 +1389,6 @@ select.timelapse {
 	margin: 0.3rem;
 	flex: 1 1 90%;
 }
-#wx-map {
-	width: 100%;
-	max-width: 1200px;
-	height: 600px;
-	margin-top: 1rem;
-}
-@media only screen and (max-width: 830px) {
-	#wx-map {
-		height: 420px;
-	}
-}
-@media only screen and (max-width: 630px) {
-	#wx-map {
-		height: 360px;
-	}
-}
 
 
 /* wx7 */

@@ -12,7 +12,6 @@ rareTags.php
 !cron_tags.php
 METAR.txt
 WUforecast.txt
-windy_widget.txt
 api_latest.txt
 lastrn
 *.json

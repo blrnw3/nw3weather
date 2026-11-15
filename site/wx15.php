@@ -77,7 +77,6 @@ $generatedFiles = array(
 	array('Detail summary (rain)', basename($rainSummaryFile), $rainSummaryFile, 300, 900),
 	array('Yr.no forecast cache', 'forecast_v5.json', V5_CACHE_ROOT . 'forecast_v5.json', 1800, 7200),
 	array('PurpleAir PM2.5', 'pm25_latest.txt', V5_CACHE_ROOT . 'pm25_latest.txt', 300, 900),
-	array('Windy widget id', 'windy_widget.txt', V5_CACHE_ROOT . 'windy_widget.txt', 86400, 259200),
 	array('METAR (EGLL)', 'METAR.txt', ROOT . 'METAR.txt', 1800, 7200),
 	array('Skycam HD', 'skycam.jpg', V5_GENERATED_ROOT . 'skycam.jpg', 60, 200),
 	array('Skycam home', 'skycam_home.jpg', V5_GENERATED_ROOT . 'skycam_home.jpg', 60, 200),

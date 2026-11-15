@@ -65,7 +65,6 @@ EXCLUDES=(
 	--exclude='METAR.txt'
 	--exclude='WUforecast.txt'
 	--exclude='pm25_latest.txt'
-	--exclude='windy_widget.txt'
 	--exclude='*.json'
 	--exclude='api_latest.txt'
 	--exclude='lastrn'
