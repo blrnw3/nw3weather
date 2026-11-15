@@ -56,7 +56,9 @@ $windySrc = ($windyBundle !== '')
 		data-windywidget="map"
 		data-thememode="white"
 		data-spotid="5980477"
-		data-appid="widgets_2467d6af6b">
+		data-appid="widgets_2467d6af6b"
+		data-type="tmp"
+		data-mobileminimal="false">
 	</div>
 	<script async="true" data-cfasync="false" type="text/javascript" src="<?php echo htmlspecialchars($windySrc); ?>"></script>
 </div>
