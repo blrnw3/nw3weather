@@ -362,7 +362,7 @@ class ClimateCard {
 		} else {
 			$title = self::periodWhenLabel($last, $scope, $monthLabel, $rangeText);
 		}
-		return ' <span class="clim-yr" title="' . htmlspecialchars($title) . '">(' . substr($last, 0, 4) . ')</span>';
+		return ' <span class="clim-yr" title="' . htmlspecialchars($title) . '">(' . self::whenYear($last, $scope) . ')</span>';
 	}
 
 	private static function prevWhenPeriod($rec, $scope, $monthLabel, $rangeText) {
@@ -563,6 +563,15 @@ class ClimateCard {
 		return date($withYear ? 'd M Y' : 'd M', $ts);
 	}
 
+	/** Visible record date: year, or "Jul '10" in the all-time columns. */
+	private static function whenYear($date, $scope) {
+		if ($scope === 'all') {
+			$ts = strtotime($date . ' 12:00');
+			return date('M', $ts) . " '" . date('y', $ts);
+		}
+		return substr($date, 0, 4);
+	}
+
 	/** Who holds a record, for the notes: the most recent year (calendar date) or date. */
 	private static function prevWhen($rec, $scope) {
 		$at = $rec['at'];
@@ -571,7 +580,7 @@ class ClimateCard {
 		return ($scope === 'day') ? substr($last, 0, 4) : self::fmtDate($last);
 	}
 
-	/** Small grey "(2014)" after a record value: the most recent year it was set, with all the dates in the tooltip. */
+	/** Small grey date after a record value (year, or "Jul '10" for all-time): the most recent time it was set, with all the dates in the tooltip. */
 	private static function whenHtml($rec, $scope) {
 		$at = $rec['at'];
 		if (!$at) { return ''; }
@@ -584,7 +593,7 @@ class ClimateCard {
 		} else {
 			$title = self::fmtDate($last);
 		}
-		return ' <span class="clim-yr" title="' . htmlspecialchars($title) . '">(' . substr($last, 0, 4) . ')</span>';
+		return ' <span class="clim-yr" title="' . htmlspecialchars($title) . '">(' . self::whenYear($last, $scope) . ')</span>';
 	}
 
 	private static function dot($flag) {
