@@ -28,7 +28,7 @@ $moves = array();
 foreach(glob(ROOT . 'serialised_*.txt') as $path) {
 	$moves[$path] = V5_CACHE_ROOT . basename($path);
 }
-foreach(array('forecast_v5.json', 'pm25_latest.txt', 'windy_widget.txt') as $name) {
+foreach(array('forecast_v5.json', 'pm25_latest.txt') as $name) {
 	$moves[ROOT . $name] = V5_CACHE_ROOT . $name;
 }
 foreach(array(

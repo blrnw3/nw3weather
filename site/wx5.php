@@ -38,27 +38,4 @@ require Site::$rareTags;
 	<?php Forecast::renderPressureChart(); ?>
 </div>
 
-<?php
-// Windy's own windy_map_async.js loader reads manifest.json with a cross-origin fetch
-// that their server answers without a CORS header, so it dies before injecting anything.
-// cron_main.php resolves the hashed bundle for us; fall back to their loader when the
-// cache is missing or stale so the widget self-heals if they fix the header.
-$windyFile = V5_CACHE_ROOT . 'windy_widget.txt';
-$windyBundle = file_exists($windyFile) ? trim(file_get_contents($windyFile)) : '';
-if (!preg_match('/^windy_map\.[a-z0-9]+\.js$/i', $windyBundle)) { $windyBundle = ''; }
-$windySrc = ($windyBundle !== '')
-	? 'https://windy.app/widget3/' . $windyBundle
-	: 'https://windy.app/widget3/windy_map_async.js?v415';
-?>
-<div>
-	<h2>Area Weather Map</h2>
-	<div id="wx-map"
-		data-windywidget="map"
-		data-thememode="white"
-		data-spotid="5980477"
-		data-appid="widgets_2467d6af6b">
-	</div>
-	<script async="true" data-cfasync="false" type="text/javascript" src="<?php echo htmlspecialchars($windySrc); ?>"></script>
-</div>
-
 <?php Page::End(); ?>
