@@ -10,12 +10,17 @@
  * day or the daily data files have changed since it was built (one request
  * at a time, others keep using the previous tables meanwhile). Today's row is
  * always left out of the tables, so today is compared with every earlier day.
+ *
+ * Rain, sunshine and average temperature also have a month-to-date subline:
+ * the current 1..d total or mean, the 1991-2020 normal for that window, and
+ * records for the same date range in earlier years of this month, for whole
+ * months of this calendar month, and for any whole calendar month.
  */
 require_once __DIR__ . '/ClimateMeanClimo.php';
 
 class ClimateCard {
 	const CACHE_FILE = 'serialised_climrec.txt';
-	const CACHE_VERSION = 5;
+	const CACHE_VERSION = 6;
 
 	/** First year used for records (the station record). */
 	const SINCE_YEAR = Site::BASE_YEAR;
@@ -74,11 +79,14 @@ class ClimateCard {
 				'project' => 'tmean', 'margin' => self::MEAN_MARGIN),
 			'flagHi' => array('from' => self::MEAN_PROVISIONAL_FROM_HOUR, 'final' => self::MEAN_FINAL_HOUR,
 				'project' => 'tmean', 'margin' => self::MEAN_MARGIN),
-			'nameHi' => 'high avg temp', 'nameLo' => 'low avg temp'),
+			'nameHi' => 'high avg temp', 'nameLo' => 'low avg temp',
+			'period' => 'mean', 'periodNameHi' => 'high month-to-date avg temp', 'periodNameLo' => 'low month-to-date avg temp'),
 			'rain' => array('label' => 'Rain', 'unit' => Wx::Rain, 'dp' => 1, 'norm' => 'rain', 'lo' => false, 'hi' => true,
-				'flagHi' => 'now', 'nameHi' => 'daily rainfall'),
+				'flagHi' => 'now', 'nameHi' => 'daily rainfall',
+				'period' => 'sum', 'periodNameHi' => 'high month-to-date rainfall', 'periodNameLo' => 'low month-to-date rainfall'),
 		'sunhr' => array('label' => 'Sunshine', 'unit' => Wx::Hours, 'dp' => 1, 'norm' => 'sunhr', 'lo' => 'day', 'hi' => true,
-			'flagHi' => 'now', 'nameHi' => 'daily sunshine'),
+			'flagHi' => 'now', 'nameHi' => 'daily sunshine',
+			'period' => 'sum', 'periodNameHi' => 'high month-to-date sunshine', 'periodNameLo' => 'low month-to-date sunshine'),
 		'wmean' => array('label' => 'Mean wind', 'unit' => Wx::Wind, 'dp' => 1, 'norm' => 'wmean', 'lo' => true, 'hi' => true),
 		);
 	}
@@ -203,7 +211,164 @@ class ClimateCard {
 			}
 			$out['vars'][$var] = $res;
 		}
+		$out['period'] = self::buildPeriod($now);
 		return $out;
+	}
+
+	/**
+	 * Month-to-date / whole-month records for rain, sunshine and avg temp.
+	 *   day   - days 1..d of this calendar month in earlier years
+	 *   month - complete months of this calendar month (earlier years)
+	 *   all   - any complete calendar month
+	 * The current year (MTD) and the current in-progress month are left out.
+	 */
+	private static function buildPeriod($now) {
+		$curY = (int)date('Y', $now);
+		$curM = (int)date('n', $now);
+		$curD = (int)date('j', $now);
+		$out = array();
+		foreach (self::rows() as $var => $cfg) {
+			if (empty($cfg['period'])) { continue; }
+			$summable = ($cfg['period'] === 'sum');
+			$res = array('day' => self::blank(), 'month' => self::blank(), 'all' => self::blank());
+			foreach (Data::getAllData($var) as $y => $months) {
+				$y = (int)$y;
+				if ($y < self::SINCE_YEAR || !is_array($months)) { continue; }
+				foreach ($months as $mm => $days) {
+					if (!is_array($days)) { continue; }
+					$mm = (int)$mm;
+					$dim = (int)Date::get_days_in_month($mm, $y);
+					if ($dim < 1) { continue; }
+					// Complete-month records: skip the in-progress month
+					if ($y < $curY || ($y === $curY && $mm < $curM)) {
+						$agg = self::periodAggregate($days, 1, $dim, $summable, $cfg['dp']);
+						if ($agg !== null) {
+							$date = sprintf('%04d-%02d-%02d', $y, $mm, $dim);
+							self::fold($res['all'], $agg, $date);
+							if ($mm === $curM) {
+								self::fold($res['month'], $agg, $date);
+							}
+						}
+					}
+					// Same-window MTD records: earlier years only, days 1..d (clamped)
+					if ($mm === $curM && $y < $curY) {
+						$end = Data::clampDay($y, $mm, $curD);
+						$agg = self::periodAggregate($days, 1, $end, $summable, $cfg['dp']);
+						if ($agg !== null) {
+							self::fold($res['day'], $agg, sprintf('%04d-%02d-%02d', $y, $mm, $end));
+						}
+					}
+				}
+			}
+			foreach (array('day', 'month', 'all') as $s) {
+				foreach (array('lo', 'hi') as $k) {
+					sort($res[$s][$k]['at']);
+					$res[$s][$k]['n'] = count($res[$s][$k]['at']);
+					$res[$s][$k]['at'] = array_slice($res[$s][$k]['at'], -self::KEEP_DATES);
+				}
+			}
+			$out[$var] = $res;
+		}
+		return $out;
+	}
+
+	/**
+	 * Sum or mean of days $from..$to, or null if the window is too incomplete
+	 * (more than one missing day).
+	 */
+	private static function periodAggregate($days, $from, $to, $summable, $dp) {
+		$vals = array();
+		$missing = 0;
+		if ((int)$to < (int)$from) { return null; }
+		for ($dd = (int)$from; $dd <= (int)$to; $dd++) {
+			$v = isset($days[$dd]) ? $days[$dd] : null;
+			if ($v === null || $v === '' || !is_numeric($v)) {
+				$missing++;
+				continue;
+			}
+			$vals[] = (float)$v;
+		}
+		if (!$vals || $missing > 1) { return null; }
+		$agg = $summable ? array_sum($vals) : (array_sum($vals) / count($vals));
+		return round($agg, $dp);
+	}
+
+	/** Current month-to-date value, using $todayVal (live) for today when present. */
+	public static function mtdValue($var, $now, $todayVal, $dp, $summable) {
+		$y = (int)date('Y', $now);
+		$m = (int)date('n', $now);
+		$d = (int)date('j', $now);
+		$days = Data::getMonthlyData($var, $y, $m);
+		if (!is_array($days)) { $days = array(); }
+		$vals = array();
+		for ($dd = 1; $dd <= $d; $dd++) {
+			if ($dd === $d && $todayVal !== null && is_numeric($todayVal)) {
+				$vals[] = (float)$todayVal;
+				continue;
+			}
+			$v = isset($days[$dd]) ? $days[$dd] : null;
+			if ($v === null || $v === '' || !is_numeric($v)) { continue; }
+			$vals[] = (float)$v;
+		}
+		if (!$vals) { return null; }
+		$agg = $summable ? array_sum($vals) : (array_sum($vals) / count($vals));
+		return round($agg, $dp);
+	}
+
+	/**
+	 * Flag the current MTD value against same-window (day-scope) records only.
+	 * Summable highs are confirmed as soon as they pass the record; other
+	 * comparisons stay provisional while today is still in progress.
+	 */
+	public static function flagPeriod($dir, $today, $recs, $hour, $summable) {
+		if ($today === null || $recs === null) { return null; }
+		$rec = isset($recs['day'][$dir]) ? $recs['day'][$dir] : null;
+		if ($rec === null || $rec['v'] === null) { return null; }
+		$t = $today;
+		if ($dir === 'hi' && $t <= 0 && $summable) { return null; }
+		$diff = ($t - $rec['v']) * ($dir === 'hi' ? 1 : -1);
+		if ($diff > 0.00001) {
+			$status = self::RECORD;
+		} elseif (abs($diff) <= 0.00001) {
+			$status = self::TIE;
+		} else {
+			return null;
+		}
+		$soFar = !($summable && $dir === 'hi') && ((int)$hour < 24);
+		return array('status' => $status, 'scope' => 'day', 'soFar' => $soFar, 'rec' => $rec, 'value' => $t);
+	}
+
+	/** Tooltip date for a period record stored as Y-m-d. */
+	private static function periodWhenLabel($date, $scope, $monthLabel, $rangeText) {
+		$ts = strtotime($date . ' 12:00');
+		$y = date('Y', $ts);
+		if ($scope === 'day') { return $rangeText . ' ' . $y; }
+		if ($scope === 'month') { return $monthLabel . ' ' . $y; }
+		return date('M Y', $ts);
+	}
+
+	private static function whenHtmlPeriod($rec, $scope, $monthLabel, $rangeText) {
+		$at = $rec['at'];
+		if (!$at) { return ''; }
+		$n = $rec['n'] ?? count($at);
+		$last = end($at);
+		if ($n > self::KEEP_DATES) {
+			$unit = ($scope === 'day') ? 'years' : 'months';
+			$title = 'Set in ' . $n . ' ' . $unit . ', most recently ' . self::periodWhenLabel($last, $scope, $monthLabel, $rangeText);
+		} elseif ($n > 1) {
+			$title = 'Set in ' . implode(', ', array_map(function ($x) use ($scope, $monthLabel, $rangeText) {
+				return self::periodWhenLabel($x, $scope, $monthLabel, $rangeText);
+			}, $at));
+		} else {
+			$title = self::periodWhenLabel($last, $scope, $monthLabel, $rangeText);
+		}
+		return ' <span class="clim-yr" title="' . htmlspecialchars($title) . '">(' . self::whenYear($last, $scope) . ')</span>';
+	}
+
+	private static function prevWhenPeriod($rec, $scope, $monthLabel, $rangeText) {
+		$at = $rec['at'];
+		if (!$at) { return ''; }
+		return self::periodWhenLabel(end($at), $scope, $monthLabel, $rangeText);
 	}
 
 	private static function blank() {
@@ -398,6 +563,15 @@ class ClimateCard {
 		return date($withYear ? 'd M Y' : 'd M', $ts);
 	}
 
+	/** Visible record date: year, or "Jul '10" in the all-time columns. */
+	private static function whenYear($date, $scope) {
+		if ($scope === 'all') {
+			$ts = strtotime($date . ' 12:00');
+			return date('M', $ts) . " '" . date('y', $ts);
+		}
+		return substr($date, 0, 4);
+	}
+
 	/** Who holds a record, for the notes: the most recent year (calendar date) or date. */
 	private static function prevWhen($rec, $scope) {
 		$at = $rec['at'];
@@ -406,7 +580,7 @@ class ClimateCard {
 		return ($scope === 'day') ? substr($last, 0, 4) : self::fmtDate($last);
 	}
 
-	/** Small grey "(2014)" after a record value: the most recent year it was set, with all the dates in the tooltip. */
+	/** Small grey date after a record value (year, or "Jul '10" for all-time): the most recent time it was set, with all the dates in the tooltip. */
 	private static function whenHtml($rec, $scope) {
 		$at = $rec['at'];
 		if (!$at) { return ''; }
@@ -419,7 +593,7 @@ class ClimateCard {
 		} else {
 			$title = self::fmtDate($last);
 		}
-		return ' <span class="clim-yr" title="' . htmlspecialchars($title) . '">(' . substr($last, 0, 4) . ')</span>';
+		return ' <span class="clim-yr" title="' . htmlspecialchars($title) . '">(' . self::whenYear($last, $scope) . ')</span>';
 	}
 
 	private static function dot($flag) {
@@ -499,7 +673,8 @@ class ClimateCard {
 			}
 
 			$label = isset($cfg['title']) ? '<span title="' . $cfg['title'] . '">' . $cfg['label'] . '</span>' : $cfg['label'];
-			$row = '<tr><th scope="row">' . $label . '</th>'
+			$hasPeriod = !empty($cfg['period']);
+			$row = '<tr' . ($hasPeriod ? ' class="clim-has-sub"' : '') . '><th scope="row">' . $label . '</th>'
 				. '<td class="clim-today">' . $todayHtml . '</td>'
 				. '<td class="clim-norm">' . $normal . '</td>';
 			foreach (array('day', 'month', 'all') as $scope) {
@@ -518,6 +693,70 @@ class ClimateCard {
 				}
 			}
 			$body .= $row . '</tr>';
+
+			if ($hasPeriod) {
+				$summable = ($cfg['period'] === 'sum');
+				$pv = self::mtdValue($var, $now, $tv, $cfg['dp'], $summable);
+				$pr = isset($recs['period'][$var]) ? $recs['period'][$var] : null;
+				$pflags = array(
+					'lo' => self::flagPeriod('lo', $pv, $pr, $hour, $summable),
+					'hi' => self::flagPeriod('hi', $pv, $pr, $hour, $summable),
+				);
+				$rangeText = Data::spanRangeText('mtd', $m, $d, $y);
+				$pNormV = null;
+				if ($cfg['norm'] !== null) {
+					$pNormV = LTA::getSpanAnom($cfg['norm'], $m, 1, $m, $d, $y);
+					$pNormV = nw3_is_numeric($pNormV) ? (float)$pNormV : null;
+				}
+				$pNormTitle = 'Normal for ' . $rangeText . ' (1991-2020)';
+				if ($pNormV === null) {
+					$pNormal = '&ndash;';
+				} else {
+					$pNormal = '<span title="' . $pNormTitle . '">' . self::fmt($pNormV, $unit) . '</span>';
+				}
+				// Rain (and sun) keep the same no-anomaly Today style as the daily row.
+				$pToday = '<b>' . self::fmt($pv, $unit, true) . '</b>' . self::dot($pflags['hi'] ?? $pflags['lo']);
+				if ($pv !== null && $pNormV !== null && $unit === Wx::Temperature) {
+					$pToday .= ' <span class="clim-anom" title="Difference from normal">'
+						. Wx::conv($pv - $pNormV, Wx::AbsTemp, false, true) . '</span>';
+				}
+				$pLabel = '<span class="clim-sub-lab" title="Month to date (' . $rangeText
+					. '), compared with previous ' . $monthLabel . 's to this date. '
+					. $monthLabel . ' and all-time records are for whole months.">Month to date</span>';
+				$prow = '<tr class="clim-sub"><th scope="row">' . $pLabel . '</th>'
+					. '<td class="clim-today">' . $pToday . '</td>'
+					. '<td class="clim-norm">' . $pNormal . '</td>';
+				foreach (array('day', 'month', 'all') as $scope) {
+					foreach (array('lo', 'hi') as $dir) {
+						$cell = '&ndash;';
+						if ($pr && $pr[$scope][$dir]['v'] !== null) {
+							$rec = $pr[$scope][$dir];
+							$f = $pflags[$dir];
+							$cell = self::fmt($rec['v'], $unit)
+								. (($f !== null && $f['scope'] === $scope) ? self::dot($f) : '')
+								. self::whenHtmlPeriod($rec, $scope, $monthLabel, $rangeText);
+						}
+						$prow .= '<td class="clim-s-' . $scope . ($dir === 'lo' ? ' clim-gs' : '') . '">' . $cell . '</td>';
+					}
+				}
+				$body .= $prow . '</tr>';
+
+				foreach (array('hi', 'lo') as $dir) {
+					$f = $pflags[$dir];
+					if ($f === null) { continue; }
+					$active[$f['status'] . ($f['soFar'] ? '-sofar' : '')] = true;
+					$name = $cfg[$dir === 'hi' ? 'periodNameHi' : 'periodNameLo'] ?? '';
+					$what = 'Record ' . $name . ' for ' . $rangeText;
+					$prev = $f['rec'];
+					$shown = $f['value'] ?? $pv;
+					$fig = '<b>' . self::fmt($shown, $unit, true) . '</b>';
+					$text = ($f['status'] === self::TIE ? 'Equals ' . lcfirst($what) : $what)
+						. ($f['soFar'] ? ' so far' : '') . ': ' . $fig . ' '
+						. ($f['status'] === self::TIE ? '' : 'beats ' . self::fmt($prev['v'], $unit, true) . ' ')
+						. '(' . self::prevWhenPeriod($prev, $f['scope'], $monthLabel, $rangeText) . ')';
+					$notes[] = array(2, '<li class="clim-note">' . self::dot($f) . $text . '</li>');
+				}
+			}
 
 			foreach (array('hi', 'lo') as $dir) {
 				$f = $flags[$dir];
