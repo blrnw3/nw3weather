@@ -1,5 +1,10 @@
 RewriteEngine on
 
+# Serve the current-site 404 (Page.php header/nav/footer). This overrides the
+# server-level ErrorDocument 404 /404.html in nw3-errors.conf; no Apache
+# config change is required on the server.
+ErrorDocument 404 /404.php
+
 # Country geofence. Env var is set by mod_maxminddb
 # (see /etc/httpd/conf.d/z-geofence.conf). Harmless no-op if the module is off.
 # AR BD BR CN CO HK ID IN IQ MA PH PK RU SG VE VN
