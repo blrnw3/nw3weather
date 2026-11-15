@@ -2,7 +2,9 @@
 /**
  * Curate the home-page notable-rankings list into an ordered, grouped top 10.
  *
- * Priority: temperature, rain and sun, plus observations (fog, snow, hail,
+ * Priority: daily (today/yesterday) flags first, because they are short-lived,
+ * then month-to-date and year-to-date (and longer periods). Within each period
+ * tier: temperature, rain and sun, plus observations (fog, snow, hail,
  * thunder); then wind; then everything else. Esoteric stats are dropped.
  * Long series and 1st-place ranks are preferred; duplicates (anomalies vs
  * absolute temperatures, day max / night min vs max / min, sun % vs sun
@@ -17,7 +19,7 @@
  */
 class RankFlagsCurate {
 	const FILE = 'rank_flags_curated.json';
-	const VERSION = 1;
+	const VERSION = 2;
 	const MAX_GROUPS = 10;
 	const HIGHLIGHT_RANK = 3;
 	const LLM_TIMEOUT = 20;
@@ -202,6 +204,7 @@ class RankFlagsCurate {
 		foreach ($items as $it) {
 			$var = $it['var'];
 			if (in_array($var, self::$drop, true)) { continue; }
+			if (class_exists('RankFlags', false) && !RankFlags::isEligiblePressureItem($it)) { continue; }
 			$pk = self::periodKey($it);
 			if (isset(self::$dupOf[$var])) {
 				$abs = self::$dupOf[$var] . '|' . $pk;
@@ -227,6 +230,11 @@ class RankFlagsCurate {
 	}
 
 	private static function cmp($a, $b) {
+		// Period tier first: daily (short-lived) above MTD/YTD, then month, year,
+		// then n-day periods and spells. Category priority applies inside a tier.
+		$ta = self::periodTier($a);
+		$tb = self::periodTier($b);
+		if ($ta !== $tb) { return $ta - $tb; }
 		// Highlights (rank <= 3) only jump ahead inside temp/rain/sun/obs/wind,
 		// not "everything else" (pressure etc.), so a 10th-sunniest long series
 		// still precedes a 2nd-highest short-series pressure record.
@@ -238,20 +246,22 @@ class RankFlagsCurate {
 		if ($ba !== $bb) { return $ba - $bb; }
 		if ($a['rank'] !== $b['rank']) { return $a['rank'] - $b['rank']; }
 		if ($a['n'] !== $b['n']) { return $b['n'] - $a['n']; }
-		$pa = self::periodTie($a);
-		$pb = self::periodTie($b);
-		if ($pa !== $pb) { return $pa - $pb; }
 		return strcmp(self::itemId($a), self::itemId($b));
 	}
 
-	/** On a tie, month-to-date before year-to-date (matches the agreed card order). */
-	private static function periodTie($it) {
+	/**
+	 * Period ranking tier: 0 daily, 1 month-to-date, 2 year-to-date,
+	 * 3 calendar month, 4 calendar year, 5 n-day periods / spells / other.
+	 */
+	public static function periodTier($it) {
+		$kind = isset($it['kind']) ? $it['kind'] : '';
+		if ($kind === 'day') { return 0; }
 		$pk = self::periodKey($it);
-		if ($pk === 'mtd') { return 0; }
-		if ($pk === 'ytd') { return 1; }
-		if ($pk === 'month') { return 2; }
-		if ($pk === 'year') { return 3; }
-		return 4;
+		if ($pk === 'mtd') { return 1; }
+		if ($pk === 'ytd') { return 2; }
+		if ($pk === 'month') { return 3; }
+		if ($pk === 'year') { return 4; }
+		return 5;
 	}
 
 	private static function familyMembers($it, $candidates) {
@@ -541,10 +551,12 @@ class RankFlagsCurate {
 		}
 		$system = 'You curate the "Notable in the rankings" card for a personal weather station in Hampstead, London (nw3weather). '
 			. 'From the candidate notable records, choose an ordered top 10 (or fewer) and group related records for the same period onto one line. '
-			. 'Priority: temperature, rain and sun first, plus observations such as fog and snow; then wind; then everything else. '
-			. 'Prefer long historical series (e.g. 146 years) and 1st-place ranks. '
+			. 'Daily records (today or yesterday) take priority over month-to-date and year-to-date, because they are short-lived. '
+			. 'Within each period group, priority is: temperature, rain and sun first, plus observations such as fog and snow; then wind; then everything else. '
+			. 'Prefer long historical series (e.g. 146 years) and 1st-place ranks within the same period group. '
 			. 'Do not include esoteric stats (pressure range, averaged maximum or 10-min rain rates, feels-like, 10-min temperature falls, dew point). '
-			. 'Duplicates are already removed. Group min/max/mean temperature for the same period; you may group mean and minimum pressure for the same period. '
+			. 'Pressure is only eligible as a daily highest maximum or daily lowest minimum. '
+			. 'Duplicates are already removed. Group min/max/mean temperature for the same period. '
 			. 'Keep month-to-date and year-to-date fog (or other observations) on separate lines. '
 			. 'Write a short headline for each group, without numeric values or ranks (those are added later). Style: "Warmest year to date on record for min, max and mean temperature", "3rd sunniest year to date", "Most fog days month to date on record", "3rd smallest temperature range month to date", "10th dullest month to date". '
 			. 'Return ONLY JSON: {"groups":[{"ids":["tmin|ytd","tmax|ytd","tmean|ytd"],"headline":"..."}]}. '

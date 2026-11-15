@@ -45,6 +45,9 @@ class RankFlags {
 	/** Skip daily (today/yesterday) flags only; monthly/annual/period/spell still allowed. */
 	private static $skipDaily = ['fog', 'sunhrp'];
 
+	/** Pressure variables. Only a daily high max (pmax/hi) or daily low min (pmin/lo) is notable. */
+	private static $pressureVars = ['pmin', 'pmax', 'pmean', 'prange'];
+
 	/** Day definitions differ from midnight-midnight: no "today so far" for these. */
 	private static $noToday = ['nightmin', 'daymax'];
 
@@ -207,7 +210,10 @@ class RankFlags {
 
 			// Days: fog is a 0/1 observation that does not rank usefully day-by-day;
 			// sunhrp (sun % of possible) is excluded because many days hit 100%.
-			if (!in_array($var, self::$skipDaily, true)) {
+			// Pressure: only daily high max (pmax) and daily low min (pmin).
+			$doDaily = !in_array($var, self::$skipDaily, true)
+				&& (!self::isPressureVar($var) || $var === 'pmax' || $var === 'pmin');
+			if ($doDaily) {
 				$ranked = [];
 				foreach (Data::getDailyData($var, $start) as $y => $months) {
 					foreach ($months as $m => $daily) {
@@ -223,15 +229,21 @@ class RankFlags {
 					&& !in_array($var, self::$noToday, true);
 				$cur = Report::currentRanks($ranked, ['today' => $hasToday ? $todayKey : null, 'yest' => $yestKey], $dayKey);
 				$dayUrl = self::url('RankDay.php', ['vartype' => $var, 'month' => 0, 'start_year_rep' => $start, 'rankLimit' => 25]);
-				$tDirs = self::partialDirs($mono, $dayFrac, self::dayLowBoring($var));
+				$tDirs = self::pressureDirs($var, self::partialDirs($mono, $dayFrac, self::dayLowBoring($var)));
 				if (isset($cur['today']) && count($tDirs)) {
 					self::consider($items, $cur['today'], $tDirs, $common + ['kind' => 'day', 'label' => 'Today', 'date' => $todayKey, 'soFar' => true, 'url' => $dayUrl]);
 				}
 				if (isset($cur['yest'])) {
-					self::consider($items, $cur['yest'], self::dayLowBoring($var) ? ['hi'] : ['hi', 'lo'], $common + ['kind' => 'day', 'label' => 'Yesterday', 'date' => $yestKey, 'soFar' => false, 'url' => $dayUrl]);
+					$yDirs = self::pressureDirs($var, self::dayLowBoring($var) ? ['hi'] : ['hi', 'lo']);
+					if (count($yDirs)) {
+						self::consider($items, $cur['yest'], $yDirs, $common + ['kind' => 'day', 'label' => 'Yesterday', 'date' => $yestKey, 'soFar' => false, 'url' => $dayUrl]);
+					}
 				}
 				unset($ranked);
 			}
+
+			// Pressure is daily-only (high max / low min); skip month, year, MTD, YTD.
+			if (self::isPressureVar($var)) { continue; }
 
 			// Months and years: totals for summable variables, else means.
 			$st = $isSum ? Data::SUMMARY_SUM : Data::SUMMARY_MEAN;
@@ -384,7 +396,48 @@ class RankFlags {
 		return $data;
 	}
 
-	/** Read the cache; null when missing, stale, or wrong version. */
+	public static function isPressureVar($var) {
+		return in_array($var, self::$pressureVars, true);
+	}
+
+	/**
+	 * Restrict pressure daily directions to high-max / low-min; other vars unchanged.
+	 * pmean / prange yield no directions (they are not notable).
+	 */
+	private static function pressureDirs($var, $dirs) {
+		if ($var === 'pmax') { return array_values(array_intersect($dirs, ['hi'])); }
+		if ($var === 'pmin') { return array_values(array_intersect($dirs, ['lo'])); }
+		if (self::isPressureVar($var)) { return []; }
+		return $dirs;
+	}
+
+	/**
+	 * Pressure eligibility: daily pmax in the high direction, or daily pmin in
+	 * the low direction. The usual 99th-percentile / top-N threshold still applies.
+	 * Non-pressure items pass through.
+	 */
+	public static function isEligiblePressureItem($it) {
+		if (!is_array($it)) { return false; }
+		$var = isset($it['var']) ? $it['var'] : '';
+		if (!self::isPressureVar($var)) { return true; }
+		$kind = isset($it['kind']) ? $it['kind'] : '';
+		$dir = isset($it['dir']) ? $it['dir'] : '';
+		if ($kind !== 'day') { return false; }
+		if ($var === 'pmax' && $dir === 'hi') { return true; }
+		if ($var === 'pmin' && $dir === 'lo') { return true; }
+		return false;
+	}
+
+	/** Drop pressure flags that are not a daily high max or daily low min. */
+	public static function dropIneligiblePressure($items) {
+		if (!is_array($items)) { return []; }
+		$out = [];
+		foreach ($items as $it) {
+			if (self::isEligiblePressureItem($it)) { $out[] = $it; }
+		}
+		return $out;
+	}
+
 	/** Remove daily flags for variables in $skipDaily (today / yesterday only). */
 	public static function dropSkippedDaily($items) {
 		if (!is_array($items)) { return []; }
@@ -399,6 +452,7 @@ class RankFlags {
 		return $out;
 	}
 
+	/** Read the cache; null when missing, stale, or wrong version. */
 	public static function load() {
 		$f = self::file();
 		if (!is_readable($f)) { return null; }
@@ -410,6 +464,8 @@ class RankFlags {
 		// Drop daily items later added to $skipDaily so a still-valid cache
 		// (e.g. yesterday's sun % of possible) is hidden immediately.
 		$data['items'] = self::dropSkippedDaily($data['items']);
+		// Same for pressure: hide MTD/YTD/mean/range/wrong-direction flags immediately.
+		$data['items'] = self::dropIneligiblePressure($data['items']);
 		return $data;
 	}
 
