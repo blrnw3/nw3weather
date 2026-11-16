@@ -76,30 +76,11 @@ class Forecast {
 					'wind' => isset($p['wind']) ? $p['wind'] : null,
 					'gust' => isset($p['gust']) ? $p['gust'] : null,
 				);
-				// After hourly coverage ends, also plot the period min/max so
-				// later daily extremes on the meteogram match the table.
-				$hour = (int)date('G', (int)($start / 1000));
-				$night = ($hour >= 18 || $hour <= 5);
-				$tmin = isset($p['tmin']) ? $p['tmin'] : null;
-				$tmax = isset($p['tmax']) ? $p['tmax'] : null;
-				if ($tmin !== null && $temp !== null && (float)$tmin < (float)$temp - 0.05) {
-					$hours[] = array(
-						't' => $start + (int)($range * ($night ? 0.7 : 0.3)),
-						'temp' => $tmin,
-					);
-				}
-				if ($tmax !== null && $temp !== null && (float)$tmax > (float)$temp + 0.05) {
-					$hours[] = array(
-						't' => $start + (int)($range * ($night ? 0.35 : 0.55)),
-						'temp' => $tmax,
-					);
-				}
 			}
-			usort($hours, function ($a, $b) {
-				$ta = isset($a['t']) ? (int)$a['t'] : 0;
-				$tb = isset($b['t']) ? (int)$b['t'] : 0;
-				return $ta - $tb;
-			});
+			// Densify the 6h tail to hourly with monotone interpolation so the
+			// line stays smooth (no min/max sawtooth). Daily table extremes
+			// are shown separately as a range band.
+			$hours = self::interpolateSixHourTail($hours, $lastT);
 			return array($hours, self::updated(), 'yr', self::iconsFromPeriods(self::periods()));
 		}
 		$path = V5_CACHE_ROOT . 'forecast_meteogram.json';
@@ -172,7 +153,127 @@ class Forecast {
 	}
 
 	/**
-	 * Today's station observations as hourly means (temp/dew), used so the
+	 * Fill the 6-hour tail with hourly points via Fritsch–Carlson monotone
+	 * cubic interpolation of temp/dew/wind/cloud. Does not invent new local
+	 * extrema between the 6h instantaneous values. Precip stays as 6h totals.
+	 */
+	private static function interpolateSixHourTail($hours, $lastT) {
+		if ($lastT <= 0 || !$hours) { return $hours; }
+		$head = array();
+		$tail = array();
+		$anchor = null;
+		foreach ($hours as $iv) {
+			if (empty($iv['t'])) { continue; }
+			$t = (int)$iv['t'];
+			if ($t < $lastT) {
+				$head[] = $iv;
+			} elseif ($t === $lastT) {
+				$anchor = $iv;
+				$head[] = $iv;
+			} else {
+				$tail[] = $iv;
+			}
+		}
+		if (!$anchor || !$tail) { return $hours; }
+		$step = 3600 * 1000;
+		$fields = array('temp', 'dew', 'wind', 'cloud');
+		$knots = array();
+		foreach (array_merge(array($anchor), $tail) as $iv) {
+			$knots[] = $iv;
+		}
+		$byT = array();
+		foreach ($tail as $iv) {
+			$byT[(int)$iv['t']] = $iv;
+		}
+		$end = (int)$tail[count($tail) - 1]['t'];
+		$out = $head;
+		for ($t = $lastT + $step; $t <= $end; $t += $step) {
+			$row = array('t' => $t);
+			foreach ($fields as $f) {
+				$pts = array();
+				foreach ($knots as $iv) {
+					if (isset($iv[$f]) && $iv[$f] !== null) {
+						$pts[] = array((int)$iv['t'], (float)$iv[$f]);
+					}
+				}
+				$val = self::monotoneAt($pts, $t);
+				if ($val !== null) { $row[$f] = nw3_round($val, ($f === 'cloud') ? 0 : 1); }
+			}
+			if (isset($byT[$t])) {
+				$src = $byT[$t];
+				foreach (array('precip', 'precipRange', 'gust', 'icon', 'desc') as $k) {
+					if (isset($src[$k])) { $row[$k] = $src[$k]; }
+				}
+			}
+			$out[] = $row;
+		}
+		return $out;
+	}
+
+	/**
+	 * Evaluate a Fritsch–Carlson monotone cubic at $x. $pts is [[x,y], ...]
+	 * sorted by x. Returns null if there are fewer than 2 points.
+	 */
+	private static function monotoneAt($pts, $x) {
+		$n = count($pts);
+		if ($n === 0) { return null; }
+		if ($n === 1) { return $pts[0][1]; }
+		if ($x <= $pts[0][0]) { return $pts[0][1]; }
+		if ($x >= $pts[$n - 1][0]) { return $pts[$n - 1][1]; }
+		$h = $delta = $m = array();
+		for ($i = 0; $i < $n - 1; $i++) {
+			$h[$i] = $pts[$i + 1][0] - $pts[$i][0];
+			if ($h[$i] == 0) { $delta[$i] = 0.0; }
+			else { $delta[$i] = ($pts[$i + 1][1] - $pts[$i][1]) / $h[$i]; }
+		}
+		$m[0] = $delta[0];
+		$m[$n - 1] = $delta[$n - 2];
+		for ($i = 1; $i < $n - 1; $i++) {
+			if ($delta[$i - 1] * $delta[$i] <= 0) {
+				$m[$i] = 0.0;
+			} else {
+				$w1 = 2 * $h[$i] + $h[$i - 1];
+				$w2 = $h[$i] + 2 * $h[$i - 1];
+				$m[$i] = ($w1 + $w2) / ($w1 / $delta[$i - 1] + $w2 / $delta[$i]);
+			}
+		}
+		$i = 0;
+		while ($i < $n - 2 && $x > $pts[$i + 1][0]) { $i++; }
+		$hi = $h[$i];
+		if ($hi == 0) { return $pts[$i][1]; }
+		$t = ($x - $pts[$i][0]) / $hi;
+		$t2 = $t * $t;
+		$t3 = $t2 * $t;
+		$h00 = 2 * $t3 - 3 * $t2 + 1;
+		$h10 = $t3 - 2 * $t2 + $t;
+		$h01 = -2 * $t3 + 3 * $t2;
+		$h11 = $t3 - $t2;
+		return $h00 * $pts[$i][1] + $h10 * $hi * $m[$i] + $h01 * $pts[$i + 1][1] + $h11 * $hi * $m[$i + 1];
+	}
+
+	/** Daily tmin/tmax band for days after Yr hourly coverage ends. */
+	private static function dailyTempRange($lastHourlyT) {
+		$out = array();
+		foreach (self::days() as $d) {
+			if (empty($d['date']) || !isset($d['tmin']) || !isset($d['tmax'])
+				|| $d['tmin'] === null || $d['tmax'] === null) {
+				continue;
+			}
+			$start = strtotime($d['date'] . ' 00:00:00');
+			if ($start === false) { continue; }
+			$startMs = $start * 1000;
+			$endMs = $startMs + 24 * 3600 * 1000 - 1;
+			if ($endMs <= $lastHourlyT) { continue; }
+			$lo = Wx::convNum($d['tmin'], Wx::Temperature, 1);
+			$hi = Wx::convNum($d['tmax'], Wx::Temperature, 1);
+			if ($out) { $out[] = null; }
+			$out[] = array($startMs, $lo, $hi);
+			$out[] = array($endMs, $lo, $hi);
+		}
+		return $out;
+	}
+
+	/**
 	 * meteogram can shade elapsed time and draw a now-line with real context.
 	 * The current (incomplete) hour is omitted so it does not collide with the
 	 * first forecast step.
@@ -254,8 +355,12 @@ class Forecast {
 		$windU = Wx::getUnitsText(Wx::Wind);
 		list($hours, $updated, $src, $icons) = self::meteogramHours();
 		$hours = self::prependObserved($hours);
+		$lastHourlyT = 0;
+		foreach (self::hourly() as $iv) {
+			if (!empty($iv['t']) && (int)$iv['t'] > $lastHourlyT) { $lastHourlyT = (int)$iv['t']; }
+		}
 
-		$temp = $dew = $precip = $pop = $cloud = $wind = $gust = array();
+		$temp = $dew = $precip = $precip6h = $pop = $cloud = $wind = $gust = array();
 		foreach ($hours as $iv) {
 			if (empty($iv['t'])) { continue; }
 			$t = (int)$iv['t'];
@@ -267,11 +372,12 @@ class Forecast {
 			}
 			if (isset($iv['precip']) && $iv['precip'] !== null) {
 				$val = Wx::convNum($iv['precip'], Wx::Rain, 2);
-				if (!empty($iv['precipRange'])) {
+				if ($val === null || (float)$val <= 0) { /* skip dry hours: zero columns render as hairlines */ }
+				elseif (!empty($iv['precipRange']) && (int)$iv['precipRange'] >= 2 * 3600 * 1000) {
 					$range = (int)$iv['precipRange'];
-					$precip[] = array('x' => $t + (int)($range / 2), 'y' => $val, 'pointRange' => $range);
+					$precip6h[] = array($t + (int)($range / 2), $val);
 				} else {
-					$precip[] = array($t, $val);
+					$precip[] = array($t + 30 * 60 * 1000, $val);
 				}
 			}
 			if (isset($iv['pop']) && $iv['pop'] !== null) {
@@ -303,7 +409,9 @@ class Forecast {
 			),
 			'temp' => $temp,
 			'dew' => $dew,
+			'tempRange' => ($src === 'yr') ? self::dailyTempRange($lastHourlyT) : array(),
 			'precip' => $precip,
+			'precip6h' => $precip6h,
 			'pop' => $pop,
 			'cloud' => $cloud,
 			'wind' => $wind,

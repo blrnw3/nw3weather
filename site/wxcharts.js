@@ -1317,7 +1317,7 @@
 
 		// Identical x-range and tick positions so stacked panels stay time-aligned.
 		var xMin = Infinity, xMax = -Infinity;
-		[data.temp, data.dew, data.precip, data.pop, data.cloud, data.wind, data.gust].forEach(function (series) {
+		[data.temp, data.dew, data.precip, data.precip6h, data.pop, data.cloud, data.wind, data.gust].forEach(function (series) {
 			(series || []).forEach(function (pt) {
 				if (!pt) { return; }
 				var x = (pt.x != null) ? pt.x : pt[0];
@@ -1416,7 +1416,19 @@
 			gridLineWidth: 1,
 			gridLineColor: '#cccccc',
 			dateTimeLabelFormats: { hour: '%H', day: '%a %e' },
-			labels: { format: '{value:%a %e}', style: { color: TEXT, fontSize: '0.72rem' } }
+			labels: {
+				format: undefined,
+				autoRotation: false,
+				style: { color: TEXT, fontSize: plotWidth < 520 ? '0.68rem' : '0.72rem', textOverflow: 'none' },
+				formatter: function () {
+					if (plotWidth < 520) {
+						var map = { Mon: 'Mo', Tue: 'Tu', Wed: 'We', Thu: 'Th', Fri: 'Fr', Sat: 'Sa', Sun: 'Su' };
+						var a = Highcharts.dateFormat('%a', this.value);
+						return map[a] || a;
+					}
+					return Highcharts.dateFormat('%a %e', this.value);
+				}
+			}
 		};
 		var tipShared = { shared: true, xDateFormat: '%a %e %b %H:%M' };
 		// Fixed left/right gutters so plot-area edges match even when a panel has no right axis.
@@ -1514,18 +1526,67 @@
 			],
 			tooltip: tipShared,
 			plotOptions: plotBase,
-			series: [
-				{ name: 'Temperature', type: 'spline', data: data.temp, color: cTemp, lineWidth: 2,
-					tooltip: { valueSuffix: ' ' + tempU, valueDecimals: 1 }, zIndex: 2 },
-				{ name: 'Dew point', type: 'spline', data: data.dew || [], color: cDew, lineWidth: 1.5,
-					dashStyle: 'ShortDash', tooltip: { valueSuffix: ' ' + tempU, valueDecimals: 1 }, zIndex: 1 }
-			]
+			series: (function () {
+				var s = [];
+				if (data.tempRange && data.tempRange.length) {
+					s.push({
+						name: 'Daily range',
+						type: 'arearange',
+						data: data.tempRange,
+						color: cTemp,
+						fillColor: 'rgba(211,79,0,0.14)',
+						lineWidth: 0,
+						zIndex: 0,
+						tooltip: {
+							valueDecimals: 1,
+							pointFormat: '<span style="color:{point.color}">\u25cf</span> {series.name}: {point.low}\u2013{point.high} ' + tempU + '<br/>'
+						}
+					});
+				}
+				s.push(
+					{ name: 'Temperature', type: 'spline', data: data.temp, color: cTemp, lineWidth: 2,
+						tooltip: { valueSuffix: ' ' + tempU, valueDecimals: 1 }, zIndex: 2 },
+					{ name: 'Dew point', type: 'spline', data: data.dew || [], color: cDew, lineWidth: 1.5,
+						dashStyle: 'ShortDash', tooltip: { valueSuffix: ' ' + tempU, valueDecimals: 1 }, zIndex: 1 }
+				);
+				return s;
+			}())
 		}));
 
-		var precipSeries = [
-			{ name: 'Rain', type: 'column', data: data.precip || [], color: cRain, yAxis: 0,
-				tooltip: { valueSuffix: ' ' + rainU, valueDecimals: 1 }, zIndex: 2 }
-		];
+		var precipCol = {
+			type: 'column',
+			color: cRain,
+			yAxis: 0,
+			borderWidth: 0,
+			borderColor: cRain,
+			crisp: false,
+			minPointLength: 0,
+			pointPadding: 0.06,
+			groupPadding: 0,
+			grouping: false,
+			shadow: false,
+			tooltip: { valueSuffix: ' ' + rainU, valueDecimals: 1 },
+			zIndex: 2
+		};
+		var precipSeries = [];
+		var hasHourlyRain = data.precip && data.precip.length;
+		var has6hRain = data.precip6h && data.precip6h.length;
+		if (hasHourlyRain) {
+			precipSeries.push(Highcharts.merge(precipCol, {
+				name: 'Rain',
+				data: data.precip,
+				pointRange: 3600 * 1000
+			}));
+		}
+		if (has6hRain) {
+			precipSeries.push(Highcharts.merge(precipCol, {
+				name: 'Rain',
+				data: data.precip6h,
+				pointRange: 6 * 3600 * 1000,
+				linkedTo: hasHourlyRain ? ':previous' : undefined,
+				showInLegend: !hasHourlyRain
+			}));
+		}
 		if (data.pop && data.pop.length) {
 			precipSeries.push({
 				name: 'Precip chance', type: 'areaspline', data: data.pop, color: cPop, yAxis: 1,
@@ -1548,7 +1609,15 @@
 					opposite: true, gridLineWidth: 0, showEmpty: false }
 			],
 			tooltip: tipShared,
-			plotOptions: plotBase,
+			plotOptions: Highcharts.merge(plotBase, {
+				column: {
+					borderWidth: 0,
+					borderColor: 'transparent',
+					crisp: false,
+					minPointLength: 0,
+					shadow: false
+				}
+			}),
 			series: precipSeries
 		}));
 
@@ -1589,11 +1658,20 @@
 				itemStyle: { color: TEXT, fontSize: '0.75rem' }, symbolHeight: 8, symbolWidth: 12 }
 			: { enabled: false };
 		charts.push(Highcharts.chart(containerId + '-wind', {
-			chart: Highcharts.merge(baseChart, { height: hasGust ? 150 : 130 }),
+			chart: Highcharts.merge(baseChart, {
+				height: hasGust ? 168 : 148,
+				marginBottom: 36,
+				spacing: [6, 10, 10, 8]
+			}),
 			title: { text: 'Wind', align: 'left', margin: 6,
 				style: { color: TEXT, fontSize: '0.9rem', fontWeight: 'normal' } },
-			credits: { enabled: true, href: credit.href, text: credit.text,
-				style: { color: '#999', fontSize: '9px' } },
+			// Attribution is already in the meteogram caption; hide the Highcharts
+			// credit on narrow charts so it does not collide with day labels.
+			credits: plotWidth < 520
+				? { enabled: false }
+				: { enabled: true, href: credit.href, text: credit.text,
+					style: { color: '#999', fontSize: '9px' },
+					position: { align: 'right', verticalAlign: 'bottom', x: -6, y: -2 } },
 			legend: windLegend,
 			xAxis: Highcharts.merge(xCommon, nowAnnot(false)),
 			yAxis: [
