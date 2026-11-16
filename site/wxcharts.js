@@ -1405,13 +1405,18 @@
 			};
 		}
 
+		// Column pointRange (6h rain) otherwise adds minPointOffset / pointRangePadding
+		// which shifts that pane's scale even when min/max are shared. Zeroed in attachXLock.
 		var xCommon = {
 			type: 'datetime',
 			min: xMin,
 			max: xMax,
+			minPadding: 0,
+			maxPadding: 0,
 			tickPositions: tickPositions,
 			startOnTick: false,
 			endOnTick: false,
+			ordinal: false,
 			crosshair: true,
 			gridLineWidth: 1,
 			gridLineColor: '#cccccc',
@@ -1468,6 +1473,37 @@
 			});
 		}
 		xCommon.events = { setExtremes: syncExtremes };
+		function attachXLock(c) {
+			var ax = c.xAxis && c.xAxis[0];
+			if (!ax || ax._nw3XLock) { return; }
+			ax._nw3XLock = true;
+			// v13 recomputes minPointOffset / pointRangePadding inside
+			// setAxisTranslation, so zero them after that and rebuild transA.
+			Highcharts.addEvent(ax, 'afterSetAxisTranslation', function () {
+				this.minPointOffset = 0;
+				this.pointRangePadding = 0;
+				this.pointRange = 0;
+				this.minPixelPadding = 0;
+				var range = (this.max - this.min) || 1;
+				this.translationSlope = this.transA = this.staticScale || this.len / range;
+			});
+			if (isFinite(xMin) && isFinite(xMax)) {
+				ax.setExtremes(xMin, xMax, false, false, { trigger: 'syncExtremes' });
+			}
+			ax.setAxisTranslation();
+			c.redraw(false);
+			// Plot lines/bands may keep paths from the pre-lock translation
+			// (same min/max, so Highcharts skips a redraw of them). Re-add.
+			var withLabel = c.renderTo && /-icons$/.test(c.renderTo.id);
+			if (!hasIcons && c.renderTo && /-temp$/.test(c.renderTo.id)) {
+				withLabel = true;
+			}
+			ax.removePlotBand('fc-elapsed');
+			ax.removePlotLine('fc-now');
+			var annot = nowAnnot(withLabel);
+			annot.plotBands.forEach(function (b) { ax.addPlotBand(b); });
+			annot.plotLines.forEach(function (l) { ax.addPlotLine(l); });
+		}
 
 		if (hasIcons) {
 			var iconSize = iconPack.size;
@@ -1601,13 +1637,19 @@
 			legend: { enabled: true, align: 'right', verticalAlign: 'top', floating: true,
 				itemStyle: { color: TEXT, fontSize: '0.75rem' }, symbolHeight: 8, symbolWidth: 12 },
 			xAxis: Highcharts.merge(xCommon, nowAnnot(false), { labels: { enabled: false }, tickLength: 0 }),
-			yAxis: [
-				{ title: { text: rainU, style: { color: cRain, fontSize: '0.75rem' } },
-					labels: { style: { color: cRain, fontSize: '0.72rem' } }, min: 0, softMax: 0.5, gridLineColor: '#eee' },
-				{ title: { text: '%', style: { color: '#2554c7', fontSize: '0.75rem' } },
-					labels: { style: { color: '#2554c7', fontSize: '0.72rem' } }, min: 0, max: 100,
-					opposite: true, gridLineWidth: 0, showEmpty: false }
-			],
+			yAxis: (data.pop && data.pop.length)
+				? [
+					{ title: { text: rainU, style: { color: cRain, fontSize: '0.75rem' } },
+						labels: { style: { color: cRain, fontSize: '0.72rem' } }, min: 0, softMax: 0.5, gridLineColor: '#eee' },
+					{ title: { text: '%', style: { color: '#2554c7', fontSize: '0.75rem' } },
+						labels: { style: { color: '#2554c7', fontSize: '0.72rem' } }, min: 0, max: 100,
+						opposite: true, gridLineWidth: 0, showEmpty: false }
+				]
+				: [
+					{ title: { text: rainU, style: { color: cRain, fontSize: '0.75rem' } },
+						labels: { style: { color: cRain, fontSize: '0.72rem' } }, min: 0, softMax: 0.5, gridLineColor: '#eee' },
+					rightGutter()
+				],
 			tooltip: tipShared,
 			plotOptions: Highcharts.merge(plotBase, {
 				column: {
@@ -1683,6 +1725,8 @@
 			plotOptions: plotBase,
 			series: windSeries
 		}));
+
+		charts.forEach(attachXLock);
 	}
 
 	window.NW3 = window.NW3 || {};
