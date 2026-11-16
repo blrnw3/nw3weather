@@ -1305,7 +1305,7 @@
 		var cCloud = cols.cloud || '#5a7a9a';
 		var cWind = cols.wind || '#c01717';
 		var cGust = cols.gust || '#c23b86';
-		var src = data.source || 'open-meteo';
+		var src = data.source || 'yr';
 		var credit = (src === 'yr')
 			? { href: 'https://www.yr.no/en/forecast/graph/2-2647553/', text: 'Data: Yr.no / MET Norway' }
 			: { href: 'https://open-meteo.com/', text: 'Data: Open-Meteo' };
@@ -1314,19 +1314,16 @@
 		if (!el) { return; }
 		el.className = (el.className || '').replace(/\bwxchart-loading\b/g, '') + ' fc-meteogram-stack';
 		el.style.minHeight = '';
-		el.innerHTML =
-			'<div class="fc-mg-panel" id="' + containerId + '-temp"></div>' +
-			'<div class="fc-mg-panel" id="' + containerId + '-precip"></div>' +
-			'<div class="fc-mg-panel" id="' + containerId + '-cloud"></div>' +
-			'<div class="fc-mg-panel" id="' + containerId + '-wind"></div>';
 
 		// Identical x-range and tick positions so stacked panels stay time-aligned.
 		var xMin = Infinity, xMax = -Infinity;
 		[data.temp, data.dew, data.precip, data.pop, data.cloud, data.wind, data.gust].forEach(function (series) {
 			(series || []).forEach(function (pt) {
-				if (!pt || pt[0] == null) { return; }
-				if (pt[0] < xMin) { xMin = pt[0]; }
-				if (pt[0] > xMax) { xMax = pt[0]; }
+				if (!pt) { return; }
+				var x = (pt.x != null) ? pt.x : pt[0];
+				if (x == null) { return; }
+				if (x < xMin) { xMin = x; }
+				if (x > xMax) { xMax = x; }
 			});
 		});
 		if (!isFinite(xMin)) { xMin = undefined; xMax = undefined; }
@@ -1337,6 +1334,75 @@
 			var tick = Math.ceil(xMin / dayMs) * dayMs;
 			for (; tick <= xMax; tick += dayMs) { tickPositions.push(tick); }
 			if (!tickPositions.length) { tickPositions = [xMin]; }
+		}
+
+		var plotWidth = Math.max(200, (el.clientWidth || 640) - 56 - 48);
+		function londonHour(ms) {
+			return parseInt(Highcharts.dateFormat('%H', ms), 10);
+		}
+		function startHour(ic) {
+			return londonHour(ic.start != null ? ic.start : ic.t);
+		}
+		function thinIcons(icons) {
+			icons = icons || [];
+			if (!icons.length) { return { icons: [], size: 24 }; }
+			function fits(list, size) { return list.length * (size + 4) <= plotWidth; }
+			if (fits(icons, 28)) { return { icons: icons, size: 28 }; }
+			var twelve = icons.filter(function (ic) {
+				var h = startHour(ic);
+				return h === 6 || h === 18;
+			});
+			if (!twelve.length) {
+				twelve = icons.filter(function (_, i) { return i % 2 === 0; });
+			}
+			if (fits(twelve, 24)) { return { icons: twelve, size: 24 }; }
+			var daily = icons.filter(function (ic) { return startHour(ic) === 12; });
+			if (!daily.length) {
+				daily = icons.filter(function (ic) { return startHour(ic) === 6; });
+			}
+			if (daily.length) { return { icons: daily, size: fits(daily, 24) ? 24 : 20 }; }
+			return { icons: twelve, size: 20 };
+		}
+		var iconPack = thinIcons(data.icons);
+		var hasIcons = iconPack.icons.length > 0;
+
+		el.innerHTML =
+			(hasIcons ? '<div class="fc-mg-panel fc-mg-icons" id="' + containerId + '-icons"></div>' : '') +
+			'<div class="fc-mg-panel" id="' + containerId + '-temp"></div>' +
+			'<div class="fc-mg-panel" id="' + containerId + '-precip"></div>' +
+			'<div class="fc-mg-panel" id="' + containerId + '-cloud"></div>' +
+			'<div class="fc-mg-panel" id="' + containerId + '-wind"></div>';
+
+		function nowAnnot(withLabel) {
+			var now = Date.now();
+			var bands = [];
+			if (isFinite(xMin) && now > xMin) {
+				bands.push({
+					id: 'fc-elapsed',
+					from: xMin,
+					to: isFinite(xMax) ? Math.min(now, xMax) : now,
+					color: 'rgba(40, 48, 56, 0.08)',
+					zIndex: 1
+				});
+			}
+			return {
+				plotBands: bands,
+				plotLines: [{
+					id: 'fc-now',
+					value: now,
+					color: '#5a5a5a',
+					width: 1,
+					zIndex: 7,
+					label: withLabel ? {
+						text: 'now',
+						rotation: 0,
+						align: 'left',
+						x: 3,
+						y: 12,
+						style: { color: '#555', fontSize: '10px', fontWeight: 'normal' }
+					} : { text: null }
+				}]
+			};
 		}
 
 		var xCommon = {
@@ -1391,6 +1457,47 @@
 		}
 		xCommon.events = { setExtremes: syncExtremes };
 
+		if (hasIcons) {
+			var iconSize = iconPack.size;
+			charts.push(Highcharts.chart(containerId + '-icons', {
+				chart: Highcharts.merge(baseChart, {
+					height: 44,
+					spacing: [2, 10, 0, 8],
+					marginTop: 2,
+					marginBottom: 0,
+					backgroundColor: 'transparent'
+				}),
+				title: { text: null },
+				credits: { enabled: false },
+				legend: { enabled: false },
+				xAxis: Highcharts.merge(xCommon, nowAnnot(true), { labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
+				yAxis: { min: 0, max: 1, visible: false, title: { text: null }, gridLineWidth: 0 },
+				tooltip: {
+					useHTML: true,
+					headerFormat: '',
+					pointFormat: '{point.desc}',
+					xDateFormat: '%a %e %b %H:%M'
+				},
+				plotOptions: {
+					series: { animation: false, states: { inactive: { opacity: 1 } } },
+					scatter: { stickyTracking: false }
+				},
+				series: [{
+					name: 'Weather',
+					type: 'scatter',
+					data: iconPack.icons.map(function (ic) {
+						return {
+							x: ic.t,
+							y: 0.5,
+							desc: ic.desc || '',
+							marker: { symbol: 'url(' + ic.icon + ')', width: iconSize, height: iconSize }
+						};
+					}),
+					tooltip: { pointFormat: '{point.desc}' }
+				}]
+			}));
+		}
+
 		charts.push(Highcharts.chart(containerId + '-temp', {
 			chart: Highcharts.merge(baseChart, { height: 170 }),
 			title: { text: 'Temperature & dew point', align: 'left', margin: 6,
@@ -1398,7 +1505,7 @@
 			credits: { enabled: false },
 			legend: { enabled: true, align: 'right', verticalAlign: 'top', floating: true,
 				itemStyle: { color: TEXT, fontSize: '0.75rem' }, symbolHeight: 8, symbolWidth: 12 },
-			xAxis: Highcharts.merge(xCommon, { labels: { enabled: false }, tickLength: 0 }),
+			xAxis: Highcharts.merge(xCommon, nowAnnot(!hasIcons), { labels: { enabled: false }, tickLength: 0 }),
 			yAxis: [
 				{ title: { text: tempU, style: { color: cTemp, fontSize: '0.75rem' } },
 					labels: { style: { color: cTemp, fontSize: '0.72rem' } }, gridLineColor: '#eee',
@@ -1432,7 +1539,7 @@
 			credits: { enabled: false },
 			legend: { enabled: true, align: 'right', verticalAlign: 'top', floating: true,
 				itemStyle: { color: TEXT, fontSize: '0.75rem' }, symbolHeight: 8, symbolWidth: 12 },
-			xAxis: Highcharts.merge(xCommon, { labels: { enabled: false }, tickLength: 0 }),
+			xAxis: Highcharts.merge(xCommon, nowAnnot(false), { labels: { enabled: false }, tickLength: 0 }),
 			yAxis: [
 				{ title: { text: rainU, style: { color: cRain, fontSize: '0.75rem' } },
 					labels: { style: { color: cRain, fontSize: '0.72rem' } }, min: 0, softMax: 0.5, gridLineColor: '#eee' },
@@ -1451,7 +1558,7 @@
 				style: { color: TEXT, fontSize: '0.9rem', fontWeight: 'normal' } },
 			credits: { enabled: false },
 			legend: { enabled: false },
-			xAxis: Highcharts.merge(xCommon, { labels: { enabled: false }, tickLength: 0 }),
+			xAxis: Highcharts.merge(xCommon, nowAnnot(false), { labels: { enabled: false }, tickLength: 0 }),
 			yAxis: [
 				{ title: { text: '%', style: { color: cCloud, fontSize: '0.75rem' } },
 					labels: { style: { color: cCloud, fontSize: '0.72rem' } }, min: 0, max: 100, gridLineColor: '#eee' },
@@ -1488,7 +1595,7 @@
 			credits: { enabled: true, href: credit.href, text: credit.text,
 				style: { color: '#999', fontSize: '9px' } },
 			legend: windLegend,
-			xAxis: xCommon,
+			xAxis: Highcharts.merge(xCommon, nowAnnot(false)),
 			yAxis: [
 				{ title: { text: windU, style: { color: cWind, fontSize: '0.75rem' } },
 					labels: { style: { color: cWind, fontSize: '0.72rem' } }, min: 0, softMax: 5, gridLineColor: '#eee' },

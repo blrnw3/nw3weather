@@ -278,7 +278,7 @@ if(false && $tstamp % 100 == 0) {
 }
 
 // Local forecast from Yr.no (same location as wx5: 2-2647553 Hampstead).
-// Full payload cached for homepage strip + wx5 table/meteogram.
+// Full payload cached for homepage strip + wx5 table and (preferred) meteogram.
 if(date('i') % 30 == 12) {
 	$fcUrl = 'https://www.yr.no/api/v0/locations/2-2647553/forecast';
 	$fcCtx = stream_context_create(array('http' => array(
@@ -351,6 +351,8 @@ if(date('i') % 30 == 12) {
 					'temp' => isset($iv['temperature']['value']) ? nw3_round((float)$iv['temperature']['value'], 1) : null,
 					'tmax' => isset($iv['temperature']['max']) ? nw3_round((float)$iv['temperature']['max'], 1) : null,
 					'tmin' => isset($iv['temperature']['min']) ? nw3_round((float)$iv['temperature']['min'], 1) : null,
+					'dew' => isset($iv['dewPoint']['value']) ? nw3_round((float)$iv['dewPoint']['value'], 1) : null,
+					'cloud' => isset($iv['cloudCover']['value']) ? (int)nw3_round((float)$iv['cloudCover']['value']) : null,
 					'precip' => isset($iv['precipitation']['value']) ? nw3_round((float)$iv['precipitation']['value'], 2) : null,
 					'wind' => isset($iv['wind']['speed']) ? yrMsToMph($iv['wind']['speed']) : null,
 					'windDir' => isset($iv['wind']['direction']) ? (int)nw3_round((float)$iv['wind']['direction']) : null,
@@ -377,13 +379,13 @@ if(date('i') % 30 == 12) {
 	}
 }
 
-// 10-day meteogram from Open-Meteo (temp, dew point, precip, POP, cloud, wind).
-// Yr shortIntervals only cover ~2.5 days and have no precipitation probability.
+// Open-Meteo 10-day hourly cache: fallback for the wx5 meteogram when Yr.no is
+// unavailable (also supplies precipitation probability, which Yr does not).
 if(date('i') % 30 == 14) {
 	$omUrl = 'https://api.open-meteo.com/v1/forecast'
 		. '?latitude=' . rawurlencode((string)Site::LATITUDE)
 		. '&longitude=' . rawurlencode((string)Site::LONGITUDE)
-		. '&hourly=temperature_2m,dew_point_2m,precipitation,precipitation_probability,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m'
+		. '&hourly=temperature_2m,dew_point_2m,precipitation,precipitation_probability,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code'
 		. '&forecast_days=10&timezone=Europe%2FLondon&wind_speed_unit=mph';
 	$omCtx = stream_context_create(array('http' => array(
 		'header' => "User-Agent: nw3weather.co.uk/v5 (https://nw3weather.co.uk)\r\n",
@@ -398,6 +400,7 @@ if(date('i') % 30 == 14) {
 		for($i = 0; $i < $n; $i++) {
 			$ts = strtotime($omH['time'][$i]);
 			if($ts === false) { continue; }
+			list($omIcon, $omDesc) = forecastIcon(isset($omH['weather_code'][$i]) ? (int)$omH['weather_code'][$i] : -1);
 			$omHours[] = array(
 				't' => $ts * 1000,
 				'temp' => isset($omH['temperature_2m'][$i]) ? nw3_round((float)$omH['temperature_2m'][$i], 1) : null,
@@ -408,6 +411,8 @@ if(date('i') % 30 == 14) {
 				'wind' => isset($omH['wind_speed_10m'][$i]) ? nw3_round((float)$omH['wind_speed_10m'][$i], 1) : null,
 				'windDir' => isset($omH['wind_direction_10m'][$i]) ? (int)nw3_round((float)$omH['wind_direction_10m'][$i]) : null,
 				'gust' => isset($omH['wind_gusts_10m'][$i]) ? nw3_round((float)$omH['wind_gusts_10m'][$i], 1) : null,
+				'icon' => $omIcon,
+				'desc' => $omDesc,
 			);
 		}
 		if(count($omHours)) {

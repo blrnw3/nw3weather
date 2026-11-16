@@ -1807,6 +1807,10 @@ div.charts.detail-chart-pair {
 	width: 100%;
 	min-width: 0;
 }
+.fc-mg-icons {
+	height: 44px;
+	overflow: hidden;
+}
 .fc-discuss {
 	margin: 1rem 0 1.4rem;
 	padding: 0.85rem 1rem;

@@ -24,7 +24,7 @@ class Charts {
 		self::$assetsDone = true;
 		echo '<script src="https://code.highcharts.com/highcharts.js"></script>' . "\n";
 		echo '<script src="https://code.highcharts.com/highcharts-more.js"></script>' . "\n";
-		echo '<script src="/wxcharts.js?20261110d"></script>' . "\n";
+		echo '<script src="/wxcharts.js?20261116a"></script>' . "\n";
 	}
 
 	/** Emit a uniquely-identified chart container div; returns its id. */
@@ -178,7 +178,7 @@ class Charts {
 	}
 
 	/**
-	 * Stacked 10-day meteogram (temp/dew, precip/POP, cloud, wind) from Forecast::meteogramSeries().
+	 * Stacked 10-day meteogram (temp/dew, precip, cloud, wind; POP when available) from Forecast::meteogramSeries().
 	 * Pass prebuilt $series from Forecast::meteogramSeries(), or null to load it here.
 	 */
 	public static function meteogram($series = null, $opts = array()) {

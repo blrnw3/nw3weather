@@ -448,7 +448,7 @@ $traffic->prepare_annual_data_table();
 	<p>
 		nw3weather is an observation site, so the forecasts shown here come from external providers.
 		The homepage forecast card uses the Met Office regional headline for London &amp; South East, with daily outlook figures from Yr.no.
-		The <a href="wx5.php">forecast page</a> adds a 10-day Hampstead meteogram from Open-Meteo (falling back to Yr.no if needed),
+		The <a href="wx5.php">forecast page</a> adds a 10-day Hampstead meteogram from Yr.no (falling back to Open-Meteo if needed),
 		the Met Office London &amp; South East discussion, and Met Office UK surface pressure charts.
 		Those products are produced by gathering observations from land sites (like this one), the sea, the air and satellites,
 		running numerical models on supercomputers, and interpreting the output.
