@@ -1406,7 +1406,8 @@
 		}
 
 		// Column pointRange (6h rain) otherwise adds minPointOffset / pointRangePadding
-		// which shifts that pane's scale even when min/max are shared. Zeroed in attachXLock.
+		// which shifts that pane's scale even when min/max are shared. Zeroed in
+		// afterSetAxisTranslation (registered before the first Highcharts.chart()).
 		var xCommon = {
 			type: 'datetime',
 			min: xMin,
@@ -1473,26 +1474,91 @@
 			});
 		}
 		xCommon.events = { setExtremes: syncExtremes };
+		// v13 recomputes minPointOffset / pointRangePadding inside
+		// setAxisTranslation. Zero them after that and rebuild transA so
+		// every pane shares one translation (and therefore identical gridlines).
+		function lockXTranslation() {
+			if (!this.isXAxis) { return; }
+			this.minPointOffset = 0;
+			this.pointRangePadding = 0;
+			this.pointRange = 0;
+			this.minPixelPadding = 0;
+			var range = (this.max - this.min) || 1;
+			this.translationSlope = this.transA = this.staticScale || this.len / range;
+		}
+		if (!Highcharts._nw3LockXTrans) {
+			Highcharts._nw3LockXTrans = true;
+			Highcharts.addEvent(Highcharts.Axis, 'afterSetAxisTranslation', function () {
+				var id = this.chart && this.chart.renderTo && this.chart.renderTo.id;
+				if (!id || !/-(icons|temp|precip|cloud|wind)$/.test(id)) { return; }
+				lockXTranslation.call(this);
+			});
+		}
+		function refreshXGrid(ax) {
+			var live = [];
+			Highcharts.objectEach(ax.ticks, function (tick) {
+				if (!tick) { return; }
+				if (tick.gridLine) {
+					tick.gridLine.destroy();
+					tick.gridLine = undefined;
+				}
+				tick.isNew = true;
+				if (typeof tick.renderGridLine === 'function') {
+					tick.renderGridLine(false, 1);
+				}
+				if (tick.gridLine && tick.gridLine.element) {
+					live.push(tick.gridLine.element);
+				}
+			});
+			var group = ax.gridGroup && ax.gridGroup.element;
+			if (group && group.querySelectorAll) {
+				var paths = group.querySelectorAll('path.highcharts-grid-line');
+				for (var i = 0; i < paths.length; i++) {
+					if (live.indexOf(paths[i]) === -1) {
+						paths[i].parentNode.removeChild(paths[i]);
+					}
+				}
+			}
+		}
+		// Forecast-only filled series (cloud) would otherwise start mid-elapsed
+		// band with a hard vertical edge, which reads as a darker strip just
+		// left of the now line. Start those series at now.
+		function clipSeriesAtNow(points) {
+			var now = Date.now();
+			if (!points || !points.length) { return points; }
+			var out = [], prev = null, i, pt, x, y, yNow;
+			for (i = 0; i < points.length; i++) {
+				pt = points[i];
+				if (!pt) { continue; }
+				x = (pt.x != null) ? pt.x : pt[0];
+				y = (pt.y != null) ? pt.y : pt[1];
+				if (x == null) { continue; }
+				if (x < now) { prev = [x, y]; continue; }
+				if (out.length === 0 && x > now) {
+					yNow = y;
+					if (prev && prev[1] != null && y != null && x !== prev[0]) {
+						yNow = prev[1] + (y - prev[1]) * (now - prev[0]) / (x - prev[0]);
+					} else if (prev && prev[1] != null) {
+						yNow = prev[1];
+					}
+					out.push([now, yNow]);
+				}
+				out.push(pt);
+			}
+			if (!out.length && prev) { out.push([now, prev[1]]); }
+			return out;
+		}
 		function attachXLock(c) {
 			var ax = c.xAxis && c.xAxis[0];
 			if (!ax || ax._nw3XLock) { return; }
 			ax._nw3XLock = true;
-			// v13 recomputes minPointOffset / pointRangePadding inside
-			// setAxisTranslation, so zero them after that and rebuild transA.
-			Highcharts.addEvent(ax, 'afterSetAxisTranslation', function () {
-				this.minPointOffset = 0;
-				this.pointRangePadding = 0;
-				this.pointRange = 0;
-				this.minPixelPadding = 0;
-				var range = (this.max - this.min) || 1;
-				this.translationSlope = this.transA = this.staticScale || this.len / range;
-			});
 			if (isFinite(xMin) && isFinite(xMax)) {
 				ax.setExtremes(xMin, xMax, false, false, { trigger: 'syncExtremes' });
 			}
 			ax.setAxisTranslation();
 			c.redraw(false);
-			// Plot lines/bands may keep paths from the pre-lock translation
+			refreshXGrid(ax);
+			// Plot lines/bands may keep paths from a pre-lock translation
 			// (same min/max, so Highcharts skips a redraw of them). Re-add.
 			var withLabel = c.renderTo && /-icons$/.test(c.renderTo.id);
 			if (!hasIcons && c.renderTo && /-temp$/.test(c.renderTo.id)) {
@@ -1678,7 +1744,7 @@
 			tooltip: tipShared,
 			plotOptions: plotBase,
 			series: [
-				{ name: 'Cloud', type: 'areaspline', data: data.cloud || [], color: cCloud,
+				{ name: 'Cloud', type: 'areaspline', data: clipSeriesAtNow(data.cloud || []), color: cCloud,
 					fillColor: 'rgba(90,122,154,0.35)', lineWidth: 1,
 					tooltip: { valueSuffix: ' %', valueDecimals: 0 } }
 			]
