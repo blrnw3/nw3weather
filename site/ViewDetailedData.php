@@ -1637,6 +1637,166 @@ class ViewDetailedData {
 		return date('d M Y', $ts) . $this->histStarFromTs($ts);
 	}
 
+	/**
+	 * Temperature heatwave / cold snap tables (past 12 months and all-time).
+	 * Uses the same RankSpells definitions: daily max > normal + 5 °C, or
+	 * daily min < normal − 5 °C (1991-2020 daily normal; Spells::ANOM_DEFAULT).
+	 */
+	public function tempSpells($limitRecent = 5, $limitAll = 10) {
+		if ($this->groupName !== 'temp') { return; }
+
+		$x = Spells::ANOM_DEFAULT;
+		$startY = $this->effectiveStartYear();
+		$todayTs = Date::mkdate((int)Date::$dmonth, (int)Date::$dday, (int)Date::$dyear);
+		$cutoff = date('Y-m-d', strtotime('-12 months', $todayTs));
+
+		// High limit so the 12-month filter is not capped to the all-time top-N.
+		$hw = Spells::rankLongest('tmax', $x, 'heatwave', $startY, 10000, 0);
+		$cs = Spells::rankLongest('tmin', $x, 'coldsnap', $startY, 10000, 0);
+		$hwUrl = $this->spellRankUrl('tmax', 'heatwave', $x);
+		$csUrl = $this->spellRankUrl('tmin', 'coldsnap', $x);
+
+		$allLabel = $this->usesHistorical()
+			? ('All time (' . $startY . '–' . Date::$dyear . ')')
+			: 'All time';
+
+		echo '<div id="temp-spells">';
+		echo '<h2>Heatwaves and Cold Snaps</h2>';
+		$this->tempSpellPair(
+			'Past 12 months',
+			array_slice($this->spellsEndingOnOrAfter($hw['spells'], $cutoff), 0, (int)$limitRecent),
+			array_slice($this->spellsEndingOnOrAfter($cs['spells'], $cutoff), 0, (int)$limitRecent),
+			$hwUrl, $csUrl, $x
+		);
+		$this->tempSpellPair(
+			$allLabel,
+			array_slice($hw['spells'], 0, (int)$limitAll),
+			array_slice($cs['spells'], 0, (int)$limitAll),
+			$hwUrl, $csUrl, $x
+		);
+		echo '</div>';
+	}
+
+	/** RankSpells URL for a heatwave / cold snap table (same variable, direction, threshold, start year). */
+	private function spellRankUrl($varName, $dir, $threshold) {
+		$q = [
+			'vartype' => $varName,
+			'spell_dir' => $dir,
+			'threshold' => $threshold,
+		];
+		$start = (int)$this->effectiveStartYear();
+		if ($start !== (int)Site::BASE_YEAR) {
+			$q['start_year_rep'] = $start;
+		}
+		return '/RankSpells.php?' . http_build_query($q);
+	}
+
+	/** Spells that ended on/after $cutoffYmd, or are still in progress. */
+	private function spellsEndingOnOrAfter($spells, $cutoffYmd) {
+		$out = [];
+		foreach ($spells as $sp) {
+			$end = !empty($sp['ongoing']) ? '9999-12-31' : $sp['endDate'];
+			if ($end >= $cutoffYmd) { $out[] = $sp; }
+		}
+		return $out;
+	}
+
+	private function tempSpellPair($heading, $heatwaves, $coldsnaps, $hwUrl, $csUrl, $x) {
+		$hwRule = 'Maximum Temperature ' . Spells::anomalyPhrase('heatwave', $x);
+		$csRule = 'Minimum Temperature ' . Spells::anomalyPhrase('coldsnap', $x);
+		echo '<h3>' . htmlspecialchars($heading) . '</h3>';
+		$this->tempSpellTable('Heatwaves', $heatwaves, $hwUrl, $hwRule, true);
+		echo '<p><a href="' . htmlspecialchars($hwUrl) . '">View heatwave rankings</a></p>';
+		$this->tempSpellTable('Cold snaps', $coldsnaps, $csUrl, $csRule, false);
+		echo '<p><a href="' . htmlspecialchars($csUrl) . '">View cold snap rankings</a></p>';
+	}
+
+	private function tempSpellTable($title, $spells, $url, $rule, $hot) {
+		echo '<div>';
+		echo '<h4><a href="' . htmlspecialchars($url) . '" title="' . htmlspecialchars($rule) . '">'
+			. htmlspecialchars($title) . '</a></h4>';
+		echo '<div class="detail-table-scroll">';
+		Html::table('table1', '99%');
+		Html::tr();
+		Html::td('Rank', $this->cssClass);
+		Html::td('Length', $this->cssClass);
+		Html::td('Period', $this->cssClass);
+		Html::td('Mean', $this->cssClass);
+		Html::td('Anomaly', $this->cssClass);
+		Html::td($hot ? 'Highest' : 'Lowest', $this->cssClass);
+		Html::tr_end();
+
+		if (!count($spells)) {
+			Html::tr(Html::colcol(0));
+			Html::td('–', $this->cssClass);
+			Html::td('None', $this->cssClass);
+			Html::td('', $this->cssClass);
+			Html::td('', $this->cssClass);
+			Html::td('', $this->cssClass);
+			Html::td('', $this->cssClass);
+			Html::tr_end();
+		} else {
+			foreach ($spells as $i => $spell) {
+				$cur = !empty($spell['ongoing']);
+				Html::tr($cur ? 'rowcurrent' : Html::colcol($i));
+				Html::td($i + 1, $this->cssClass);
+				$n = (int)$spell['length'];
+				Html::td($n . ' day' . ($n === 1 ? '' : 's') . ($cur ? '+' : ''), $this->cssClass);
+				Html::td($this->tempSpellPeriod($spell), $this->cssClass);
+				if (isset($spell['meanVal']) && $spell['meanVal'] !== null) {
+					Html::td($this->disp($spell['meanVal'], Wx::Temperature), $this->cssClass);
+				} else {
+					Html::td('–', $this->cssClass);
+				}
+				$meanAnom = isset($spell['meanAnom']) ? $spell['meanAnom'] : 0;
+				Html::td(htmlspecialchars(Spells::anomText($meanAnom)), $this->cssClass);
+				Html::td($this->tempSpellPeak($spell), $this->cssClass);
+				Html::tr_end();
+			}
+		}
+		Html::table_end();
+		echo '</div>';
+		echo '</div>';
+	}
+
+	private function tempSpellPeriod($spell) {
+		$startTs = strtotime($spell['startDate']);
+		$endTs = strtotime($spell['endDate']);
+		if (!$startTs) {
+			return $this->dateToken($spell['startDate']);
+		}
+		$star = $this->histStarFromTs($startTs);
+		if (!empty($spell['ongoing'])) {
+			return $this->dateToken(date('d M Y', $startTs) . ' – Current' . $star);
+		}
+		if (!$endTs || $spell['startDate'] === $spell['endDate']) {
+			return $this->dateToken(date('d M Y', $startTs) . $star);
+		}
+		if (date('Y-m', $startTs) === date('Y-m', $endTs)) {
+			$label = date('d', $startTs) . '–' . date('d M Y', $endTs) . $star;
+		} elseif (date('Y', $startTs) === date('Y', $endTs)) {
+			$label = date('d M', $startTs) . ' – ' . date('d M Y', $endTs) . $star;
+		} else {
+			$label = date('d M Y', $startTs) . ' – ' . date('d M Y', $endTs) . $star;
+		}
+		return $this->dateToken($label);
+	}
+
+	private function tempSpellPeak($spell) {
+		if (!isset($spell['peakVal']) || $spell['peakVal'] === null) { return '–'; }
+		$html = $this->disp($spell['peakVal'], Wx::Temperature);
+		if (isset($spell['peakAnom'])) {
+			$html .= ' (' . htmlspecialchars(Spells::anomText($spell['peakAnom'])) . ')';
+		}
+		if (!empty($spell['peakDate'])) {
+			$ts = strtotime($spell['peakDate']);
+			if ($ts) {
+				$html .= $this->dateHtml(date('d M Y', $ts) . $this->histStarFromTs($ts));
+			}
+		}
+		return $html;
+	}
+
 	function avgsExtrmsRecs($measures = null, $wid = 99) {
 		echo "<h2>Averages, Extremes, and Records</h2>";
 		$this->startYearSelector();
