@@ -1346,13 +1346,13 @@
 			if (!tickPositions.length) { tickPositions = [xMin]; }
 		}
 
-		// Size 6h icon chips so they do not overlap. Grow the scrollable
+		// Size 12h icon chips so they do not overlap. Grow the scrollable
 		// min-width if the natural desktop plot would pack them closer than
 		// the target chip plus a 2px gap.
-		var sixH = 6 * 3600 * 1000;
-		var nSlots = (isFinite(xMin) && isFinite(xMax) && xMax > xMin) ? ((xMax - xMin) / sixH) : 36;
+		var twelveH = 12 * 3600 * 1000;
+		var nSlots = (isFinite(xMin) && isFinite(xMax) && xMax > xMin) ? ((xMax - xMin) / twelveH) : 18;
 		var CHIP_GAP = 2;
-		var TARGET_CHIP = 22;
+		var TARGET_CHIP = 32;
 		var neededPlot = Math.ceil(nSlots * (TARGET_CHIP + CHIP_GAP));
 		var MG_MIN_WIDTH = Math.max(960, neededPlot + 56 + 48);
 		el.style.minWidth = MG_MIN_WIDTH + 'px';
@@ -1564,14 +1564,19 @@
 			c.redraw(false);
 			refreshXGrid(ax);
 			// Plot lines/bands may keep paths from a pre-lock translation
-			// (same min/max, so Highcharts skips a redraw of them). Re-add.
-			var topId = '-temp';
-			var withLabel = c.renderTo && c.renderTo.id.indexOf(topId, c.renderTo.id.length - topId.length) !== -1;
+			// (same min/max, so Highcharts skips a redraw of them). Re-add
+			// on chart panes only — the now line must not appear in the
+			// header text/summary rows.
+			var id = c.renderTo && c.renderTo.id;
+			var isHeader = !!(id && /-(hi|desc|icons|rain|daywind)$/.test(id));
 			ax.removePlotBand('fc-elapsed');
 			ax.removePlotLine('fc-now');
-			var annot = nowAnnot(withLabel);
-			annot.plotBands.forEach(function (b) { ax.addPlotBand(b); });
-			annot.plotLines.forEach(function (l) { ax.addPlotLine(l); });
+			if (!isHeader) {
+				var withLabel = !!(id && /-(temp)$/.test(id));
+				var annot = nowAnnot(withLabel);
+				annot.plotBands.forEach(function (b) { ax.addPlotBand(b); });
+				annot.plotLines.forEach(function (l) { ax.addPlotLine(l); });
+			}
 		}
 
 		function escLbl(v) {
@@ -1589,7 +1594,7 @@
 				title: { text: null },
 				credits: { enabled: false },
 				legend: { enabled: false },
-				xAxis: Highcharts.merge(xCommon, nowAnnot(!!nowLabel), { labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
+				xAxis: Highcharts.merge(xCommon, { plotLines: [], plotBands: [], labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
 				yAxis: { min: 0, max: 1, visible: false, title: { text: null }, gridLineWidth: 0 },
 				tooltip: { enabled: false },
 				plotOptions: { series: { animation: false, enableMouseTracking: false, states: { inactive: { opacity: 1 } } } },
@@ -1608,23 +1613,23 @@
 						verticalAlign: 'middle',
 						y: 0,
 						formatter: formatter,
-						style: { textOutline: 'none', fontWeight: 'normal', fontSize: '11px', color: '#334' }
+						style: { textOutline: 'none', fontWeight: 'normal', fontSize: '14px', color: '#334' }
 					}
 				}]
 			}));
 		}
 
 		if (hasDaily) {
-			headerPane('hi', 26, dailyList.map(function (d) {
+			headerPane('hi', 34, dailyList.map(function (d) {
 				return { x: d.t, y: 0.5, hi: d.hi, lo: d.lo };
 			}), function () {
-				return '<span style="color:#d34f00;font-weight:bold">' + escLbl(this.point.hi) + '\u00B0</span>'
-					+ ' / <span style="color:#2554c7">' + escLbl(this.point.lo) + '\u00B0</span>';
+				return '<span style="color:#d34f00;font-weight:bold;font-size:15px">' + escLbl(this.point.hi) + '\u00B0</span>'
+					+ ' / <span style="color:#2554c7;font-size:15px">' + escLbl(this.point.lo) + '\u00B0</span>';
 			}, false);
-			headerPane('desc', 22, dailyList.map(function (d) {
+			headerPane('desc', 28, dailyList.map(function (d) {
 				return { x: d.t, y: 0.5, txt: d.desc || '' };
 			}), function () {
-				return '<span style="font-weight:600;color:#1f303a;font-size:10px">' + escLbl(this.point.txt) + '</span>';
+				return '<span style="font-weight:600;color:#1f303a;font-size:13px">' + escLbl(this.point.txt) + '</span>';
 			}, false);
 		}
 
@@ -1640,7 +1645,7 @@
 				title: { text: null },
 				credits: { enabled: false },
 				legend: { enabled: false },
-				xAxis: Highcharts.merge(xCommon, nowAnnot(false), { labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
+				xAxis: Highcharts.merge(xCommon, { plotLines: [], plotBands: [], labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
 				yAxis: { min: 0, max: 1, visible: false, title: { text: null }, gridLineWidth: 0 },
 				tooltip: {
 					useHTML: true,
@@ -1687,17 +1692,17 @@
 		}
 
 		if (hasDaily) {
-			headerPane('rain', 20, dailyList.map(function (d) {
+			headerPane('rain', 28, dailyList.map(function (d) {
 				return { x: d.t, y: 0.5, txt: d.precip || '' };
 			}), function () {
-				return '<span style="color:#2554c7;font-size:10px">' + escLbl(this.point.txt) + '</span>';
+				return '<span style="color:#2554c7;font-size:13px">' + escLbl(this.point.txt) + '</span>';
 			}, false);
-			headerPane('daywind', 48, dailyList.map(function (d) {
+			headerPane('daywind', 56, dailyList.map(function (d) {
 				var wind = d.wind || '';
 				var gust = d.gust || '';
 				return { x: d.t, y: 0.5, txt: gust
-					? ('<span style="color:#c01717;font-size:10px">' + escLbl(wind) + '</span><br/><span style="color:#c23b86;font-size:10px">' + escLbl(gust) + '</span>')
-					: ('<span style="color:#c01717;font-size:10px">' + escLbl(wind) + '</span>') };
+					? ('<span style="color:#c01717;font-size:13px">' + escLbl(wind) + '</span><br/><span style="color:#c23b86;font-size:13px">' + escLbl(gust) + '</span>')
+					: ('<span style="color:#c01717;font-size:13px">' + escLbl(wind) + '</span>') };
 			}), function () { return this.point.txt; }, false);
 		}
 
