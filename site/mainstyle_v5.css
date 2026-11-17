@@ -1889,16 +1889,41 @@ div.charts.detail-chart-pair {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	background: #fff;
-	border: 1px solid rgba(20, 30, 40, 0.12);
-	border-radius: 50%;
-	box-shadow: 0 1px 3px rgba(20, 30, 40, 0.28);
+	background: transparent;
+	border: none;
+	border-radius: 8px;
 	box-sizing: border-box;
 	vertical-align: middle;
 }
 .fc-mg-iconchip img {
 	display: block;
 }
+.fc-mg-alerts {
+	display: inline-flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	vertical-align: middle;
+	line-height: 1.15;
+}
+.fc-mg-alert {
+	display: inline-block;
+	color: #fff;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.01em;
+	border-radius: 999px;
+	padding: 1px 6px;
+	line-height: 1.35;
+	white-space: nowrap;
+	background: #6b3a14;
+}
+.fc-mg-alert-wind { background: #6b4a12; }
+.fc-mg-alert-rain { background: #1d4e89; }
+.fc-mg-alert-snow { background: #3d5a80; }
+.fc-mg-alert-frost { background: #2a5f8a; }
+.fc-mg-alert-heat { background: #9a2e0c; }
 .fc-mg-hi {
 	font-weight: 700;
 	font-size: 15px;

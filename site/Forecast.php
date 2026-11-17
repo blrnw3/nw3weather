@@ -397,9 +397,184 @@ class Forecast {
 		return $out;
 	}
 
+	/** Public URL for a vendored Meteocons fill SVG. */
+	private static function meteoconUrl($name) {
+		return '/vendor/meteocons/fill/' . $name . '.svg';
+	}
+
+	/** True if icon, description or Yr symbol indicates snow or sleet. */
+	private static function isSnowy($icon, $desc = '', $symbol = '') {
+		$blob = strtolower(trim((string)$icon . ' ' . (string)$desc . ' ' . (string)$symbol));
+		return (strpos($blob, 'snow') !== false || strpos($blob, 'sleet') !== false);
+	}
+
 	/**
-	 * Per-day hi/lo, description, rain and wind for the meteogram header/footer,
-	 * using the same Yr dayIntervals values as the (removed) daily table.
+	 * Map a site icon / Yr description / symbol to a Meteocons fill SVG name.
+	 * Daytime variants are used because the meteogram shows one icon per day.
+	 */
+	private static function meteoconName($icon, $desc = '', $symbol = '') {
+		$icon = (string)$icon;
+		$descL = strtolower((string)$desc);
+		$symL = strtolower(preg_replace('/_(day|night|polartwilight)$/', '', (string)$symbol));
+		if (self::isSnowy($icon, $desc, $symbol)) {
+			if (strpos($icon, 'shower') !== false || strpos($descL, 'shower') !== false
+				|| strpos($symL, 'shower') !== false) {
+				return 'partly-cloudy-day-snow';
+			}
+			if (strpos($descL, 'sleet') !== false || strpos($symL, 'sleet') !== false) {
+				return (strpos($descL, 'shower') !== false) ? 'partly-cloudy-day-sleet' : 'sleet';
+			}
+			return 'snow';
+		}
+		if (strpos($descL, 'sleet') !== false || strpos($symL, 'sleet') !== false) {
+			return (strpos($icon, 'shower') !== false || strpos($descL, 'shower') !== false)
+				? 'partly-cloudy-day-sleet' : 'sleet';
+		}
+		$map = array(
+			'clear' => 'clear-day',
+			'partlycloudy' => 'partly-cloudy-day',
+			'cloudy' => 'cloudy',
+			'fog' => 'fog',
+			'rain' => 'rain',
+			'rain_showers' => 'partly-cloudy-day-rain',
+			'tstorms' => 'thunderstorms',
+			'tstorms_showers' => 'thunderstorms-day-rain',
+			'snow' => 'snow',
+			'snow_showers' => 'partly-cloudy-day-snow',
+		);
+		$name = isset($map[$icon]) ? $map[$icon] : 'cloudy';
+		if ($icon === 'rain' && (strpos($descL, 'light rain') !== false || strpos($symL, 'lightrain') !== false)
+			&& strpos($descL, 'shower') === false) {
+			$name = 'drizzle';
+		}
+		if (($icon === 'rain' || $icon === 'rain_showers')
+			&& (strpos($descL, 'heavy') !== false || strpos($symL, 'heavy') !== false)) {
+			$name = 'overcast-day-rain';
+		}
+		return $name;
+	}
+
+	/**
+	 * Pick one representative daytime icon for a local calendar day.
+	 * Among intervals overlapping 06:00–18:00 Europe/London, choose the
+	 * condition that covers the most time; ties go to the more significant
+	 * weather (iconRank), then to the interval closest to midday. Falls
+	 * back to the Yr dayInterval icon if no daytime samples exist.
+	 */
+	private static function dailyIconChoice($startMs, $endMs, $samples, $fallbackIcon, $fallbackDesc, $fallbackSymbol) {
+		$tz = new DateTimeZone('Europe/London');
+		$day = new DateTime('@' . (int)($startMs / 1000));
+		$day->setTimezone($tz);
+		$dawn = clone $day;
+		$dawn->setTime(6, 0, 0);
+		$dusk = clone $day;
+		$dusk->setTime(18, 0, 0);
+		$winA = $dawn->getTimestamp() * 1000;
+		$winB = $dusk->getTimestamp() * 1000;
+		$mid = $winA + (int)(($winB - $winA) / 2);
+
+		$buckets = array();
+		foreach ($samples as $iv) {
+			if (empty($iv['icon']) && empty($iv['desc'])) { continue; }
+			$a = isset($iv['t']) ? (int)$iv['t'] : 0;
+			if (!$a) { continue; }
+			$b = !empty($iv['end']) ? (int)$iv['end'] : ($a + 3600 * 1000);
+			$ovA = max($a, $winA);
+			$ovB = min($b, $winB);
+			if ($ovB <= $ovA) { continue; }
+			$icon = isset($iv['icon']) ? $iv['icon'] : $fallbackIcon;
+			$desc = isset($iv['desc']) ? $iv['desc'] : '';
+			$symbol = isset($iv['symbol']) ? $iv['symbol'] : '';
+			$key = $icon . '|' . $desc . '|' . $symbol;
+			if (!isset($buckets[$key])) {
+				$buckets[$key] = array(
+					'icon' => $icon, 'desc' => $desc, 'symbol' => $symbol,
+					'dur' => 0, 'midDist' => abs((($a + $b) / 2) - $mid),
+				);
+			}
+			$buckets[$key]['dur'] += ($ovB - $ovA);
+			$dist = abs((($a + $b) / 2) - $mid);
+			if ($dist < $buckets[$key]['midDist']) { $buckets[$key]['midDist'] = $dist; }
+		}
+		$maxDur = 0;
+		foreach ($buckets as $b) {
+			if ($b['dur'] > $maxDur) { $maxDur = $b['dur']; }
+		}
+		$tied = array();
+		foreach ($buckets as $b) {
+			if ($b['dur'] === $maxDur) { $tied[] = $b; }
+		}
+		// A unique daytime leader is the representative icon. When two or more
+		// conditions share the lead (or none overlap 06:00–18:00), use the Yr
+		// dayInterval symbol — it is already their daytime representative.
+		if (count($tied) === 1) {
+			$best = $tied[0];
+			return array($best['icon'], $best['desc'], $best['symbol']);
+		}
+
+		return array($fallbackIcon, $fallbackDesc, $fallbackSymbol);
+	}
+
+	/**
+	 * Severe-weather flags for one day. Thresholds are in the site's stored
+	 * units (°C, mph, mm), matching Ben's rules, independent of display units.
+	 */
+	private static function alertAmount($val, $type, $dpa = 0) {
+		return html_entity_decode(Wx::conv($val, $type, true, false, $dpa), ENT_QUOTES, 'UTF-8');
+	}
+
+	private static function dailyAlerts($d, $windPeak, $gustMax, $snow) {
+		$alerts = array();
+		$windBits = array();
+		if ($windPeak !== null && (float)$windPeak > 20) {
+			$windBits[] = 'sustained ' . self::alertAmount($windPeak, Wx::Wind, -1);
+		}
+		if ($gustMax !== null && (float)$gustMax > 40) {
+			$windBits[] = 'gusts ' . self::alertAmount($gustMax, Wx::Wind, -1);
+		}
+		if ($windBits) {
+			$alerts[] = array(
+				'code' => 'wind',
+				'label' => 'Strong wind',
+				'detail' => ucfirst(implode(', ', $windBits)),
+			);
+		}
+		$precip = (isset($d['precip']) && $d['precip'] !== null) ? (float)$d['precip'] : null;
+		if ($precip !== null && $precip > 15) {
+			$alerts[] = array(
+				'code' => 'rain',
+				'label' => 'Heavy rain',
+				'detail' => self::alertAmount($precip, Wx::Rain, 0),
+			);
+		}
+		if ($snow) {
+			$alerts[] = array(
+				'code' => 'snow',
+				'label' => 'Snow',
+				'detail' => 'Snow or sleet forecast',
+			);
+		}
+		if (isset($d['tmin']) && $d['tmin'] !== null && (float)$d['tmin'] < 0) {
+			$alerts[] = array(
+				'code' => 'frost',
+				'label' => 'Frost',
+				'detail' => 'Min ' . self::alertAmount($d['tmin'], Wx::Temperature, 0),
+			);
+		}
+		if (isset($d['tmax']) && $d['tmax'] !== null && (float)$d['tmax'] > 30) {
+			$alerts[] = array(
+				'code' => 'heat',
+				'label' => 'Heat',
+				'detail' => 'Max ' . self::alertAmount($d['tmax'], Wx::Temperature, 0),
+			);
+		}
+		return $alerts;
+	}
+
+	/**
+	 * Per-day hi/lo, description, rain, wind, icon and severe-weather flags
+	 * for the meteogram header, using the same Yr dayIntervals values as the
+	 * (removed) daily table.
 	 */
 	private static function dailySummaries() {
 		$om = self::openMeteoHoursByT();
@@ -425,11 +600,14 @@ class Forecast {
 		$out = array();
 		foreach (self::days() as $d) {
 			if (empty($d['date'])) { continue; }
-			$startTs = strtotime($d['date'] . ' 00:00:00');
-			if ($startTs === false) { continue; }
-			$start = $startTs * 1000;
-			$end = $start + 24 * 3600 * 1000;
-			$mid = $start + 12 * 3600 * 1000;
+			$tzLon = new DateTimeZone('Europe/London');
+			$dayStart = DateTime::createFromFormat('Y-m-d H:i:s', $d['date'] . ' 00:00:00', $tzLon);
+			if (!$dayStart) { continue; }
+			$dayEnd = clone $dayStart;
+			$dayEnd->modify('+1 day');
+			$start = $dayStart->getTimestamp() * 1000;
+			$end = $dayEnd->getTimestamp() * 1000;
+			$mid = $start + (int)(($end - $start) / 2);
 
 			$dirX = 0.0;
 			$dirY = 0.0;
@@ -437,11 +615,22 @@ class Forecast {
 			$gustMax = null;
 			$windSum = 0.0;
 			$windN = 0;
+			$windPeak = null;
+			$snow = self::isSnowy(
+				isset($d['icon']) ? $d['icon'] : '',
+				isset($d['desc']) ? $d['desc'] : '',
+				isset($d['symbol']) ? $d['symbol'] : ''
+			);
+			$daySamples = array();
 			foreach ($samples as $t => $iv) {
 				if ($t < $start || $t >= $end) { continue; }
+				$iv['t'] = $t;
+				$daySamples[] = $iv;
 				if (isset($iv['wind']) && $iv['wind'] !== null) {
 					$windSum += (float)$iv['wind'];
 					$windN++;
+					$w = (float)$iv['wind'];
+					$windPeak = ($windPeak === null) ? $w : max($windPeak, $w);
 				}
 				if (isset($iv['windDir']) && $iv['windDir'] !== null) {
 					$rad = deg2rad((float)$iv['windDir']);
@@ -453,6 +642,13 @@ class Forecast {
 					$g = (float)$iv['gust'];
 					$gustMax = ($gustMax === null) ? $g : max($gustMax, $g);
 				}
+				if (self::isSnowy(
+					isset($iv['icon']) ? $iv['icon'] : '',
+					isset($iv['desc']) ? $iv['desc'] : '',
+					isset($iv['symbol']) ? $iv['symbol'] : ''
+				)) {
+					$snow = true;
+				}
 			}
 
 			$mean = null;
@@ -462,6 +658,10 @@ class Forecast {
 				$mean = (float)$d['windMax'];
 			} elseif ($windN) {
 				$mean = $windSum / $windN;
+			}
+			if (isset($d['windMax']) && $d['windMax'] !== null) {
+				$wm = (float)$d['windMax'];
+				$windPeak = ($windPeak === null) ? $wm : max($windPeak, $wm);
 			}
 			$dirTxt = '';
 			if ($dirN && ($dirX != 0.0 || $dirY != 0.0)) {
@@ -489,12 +689,35 @@ class Forecast {
 				? Wx::conv($d['tmin'], Wx::Temperature, false, false, -1) : '—';
 			$deg = '°';
 
+			$rawDesc = isset($d['desc']) ? $d['desc'] : '';
+			$rawIcon = isset($d['icon']) ? $d['icon'] : 'cloudy';
+			$rawSymbol = isset($d['symbol']) ? $d['symbol'] : '';
+			$hourlyIcon = array();
+			$periodIcon = array();
+			foreach ($daySamples as $iv) {
+				if (empty($iv['icon']) && empty($iv['desc'])) { continue; }
+				if (!empty($iv['end']) && (int)$iv['end'] - (int)$iv['t'] > 3600 * 1000) {
+					$periodIcon[] = $iv;
+				} else {
+					$hourlyIcon[] = $iv;
+				}
+			}
+			// Prefer 6h periods when they exist: they cover the full local day,
+			// whereas Yr hourly only reaches ~2.5 days and would otherwise miss
+			// afternoon weather (and pick a non-representative morning icon).
+			list($pickIcon, $pickDesc, $pickSymbol) = self::dailyIconChoice(
+				$start, $end, $periodIcon ? $periodIcon : $hourlyIcon, $rawIcon, $rawDesc, $rawSymbol
+			);
+			$mc = self::meteoconName($pickIcon, $pickDesc, $pickSymbol);
+			$dateObj = $dayStart;
+
 			$out[] = array(
 				't' => $mid,
 				'start' => $start,
 				'end' => $end,
 				'label' => isset($d['label']) ? $d['label'] : '',
-				'desc' => isset($d['desc']) ? htmlspecialchars($d['desc']) : '',
+				'dateLabel' => $dateObj->format('D j'),
+				'desc' => $rawDesc !== '' ? htmlspecialchars($rawDesc) : '',
 				'hi' => $hi,
 				'lo' => $lo,
 				'hiLo' => '<span class="fc-mg-hi">' . htmlspecialchars($hi) . $deg
@@ -502,6 +725,9 @@ class Forecast {
 				'precip' => $precipTxt,
 				'wind' => $windTxt,
 				'gust' => $gustTxt,
+				'icon' => self::meteoconUrl($mc),
+				'iconKey' => $mc,
+				'alerts' => self::dailyAlerts($d, $windPeak, $gustMax, $snow),
 			);
 		}
 		return $out;
@@ -714,6 +940,21 @@ class Forecast {
 		$windU = Wx::getUnitsText(Wx::Wind);
 		list($hours, $updated, $src, $icons) = self::meteogramHours();
 		$hours = self::prependObserved($hours);
+		$daily = ($src === 'yr') ? self::dailySummaries() : array();
+		if ($daily) {
+			$icons = array();
+			foreach ($daily as $d) {
+				if (empty($d['icon'])) { continue; }
+				$icons[] = array(
+					't' => $d['t'],
+					'start' => $d['start'],
+					'end' => $d['end'],
+					'icon' => $d['icon'],
+					'desc' => isset($d['desc']) ? $d['desc'] : '',
+					'step' => 24,
+				);
+			}
+		}
 
 		$temp = $dew = $precip = $precip6h = $pop = $cloud = $wind = $gust = array();
 		foreach ($hours as $iv) {
@@ -772,7 +1013,7 @@ class Forecast {
 			'wind' => $wind,
 			'gust' => $gust,
 			'icons' => $icons,
-			'daily' => ($src === 'yr') ? self::dailySummaries() : array(),
+			'daily' => $daily,
 			'popSource' => ($src === 'yr' && $pop) ? 'open-meteo' : $src,
 			'gustSource' => ($src === 'yr' && $gust) ? 'open-meteo' : $src,
 		);

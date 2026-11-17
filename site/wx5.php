@@ -33,7 +33,7 @@ require Site::$rareTags;
 		?>
 		<p class="hm-break-note"><?php echo $mgNote; ?></p>
 		<div class="fc-mg-scroll">
-			<?php Charts::meteogram($mg, ['height' => 900]); ?>
+			<?php Charts::meteogram($mg, ['height' => 1040]); ?>
 		</div>
 	</div>
 
