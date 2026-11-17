@@ -172,7 +172,7 @@ class ViewDetailedData {
 				"measures" => ['Total', 'Sunniest Day', 'Sun Days', 'Dullest Day', '% of Max'],
 				"measureConvs" => [Wx::Hours, Wx::Hours, Wx::Days, Wx::Hours, Wx::Percentage],
 				"rankDailyCols" => [
-					['label' => 'Total', 'j' => 2, 'unit' => Wx::Hours],
+					['label' => 'Total', 'j' => 2, 'unit' => Wx::Hours, 'dpa' => 1],
 					['label' => '% of Max', 'j' => 3, 'unit' => Wx::Percentage],
 				],
 				"rankMonthlyCols" => [
@@ -1235,9 +1235,15 @@ class ViewDetailedData {
 
 	/** Display a value, or '-' when null. */
 	private function disp($val, $conv = null, $dpa = 0) {
+		$type = ($conv === null) ? $this->conv : $conv;
+		// Daily sun hours on wx11: always 1 dp (lifetime daily mean, daily ranks, etc.).
+		if ($this->groupName === 'sun' && $type === Wx::Hours && (int)$dpa === 1) {
+			$display = nw3_is_numeric($val) ? (sprintf('%.1f', (float)$val) . ' hrs') : '-';
+			return '<span class="wx-value">' . $display . '</span>';
+		}
 		$display = ($val === null)
 			? '-'
-			: Wx::conv($val, $conv === null ? $this->conv : $conv, true, false, $dpa);
+			: Wx::conv($val, $type, true, false, $dpa);
 		return '<span class="wx-value">' . $display . '</span>';
 	}
 
@@ -1255,6 +1261,9 @@ class ViewDetailedData {
 	private function measureDpa($label) {
 		if ($this->groupName === 'wind' && $label === 'Max Gust') {
 			return -1;
+		}
+		if ($this->groupName === 'sun' && ($label === 'Sunniest Day' || $label === 'Dullest Day')) {
+			return 1;
 		}
 		return 0;
 	}
@@ -1593,10 +1602,27 @@ class ViewDetailedData {
 			$monthAnom = isset($this->dat['mean'][2]['curr_monthanom']) ? $this->dat['mean'][2]['curr_monthanom'] : null;
 			$yearTot = isset($this->dat['mean'][2]['curr_year']) ? $this->dat['mean'][2]['curr_year'] : null;
 			$yearAnom = isset($this->dat['mean'][2]['curr_yearanom']) ? $this->dat['mean'][2]['curr_yearanom'] : null;
+			$todaySun = Data::liveTodaySunhr();
+			if ($todaySun === null) {
+				$todaySun = isset($this->datToday[0][2]) ? $this->datToday[0][2] : null;
+			}
+			$todayPct = Data::get('sunhrp', (int)date('Y'), (int)date('n'), (int)date('j'));
 			$data = [
 				[
+					'label' => "Today's Sun",
+					'value' => $this->disp($todaySun, Wx::Hours, 1),
+					'time' => null,
+					'anomaly' => null,
+				],
+				[
+					'label' => "Today's % of Max",
+					'value' => $this->disp($todayPct, Wx::Percentage),
+					'time' => null,
+					'anomaly' => null,
+				],
+				[
 					'label' => "Yesterday's Sun",
-					'value' => $this->disp($yestSun, Wx::Hours),
+					'value' => $this->disp($yestSun, Wx::Hours, 1),
 					'time' => null,
 					'anomaly' => null,
 				],
@@ -1689,6 +1715,10 @@ class ViewDetailedData {
 		echo ' </div>';
 		echo '</div>';
 
+		if ($this->groupName === 'sun') {
+			$this->renderTodaySunTracker();
+		}
+
 		if ($this->isSummableDetail()) {
 			Charts::dailySelectable(
 				['mode' => 'monthly', 'length' => 12, 'lta' => 1],
@@ -1702,6 +1732,13 @@ class ViewDetailedData {
 				$this->varMean
 			);
 		}
+	}
+
+	/** Existing webcam sunshine tracker, placed below wx11's first table/graph. */
+	private function renderTodaySunTracker() {
+		require_once __DIR__ . '/SunTracker.php';
+		$hours = Data::liveTodaySunhr();
+		SunTracker::renderReport(date('Ymd'), true, $hours);
 	}
 
 	/** Plain-text current wet/dry spell for the live conditions table. */
@@ -2180,6 +2217,7 @@ class ViewDetailedData {
 							$cell = $dat['mean']['avg'][$pk];
 							$anomVal = isset($dat['mean']['avg'][$pk . 'anom'])
 								? $dat['mean']['avg'][$pk . 'anom'] : $anomVal;
+							$dpa = 1;
 						} elseif ($measures[$r] === 'Sun Days' && isset($dat['sdays']['avg'][$pk])) {
 							$cell = $dat['sdays']['avg'][$pk];
 							$anomVal = null;
