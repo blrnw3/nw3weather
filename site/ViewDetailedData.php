@@ -1269,6 +1269,127 @@ class ViewDetailedData {
 		return '<br />(' . Wx::conv($val, Wx::AbsTemp, 0, 1) . ')';
 	}
 
+	/**
+	 * Recent-table column header. On the rain page, mark the incomplete
+	 * calendar month and year as to date.
+	 */
+	private function recentPeriodLabel($pk) {
+		$label = isset($this->periods_all[$pk]) ? $this->periods_all[$pk] : $pk;
+		if ($this->groupName === 'rain' && ($pk === 'curr_month' || $pk === 'curr_year')) {
+			$label .= ' (to date)';
+		}
+		return $label;
+	}
+
+	/** Normal row immediately under Total in the rain Recent table. */
+	private function renderRecentRainNormalRow($splitOne) {
+		Html::tr('row-norm');
+		Html::td('Normal', $this->cssClass);
+		for ($c = 0; $c < $splitOne; $c++) {
+			$pk = self::$periods[$c];
+			$norm = $this->rainToDateNormal($pk);
+			Html::td($this->disp($norm, Wx::Rain), $this->cssClass);
+		}
+		Html::tr_end();
+	}
+
+	/**
+	 * Extra kv-table rows under a current month / year / season rain total:
+	 * normal to-date and full-period normal, each with signed diffs.
+	 */
+	private function rainNormRowsHtml($actual, $kind, $stripe) {
+		$toDate = $this->rainToDateNormal($kind);
+		$full = $this->rainFullPeriodNormal($kind);
+		if ($kind === 'month') {
+			$fullLabel = 'Full month';
+		} elseif ($kind === 'year') {
+			$fullLabel = 'Full year';
+		} else {
+			$fullLabel = 'Full season';
+		}
+		$html = '<div class="' . $stripe . ' kv-norm-row">';
+		$html .= '<div>Normal to-date</div>';
+		$html .= '<div>' . $this->disp($toDate, Wx::Rain)
+			. $this->rainNormDiffSuffix($actual, $toDate) . '</div>';
+		$html .= '</div>';
+		$html .= '<div class="' . $stripe . ' kv-norm-row">';
+		$html .= '<div>' . $fullLabel . '</div>';
+		$html .= '<div>' . $this->disp($full, Wx::Rain)
+			. $this->rainNormDiffSuffix($actual, $full) . '</div>';
+		$html .= '</div>';
+		return $html;
+	}
+
+	/** Signed "(±a mm, ±b%)" vs a normal, or empty if either value is missing. */
+	private function rainNormDiffSuffix($actual, $norm) {
+		if (!nw3_is_numeric($actual) || !nw3_is_numeric($norm)) {
+			return '';
+		}
+		$diff = (float)$actual - (float)$norm;
+		$mm = Wx::conv($diff, Wx::Rain, true, true, 0);
+		if ((float)$norm != 0.0) {
+			$pct = ($diff / (float)$norm) * 100;
+			$pctTxt = (($pct > 0) ? '+' : '') . nw3_round($pct) . '%';
+		} else {
+			$pctTxt = '-';
+		}
+		return ' (' . $mm . ', ' . $pctTxt . ')';
+	}
+
+	/**
+	 * 1991-2020 rain normal for a period. Calendar to-date windows use the
+	 * same LTA::getSpanAnom / getRangeAnom logic as the homepage climate card
+	 * MTD; rolling 7/31/365-day windows use getRecentPeriodMeanAnom.
+	 */
+	private function rainToDateNormal($pk) {
+		LTA::init();
+		$y = (int)Date::$dyear;
+		$m = (int)Date::$dmonth;
+		$d = (int)Date::$dday;
+		if ($pk === 'month' || $pk === 'curr_month') {
+			return LTA::getSpanAnom('rain', $m, 1, $m, $d, $y);
+		}
+		if ($pk === 'year' || $pk === 'curr_year') {
+			return LTA::getSpanAnom('rain', 1, 1, $m, $d, $y);
+		}
+		if ($pk === 'season') {
+			$si = (int)Date::$season - 1;
+			$span = isset(Data::$seasonSpans[$si]) ? Data::$seasonSpans[$si] : null;
+			if ($span === null) {
+				return null;
+			}
+			$b = Data::seasonBounds($span, Data::seasonLabelYear($y, $m), true);
+			if ($b === null) {
+				return null;
+			}
+			return LTA::getRangeAnom('rain', $b['sy'], $b['sm'], $b['sd'], $b['ey'], $b['em'], $b['ed']);
+		}
+		if ($pk === 'latest_7d') {
+			return LTA::getRecentPeriodMeanAnom('rain', 7);
+		}
+		if ($pk === 'latest_31d') {
+			return LTA::getRecentPeriodMeanAnom('rain', 31);
+		}
+		if ($pk === 'latest_365d') {
+			return LTA::getRecentPeriodMeanAnom('rain', 365);
+		}
+		return null;
+	}
+
+	private function rainFullPeriodNormal($kind) {
+		LTA::init();
+		if ($kind === 'month') {
+			return LTA::getMonthlyAnom('rain', (int)Date::$dmonth);
+		}
+		if ($kind === 'year') {
+			return LTA::getYearlyAnom('rain');
+		}
+		if ($kind === 'season') {
+			return LTA::getSeasonAnom('rain', (int)Date::$season - 1);
+		}
+		return null;
+	}
+
 	// ---- rendering ----
 
 	/**
@@ -1403,18 +1524,24 @@ class ViewDetailedData {
 					'value' => $this->disp($monthTot, Wx::Rain),
 					'time' => null,
 					'anomaly' => $monthAnom,
+					'normKind' => 'month',
+					'actual' => $monthTot,
 				],
 				[
 					'label' => 'Annual Rain',
 					'value' => $this->disp($yearTot, Wx::Rain),
 					'time' => null,
 					'anomaly' => $yearAnom,
+					'normKind' => 'year',
+					'actual' => $yearTot,
 				],
 				[
 					'label' => $seasName . ' Total',
 					'value' => $this->disp($seasTot, Wx::Rain),
 					'time' => null,
 					'anomaly' => $seasAnom,
+					'normKind' => 'season',
+					'actual' => $seasTot,
 				],
 				[
 					'label' => 'Current Spell',
@@ -1470,7 +1597,12 @@ class ViewDetailedData {
 		echo '<div class="detail-grid current-latest-grid">';
 		echo ' <div class="kv-table">';
 		foreach ($data as $r => $row) {
-			echo '<div class="' . Html::colcol($r) . '">';
+			$stripe = Html::colcol($r);
+			$cls = $stripe;
+			if (isset($row['normKind'])) {
+				$cls .= ' kv-has-norm';
+			}
+			echo '<div class="' . $cls . '">';
 			echo '<div>' . $row['label'] . '</div>';
 			$val = $row['value'];
 			if ($row['time']) {
@@ -1486,6 +1618,13 @@ class ViewDetailedData {
 			}
 			echo '<div>' . $val . '</div>';
 			echo '</div>';
+			if (isset($row['normKind'])) {
+				echo $this->rainNormRowsHtml(
+					isset($row['actual']) ? $row['actual'] : null,
+					$row['normKind'],
+					$stripe
+				);
+			}
 		}
 		echo ' </div>';
 
@@ -1925,7 +2064,7 @@ class ViewDetailedData {
 		Html::tr();
 		Html::td($this->label, $this->cssClass, "10%");
 		for ($h = 0; $h < $splitOne; $h++) {
-			Html::td($this->periods_all[self::$periods[$h]], $this->cssClass, '18%');
+			Html::td($this->recentPeriodLabel(self::$periods[$h]), $this->cssClass, '18%');
 		}
 		Html::tr_end();
 
@@ -1945,6 +2084,9 @@ class ViewDetailedData {
 				}
 			}
 			Html::tr_end();
+			if ($this->groupName === 'rain' && $measures[$r] === 'Total') {
+				$this->renderRecentRainNormalRow($splitOne);
+			}
 		}
 		Html::table_end();
 		echo '</div>';
