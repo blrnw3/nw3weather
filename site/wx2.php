@@ -268,4 +268,6 @@ $(function() {
 //]]>
 </script>
 
+<p><a href="webcambest.php" title="Best webcam shots"><b>Best webcam shots &rarr;</b></a></p>
+
 <?php Page::End(); ?>
