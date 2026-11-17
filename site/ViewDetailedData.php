@@ -1294,31 +1294,42 @@ class ViewDetailedData {
 	}
 
 	/**
-	 * Sublines for a current month / year / season rain total: normal to date,
-	 * full-period normal, and signed absolute difference (actual minus to-date).
+	 * Sublines for a current month / year / season rain total: normal to-date
+	 * and full-period normal, each with signed actual-minus-normal diffs.
 	 */
 	private function rainNormLinesHtml($actual, $kind) {
 		$toDate = $this->rainToDateNormal($kind);
 		$full = $this->rainFullPeriodNormal($kind);
-		$diff = (nw3_is_numeric($actual) && nw3_is_numeric($toDate))
-			? ((float)$actual - (float)$toDate) : null;
+		if ($kind === 'month') {
+			$fullLabel = 'Full month normal';
+		} elseif ($kind === 'year') {
+			$fullLabel = 'Full year normal';
+		} else {
+			$fullLabel = 'Full season normal';
+		}
 		$html = '<div class="kv-norm">';
-		$html .= '<div>Normal to date ' . $this->disp($toDate, Wx::Rain) . '</div>';
-		$html .= '<div>Full period ' . $this->disp($full, Wx::Rain) . '</div>';
-		$html .= '<div>Diff ' . $this->rainSignedDiffHtml($diff) . '</div>';
+		$html .= '<div>Normal to-date: ' . $this->disp($toDate, Wx::Rain)
+			. $this->rainNormDiffSuffix($actual, $toDate) . '</div>';
+		$html .= '<div>' . $fullLabel . ': ' . $this->disp($full, Wx::Rain)
+			. $this->rainNormDiffSuffix($actual, $full) . '</div>';
 		$html .= '</div>';
 		return $html;
 	}
 
-	private function rainSignedDiffHtml($diff) {
-		if (!nw3_is_numeric($diff)) {
-			return '-';
+	/** Signed "(±a mm, ±b%)" vs a normal, or empty if either value is missing. */
+	private function rainNormDiffSuffix($actual, $norm) {
+		if (!nw3_is_numeric($actual) || !nw3_is_numeric($norm)) {
+			return '';
 		}
-		$txt = Wx::conv($diff, Wx::Rain, true, false, 0);
-		if ((float)$diff > 0 && $txt !== '' && $txt[0] !== '+') {
-			$txt = '+' . $txt;
+		$diff = (float)$actual - (float)$norm;
+		$mm = Wx::conv($diff, Wx::Rain, true, true, 0);
+		if ((float)$norm != 0.0) {
+			$pct = ($diff / (float)$norm) * 100;
+			$pctTxt = (($pct > 0) ? '+' : '') . nw3_round($pct) . '%';
+		} else {
+			$pctTxt = '-';
 		}
-		return '<span class="wx-value">' . $txt . '</span>';
+		return ' (' . $mm . ', ' . $pctTxt . ')';
 	}
 
 	/**
@@ -1582,6 +1593,18 @@ class ViewDetailedData {
 		echo '<div class="detail-grid current-latest-grid">';
 		echo ' <div class="kv-table">';
 		foreach ($data as $r => $row) {
+			if (isset($row['normKind'])) {
+				echo '<div class="' . Html::colcol($r) . ' kv-norm-block">';
+				echo '<div class="kv-norm-stack">';
+				echo '<div>' . $row['label'] . ': ' . $row['value'] . '</div>';
+				echo $this->rainNormLinesHtml(
+					isset($row['actual']) ? $row['actual'] : null,
+					$row['normKind']
+				);
+				echo '</div>';
+				echo '</div>';
+				continue;
+			}
 			echo '<div class="' . Html::colcol($r) . '">';
 			echo '<div>' . $row['label'] . '</div>';
 			$val = $row['value'];
@@ -1595,12 +1618,6 @@ class ViewDetailedData {
 				} else {
 					$val .= '&nbsp; (' . Wx::conv($row['anomaly'], Wx::AbsTemp, 0, 1) . ')';
 				}
-			}
-			if (isset($row['normKind'])) {
-				$val .= $this->rainNormLinesHtml(
-					isset($row['actual']) ? $row['actual'] : null,
-					$row['normKind']
-				);
 			}
 			echo '<div>' . $val . '</div>';
 			echo '</div>';

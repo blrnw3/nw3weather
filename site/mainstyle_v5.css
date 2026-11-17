@@ -470,6 +470,19 @@ select {
 .kv-table > div > div:nth-of-type(1) {
 	font-weight: 600;
 }
+.kv-table > div.kv-norm-block {
+	display: block;
+	grid-column: 1 / -1;
+	min-width: 0;
+}
+.kv-table > div.kv-norm-block > .kv-norm-stack {
+	padding: 0.6rem 0.5rem;
+	overflow-wrap: break-word;
+	min-width: 0;
+}
+.kv-norm-stack > div:first-child {
+	font-weight: 600;
+}
 .kv-norm {
 	margin-top: 0.3rem;
 	font-size: 0.88em;
