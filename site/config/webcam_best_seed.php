@@ -1,8 +1,8 @@
 <?php
-// Saved by cron_webcam_best.php --write-seed on 16 Nov 2026: shown on wx2 until the cron's own selection exists.
+// Saved by cron_webcam_best.php --write-seed on 17 Nov 2026: shown on wx2 until the cron's own selection exists.
 return array (
-  'built' => '2026-11-16T20:04:07+00:00',
-  'today' => '2026-11-16',
+  'built' => '2026-11-17T02:21:33+00:00',
+  'today' => '2026-11-17',
   'months' => 
   array (
     1 => 
@@ -52,11 +52,11 @@ return array (
     ),
     6 => 
     array (
-      'date' => '2020-06-18',
-      'hm' => '2030',
+      'date' => '2018-06-29',
+      'hm' => '0530',
       'cam' => 'hik',
-      'score' => 59.3,
-      'caption' => 'Sunset',
+      'score' => 57.62,
+      'caption' => 'Sunrise',
       'pinned' => false,
     ),
     7 => 
@@ -106,11 +106,11 @@ return array (
     ),
     12 => 
     array (
-      'date' => '2018-12-10',
-      'hm' => '0830',
+      'date' => '2022-12-14',
+      'hm' => '0730',
       'cam' => 'hik',
-      'score' => 71.02,
-      'caption' => 'Sunrise',
+      'score' => 46.21,
+      'caption' => 'Snowy sunrise, 7 cm lying',
       'pinned' => false,
     ),
   ),
@@ -217,15 +217,6 @@ return array (
     ),
     11 => 
     array (
-      'date' => '2026-10-17',
-      'hm' => '1400',
-      'cam' => 'hik',
-      'score' => 24.82,
-      'caption' => 'Dramatic sky',
-      'pinned' => false,
-    ),
-    12 => 
-    array (
       'date' => '2026-10-28',
       'hm' => '0730',
       'cam' => 'hik',
@@ -233,7 +224,7 @@ return array (
       'caption' => 'Sunrise',
       'pinned' => false,
     ),
-    13 => 
+    12 => 
     array (
       'date' => '2026-11-08',
       'hm' => '0800',
@@ -242,13 +233,22 @@ return array (
       'caption' => 'Foggy sunrise',
       'pinned' => false,
     ),
-    14 => 
+    13 => 
     array (
       'date' => '2026-11-07',
       'hm' => '1600',
       'cam' => 'hik',
       'score' => 23.61,
       'caption' => 'Sunset',
+      'pinned' => false,
+    ),
+    14 => 
+    array (
+      'date' => '2026-10-24',
+      'hm' => '0800',
+      'cam' => 'hik',
+      'score' => 22.54,
+      'caption' => 'Sunrise',
       'pinned' => false,
     ),
   ),

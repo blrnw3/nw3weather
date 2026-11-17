@@ -241,13 +241,32 @@ class WebcamBest {
 		return false;
 	}
 
-	/** Parse a pin: ['2026-11-14 07:30', 'caption', 'cam'] => entry, or null. */
+	/** Candidate IDs from the contact sheets (config/webcam_best_candidates.php): 'JAN-01' => ['Y-m-d HH:MM', caption]. */
+	public static function candidates() {
+		$file = ROOT . 'config/webcam_best_candidates.php';
+		$c = is_file($file) ? include $file : array();
+		return is_array($c) ? $c : array();
+	}
+
+	/**
+	 * Parse a pin: a candidate ID ('JAN-03'), a frame ('2026-11-14 07:30'), or an array of either plus a caption
+	 * and optional camera: ['JAN-03', 'caption'] / ['2026-11-14 07:30', 'caption', 'hik']. Returns an entry or null.
+	 */
 	public static function pinEntry($pin) {
+		if (is_string($pin)) { $pin = array($pin); }
 		if (!is_array($pin) || empty($pin[0])) { return null; }
-		if (!preg_match('/^(\d{4}-\d\d-\d\d)[ T](\d\d):?(\d\d)$/', trim($pin[0]), $m)) { return null; }
+		$key = strtoupper(trim($pin[0]));
+		$caption = isset($pin[1]) ? $pin[1] : null;
+		if (preg_match('/^[A-Z]{3}-\d\d$/', $key)) {
+			$c = self::candidates();
+			if (!isset($c[$key])) { return null; }
+			if ($caption === null && isset($c[$key][1])) { $caption = $c[$key][1]; }
+			$key = $c[$key][0];
+		}
+		if (!preg_match('/^(\d{4}-\d\d-\d\d)[ T](\d\d):?(\d\d)$/', trim($key), $m)) { return null; }
 		return array(
 			'date' => $m[1], 'hm' => $m[2] . $m[3], 'cam' => isset($pin[2]) ? $pin[2] : 'hik',
-			'caption' => isset($pin[1]) ? $pin[1] : '', 'pinned' => true,
+			'caption' => $caption === null ? '' : $caption, 'pinned' => true,
 		);
 	}
 

@@ -1,6 +1,5 @@
 <?php
 require("Page.php");
-require_once("WebcamBest.php");
 Page::init([
 	"fileNum" => 2,
 	"title" => "Webcam",
@@ -92,25 +91,6 @@ if ($now_mins >= $rise_mins) {
 }
 $placeholder_src = '/camchive/hik/' . date('Y/m/d') . '/' . $placeholder_stamp . 'hik.jpg';
 $placeholder_time = substr($placeholder_stamp, 0, 2) . ':' . substr($placeholder_stamp, 2, 2);
-
-// Best webcam shots: automatic picks (cron_webcam_best.php) with hand pins (config/webcam_best_pins.php)
-$best = WebcamBest::gallery();
-$best_month_names = array(1 => 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-	'September', 'October', 'November', 'December');
-function cam_best_figure($e, $heading) {
-	$when = date('D j M Y, H:i', $e['ts']);
-	$alt = 'Skycam ' . $when . ($e['caption'] !== '' ? ', ' . $e['caption'] : '');
-	echo '<figure class="cam-best-item">'
-		. '<a class="cam-best-link" href="', htmlspecialchars($e['src']), '" target="_blank" rel="noopener"'
-		. ' data-day="', htmlspecialchars(date('D j M Y', $e['ts'])), '"'
-		. ' data-label="', htmlspecialchars(date('H:i', $e['ts']) . ($e['caption'] !== '' ? ' · ' . $e['caption'] : '')), '">'
-		. '<img src="', htmlspecialchars($e['thumb']), '" width="600" height="400" loading="lazy" alt="', htmlspecialchars($alt), '" /></a>'
-		. '<figcaption><b>', htmlspecialchars($heading), '</b> <span class="cam-best-when">', htmlspecialchars($when), '</span>';
-	if ($e['caption'] !== '') {
-		echo '<span class="cam-best-caption">', htmlspecialchars($e['caption']), '</span>';
-	}
-	echo '</figcaption></figure>';
-}
 ?>
 
 <h1>Webcam</h1>
@@ -215,58 +195,6 @@ foreach ($grid_frames as $f) {
 <a href="timelapsechive.php" title="Webcam timelapse archive"><b>See full timelapse archive</b></a>
 </p>
 
-<?php
-$best_recent = array_filter(array('Past month' => $best['past_month'], 'Past year' => $best['past_year']));
-$best_months = array();
-foreach ($best_month_names as $mo => $name) {
-	if ($best[$mo]) { $best_months[$name] = $best[$mo]; }
-}
-if ($best_recent || $best_months) { ?>
-<hr />
-
-<style>
-.cam-best { display: grid; gap: 10px; margin: 0.5rem 0 0.8rem; }
-.cam-best-recent { grid-template-columns: repeat(2, 1fr); }
-.cam-best-months { grid-template-columns: repeat(4, 1fr); }
-.cam-best-item { margin: 0; font-size: 0.8rem; line-height: 1.35; }
-.cam-best-link { display: block; }
-.cam-best-item img {
-	display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover;
-	border-radius: 4px; border: 1px solid #d6e2d8; background: #eef3ee;
-}
-.cam-best-link:hover img, .cam-best-link:focus img { border-color: #4a7c59; }
-.cam-best-link:focus { outline: 2px solid #4a7c59; outline-offset: 2px; }
-.cam-best-item figcaption { color: #444; padding-top: 3px; }
-.cam-best-item figcaption b { color: #4a7c59; margin-right: 0.3em; }
-.cam-best-when { white-space: nowrap; }
-.cam-best-caption { display: block; color: #666; }
-.cam-best-recent .cam-best-item { font-size: 0.85rem; }
-.cam-modal-single .cam-modal-nav { display: none; }
-@media only screen and (max-width: 900px) {
-	.cam-best-months { grid-template-columns: repeat(3, 1fr); }
-}
-@media only screen and (max-width: 560px) {
-	.cam-best-recent { grid-template-columns: 1fr; }
-	.cam-best-months { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-	.cam-best-months figcaption b { display: block; }
-}
-</style>
-
-<h3 id="best-shots">Best webcam shots</h3>
-<?php if ($best_recent) { ?>
-<div class="cam-best cam-best-recent">
-<?php foreach ($best_recent as $heading => $e) { cam_best_figure($e, $heading); } ?>
-</div>
-<?php } ?>
-<?php if ($best_months) { ?>
-<h4>Best of each month, all years</h4>
-<div class="cam-best cam-best-months">
-<?php foreach ($best_months as $heading => $e) { cam_best_figure($e, $heading); } ?>
-</div>
-<?php } ?>
-<p>Picked automatically from the daily webcam summaries (colourful skies, sunrises and sunsets, snow, frost and fog), with some chosen by hand. Click an image for the full-size frame.</p>
-<?php } ?>
-
 <div id="cam-modal" class="cam-modal" hidden>
 	<div class="cam-modal-backdrop" data-cam-modal-close></div>
 	<div class="cam-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="cam-modal-label">
@@ -324,17 +252,7 @@ $(function() {
 
 	$('.cam-grid-thumb').on('click', function() {
 		var $btn = $(this);
-		$modal.removeClass('cam-modal-single');
 		openModal($btn.attr('data-day'), $btn.attr('data-src'));
-	});
-	// Best shots: one frame each, shown in the same viewer (the link still opens the full-size image without JS)
-	$('.cam-best-link').on('click', function(e) {
-		var $a = $(this);
-		e.preventDefault();
-		frames = [{ src: $a.attr('href'), label: $a.attr('data-label'), day: $a.attr('data-day') }];
-		$modal.addClass('cam-modal-single').removeAttr('hidden');
-		$('body').addClass('cam-modal-open');
-		showFrame(0);
 	});
 	$modal.on('click', '[data-cam-modal-close]', closeModal);
 	$btnPrev.on('click', function() { showFrame(index - 1); });
@@ -349,5 +267,7 @@ $(function() {
 });
 //]]>
 </script>
+
+<p><a href="webcambest.php" title="Best webcam shots"><b>Best webcam shots &rarr;</b></a></p>
 
 <?php Page::End(); ?>
