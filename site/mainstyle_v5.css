@@ -470,18 +470,18 @@ select {
 .kv-table > div > div:nth-of-type(1) {
 	font-weight: 600;
 }
-.kv-norm {
-	margin-top: 0.3rem;
-	font-size: 0.88em;
+.kv-table > div.kv-norm-row > div {
+	padding-top: 0.2rem;
+	padding-bottom: 0.2rem;
 	font-weight: 400;
+	font-size: 0.88em;
 	line-height: 1.4;
 	color: #555;
 	overflow-wrap: break-word;
 	min-width: 0;
 }
-.kv-norm div {
-	padding: 0;
-	font-weight: 400;
+.kv-table > div.kv-has-norm > div {
+	padding-bottom: 0.25rem;
 }
 .rowdark > div {
 	background: #e8f0ea

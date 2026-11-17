@@ -1294,23 +1294,27 @@ class ViewDetailedData {
 	}
 
 	/**
-	 * Sublines for a current month / year / season rain total: normal to-date
-	 * and full-period normal, each with signed actual-minus-normal diffs.
+	 * Extra kv-table rows under a current month / year / season rain total:
+	 * normal to-date and full-period normal, each with signed diffs.
 	 */
-	private function rainNormLinesHtml($actual, $kind) {
+	private function rainNormRowsHtml($actual, $kind, $stripe) {
 		$toDate = $this->rainToDateNormal($kind);
 		$full = $this->rainFullPeriodNormal($kind);
 		if ($kind === 'month') {
-			$fullLabel = 'Full month normal';
+			$fullLabel = 'Full month';
 		} elseif ($kind === 'year') {
-			$fullLabel = 'Full year normal';
+			$fullLabel = 'Full year';
 		} else {
-			$fullLabel = 'Full season normal';
+			$fullLabel = 'Full season';
 		}
-		$html = '<div class="kv-norm">';
-		$html .= '<div>Normal to-date: ' . $this->disp($toDate, Wx::Rain)
+		$html = '<div class="' . $stripe . ' kv-norm-row">';
+		$html .= '<div>Normal to-date</div>';
+		$html .= '<div>' . $this->disp($toDate, Wx::Rain)
 			. $this->rainNormDiffSuffix($actual, $toDate) . '</div>';
-		$html .= '<div>' . $fullLabel . ': ' . $this->disp($full, Wx::Rain)
+		$html .= '</div>';
+		$html .= '<div class="' . $stripe . ' kv-norm-row">';
+		$html .= '<div>' . $fullLabel . '</div>';
+		$html .= '<div>' . $this->disp($full, Wx::Rain)
 			. $this->rainNormDiffSuffix($actual, $full) . '</div>';
 		$html .= '</div>';
 		return $html;
@@ -1593,7 +1597,12 @@ class ViewDetailedData {
 		echo '<div class="detail-grid current-latest-grid">';
 		echo ' <div class="kv-table">';
 		foreach ($data as $r => $row) {
-			echo '<div class="' . Html::colcol($r) . '">';
+			$stripe = Html::colcol($r);
+			$cls = $stripe;
+			if (isset($row['normKind'])) {
+				$cls .= ' kv-has-norm';
+			}
+			echo '<div class="' . $cls . '">';
 			echo '<div>' . $row['label'] . '</div>';
 			$val = $row['value'];
 			if ($row['time']) {
@@ -1607,14 +1616,15 @@ class ViewDetailedData {
 					$val .= '&nbsp; (' . Wx::conv($row['anomaly'], Wx::AbsTemp, 0, 1) . ')';
 				}
 			}
-			if (isset($row['normKind'])) {
-				$val .= $this->rainNormLinesHtml(
-					isset($row['actual']) ? $row['actual'] : null,
-					$row['normKind']
-				);
-			}
 			echo '<div>' . $val . '</div>';
 			echo '</div>';
+			if (isset($row['normKind'])) {
+				echo $this->rainNormRowsHtml(
+					isset($row['actual']) ? $row['actual'] : null,
+					$row['normKind'],
+					$stripe
+				);
+			}
 		}
 		echo ' </div>';
 
