@@ -1125,7 +1125,7 @@ class Wx {
 			'sunhr' => 'Hours of bright sunshine during the day, classified minute by minute from the webcam (a lightweight on-server model). Daily totals are written each night and may be corrected by hand.',
 			'wethr' => 'Hours with measurable rainfall during the day (midnight to midnight, local time). Estimated heuristically from rain observations.',
 			'rdays' => 'Count of days (midnight to midnight) with more than 0.2 mm of rain.',
-			'maxsun' => 'Maximum possible sunshine hours for the day (sunrise to sunset).',
+			'maxsun' => 'Maximum possible sunshine hours for the day, allowing for the local horizon (2° in the south, 7° elsewhere).',
 			'afdays' => 'Count of days with an air frost (overnight 21:00–09:00 minimum below 0 °C).',
 			'tsdays' => 'Count of days on which thunder was observed.',
 			'lsdays' => 'Count of days with lying snow at the morning observation (9am). Approximate.',
@@ -1537,7 +1537,7 @@ class LTA {
 			"color" => "gold"
 		],
 		"maxsun" => [
-			"monthly" => [233,249,331,376,440,452,454,410,342,295,237,219],
+			"monthly" => [238,258,317,365,426,436,438,396,328,294,245,221],
 			"daily" => [],
 			"desription" => "Max Sun hours",
 			"unit" => false,
