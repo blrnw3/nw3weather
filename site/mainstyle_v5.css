@@ -1642,6 +1642,10 @@ div.charts.detail-chart-pair {
 		max-width: 7.5rem;
 		overflow-wrap: break-word;
 	}
+	/* Let period / anomaly sublines wrap so the four-column spell tables fit. */
+	#temp-spells .wx-date {
+		white-space: normal;
+	}
 }
 
 /****************** Home dashboard ***************************/

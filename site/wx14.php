@@ -35,6 +35,7 @@ $measures2 = array('Lowest Min', 'Highest Max', 'Highest Min', 'Lowest Max', 'Co
 $mainTables->avgsExtrmsRecs($measures2);
 $mainTables->pastYearAvgsExtrms($measures2);
 $mainTables->rankTables();
+$mainTables->tempSpells();
 ?>
 
 <p class="report-var-about">Air-temperature extremes for each calendar day run midnight to midnight (local time), when daily extremes are reset. Night minimum (21–09) and day maximum (09–21) use those fixed windows instead.</p>
