@@ -32,6 +32,7 @@
   <url><loc>https://nw3weather.co.uk/windrose_viewer.php</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://nw3weather.co.uk/highreswebcam.php</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://nw3weather.co.uk/timelapsechive.php</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://nw3weather.co.uk/webcambest.php</loc><changefreq>daily</changefreq><priority>0.5</priority></url>
   <url><loc>https://nw3weather.co.uk/wx7.php</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://nw3weather.co.uk/wx9.php</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://nw3weather.co.uk/news.php</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
