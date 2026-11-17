@@ -1317,7 +1317,7 @@
 
 		// Identical x-range and tick positions so stacked panels stay time-aligned.
 		var xMin = Infinity, xMax = -Infinity;
-		[data.temp, data.dew, data.precip, data.precip6h, data.pop, data.cloud, data.wind, data.gust].forEach(function (series) {
+		[data.temp, data.dew, data.precip, data.precip6h, data.pop, data.cloud, data.wind, data.gust, data.daily].forEach(function (series) {
 			(series || []).forEach(function (pt) {
 				if (!pt) { return; }
 				var x = (pt.x != null) ? pt.x : pt[0];
@@ -1327,6 +1327,16 @@
 			});
 		});
 		if (!isFinite(xMin)) { xMin = undefined; xMax = undefined; }
+		// Keep "now" and today's column on the axis even if the first
+		// forecast step is slightly ahead of the clock (or observed hours
+		// have not been prepended yet).
+		if (isFinite(xMin) && isFinite(xMax)) {
+			var nowMs = Date.now();
+			if (data.daily && data.daily[0] && data.daily[0].start != null && data.daily[0].start < xMax) {
+				xMin = Math.min(xMin, data.daily[0].start);
+			}
+			if (nowMs < xMax) { xMin = Math.min(xMin, nowMs); }
+		}
 		var dayMs = 24 * 3600 * 1000;
 		var tickPositions;
 		if (isFinite(xMin) && isFinite(xMax)) {
@@ -1336,42 +1346,35 @@
 			if (!tickPositions.length) { tickPositions = [xMin]; }
 		}
 
-		var plotWidth = Math.max(200, (el.clientWidth || 640) - 56 - 48);
+		// Keep a desktop-like width on narrow viewports; the parent .fc-mg-scroll
+		// provides horizontal scrolling instead of squashing icons or labels.
+		var MG_MIN_WIDTH = 960;
+		el.style.minWidth = MG_MIN_WIDTH + 'px';
+		var plotWidth = Math.max(200, (el.clientWidth || MG_MIN_WIDTH) - 56 - 48);
 		function londonHour(ms) {
 			return parseInt(Highcharts.dateFormat('%H', ms), 10);
 		}
 		function startHour(ic) {
 			return londonHour(ic.start != null ? ic.start : ic.t);
 		}
-		function thinIcons(icons) {
-			icons = icons || [];
-			if (!icons.length) { return { icons: [], size: 24 }; }
-			function fits(list, size) { return list.length * (size + 4) <= plotWidth; }
-			if (fits(icons, 28)) { return { icons: icons, size: 28 }; }
-			var twelve = icons.filter(function (ic) {
-				var h = startHour(ic);
-				return h === 6 || h === 18;
-			});
-			if (!twelve.length) {
-				twelve = icons.filter(function (_, i) { return i % 2 === 0; });
-			}
-			if (fits(twelve, 24)) { return { icons: twelve, size: 24 }; }
-			var daily = icons.filter(function (ic) { return startHour(ic) === 12; });
-			if (!daily.length) {
-				daily = icons.filter(function (ic) { return startHour(ic) === 6; });
-			}
-			if (daily.length) { return { icons: daily, size: fits(daily, 24) ? 24 : 20 }; }
-			return { icons: twelve, size: 20 };
+		function iconY(ic) {
+			if (ic.step === 6) { return 0.5; }
+			return (startHour(ic) % 6 === 0) ? 0.72 : 0.28;
 		}
-		var iconPack = thinIcons(data.icons);
-		var hasIcons = iconPack.icons.length > 0;
+		var iconList = data.icons || [];
+		var iconSize = 28;
+		var hasIcons = iconList.length > 0;
+		var dailyList = data.daily || [];
+		var hasDaily = dailyList.length > 0;
 
 		el.innerHTML =
+			(hasDaily ? '<div class="fc-mg-panel" id="' + containerId + '-hi"></div>' : '') +
 			(hasIcons ? '<div class="fc-mg-panel fc-mg-icons" id="' + containerId + '-icons"></div>' : '') +
 			'<div class="fc-mg-panel" id="' + containerId + '-temp"></div>' +
 			'<div class="fc-mg-panel" id="' + containerId + '-precip"></div>' +
 			'<div class="fc-mg-panel" id="' + containerId + '-cloud"></div>' +
-			'<div class="fc-mg-panel" id="' + containerId + '-wind"></div>';
+			'<div class="fc-mg-panel" id="' + containerId + '-wind"></div>' +
+			(hasDaily ? '<div class="fc-mg-panel" id="' + containerId + '-daily"></div>' : '');
 
 		function nowAnnot(withLabel) {
 			var now = Date.now();
@@ -1425,13 +1428,8 @@
 			labels: {
 				format: undefined,
 				autoRotation: false,
-				style: { color: TEXT, fontSize: plotWidth < 520 ? '0.68rem' : '0.72rem', textOverflow: 'none' },
+				style: { color: TEXT, fontSize: '0.72rem', textOverflow: 'none' },
 				formatter: function () {
-					if (plotWidth < 520) {
-						var map = { Mon: 'Mo', Tue: 'Tu', Wed: 'We', Thu: 'Th', Fri: 'Fr', Sat: 'Sa', Sun: 'Su' };
-						var a = Highcharts.dateFormat('%a', this.value);
-						return map[a] || a;
-					}
 					return Highcharts.dateFormat('%a %e', this.value);
 				}
 			}
@@ -1490,7 +1488,7 @@
 			Highcharts._nw3LockXTrans = true;
 			Highcharts.addEvent(Highcharts.Axis, 'afterSetAxisTranslation', function () {
 				var id = this.chart && this.chart.renderTo && this.chart.renderTo.id;
-				if (!id || !/-(icons|temp|precip|cloud|wind)$/.test(id)) { return; }
+				if (!id || !/-(hi|icons|temp|precip|cloud|wind|daily)$/.test(id)) { return; }
 				lockXTranslation.call(this);
 			});
 		}
@@ -1560,10 +1558,8 @@
 			refreshXGrid(ax);
 			// Plot lines/bands may keep paths from a pre-lock translation
 			// (same min/max, so Highcharts skips a redraw of them). Re-add.
-			var withLabel = c.renderTo && /-icons$/.test(c.renderTo.id);
-			if (!hasIcons && c.renderTo && /-temp$/.test(c.renderTo.id)) {
-				withLabel = true;
-			}
+			var topId = hasDaily ? '-hi' : (hasIcons ? '-icons' : '-temp');
+			var withLabel = c.renderTo && c.renderTo.id.indexOf(topId, c.renderTo.id.length - topId.length) !== -1;
 			ax.removePlotBand('fc-elapsed');
 			ax.removePlotLine('fc-now');
 			var annot = nowAnnot(withLabel);
@@ -1571,11 +1567,51 @@
 			annot.plotLines.forEach(function (l) { ax.addPlotLine(l); });
 		}
 
+		if (hasDaily) {
+			charts.push(Highcharts.chart(containerId + '-hi', {
+				chart: Highcharts.merge(baseChart, {
+					height: 48,
+					spacing: [2, 10, 0, 8],
+					marginTop: 6,
+					marginBottom: 0,
+					backgroundColor: 'transparent'
+				}),
+				title: { text: null },
+				credits: { enabled: false },
+				legend: { enabled: false },
+				xAxis: Highcharts.merge(xCommon, nowAnnot(true), { labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
+				yAxis: { min: 0, max: 1, visible: false, title: { text: null }, gridLineWidth: 0 },
+				tooltip: { enabled: false },
+				plotOptions: { series: { animation: false, enableMouseTracking: false, states: { inactive: { opacity: 1 } } } },
+				series: [{
+					name: 'High / Low',
+					type: 'scatter',
+					data: dailyList.map(function (d) {
+						return { x: d.t, y: 0.5, hi: d.hi, lo: d.lo };
+					}),
+					marker: { enabled: false },
+					dataLabels: {
+						enabled: true,
+						useHTML: false,
+						allowOverlap: true,
+						crop: false,
+						overflow: 'allow',
+						padding: 0,
+						y: 4,
+						formatter: function () {
+							return '<span style="color:#d34f00;font-weight:bold;font-size:12px">' + this.point.hi + '\u00B0</span>'
+								+ '<br/><span style="color:#2554c7;font-size:11px">' + this.point.lo + '\u00B0</span>';
+						},
+						style: { textOutline: 'none', fontWeight: 'normal', color: TEXT }
+					}
+				}]
+			}));
+		}
+
 		if (hasIcons) {
-			var iconSize = iconPack.size;
 			charts.push(Highcharts.chart(containerId + '-icons', {
 				chart: Highcharts.merge(baseChart, {
-					height: 44,
+					height: 52,
 					spacing: [2, 10, 0, 8],
 					marginTop: 2,
 					marginBottom: 0,
@@ -1584,7 +1620,7 @@
 				title: { text: null },
 				credits: { enabled: false },
 				legend: { enabled: false },
-				xAxis: Highcharts.merge(xCommon, nowAnnot(true), { labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
+				xAxis: Highcharts.merge(xCommon, nowAnnot(!hasDaily), { labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
 				yAxis: { min: 0, max: 1, visible: false, title: { text: null }, gridLineWidth: 0 },
 				tooltip: {
 					useHTML: true,
@@ -1599,31 +1635,75 @@
 				series: [{
 					name: 'Weather',
 					type: 'scatter',
-					data: iconPack.icons.map(function (ic) {
+					data: iconList.map(function (ic) {
 						return {
 							x: ic.t,
-							y: 0.5,
+							y: iconY(ic),
 							desc: ic.desc || '',
-							marker: { symbol: 'url(' + ic.icon + ')', width: iconSize, height: iconSize }
+							icon: ic.icon
 						};
 					}),
+					marker: { enabled: false, states: { hover: { enabled: false } } },
+					dataLabels: {
+						enabled: true,
+						useHTML: true,
+						allowOverlap: true,
+						crop: false,
+						overflow: 'allow',
+						padding: 0,
+						verticalAlign: 'middle',
+						y: 0,
+						formatter: function () {
+							var safe = String(this.point.icon || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+							var desc = String(this.point.desc || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+							return '<span class="fc-mg-iconchip"><img src="' + safe + '" width="' + iconSize + '" height="' + iconSize + '" alt="' + desc + '" /></span>';
+						},
+						style: { textOutline: 'none' }
+					},
 					tooltip: { pointFormat: '{point.desc}' }
 				}]
 			}));
 		}
 
+		function tightAxis(seriesList, pad) {
+			pad = (pad == null) ? 1 : pad;
+			var vals = [];
+			function take(pt) {
+				if (pt == null) { return; }
+				if (Array.isArray(pt)) {
+					if (pt[1] != null) { vals.push(pt[1]); }
+					if (pt.length > 2 && pt[2] != null) { vals.push(pt[2]); }
+				} else {
+					if (pt.y != null) { vals.push(pt.y); }
+					if (pt.low != null) { vals.push(pt.low); }
+					if (pt.high != null) { vals.push(pt.high); }
+				}
+			}
+			(seriesList || []).forEach(function (s) { (s || []).forEach(take); });
+			if (!vals.length) { return {}; }
+			var lo = Math.min.apply(null, vals);
+			var hi = Math.max.apply(null, vals);
+			var min = Math.floor(lo - pad);
+			var max = Math.ceil(hi + pad);
+			if (min >= max) { max = min + 1; }
+			return { min: min, max: max, minPadding: 0, maxPadding: 0, startOnTick: false, endOnTick: false };
+		}
+		var tempScale = tightAxis([data.temp, data.dew, data.tempRange], 1);
+
 		charts.push(Highcharts.chart(containerId + '-temp', {
-			chart: Highcharts.merge(baseChart, { height: 170 }),
+			chart: Highcharts.merge(baseChart, { height: 240 }),
 			title: { text: 'Temperature & dew point', align: 'left', margin: 6,
 				style: { color: TEXT, fontSize: '0.9rem', fontWeight: 'normal' } },
 			credits: { enabled: false },
 			legend: { enabled: true, align: 'right', verticalAlign: 'top', floating: true,
 				itemStyle: { color: TEXT, fontSize: '0.75rem' }, symbolHeight: 8, symbolWidth: 12 },
-			xAxis: Highcharts.merge(xCommon, nowAnnot(!hasIcons), { labels: { enabled: false }, tickLength: 0 }),
+			xAxis: Highcharts.merge(xCommon, nowAnnot(!hasDaily && !hasIcons), { labels: { enabled: false }, tickLength: 0 }),
 			yAxis: [
-				{ title: { text: tempU, style: { color: cTemp, fontSize: '0.75rem' } },
-					labels: { style: { color: cTemp, fontSize: '0.72rem' } }, gridLineColor: '#eee',
-					softMin: undefined, softMax: undefined },
+				Highcharts.merge({
+					title: { text: tempU, style: { color: cTemp, fontSize: '0.75rem' } },
+					labels: { style: { color: cTemp, fontSize: '0.72rem' } },
+					gridLineColor: '#eee'
+				}, tempScale),
 				rightGutter()
 			],
 			tooltip: tipShared,
@@ -1691,7 +1771,7 @@
 		}
 		if (data.pop && data.pop.length) {
 			precipSeries.push({
-				name: 'Precip chance', type: 'areaspline', data: data.pop, color: cPop, yAxis: 1,
+				name: 'Precip chance', type: 'areaspline', data: clipSeriesAtNow(data.pop), color: cPop, yAxis: 1,
 				tooltip: { valueSuffix: ' %', valueDecimals: 0 }, zIndex: 1, fillColor: cPop, lineWidth: 0
 			});
 		}
@@ -1773,13 +1853,9 @@
 			}),
 			title: { text: 'Wind', align: 'left', margin: 6,
 				style: { color: TEXT, fontSize: '0.9rem', fontWeight: 'normal' } },
-			// Attribution is already in the meteogram caption; hide the Highcharts
-			// credit on narrow charts so it does not collide with day labels.
-			credits: plotWidth < 520
-				? { enabled: false }
-				: { enabled: true, href: credit.href, text: credit.text,
-					style: { color: '#999', fontSize: '9px' },
-					position: { align: 'right', verticalAlign: 'bottom', x: -6, y: -2 } },
+			credits: { enabled: true, href: credit.href, text: credit.text,
+				style: { color: '#999', fontSize: '9px' },
+				position: { align: 'right', verticalAlign: 'bottom', x: -6, y: -2 } },
 			legend: windLegend,
 			xAxis: Highcharts.merge(xCommon, nowAnnot(false)),
 			yAxis: [
@@ -1792,7 +1868,65 @@
 			series: windSeries
 		}));
 
+		if (hasDaily) {
+			charts.push(Highcharts.chart(containerId + '-daily', {
+				chart: Highcharts.merge(baseChart, {
+					height: 88,
+					spacing: [0, 10, 4, 8],
+					marginTop: 0,
+					marginBottom: 4,
+					backgroundColor: 'transparent'
+				}),
+				title: { text: null },
+				credits: { enabled: false },
+				legend: { enabled: false },
+				xAxis: Highcharts.merge(xCommon, nowAnnot(false), { labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
+				yAxis: { min: 0, max: 1, visible: false, title: { text: null }, gridLineWidth: 0 },
+				tooltip: { enabled: false },
+				plotOptions: { series: { animation: false, enableMouseTracking: false, states: { inactive: { opacity: 1 } } } },
+				series: [{
+					name: 'Daily',
+					type: 'scatter',
+					data: dailyList.map(function (d) {
+						function esc(v) {
+							return String(v || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+						}
+						var lines = [
+							'<span style="font-weight:bold;color:#1f303a;font-size:10.5px">' + esc(d.desc) + '</span>',
+							'<span style="color:#2554c7">' + esc(d.precip) + '</span>',
+							'<span style="color:#c01717">' + esc(d.wind) + '</span>'
+						];
+						if (d.gust) { lines.push('<span style="color:#c23b86">' + esc(d.gust) + '</span>'); }
+						return { x: d.t, y: 0.92, txt: lines.join('<br/>') };
+					}),
+					marker: { enabled: false },
+					dataLabels: {
+						enabled: true,
+						useHTML: false,
+						allowOverlap: true,
+						crop: false,
+						overflow: 'allow',
+						padding: 0,
+						verticalAlign: 'top',
+						y: 2,
+						formatter: function () { return this.point.txt; },
+						style: { textOutline: 'none', fontWeight: 'normal', fontSize: '10px', color: '#334' }
+					}
+				}]
+			}));
+		}
+
 		charts.forEach(attachXLock);
+
+		(function scrollNowIntoView() {
+			var scroller = el.closest ? el.closest('.fc-mg-scroll') : null;
+			if (!scroller || !isFinite(xMin) || !isFinite(xMax) || xMax <= xMin) { return; }
+			if (scroller.scrollWidth <= scroller.clientWidth + 2) { return; }
+			var now = Date.now();
+			var nowPx = 56 + ((Math.min(Math.max(now, xMin), xMax) - xMin) / (xMax - xMin)) * (el.clientWidth - 56 - 48);
+			scroller.scrollLeft = Math.max(0, nowPx - 64);
+		}());
+
 	}
 
 	window.NW3 = window.NW3 || {};

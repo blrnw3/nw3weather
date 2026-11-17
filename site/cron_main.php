@@ -325,6 +325,7 @@ if(date('i') % 30 == 12) {
 					'temp' => isset($iv['temperature']['value']) ? nw3_round((float)$iv['temperature']['value'], 1) : null,
 					'dew' => isset($iv['dewPoint']['value']) ? nw3_round((float)$iv['dewPoint']['value'], 1) : null,
 					'precip' => isset($iv['precipitation']['value']) ? nw3_round((float)$iv['precipitation']['value'], 2) : null,
+					'pop' => yrPrecipProb(isset($iv['precipitation']) ? $iv['precipitation'] : null),
 					'cloud' => isset($iv['cloudCover']['value']) ? (int)nw3_round((float)$iv['cloudCover']['value']) : null,
 					'wind' => isset($iv['wind']['speed']) ? yrMsToMph($iv['wind']['speed']) : null,
 					'windDir' => isset($iv['wind']['direction']) ? (int)nw3_round((float)$iv['wind']['direction']) : null,
@@ -354,6 +355,7 @@ if(date('i') % 30 == 12) {
 					'dew' => isset($iv['dewPoint']['value']) ? nw3_round((float)$iv['dewPoint']['value'], 1) : null,
 					'cloud' => isset($iv['cloudCover']['value']) ? (int)nw3_round((float)$iv['cloudCover']['value']) : null,
 					'precip' => isset($iv['precipitation']['value']) ? nw3_round((float)$iv['precipitation']['value'], 2) : null,
+					'pop' => yrPrecipProb(isset($iv['precipitation']) ? $iv['precipitation'] : null),
 					'wind' => isset($iv['wind']['speed']) ? yrMsToMph($iv['wind']['speed']) : null,
 					'windDir' => isset($iv['wind']['direction']) ? (int)nw3_round((float)$iv['wind']['direction']) : null,
 					'gust' => yrWindGustMph(isset($iv['wind']) ? $iv['wind'] : null),
@@ -380,7 +382,8 @@ if(date('i') % 30 == 12) {
 }
 
 // Open-Meteo 10-day hourly cache: fallback for the wx5 meteogram when Yr.no is
-// unavailable (also supplies precipitation probability, which Yr does not).
+// unavailable, and the source of precipitation probability and gusts (the Yr
+// location forecast currently has neither).
 if(date('i') % 30 == 14) {
 	$omUrl = 'https://api.open-meteo.com/v1/forecast'
 		. '?latitude=' . rawurlencode((string)Site::LATITUDE)
@@ -716,9 +719,19 @@ function yrForecastIcon($symbol) {
 /** Yr wind is m/s; site UK base unit for Wind is mph. */
 function yrWindGustMph($wind) {
 	if(!is_array($wind)) { return null; }
-	foreach(array('gust', 'gustSpeed', 'gusts') as $k) {
+	foreach(array('gust', 'gustSpeed', 'gusts', 'wind_speed_of_gust', 'windSpeedOfGust') as $k) {
 		if(isset($wind[$k]) && $wind[$k] !== null && $wind[$k] !== '') {
 			return yrMsToMph($wind[$k]);
+		}
+	}
+	return null;
+}
+/** Probability of precipitation (0–100) if Yr starts sending it. */
+function yrPrecipProb($precip) {
+	if(!is_array($precip)) { return null; }
+	foreach(array('probability', 'probabilityOfPrecipitation', 'probability_of_precipitation', 'pop', 'prob') as $k) {
+		if(isset($precip[$k]) && $precip[$k] !== null && $precip[$k] !== '') {
+			return (int)nw3_round((float)$precip[$k]);
 		}
 	}
 	return null;

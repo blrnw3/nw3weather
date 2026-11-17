@@ -28,17 +28,18 @@ require Site::$rareTags;
 		<?php
 		$mg = Forecast::meteogramSeries();
 		$mgNote = ($mg['source'] === 'yr')
-			? 'Temperature &amp; dew point, precipitation, cloud cover and wind. Data: Yr.no / MET Norway.'
+			? 'Temperature &amp; dew point, precipitation amount &amp; chance, cloud cover and wind. Data: Yr.no / MET Norway; precip chance and gusts: Open-Meteo.'
 			: 'Temperature &amp; dew point, precipitation amount &amp; chance, cloud cover and wind. Data: Open-Meteo.';
 		?>
 		<p class="hm-break-note"><?php echo $mgNote; ?></p>
-		<?php Charts::meteogram($mg, ['height' => 680]); ?>
+		<div class="fc-mg-scroll">
+			<?php Charts::meteogram($mg, ['height' => 860]); ?>
+		</div>
 	</div>
 
 	<div>
 		<h2>Forecast for NW3</h2>
-		<?php Forecast::renderDailyTable(); ?>
-		<?php Forecast::renderPeriodTable(8); ?>
+		<?php Forecast::renderPeriodTable(); ?>
 	</div>
 
 	<?php Forecast::renderPressureChart(); ?>
