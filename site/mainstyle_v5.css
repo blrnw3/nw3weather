@@ -1829,55 +1829,22 @@ div.charts.detail-chart-pair {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 32px;
-	height: 32px;
 	background: #fff;
 	border: 1px solid rgba(20, 30, 40, 0.12);
 	border-radius: 50%;
 	box-shadow: 0 1px 3px rgba(20, 30, 40, 0.28);
 	box-sizing: border-box;
+	vertical-align: middle;
 }
 .fc-mg-iconchip img {
-	width: 26px;
-	height: 26px;
 	display: block;
 }
 .fc-mg-hi {
-	display: block;
 	font-weight: 700;
 	color: #d34f00;
-	line-height: 1.15;
-	font-size: 11px;
 }
 .fc-mg-lo {
-	display: block;
 	color: #2554c7;
-	line-height: 1.15;
-	font-size: 11px;
-}
-.fc-mg-daylab {
-	display: block;
-	text-align: center;
-	line-height: 1.2;
-	font-size: 9px;
-	color: #334;
-	width: 6.2rem;
-	max-width: 6.2rem;
-	overflow: hidden;
-	white-space: normal;
-	box-sizing: border-box;
-}
-.fc-mg-daylab .fc-mg-desc {
-	display: block;
-	font-weight: 600;
-	color: #1f303a;
-	font-size: 10px;
-}
-.fc-mg-daylab .fc-mg-rain,
-.fc-mg-daylab .fc-mg-wind,
-.fc-mg-daylab .fc-mg-gust {
-	display: block;
-	color: #445;
 }
 .fc-discuss {
 	margin: 1rem 0 1.4rem;

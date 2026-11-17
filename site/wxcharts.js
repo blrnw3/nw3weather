@@ -1346,35 +1346,41 @@
 			if (!tickPositions.length) { tickPositions = [xMin]; }
 		}
 
-		// Keep a desktop-like width on narrow viewports; the parent .fc-mg-scroll
-		// provides horizontal scrolling instead of squashing icons or labels.
-		var MG_MIN_WIDTH = 960;
+		// Size 6h icon chips so they do not overlap. Grow the scrollable
+		// min-width if the natural desktop plot would pack them closer than
+		// the target chip plus a 2px gap.
+		var sixH = 6 * 3600 * 1000;
+		var nSlots = (isFinite(xMin) && isFinite(xMax) && xMax > xMin) ? ((xMax - xMin) / sixH) : 36;
+		var CHIP_GAP = 2;
+		var TARGET_CHIP = 22;
+		var neededPlot = Math.ceil(nSlots * (TARGET_CHIP + CHIP_GAP));
+		var MG_MIN_WIDTH = Math.max(960, neededPlot + 56 + 48);
 		el.style.minWidth = MG_MIN_WIDTH + 'px';
 		var plotWidth = Math.max(200, (el.clientWidth || MG_MIN_WIDTH) - 56 - 48);
+		var spacing = nSlots > 0 ? (plotWidth / nSlots) : TARGET_CHIP;
+		var chipSize = Math.max(18, Math.min(32, Math.floor(spacing - CHIP_GAP)));
+		var iconSize = Math.max(14, chipSize - 6);
 		function londonHour(ms) {
 			return parseInt(Highcharts.dateFormat('%H', ms), 10);
 		}
 		function startHour(ic) {
 			return londonHour(ic.start != null ? ic.start : ic.t);
 		}
-		function iconY(ic) {
-			if (ic.step === 6) { return 0.5; }
-			return (startHour(ic) % 6 === 0) ? 0.72 : 0.28;
-		}
 		var iconList = data.icons || [];
-		var iconSize = 28;
 		var hasIcons = iconList.length > 0;
 		var dailyList = data.daily || [];
 		var hasDaily = dailyList.length > 0;
 
 		el.innerHTML =
 			(hasDaily ? '<div class="fc-mg-panel" id="' + containerId + '-hi"></div>' : '') +
+			(hasDaily ? '<div class="fc-mg-panel" id="' + containerId + '-desc"></div>' : '') +
 			(hasIcons ? '<div class="fc-mg-panel fc-mg-icons" id="' + containerId + '-icons"></div>' : '') +
+			(hasDaily ? '<div class="fc-mg-panel" id="' + containerId + '-rain"></div>' : '') +
+			(hasDaily ? '<div class="fc-mg-panel" id="' + containerId + '-daywind"></div>' : '') +
 			'<div class="fc-mg-panel" id="' + containerId + '-temp"></div>' +
 			'<div class="fc-mg-panel" id="' + containerId + '-precip"></div>' +
 			'<div class="fc-mg-panel" id="' + containerId + '-cloud"></div>' +
-			'<div class="fc-mg-panel" id="' + containerId + '-wind"></div>' +
-			(hasDaily ? '<div class="fc-mg-panel" id="' + containerId + '-daily"></div>' : '');
+			'<div class="fc-mg-panel" id="' + containerId + '-wind"></div>';
 
 		function nowAnnot(withLabel) {
 			var now = Date.now();
@@ -1488,7 +1494,7 @@
 			Highcharts._nw3LockXTrans = true;
 			Highcharts.addEvent(Highcharts.Axis, 'afterSetAxisTranslation', function () {
 				var id = this.chart && this.chart.renderTo && this.chart.renderTo.id;
-				if (!id || !/-(hi|icons|temp|precip|cloud|wind|daily)$/.test(id)) { return; }
+				if (!id || !/-(hi|desc|icons|rain|daywind|temp|precip|cloud|wind)$/.test(id)) { return; }
 				lockXTranslation.call(this);
 			});
 		}
@@ -1567,28 +1573,29 @@
 			annot.plotLines.forEach(function (l) { ax.addPlotLine(l); });
 		}
 
-		if (hasDaily) {
-			charts.push(Highcharts.chart(containerId + '-hi', {
+		function escLbl(v) {
+			return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		}
+		function headerPane(suffix, height, points, formatter, nowLabel) {
+			charts.push(Highcharts.chart(containerId + '-' + suffix, {
 				chart: Highcharts.merge(baseChart, {
-					height: 48,
-					spacing: [2, 10, 0, 8],
-					marginTop: 6,
+					height: height,
+					spacing: [0, 10, 0, 8],
+					marginTop: 0,
 					marginBottom: 0,
 					backgroundColor: 'transparent'
 				}),
 				title: { text: null },
 				credits: { enabled: false },
 				legend: { enabled: false },
-				xAxis: Highcharts.merge(xCommon, nowAnnot(true), { labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
+				xAxis: Highcharts.merge(xCommon, nowAnnot(!!nowLabel), { labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
 				yAxis: { min: 0, max: 1, visible: false, title: { text: null }, gridLineWidth: 0 },
 				tooltip: { enabled: false },
 				plotOptions: { series: { animation: false, enableMouseTracking: false, states: { inactive: { opacity: 1 } } } },
 				series: [{
-					name: 'High / Low',
+					name: suffix,
 					type: 'scatter',
-					data: dailyList.map(function (d) {
-						return { x: d.t, y: 0.5, hi: d.hi, lo: d.lo };
-					}),
+					data: points,
 					marker: { enabled: false },
 					dataLabels: {
 						enabled: true,
@@ -1597,21 +1604,33 @@
 						crop: false,
 						overflow: 'allow',
 						padding: 0,
-						y: 4,
-						formatter: function () {
-							return '<span style="color:#d34f00;font-weight:bold;font-size:12px">' + this.point.hi + '\u00B0</span>'
-								+ '<br/><span style="color:#2554c7;font-size:11px">' + this.point.lo + '\u00B0</span>';
-						},
-						style: { textOutline: 'none', fontWeight: 'normal', color: TEXT }
+						verticalAlign: 'middle',
+						y: 0,
+						formatter: formatter,
+						style: { textOutline: 'none', fontWeight: 'normal', fontSize: '11px', color: '#334' }
 					}
 				}]
 			}));
 		}
 
+		if (hasDaily) {
+			headerPane('hi', 26, dailyList.map(function (d) {
+				return { x: d.t, y: 0.5, hi: d.hi, lo: d.lo };
+			}), function () {
+				return '<span style="color:#d34f00;font-weight:bold">' + escLbl(this.point.hi) + '\u00B0</span>'
+					+ ' / <span style="color:#2554c7">' + escLbl(this.point.lo) + '\u00B0</span>';
+			}, true);
+			headerPane('desc', 22, dailyList.map(function (d) {
+				return { x: d.t, y: 0.5, txt: d.desc || '' };
+			}), function () {
+				return '<span style="font-weight:600;color:#1f303a;font-size:10px">' + escLbl(this.point.txt) + '</span>';
+			}, false);
+		}
+
 		if (hasIcons) {
 			charts.push(Highcharts.chart(containerId + '-icons', {
 				chart: Highcharts.merge(baseChart, {
-					height: 52,
+					height: Math.max(40, chipSize + 16),
 					spacing: [2, 10, 0, 8],
 					marginTop: 2,
 					marginBottom: 0,
@@ -1638,7 +1657,7 @@
 					data: iconList.map(function (ic) {
 						return {
 							x: ic.t,
-							y: iconY(ic),
+							y: 0.5,
 							desc: ic.desc || '',
 							icon: ic.icon
 						};
@@ -1656,13 +1675,29 @@
 						formatter: function () {
 							var safe = String(this.point.icon || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 							var desc = String(this.point.desc || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-							return '<span class="fc-mg-iconchip"><img src="' + safe + '" width="' + iconSize + '" height="' + iconSize + '" alt="' + desc + '" /></span>';
+							return '<span class="fc-mg-iconchip" style="width:' + chipSize + 'px;height:' + chipSize + 'px">'
+								+ '<img src="' + safe + '" width="' + iconSize + '" height="' + iconSize + '" alt="' + desc + '" style="width:' + iconSize + 'px;height:' + iconSize + 'px" /></span>';
 						},
 						style: { textOutline: 'none' }
 					},
 					tooltip: { pointFormat: '{point.desc}' }
 				}]
 			}));
+		}
+
+		if (hasDaily) {
+			headerPane('rain', 20, dailyList.map(function (d) {
+				return { x: d.t, y: 0.5, txt: d.precip || '' };
+			}), function () {
+				return '<span style="color:#2554c7;font-size:10px">' + escLbl(this.point.txt) + '</span>';
+			}, false);
+			headerPane('daywind', 48, dailyList.map(function (d) {
+				var wind = d.wind || '';
+				var gust = d.gust || '';
+				return { x: d.t, y: 0.5, txt: gust
+					? ('<span style="color:#c01717;font-size:10px">' + escLbl(wind) + '</span><br/><span style="color:#c23b86;font-size:10px">' + escLbl(gust) + '</span>')
+					: ('<span style="color:#c01717;font-size:10px">' + escLbl(wind) + '</span>') };
+			}), function () { return this.point.txt; }, false);
 		}
 
 		function tightAxis(seriesList, pad) {
@@ -1868,54 +1903,6 @@
 			series: windSeries
 		}));
 
-		if (hasDaily) {
-			charts.push(Highcharts.chart(containerId + '-daily', {
-				chart: Highcharts.merge(baseChart, {
-					height: 88,
-					spacing: [0, 10, 4, 8],
-					marginTop: 0,
-					marginBottom: 4,
-					backgroundColor: 'transparent'
-				}),
-				title: { text: null },
-				credits: { enabled: false },
-				legend: { enabled: false },
-				xAxis: Highcharts.merge(xCommon, nowAnnot(false), { labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
-				yAxis: { min: 0, max: 1, visible: false, title: { text: null }, gridLineWidth: 0 },
-				tooltip: { enabled: false },
-				plotOptions: { series: { animation: false, enableMouseTracking: false, states: { inactive: { opacity: 1 } } } },
-				series: [{
-					name: 'Daily',
-					type: 'scatter',
-					data: dailyList.map(function (d) {
-						function esc(v) {
-							return String(v || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-						}
-						var lines = [
-							'<span style="font-weight:bold;color:#1f303a;font-size:10.5px">' + esc(d.desc) + '</span>',
-							'<span style="color:#2554c7">' + esc(d.precip) + '</span>',
-							'<span style="color:#c01717">' + esc(d.wind) + '</span>'
-						];
-						if (d.gust) { lines.push('<span style="color:#c23b86">' + esc(d.gust) + '</span>'); }
-						return { x: d.t, y: 0.92, txt: lines.join('<br/>') };
-					}),
-					marker: { enabled: false },
-					dataLabels: {
-						enabled: true,
-						useHTML: false,
-						allowOverlap: true,
-						crop: false,
-						overflow: 'allow',
-						padding: 0,
-						verticalAlign: 'top',
-						y: 2,
-						formatter: function () { return this.point.txt; },
-						style: { textOutline: 'none', fontWeight: 'normal', fontSize: '10px', color: '#334' }
-					}
-				}]
-			}));
-		}
-
 		charts.forEach(attachXLock);
 
 		(function scrollNowIntoView() {
@@ -1924,7 +1911,10 @@
 			if (scroller.scrollWidth <= scroller.clientWidth + 2) { return; }
 			var now = Date.now();
 			var nowPx = 56 + ((Math.min(Math.max(now, xMin), xMax) - xMin) / (xMax - xMin)) * (el.clientWidth - 56 - 48);
-			scroller.scrollLeft = Math.max(0, nowPx - 64);
+			// Only shift when 'now' would be off the right of the visible area.
+			// A small nudge when now is already on the left clips pane titles.
+			if (nowPx < scroller.clientWidth - 24) { return; }
+			scroller.scrollLeft = Math.max(0, nowPx - 72);
 		}());
 
 	}

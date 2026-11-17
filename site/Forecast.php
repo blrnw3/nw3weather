@@ -104,20 +104,26 @@ class Forecast {
 	private static function iconsFromPeriods($periods) {
 		$out = array();
 		$img = Site::IMG_ROOT;
+		$step = 6 * 3600 * 1000;
 		foreach ($periods as $p) {
 			if (empty($p['t'])) { continue; }
 			$start = (int)$p['t'];
-			$end = !empty($p['end']) ? (int)$p['end'] : ($start + 6 * 3600 * 1000);
+			$end = !empty($p['end']) ? (int)$p['end'] : ($start + $step);
 			$icon = isset($p['icon']) ? $p['icon'] : 'cloudy';
-			$out[] = array(
-				't' => (int)(($start + $end) / 2),
+			$slot = self::londonSlotStart((int)(($start + $end) / 2), 6);
+			$t = $slot + (int)($step / 2);
+			// One chip per 6h clock slot so a leftover first period cannot sit
+			// 5h from the next mid-point and overlap its neighbour.
+			$out[$slot] = array(
+				't' => $t,
 				'start' => $start,
 				'end' => $end,
 				'icon' => $img . $icon . '_lg.png',
 				'desc' => isset($p['desc']) ? $p['desc'] : '',
 			);
 		}
-		return $out;
+		ksort($out);
+		return array_values($out);
 	}
 
 	/**
@@ -322,16 +328,21 @@ class Forecast {
 		$img = Site::IMG_ROOT;
 		$now = (int) floor(microtime(true) * 1000);
 		$out = array();
+		$step = 6 * 3600 * 1000;
 		if ($periods) {
 			foreach ($periods as $p) {
 				if (empty($p['t'])) { continue; }
 				$start = (int)$p['t'];
-				$end = !empty($p['end']) ? (int)$p['end'] : ($start + 6 * 3600 * 1000);
-				$mid = (int)(($start + $end) / 2);
+				$end = !empty($p['end']) ? (int)$p['end'] : ($start + $step);
 				if ($end <= $now) { continue; }
 				$icon = isset($p['icon']) ? $p['icon'] : 'cloudy';
-				$out[] = array(
-					't' => $mid,
+				// Place every chip on a 6h London clock mid-point (03/09/15/21)
+				// so a current leftover period (e.g. 02–06) is not 5h from the
+				// next 6h icon and the chips do not overlap.
+				$slot = self::londonSlotStart((int)(($start + $end) / 2), 6);
+				$t = $slot + (int)($step / 2);
+				$out[$slot] = array(
+					't' => $t,
 					'start' => $start,
 					'end' => $end,
 					'icon' => $img . $icon . '_lg.png',
@@ -339,6 +350,8 @@ class Forecast {
 					'step' => 6,
 				);
 			}
+			ksort($out);
+			$out = array_values($out);
 		} elseif ($omHours) {
 			foreach (self::hoursToPeriodBuckets($omHours, 6, $now, null) as $p) {
 				$out[] = array(
@@ -587,8 +600,11 @@ class Forecast {
 		return $h00 * $pts[$i][1] + $h10 * $hi * $m[$i] + $h01 * $pts[$i + 1][1] + $h11 * $hi * $m[$i + 1];
 	}
 
-	/** Daily tmin/tmax band for days after Yr hourly coverage ends. */
-	private static function dailyTempRange($lastHourlyT) {
+	/**
+	 * Daily tmin/tmax band from Yr dayIntervals for every day in the meteogram
+	 * (including days that also have hourly points).
+	 */
+	private static function dailyTempRange() {
 		$out = array();
 		foreach (self::days() as $d) {
 			if (empty($d['date']) || !isset($d['tmin']) || !isset($d['tmax'])
@@ -599,7 +615,6 @@ class Forecast {
 			if ($start === false) { continue; }
 			$startMs = $start * 1000;
 			$endMs = $startMs + 24 * 3600 * 1000 - 1;
-			if ($endMs <= $lastHourlyT) { continue; }
 			$lo = Wx::convNum($d['tmin'], Wx::Temperature, 1);
 			$hi = Wx::convNum($d['tmax'], Wx::Temperature, 1);
 			if ($out) { $out[] = null; }
@@ -693,10 +708,6 @@ class Forecast {
 		$windU = Wx::getUnitsText(Wx::Wind);
 		list($hours, $updated, $src, $icons) = self::meteogramHours();
 		$hours = self::prependObserved($hours);
-		$lastHourlyT = 0;
-		foreach (self::hourly() as $iv) {
-			if (!empty($iv['t']) && (int)$iv['t'] > $lastHourlyT) { $lastHourlyT = (int)$iv['t']; }
-		}
 
 		$temp = $dew = $precip = $precip6h = $pop = $cloud = $wind = $gust = array();
 		foreach ($hours as $iv) {
@@ -747,7 +758,7 @@ class Forecast {
 			),
 			'temp' => $temp,
 			'dew' => $dew,
-			'tempRange' => ($src === 'yr') ? self::dailyTempRange($lastHourlyT) : array(),
+			'tempRange' => ($src === 'yr') ? self::dailyTempRange() : array(),
 			'precip' => $precip,
 			'precip6h' => $precip6h,
 			'pop' => $pop,
