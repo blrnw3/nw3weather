@@ -307,12 +307,257 @@ class DataSummarizer {
 		$path = self::summaryCachePath($varName, $sy);
 		$cached = self::readSummaryCacheIfFresh($varName, $sy, $path, $rebuildIfStale);
 		if ($cached !== null) {
-			return $cached;
+			return self::applyLiveTodaySunhr($varName, $cached);
 		}
 		$s = new self($varName, $sy);
 		$result = $s->summarize();
 		self::writeSummaryCache($path, $result);
+		return self::applyLiveTodaySunhr($varName, $result);
+	}
+
+	/**
+	 * Detail pages serve a cached summarize() payload that often predates
+	 * today's live sun. Add (or refresh) today's hours (and % of max) on
+	 * current-period totals, anomalies, and current month/year/season rows.
+	 */
+	private static function applyLiveTodaySunhr($varName, $result) {
+		if (($varName !== 'sunhr' && $varName !== 'sunhrp') || !is_array($result) || !isset($result['period_summaries'])) {
+			return $result;
+		}
+		$hours = Data::liveTodaySunhr();
+		if ($hours === null) {
+			return $result;
+		}
+		if ($varName === 'sunhr') {
+			$t = $hours;
+		} else {
+			$t = Data::get('sunhrp', (int)date('Y'), (int)date('n'), (int)date('j'));
+			if (!nw3_is_numeric($t)) {
+				return $result;
+			}
+			$t = (float)$t;
+		}
+		$ps = &$result['period_summaries'];
+		$hadToday = isset($ps['today']['val']) && nw3_is_numeric($ps['today']['val']);
+		$oldToday = $hadToday ? (float)$ps['today']['val'] : 0.0;
+		$delta = $t - $oldToday;
+		if (abs($delta) < 0.0001) {
+			return $result;
+		}
+		$todayWasNew = !$hadToday;
+		if (!isset($ps['today']) || !is_array($ps['today'])) {
+			$ps['today'] = array();
+		}
+		$ps['today']['val'] = $t;
+
+		LTA::init();
+		$periodKeys = array('curr_month', 'curr_year', 'curr_season', 'latest_7d', 'latest_31d', 'latest_365d');
+		foreach ($periodKeys as $k) {
+			if (isset($ps[$k]) && is_array($ps[$k])) {
+				self::addLiveTodayToSunhrSummary($ps[$k], $delta, $t, $todayWasNew);
+			}
+		}
+		$norms = array(
+			'curr_month' => LTA::getRecentPeriodMeanAnom($varName, max(1, (int)date('j'))),
+			'curr_year' => LTA::getRecentPeriodMeanAnom($varName, (int)date('z') + 1),
+			'curr_season' => LTA::getRecentPeriodMeanAnom($varName, Date::seasonDaysElapsed()),
+			'latest_7d' => LTA::getRecentPeriodMeanAnom($varName, 7),
+			'latest_31d' => LTA::getRecentPeriodMeanAnom($varName, 31),
+			'latest_365d' => LTA::getRecentPeriodMeanAnom($varName, 365),
+		);
+		foreach ($norms as $k => $norm) {
+			if (isset($ps[$k]) && is_array($ps[$k])) {
+				self::attachAnom($varName, $ps[$k], $norm);
+			}
+		}
+
+		$y = (int)date('Y');
+		$m = (int)date('n');
+		$d = (int)date('j');
+		$mZ = Util::zerolead($m);
+		$todayDt = sprintf('%04d-%02d-%02d', $y, $m, $d);
+		$monthDt = sprintf('%04d-%02d-01', $y, $m);
+
+		if (isset($result['month_summaries'][$y][$mZ]) && is_array($result['month_summaries'][$y][$mZ])) {
+			self::addLiveTodayToSunhrSummary($result['month_summaries'][$y][$mZ], $delta, $t, $todayWasNew);
+			self::attachAnom($varName, $result['month_summaries'][$y][$mZ], LTA::getMonthlyAnom($varName, $m));
+		}
+		if (isset($result['year_summaries'][$y]) && is_array($result['year_summaries'][$y])) {
+			self::addLiveTodayToSunhrSummary($result['year_summaries'][$y], $delta, $t, $todayWasNew);
+			self::attachAnom($varName, $result['year_summaries'][$y], LTA::getYearlyAnom($varName));
+		}
+		$si = (int)Date::$season - 1;
+		$seasName = isset(Date::$snames[$si]) ? Date::$snames[$si] : null;
+		$seasYear = Data::seasonLabelYear($y, $m);
+		$seasKey = ($seasName !== null) ? ($seasName . '_' . $seasYear) : null;
+		if ($seasKey !== null && isset($result['season_summaries'][$seasKey]) && is_array($result['season_summaries'][$seasKey])) {
+			self::addLiveTodayToSunhrSummary($result['season_summaries'][$seasKey], $delta, $t, $todayWasNew);
+			self::attachAnom($varName, $result['season_summaries'][$seasKey], LTA::getSeasonAnom($varName, $si));
+		}
+
+		// All-time month/year record rows include the current incomplete period.
+		$monthSumNow = (isset($result['month_summaries'][$y][$mZ]['sum']))
+			? $result['month_summaries'][$y][$mZ]['sum'] : null;
+		$yearSumNow = (isset($result['year_summaries'][$y]['sum']))
+			? $result['year_summaries'][$y]['sum'] : null;
+		$monthMeanNow = (isset($result['month_summaries'][$y][$mZ]['mean']))
+			? $result['month_summaries'][$y][$mZ]['mean'] : null;
+		$yearMeanNow = (isset($result['year_summaries'][$y]['mean']))
+			? $result['year_summaries'][$y]['mean'] : null;
+		if ($varName === 'sunhrp') {
+			self::addDeltaToSunhrAlltimeRecord($ps['month_mean_alltime'], $delta, $monthMeanNow, $monthDt, false);
+			self::addDeltaToSunhrAlltimeRecord($ps['month_mean_all_this_month'], $delta, $monthMeanNow, $monthDt, false);
+			self::addDeltaToSunhrAlltimeRecord($ps['year_mean_alltime'], $delta, $yearMeanNow, $y, false);
+		} else {
+			self::addDeltaToSunhrAlltimeRecord($ps['month_mean_alltime'], $delta, $monthSumNow, $monthDt);
+			self::addDeltaToSunhrAlltimeRecord($ps['month_mean_all_this_month'], $delta, $monthSumNow, $monthDt);
+			self::addDeltaToSunhrAlltimeRecord($ps['year_mean_alltime'], $delta, $yearSumNow, $y);
+		}
+		foreach (array(7, 31, 365) as $n) {
+			$cur = isset($ps['latest_' . $n . 'd']) ? $ps['latest_' . $n . 'd'] : null;
+			$curVal = null;
+			if (is_array($cur)) {
+				$curVal = ($varName === 'sunhrp')
+					? (isset($cur['mean']) ? $cur['mean'] : null)
+					: (isset($cur['sum']) ? $cur['sum'] : null);
+			}
+			$cmp = ($varName === 'sunhrp') ? 'mean' : 'sum';
+			self::refreshSunhrRollingRecord($ps, $n, 'hi', $cur, $curVal, $todayDt, $cmp);
+			self::refreshSunhrRollingRecord($ps, $n, 'lo', $cur, $curVal, $todayDt, $cmp);
+		}
+
+		if (isset($result['ranks']) && is_array($result['ranks'])) {
+			// Hours ranks use period totals; % of max ranks use the period mean.
+			$monthKey = ($varName === 'sunhrp') ? 'mean' : 'sum';
+			$yearKey = $monthKey;
+			$monthVal = (isset($result['month_summaries'][$y][$mZ][$monthKey]))
+				? $result['month_summaries'][$y][$mZ][$monthKey] : null;
+			$yearVal = (isset($result['year_summaries'][$y][$yearKey]))
+				? $result['year_summaries'][$y][$yearKey] : null;
+			self::bumpSunhrRankVal($result['ranks'], 'month_mean_alltime', $monthDt, $monthVal);
+			self::bumpSunhrRankVal($result['ranks'], 'month_mean_all_this_month', $monthDt, $monthVal);
+			self::bumpSunhrRankVal($result['ranks'], 'year_mean_alltime', (string)$y, $yearVal);
+			if ($varName === 'sunhr') {
+				$monthCnz = (isset($result['month_summaries'][$y][$mZ]['count_nonzero']))
+					? $result['month_summaries'][$y][$mZ]['count_nonzero'] : null;
+				$yearCnz = (isset($result['year_summaries'][$y]['count_nonzero']))
+					? $result['year_summaries'][$y]['count_nonzero'] : null;
+				self::bumpSunhrRankVal($result['ranks'], 'month_count_alltime', $monthDt, $monthCnz);
+				self::bumpSunhrRankVal($result['ranks'], 'month_count_all_this_month', $monthDt, $monthCnz);
+				self::bumpSunhrRankVal($result['ranks'], 'year_count_alltime', (string)$y, $yearCnz);
+			}
+			self::bumpSunhrRankVal($result['ranks'], 'daily_alltime', $todayDt, $t);
+			self::bumpSunhrRankVal($result['ranks'], 'daily_all_this_month', $todayDt, $t);
+			self::bumpSunhrRankVal($result['ranks'], 'daily_all_this_date', $todayDt, $t);
+		}
 		return $result;
+	}
+
+	/** Add today's live sun hours into one summable summary row. */
+	private static function addLiveTodayToSunhrSummary(&$summary, $delta, $t, $todayWasNew) {
+		if (!is_array($summary)) {
+			return;
+		}
+		if (isset($summary['sum']) && nw3_is_numeric($summary['sum'])) {
+			$summary['sum'] = (float)$summary['sum'] + $delta;
+		} elseif ($todayWasNew) {
+			$summary['sum'] = $delta;
+		}
+		if ($todayWasNew) {
+			$summary['count'] = (isset($summary['count']) ? (int)$summary['count'] : 0) + 1;
+			$summary['count_internal'] = (isset($summary['count_internal']) ? (int)$summary['count_internal'] : 0) + 1;
+		}
+		$oldT = $t - $delta;
+		$wasNZ = (!$todayWasNew && (float)$oldT != 0.0);
+		$isNZ = ((float)$t != 0.0);
+		if ($isNZ && !$wasNZ) {
+			$summary['count_nonzero'] = (isset($summary['count_nonzero']) ? (int)$summary['count_nonzero'] : 0) + 1;
+		} elseif (!$isNZ && $wasNZ) {
+			$summary['count_nonzero'] = max(0, (isset($summary['count_nonzero']) ? (int)$summary['count_nonzero'] : 0) - 1);
+		}
+		if (isset($summary['count']) && (int)$summary['count'] > 0 && isset($summary['sum']) && nw3_is_numeric($summary['sum'])) {
+			$summary['mean'] = $summary['sum'] / (int)$summary['count'];
+		}
+		$todayDt = date('Y-m-d');
+		if (!isset($summary['max']) || !nw3_is_numeric($summary['max']) || (float)$t > (float)$summary['max']) {
+			$summary['max'] = $t;
+			$summary['maxDate'] = $todayDt;
+		}
+		if (!isset($summary['min']) || !nw3_is_numeric($summary['min']) || (float)$t < (float)$summary['min']) {
+			$summary['min'] = $t;
+			$summary['minDate'] = $todayDt;
+		}
+	}
+
+
+	/** Add today's delta into an all-time month/year record summary that already includes this period. */
+	private static function addDeltaToSunhrAlltimeRecord(&$rec, $delta, $newVal, $dt, $addDeltaToSum = true) {
+		if (!is_array($rec) || $newVal === null || !nw3_is_numeric($newVal)) {
+			return;
+		}
+		if ($addDeltaToSum && isset($rec['sum']) && nw3_is_numeric($rec['sum'])) {
+			$rec['sum'] = (float)$rec['sum'] + $delta;
+			if (isset($rec['count']) && (int)$rec['count'] > 0) {
+				$rec['mean'] = $rec['sum'] / (int)$rec['count'];
+			}
+		}
+		$newVal = (float)$newVal;
+		$isMax = (isset($rec['maxDate']) && (string)$rec['maxDate'] === (string)$dt);
+		$isMin = (isset($rec['minDate']) && (string)$rec['minDate'] === (string)$dt);
+		if ($isMax || !isset($rec['max']) || !nw3_is_numeric($rec['max']) || $newVal > (float)$rec['max']) {
+			$rec['max'] = $newVal;
+			$rec['maxDate'] = $dt;
+		}
+		if ($isMin || !isset($rec['min']) || !nw3_is_numeric($rec['min']) || $newVal < (float)$rec['min']) {
+			$rec['min'] = $newVal;
+			$rec['minDate'] = $dt;
+		}
+	}
+
+	/** Refresh a rolling-window all-time record if it already ends today, or if today sets a new extreme. */
+	private static function refreshSunhrRollingRecord(&$ps, $n, $dir, $cur, $curVal, $todayDt, $compareKey = 'sum') {
+		$key = $n . 'd_' . $dir . '_mean_alltime';
+		if (!isset($ps[$key]) || !is_array($ps[$key]) || $curVal === null || !nw3_is_numeric($curVal)) {
+			return;
+		}
+		$rec = &$ps[$key];
+		$curVal = (float)$curVal;
+		$endsToday = (isset($rec['endDate']) && (string)$rec['endDate'] === (string)$todayDt);
+		$recVal = (isset($rec[$compareKey]) && nw3_is_numeric($rec[$compareKey])) ? (float)$rec[$compareKey] : null;
+		$isNewExt = false;
+		if ($dir === 'hi') {
+			$isNewExt = ($recVal === null || $curVal > $recVal);
+		} else {
+			$isNewExt = ($recVal === null || $curVal < $recVal);
+		}
+		if (!$endsToday && !$isNewExt) {
+			return;
+		}
+		if (is_array($cur)) {
+			foreach (array('sum', 'mean', 'count', 'count_nonzero', 'count_internal', 'min', 'max', 'minDate', 'maxDate') as $f) {
+				if (isset($cur[$f])) {
+					$rec[$f] = $cur[$f];
+				}
+			}
+		}
+		$rec['endDate'] = $todayDt;
+	}
+
+	/** Update a current-period entry already present in a cached rank list. */
+	private static function bumpSunhrRankVal(&$ranks, $typeKey, $dt, $newVal) {
+		if ($newVal === null || !isset($ranks[$typeKey]) || !is_array($ranks[$typeKey])) {
+			return;
+		}
+		foreach (array('lo', 'hi') as $dir) {
+			if (!isset($ranks[$typeKey][$dir]) || !is_array($ranks[$typeKey][$dir])) {
+				continue;
+			}
+			foreach ($ranks[$typeKey][$dir] as $i => $e) {
+				if (is_array($e) && isset($e['dt']) && (string)$e['dt'] === (string)$dt) {
+					$ranks[$typeKey][$dir][$i]['val'] = $newVal;
+				}
+			}
+		}
 	}
 
 	/**
@@ -321,6 +566,7 @@ class DataSummarizer {
 	 * rebuilt here if it is missing or historical.csv has been updated.
 	 */
 	private static function summarizeCachedHistorical($varName, $sy) {
+
 		$path = self::summaryCachePath($varName, $sy);
 		$hist = self::readSummaryCache($path);
 		$histSrc = CACHE_ROOT . "serialised_historical_{$varName}.txt";
@@ -1313,11 +1559,56 @@ class Data {
 		$file = CACHE_ROOT . "serialised_dat_new_$name.txt";
 		if (!file_exists($file)) {
 			self::$CACHE_DAT[$name] = array();
-			return self::$CACHE_DAT[$name];
+		} else {
+			$data = unserialize(file_get_contents($file));
+			self::$CACHE_DAT[$name] = ($data === false) ? array() : $data;
 		}
-		$data = unserialize(file_get_contents($file));
-		self::$CACHE_DAT[$name] = ($data === false) ? array() : $data;
+		// Sunshine hours are only written to the daily file overnight, so
+		// current-period totals would otherwise exclude today. Overlay the
+		// same live "so far" value the homepage climate card uses.
+		if ($name === 'sunhr') {
+			self::overlayLiveTodaySunhr(self::$CACHE_DAT[$name]);
+		}
 		return self::$CACHE_DAT[$name];
+	}
+
+	/**
+	 * Today's live sunshine hours, same source and freshness check as
+	 * ClimateCard::todayValues() for sunhr. Null when not available.
+	 */
+	public static function liveTodaySunhr() {
+		$f = CACHE_ROOT . 'serialised_datNow.txt';
+		if (!is_file($f) || date('Ymd', filemtime($f)) !== date('Ymd')) {
+			return null;
+		}
+		$NOW = is_array(Live::$NOW) ? Live::$NOW : @unserialize(file_get_contents($f));
+		if (!is_array($NOW)) {
+			return null;
+		}
+		$sun = (isset($NOW['sun']) && isset($NOW['sun']['hours'])) ? $NOW['sun']['hours'] : null;
+		return nw3_is_numeric($sun) ? (float)$sun : null;
+	}
+
+	/**
+	 * Put today's live sunshine hours onto the current date in a sunhr
+	 * [year][month][day] array, using ClimateCard's source and freshness check.
+	 */
+	private static function overlayLiveTodaySunhr(&$arr) {
+		$sun = self::liveTodaySunhr();
+		if ($sun === null) {
+			return;
+		}
+		// Clock date (site timezone): safe even if Date is not yet initialised.
+		$y = (int)date('Y');
+		$m = (int)date('n');
+		$d = (int)date('j');
+		if (!isset($arr[$y]) || !is_array($arr[$y])) {
+			$arr[$y] = array();
+		}
+		if (!isset($arr[$y][$m]) || !is_array($arr[$y][$m])) {
+			$arr[$y][$m] = array();
+		}
+		$arr[$y][$m][$d] = $sun;
 	}
 	public static function getYearlyData($name, $year) {
 		if (!empty(Wx::$daily[$name]['derived'])) {
