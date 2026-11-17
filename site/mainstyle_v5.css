@@ -1582,6 +1582,17 @@ div.charts.detail-chart-pair {
 .detail-table-scroll > table tr.rowcurrent > td:first-child {
 	background-color: #dce8f5;
 }
+.detail-table-scroll > table tr.rank-foot > td {
+	border-top: 2px solid #8aa0b8;
+}
+.detail-table-scroll > table tr.rank-foot > td:first-child {
+	background-color: #dce8f5;
+}
+.rank-foot-ord {
+	font-weight: 600;
+	color: #333;
+	font-style: normal;
+}
 .detail-table-scroll > table tr.rowhlite > td:first-child {
 	background-color: #ccf5b1;
 }

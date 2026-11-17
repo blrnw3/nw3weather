@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/RankFlags.php';
+
 class ViewDetailedData {
 
 	private $group;
@@ -33,6 +35,9 @@ class ViewDetailedData {
 	private $dat;
 	private $datMM;
 	private $datMMCurr; // current (incomplete) month summary, same shape as one month of datMM
+	/** Memo of full rank universes (type/j/span) and to-date assoc lists. */
+	private $rankUnivCache = array();
+	private $toDateAll = array();
 	private $datSS;
 	private $datSSanom;
 	// Current season to date (from curr_season), for the latest-data cards
@@ -2298,7 +2303,7 @@ class ViewDetailedData {
 		echo '</div>';
 	}
 
-	private function rankTablePair($rankArray, $rankNum, $type, $title, $label, $moreHref = null, $cols = null, $hiOnly = false) {
+	private function rankTablePair($rankArray, $rankNum, $type, $title, $label, $moreHref = null, $cols = null, $hiOnly = false, $moreText = null) {
 		if ($cols === null) {
 			$meanLabel = $label === "Mean" ? "" : " Mean";
 			$cols = [
@@ -2321,19 +2326,7 @@ class ViewDetailedData {
 		}
 		Html::tr_end();
 
-		for ($i = 1; $i <= $rankNum; $i++) {
-			Html::tr(Html::colcol($i));
-			Html::td($i, $this->cssClass);
-			foreach ($cols as $col) {
-				$j = $col['j'];
-				$unit = isset($col['unit']) ? $col['unit'] : $this->conv;
-				$dpa = isset($col['dpa']) ? (int)$col['dpa'] : 0;
-				$v = isset($rankArray[$j][$type][1][0][$i]) ? $rankArray[$j][$type][1][0][$i] : null;
-				$d = isset($rankArray[$j][$type][1][1][$i]) ? $rankArray[$j][$type][1][1][$i] : '';
-				Html::td($this->disp($v, $unit, $dpa) . $this->dateHtml($d), $this->cssClass);
-			}
-			Html::tr_end();
-		}
+		$this->renderRankTableBody($type, 1, $rankNum, $cols, $hiOnly);
 		Html::table_end();
 		echo '</div>';
 		echo "</div>";
@@ -2350,19 +2343,7 @@ class ViewDetailedData {
 			}
 			Html::tr_end();
 
-			for ($i = 1; $i <= $rankNum; $i++) {
-				Html::tr(Html::colcol($i));
-				Html::td($i, $this->cssClass);
-				foreach ($cols as $col) {
-					$j = $col['j'];
-					$unit = isset($col['unit']) ? $col['unit'] : $this->conv;
-					$dpa = isset($col['dpa']) ? (int)$col['dpa'] : 0;
-					$v = isset($rankArray[$j][$type][0][0][$i]) ? $rankArray[$j][$type][0][0][$i] : null;
-					$d = isset($rankArray[$j][$type][0][1][$i]) ? $rankArray[$j][$type][0][1][$i] : '';
-					Html::td($this->disp($v, $unit, $dpa) . $this->dateHtml($d), $this->cssClass);
-				}
-				Html::tr_end();
-			}
+			$this->renderRankTableBody($type, 0, $rankNum, $cols, false);
 			Html::table_end();
 			echo '</div>';
 			echo "</div>";
@@ -2370,8 +2351,9 @@ class ViewDetailedData {
 
 		echo "</div>";
 		if ($moreHref) {
+			$more = ($moreText !== null) ? $moreText : $label;
 			echo "<p><a href=\"" . htmlspecialchars($moreHref) . "\">View more "
-				. strtolower($label) . " rankings</a></p>";
+				. strtolower($more) . " rankings</a></p>";
 		}
 	}
 
@@ -2389,6 +2371,7 @@ class ViewDetailedData {
 		$mon = (int)Date::$dmonth;
 		$monName = Date::$monthname;
 		$monPlural = $monName . 's';
+		$toDate = $this->isToDateRanks();
 
 		$dailyCols = !empty($this->group['rankDailyCols']) ? $this->group['rankDailyCols'] : null;
 		$monthlyCols = !empty($this->group['rankMonthlyCols']) ? $this->group['rankMonthlyCols'] : null;
@@ -2397,16 +2380,613 @@ class ViewDetailedData {
 			: $monthlyCols;
 		$dailyHiOnly = !empty($this->group['rankDailyHiOnly']);
 
+		$yearRanks = $this->ranks;
+		$cmRanks = $this->ranks;
+		$yearTitle = 'Years';
+		$cmTitle = $monPlural;
+		$yearHref = '/RankYear.php?vartype=' . rawurlencode($vt);
+		$cmHref = '/RankMonth.php?vartype=' . rawurlencode($vt) . '&month=' . $mon;
+		if ($toDate) {
+			$yearRanks = $this->buildToDateRanks((int)$rankNumY, (int)$rankNumCM);
+			$cmRanks = $yearRanks;
+			$yearTitle .= ' (' . Data::spanRangeText('ytd') . ')';
+			$cmTitle .= ' (' . Data::spanRangeText('mtd') . ')';
+			$yearHref .= '&span=ytd';
+			$cmHref .= '&span=mtd';
+		}
+
 		$this->rankTablePair($this->ranks, $rankNum, 'daily', "Days", "Daily",
 			'/RankDay.php?vartype=' . rawurlencode($vt), $dailyCols, $dailyHiOnly);
 		$this->rankTablePair($this->ranks, $rankNumM, 'monthly', "Months", "Mean",
 			'/RankMonth.php?vartype=' . rawurlencode($vt), $monthlyCols);
-		$this->rankTablePair($this->ranks, $rankNumY, 'annual', "Years", "Mean",
-			'/RankYear.php?vartype=' . rawurlencode($vt), $annualCols);
+
+		echo '<div id="rank-years">';
+		$this->rankSpanSelector('rank-years');
+		$this->rankTablePair($yearRanks, $rankNumY, 'annual', $yearTitle, "Mean",
+			$yearHref, $annualCols);
+		echo '</div>';
+
 		$this->rankTablePair($this->ranks, $rankNumCM, 'dailyCM', "Days in " . $monName, "Daily",
 			null, $dailyCols, $dailyHiOnly);
-		$this->rankTablePair($this->ranks, $rankNumCM, 'monthlyCM', $monPlural, "Mean",
-			null, $monthlyCols);
+
+		echo '<div id="rank-current-month">';
+		$this->rankSpanSelector('rank-current-month');
+		$this->rankTablePair($cmRanks, $rankNumCM, 'monthlyCM', $cmTitle, "Mean",
+			$cmHref, $monthlyCols, false, $monName);
+		echo '</div>';
 	}
+
+	/** True when the years / current-month rank tables should use the to-date window. */
+	private function isToDateRanks() {
+		$s = isset($_GET['rank_span']) ? (string)$_GET['rank_span'] : 'full';
+		return ($s === 'todate' || $s === 'ytd' || $s === 'mtd');
+	}
+
+	/** Whole period / To date chips for the year and current-month rank tables. */
+	private function rankSpanSelector($anchor) {
+		$toDate = $this->isToDateRanks();
+		$ytd = Data::spanRangeText('ytd');
+		$mtd = Data::spanRangeText('mtd');
+		$monPlural = Date::$monthname . 's';
+		echo '<div class="report-sel detail-start-sel">';
+		echo '<div class="report-sel-row report-sel-labelled">';
+		echo '<div class="wxsel-label">Period</div>';
+		echo '<div class="wxsel-scale" role="tablist">';
+		echo '<a class="wxsel-chip' . ($toDate ? '' : ' active') . '" href="'
+			. htmlspecialchars($this->rankSpanUrl('full', $anchor))
+			. '" title="Full calendar years and full ' . htmlspecialchars($monPlural) . '">Whole period</a>';
+		echo '<a class="wxsel-chip' . ($toDate ? ' active' : '') . '" href="'
+			. htmlspecialchars($this->rankSpanUrl('todate', $anchor))
+			. '" title="Years ' . htmlspecialchars($ytd) . '; ' . htmlspecialchars($monPlural) . ' ' . htmlspecialchars($mtd) . '">To date</a>';
+		echo '</div></div></div>';
+	}
+
+	/** Preserve other query params when switching Whole period / To date. */
+	private function rankSpanUrl($span, $anchor = null) {
+		$q = $_GET;
+		if ($span === 'todate') {
+			$q['rank_span'] = 'todate';
+		} else {
+			unset($q['rank_span']);
+		}
+		$url = '?' . http_build_query($q);
+		if ($anchor) {
+			$url .= '#' . $anchor;
+		}
+		return $url;
+	}
+
+	/**
+	 * Year and current-month ranks for the same window RankYear (span=ytd)
+	 * and RankMonth (span=mtd, this month) use: 1 Jan–today, and the 1st
+	 * through today's day of the current month.
+	 * @return array same shape as $this->ranks, with annual + monthlyCM filled
+	 */
+	private function buildToDateRanks($limitY, $limitCM) {
+		$startY = $this->effectiveStartYear();
+		$endY = (int)Date::$dyear;
+		$cm = (int)Date::$dmonth;
+		list(, $endD) = Data::spanEndMd();
+		$out = [];
+
+		$series = [
+			0 => $this->varMin,
+			1 => $this->varMax,
+			2 => $this->varMean,
+		];
+		if (!empty($this->group['var_extra'])) {
+			$series[3] = $this->group['var_extra'];
+		}
+
+		foreach ($series as $j => $var) {
+			$st = $this->toDateSummaryType($var);
+			$annual = [];
+			foreach (Data::getAnnualData($var, $st, $startY, $endY, null, 'ytd') as $y => $v) {
+				if (Data::dateIsFuture($y, 1, $endD)) { continue; }
+				if (!Util::isBlank($v)) { $annual[(string)((int)$y)] = $v; }
+			}
+			$this->toDateAll[$j]['annual'] = $annual;
+			$out[$j]['annual'] = $this->toDateRankPair($annual, 'annual', $limitY);
+			$cmVals = $this->toDateCurrentMonthValues($var, $st, $startY, $endY, $cm);
+			$this->toDateAll[$j]['monthlyCM'] = $cmVals;
+			$out[$j]['monthlyCM'] = $this->toDateRankPair($cmVals, 'monthlyCM', $limitCM);
+		}
+
+		if ($this->isSummableDetail()) {
+			$var = $this->varMean;
+			$annual = [];
+			foreach (Data::getAnnualData($var, Data::SUMMARY_COUNT, $startY, $endY, null, 'ytd') as $y => $v) {
+				if (Data::dateIsFuture($y, 1, $endD)) { continue; }
+				if (!Util::isBlank($v)) { $annual[(string)((int)$y)] = $v; }
+			}
+			$this->toDateAll[4]['annual'] = $annual;
+			$out[4]['annual'] = $this->toDateRankPair($annual, 'annual', $limitY);
+			$cmVals = $this->toDateCurrentMonthValues($var, Data::SUMMARY_COUNT, $startY, $endY, $cm);
+			$this->toDateAll[4]['monthlyCM'] = $cmVals;
+			$out[4]['monthlyCM'] = $this->toDateRankPair($cmVals, 'monthlyCM', $limitCM);
+		}
+
+		return $out;
+	}
+
+	/** SUMMARY_SUM for rain/sun-style totals, otherwise the period mean. */
+	private function toDateSummaryType($varName) {
+		return (!empty(Wx::$daily[$varName]['summable'])) ? Data::SUMMARY_SUM : Data::SUMMARY_MEAN;
+	}
+
+	/** This month, days 1–today, keyed Y-m-01 for fmtRankDate. */
+	private function toDateCurrentMonthValues($var, $summaryType, $startY, $endY, $cm) {
+		$out = [];
+		foreach (Data::getMonthlySummary($var, $summaryType, $startY, $endY, null, 'mtd') as $y => $months) {
+			if (!is_array($months) || Data::dateIsFuture($y, $cm, 1)) { continue; }
+			foreach ($months as $m => $v) {
+				if ((int)$m === $cm && !Util::isBlank($v)) {
+					$out[sprintf('%04d-%02d-01', (int)$y, $cm)] = $v;
+					break;
+				}
+			}
+		}
+		return $out;
+	}
+
+	/** High/low rank lists in the same [hilo][vals|dates][rank] shape as buildRanks. */
+	private function toDateRankPair($assoc, $type, $limit) {
+		$clean = [];
+		foreach ($assoc as $k => $v) {
+			if (nw3_is_numeric($v)) { $clean[$k] = (float)$v; }
+		}
+		if (!count($clean)) {
+			$empty = [0 => [], 1 => []];
+			return [0 => $empty, 1 => $empty];
+		}
+		nw3_asort($clean);
+		$n = (int)$limit;
+		$bottom = array_slice($clean, 0, $n, true);
+		$top = array_reverse(array_slice($clean, -$n, $n, true), true);
+		return [
+			0 => $this->toDateRankList($bottom, $type),
+			1 => $this->toDateRankList($top, $type),
+		];
+	}
+
+	private function toDateRankList($assoc, $type) {
+		$vals = [];
+		$dates = [];
+		$i = 1;
+		foreach ($assoc as $k => $v) {
+			$vals[$i] = $v;
+			$dates[$i] = $this->fmtRankDate($k, $type);
+			$i++;
+		}
+		return [0 => $vals, 1 => $dates];
+	}
+
+	/**
+	 * Body of one high or low rank table, then an optional current-period footer.
+	 * An incomplete current period is mixed into the main top-N of a column
+	 * only when RankFlags says that rank is certain or likely; otherwise it
+	 * stays in the footer of the better-ranked paired table.
+	 */
+	private function renderRankTableBody($type, $hilo, $rankNum, $cols, $hiOnly) {
+		$lists = array();
+		foreach ($cols as $idx => $col) {
+			$lists[$idx] = $this->rankDisplayList($type, $col['j'], $hilo, $rankNum, $hiOnly);
+		}
+		for ($i = 1; $i <= $rankNum; $i++) {
+			Html::tr(Html::colcol($i));
+			Html::td($i, $this->cssClass);
+			foreach ($cols as $idx => $col) {
+				$unit = isset($col['unit']) ? $col['unit'] : $this->conv;
+				$dpa = isset($col['dpa']) ? (int)$col['dpa'] : 0;
+				$v = isset($lists[$idx][0][$i]) ? $lists[$idx][0][$i] : null;
+				$d = isset($lists[$idx][1][$i]) ? $lists[$idx][1][$i] : '';
+				Html::td($this->disp($v, $unit, $dpa) . $this->dateHtml($d), $this->cssClass);
+			}
+			Html::tr_end();
+		}
+		$this->appendCurrentRankRow($type, $hilo, $cols, $hiOnly, $rankNum);
+	}
+
+	/**
+	 * Top-N values/dates for one column. An incomplete current period is
+	 * included only when its rank in this table is certain or likely and
+	 * falls inside the top N (and this is the better-ranked paired table).
+	 * @return array [0 => vals, 1 => dates] keyed 1..rankNum
+	 */
+	private function rankDisplayList($type, $j, $hilo, $rankNum, $hiOnly) {
+		$univ = $this->rankValueUniverse($type, $j);
+		$skip = $this->includeCurrentInMain($type, $j, $hilo, $rankNum, $hiOnly)
+			? null
+			: $this->currentPeriodKey($type);
+		$clean = array();
+		foreach ($univ as $k => $v) {
+			if ($skip !== null && (string)$k === (string)$skip) {
+				continue;
+			}
+			if (nw3_is_numeric($v)) {
+				$clean[$k] = (float)$v;
+			}
+		}
+		if (!count($clean)) {
+			return array(array(), array());
+		}
+		nw3_asort($clean);
+		if ($hilo === 1) {
+			$clean = array_reverse($clean, true);
+		}
+		$vals = array();
+		$dates = array();
+		$i = 1;
+		foreach ($clean as $k => $v) {
+			if ($i > $rankNum) {
+				break;
+			}
+			$vals[$i] = $v;
+			$dates[$i] = $this->fmtRankDate($k, $type);
+			$i++;
+		}
+		return array($vals, $dates);
+	}
+
+	/**
+	 * Footer row: current period's value and rank, only in the paired table
+	 * where it ranks better (closer to 1), per column. Ties go on the high table.
+	 * Value cells are just the value and ordinal; the row label is the identifier.
+	 */
+	private function appendCurrentRankRow($type, $hilo, $cols, $hiOnly, $rankNum) {
+		$cells = array();
+		$need = false;
+		foreach ($cols as $col) {
+			$info = $this->currentPeriodRankInfo($type, $col['j'], $hilo);
+			if ($info !== null && !$this->currentPeriodShowsOnTable($type, $col['j'], $hilo, $hiOnly)) {
+				$info = null;
+			}
+			if ($info !== null && $this->includeCurrentInMain($type, $col['j'], $hilo, $rankNum, $hiOnly)) {
+				$info = null;
+			}
+			$cells[] = $info;
+			if ($info !== null) {
+				$need = true;
+			}
+		}
+		if (!$need) {
+			return;
+		}
+
+		Html::tr('rowcurrent rank-foot');
+		Html::td($this->currentPeriodFooterLabel($type), $this->cssClass);
+		foreach ($cols as $idx => $col) {
+			$info = $cells[$idx];
+			if ($info === null) {
+				Html::td('&nbsp;', $this->cssClass);
+				continue;
+			}
+			$unit = isset($col['unit']) ? $col['unit'] : $this->conv;
+			$dpa = isset($col['dpa']) ? (int)$col['dpa'] : 0;
+			$ord = ($info['tied'] ? '=' : '') . $this->rankOrdinal($info['rank'])
+				. ' of ' . number_format($info['n']);
+			Html::td(
+				$this->disp($info['val'], $unit, $dpa)
+					. '<br /><span class="wx-date rank-foot-ord">' . htmlspecialchars($ord) . '</span>',
+				$this->cssClass
+			);
+		}
+		Html::tr_end();
+	}
+
+	/** Red Current / Today label, same wording as existing rank-table date labels. */
+	private function currentPeriodFooterLabel($type) {
+		$current = !($type === 'daily' || $type === 'dailyCM');
+		return Date::today(false, false, false, $current);
+	}
+
+	/**
+	 * Rank of the current year, month or day in one column, or null when that
+	 * period has no value in the same universe as the table (e.g. today not
+	 * yet in the daily series).
+	 * @return array|null val, rank, n, tied, hiRank, loRank
+	 */
+	private function currentPeriodRankInfo($type, $j, $hilo) {
+		$univ = $this->rankValueUniverse($type, $j);
+		if (!is_array($univ) || !count($univ)) {
+			return null;
+		}
+		$key = $this->currentPeriodKey($type);
+		if ($key === null || !isset($univ[$key]) || !nw3_is_numeric($univ[$key])) {
+			return null;
+		}
+		$val = $univ[$key];
+		$vals = array_values($univ);
+		sort($vals, SORT_NUMERIC);
+		$hi = $this->currentRankStats($vals, $val, true);
+		$lo = $this->currentRankStats($vals, $val, false);
+		$st = ($hilo === 1) ? $hi : $lo;
+		return array(
+			'val' => $val,
+			'rank' => $st['rank'],
+			'n' => $st['n'],
+			'tied' => $st['tied'],
+			'hiRank' => $hi['rank'],
+			'loRank' => $lo['rank'],
+		);
+	}
+
+	/**
+	 * Show this column's footer only on the paired table where the current
+	 * period ranks better (closer to 1). Equal ranks go on the high table.
+	 * A high-only pair (e.g. wettest days) shows the footer only when high
+	 * is the better or tied side.
+	 */
+	private function currentPeriodShowsOnTable($type, $j, $hilo, $hiOnly) {
+		$info = $this->currentPeriodRankInfo($type, $j, $hilo);
+		if ($info === null) {
+			return false;
+		}
+		if ($info['hiRank'] < $info['loRank']) {
+			$better = 1;
+		} elseif ($info['loRank'] < $info['hiRank']) {
+			$better = 0;
+		} else {
+			$better = 1;
+		}
+		if ($hilo !== $better) {
+			return false;
+		}
+		if ($hiOnly && $better !== 1) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Put the incomplete current period in this column's main top-N when the
+	 * RankFlags heuristic says the rank is certain or likely, it falls inside
+	 * the displayed N, and this is the better-ranked paired table.
+	 */
+	private function includeCurrentInMain($type, $j, $hilo, $rankNum, $hiOnly) {
+		if (!$this->isCurrentPeriodIncomplete($type)) {
+			return false;
+		}
+		if (!$this->currentPeriodRankHolds($type, $j, $hilo)) {
+			return false;
+		}
+		$info = $this->currentPeriodRankInfo($type, $j, $hilo);
+		if ($info === null || $info['rank'] > $rankNum) {
+			return false;
+		}
+		return $this->currentPeriodShowsOnTable($type, $j, $hilo, $hiOnly);
+	}
+
+	/**
+	 * Certain in the monotone direction, or likely in both directions once
+	 * RankFlags::COMPLETE_FRAC (90%) of the period has elapsed.
+	 */
+	private function currentPeriodRankHolds($type, $j, $hilo) {
+		$var = $this->rankVarForJ($j);
+		if (!$var) {
+			return false;
+		}
+		$dir = ($hilo === 1) ? 'hi' : 'lo';
+		$toDate = $this->isToDateRanks() && ($type === 'annual' || $type === 'monthlyCM');
+		if ($type === 'daily' || $type === 'dailyCM') {
+			$kind = 'day';
+			$scope = 'daily';
+		} elseif ($type === 'annual') {
+			$kind = $toDate ? 'ytd' : 'year';
+			$scope = 'period';
+		} else {
+			$kind = $toDate ? 'mtd' : 'month';
+			$scope = 'period';
+		}
+		return RankFlags::partialDirHolds($var, $dir, RankFlags::periodFrac($kind), $scope);
+	}
+
+	/** True while today / this month / this year is still running. */
+	private function isCurrentPeriodIncomplete($type) {
+		if ($type === 'annual' || $type === 'monthly' || $type === 'monthlyCM'
+			|| $type === 'daily' || $type === 'dailyCM') {
+			return true;
+		}
+		return false;
+	}
+
+	private function currentPeriodKey($type) {
+		$y = (int)Date::$dyear;
+		$m = (int)Date::$dmonth;
+		$d = (int)Date::$dday;
+		if ($type === 'annual') {
+			return (string)$y;
+		}
+		if ($type === 'monthly' || $type === 'monthlyCM') {
+			return sprintf('%04d-%02d-01', $y, $m);
+		}
+		if ($type === 'daily' || $type === 'dailyCM') {
+			return sprintf('%04d-%02d-%02d', $y, $m, $d);
+		}
+		return null;
+	}
+
+	/** Full set of values for one rank column, same window as the displayed table. */
+	private function rankValueUniverse($type, $j) {
+		$toDate = $this->isToDateRanks() && ($type === 'annual' || $type === 'monthlyCM');
+		$cacheKey = ($toDate ? 'td:' : 'wp:') . $type . ':' . $j . ':' . $this->effectiveStartYear();
+		if (isset($this->rankUnivCache[$cacheKey])) {
+			return $this->rankUnivCache[$cacheKey];
+		}
+		$out = array();
+		if ($toDate) {
+			$out = $this->numericAssoc(isset($this->toDateAll[$j][$type]) ? $this->toDateAll[$j][$type] : array());
+		} elseif ($type === 'annual' || $type === 'monthly' || $type === 'monthlyCM') {
+			$out = $this->wholePeriodUniverse($type, $j);
+		} elseif ($type === 'daily' || $type === 'dailyCM') {
+			$var = $this->rankVarForJ($j);
+			if ($var) {
+				$out = $this->dailyValueUniverse($var, $type === 'dailyCM');
+			}
+		}
+		$this->rankUnivCache[$cacheKey] = $out;
+		return $out;
+	}
+
+	private function wholePeriodUniverse($type, $j) {
+		$sum = $this->rankSumForJ($j);
+		if (!is_array($sum)) {
+			return array();
+		}
+		$key = $this->rankSummaryKey($j);
+		if ($type === 'annual') {
+			return $this->yearValuesFromSum($sum, $key);
+		}
+		return $this->monthValuesFromSum($sum, $key, $type === 'monthlyCM');
+	}
+
+	private function yearValuesFromSum($sum, $key) {
+		$out = array();
+		$years = isset($sum['year_summaries']) ? $sum['year_summaries'] : array();
+		foreach ($years as $y => $s) {
+			if (is_array($s) && isset($s[$key]) && nw3_is_numeric($s[$key])) {
+				$out[(string)((int)$y)] = $s[$key];
+			}
+		}
+		return $out;
+	}
+
+	private function monthValuesFromSum($sum, $key, $thisMonthOnly) {
+		$out = array();
+		$cm = Util::zerolead(Date::$dmonth);
+		$months = isset($sum['month_summaries']) ? $sum['month_summaries'] : array();
+		foreach ($months as $y => $ms) {
+			if (!is_array($ms)) {
+				continue;
+			}
+			foreach ($ms as $m => $s) {
+				if ($thisMonthOnly && (string)$m !== (string)$cm && (int)$m !== (int)$cm) {
+					continue;
+				}
+				if (is_array($s) && isset($s[$key]) && nw3_is_numeric($s[$key])) {
+					$out[sprintf('%04d-%02d-01', (int)$y, (int)$m)] = $s[$key];
+				}
+			}
+		}
+		return $out;
+	}
+
+	private function dailyValueUniverse($var, $thisMonthOnly) {
+		$out = array();
+		$startY = $this->effectiveStartYear();
+		$cm = (int)Date::$dmonth;
+		$data = Data::getDailyData($var, $startY);
+		foreach ($data as $y => $months) {
+			if (!is_array($months)) {
+				continue;
+			}
+			foreach ($months as $m => $days) {
+				if ($thisMonthOnly && (int)$m !== $cm) {
+					continue;
+				}
+				if (!is_array($days)) {
+					continue;
+				}
+				foreach ($days as $d => $v) {
+					if (!Util::isBlank($v) && nw3_is_numeric($v)) {
+						$out[sprintf('%04d-%02d-%02d', (int)$y, (int)$m, (int)$d)] = (float)$v;
+					}
+				}
+			}
+		}
+		return $out;
+	}
+
+	private function numericAssoc($assoc) {
+		$out = array();
+		foreach ($assoc as $k => $v) {
+			if (nw3_is_numeric($v)) {
+				$out[$k] = $v;
+			}
+		}
+		return $out;
+	}
+
+	private function rankSumForJ($j) {
+		if ($j === 0) {
+			return $this->minSum;
+		}
+		if ($j === 1) {
+			return $this->maxSum;
+		}
+		if ($j === 3) {
+			return $this->extraSum;
+		}
+		return $this->meanSum;
+	}
+
+	private function rankVarForJ($j) {
+		if ($j === 0) {
+			return $this->varMin;
+		}
+		if ($j === 1) {
+			return $this->varMax;
+		}
+		if ($j === 3) {
+			return !empty($this->group['var_extra']) ? $this->group['var_extra'] : null;
+		}
+		return $this->varMean;
+	}
+
+	private function rankSummaryKey($j) {
+		if ($j === 4) {
+			return 'count_nonzero';
+		}
+		$var = $this->rankVarForJ($j);
+		if ($var && !empty(Wx::$daily[$var]['summable'])) {
+			return 'sum';
+		}
+		return 'mean';
+	}
+
+
+	/** 1 → "1st", 22 → "22nd" (same rules as Report::ordinal). */
+	private function rankOrdinal($n) {
+		$n = (int)$n;
+		$m100 = $n % 100;
+		$m10 = $n % 10;
+		$suf = 'th';
+		if ($m100 < 11 || $m100 > 13) {
+			if ($m10 === 1) { $suf = 'st'; } elseif ($m10 === 2) { $suf = 'nd'; } elseif ($m10 === 3) { $suf = 'rd'; }
+		}
+		return number_format($n) . $suf;
+	}
+
+	/**
+	 * Rank of $v in a pre-sorted ascending list. Ties share a rank and are
+	 * flagged so the label can use a leading '='.
+	 * @param float[] $sortedAsc
+	 * @return array rank, n, tied
+	 */
+	private function currentRankStats($sortedAsc, $v, $fromHigh) {
+		$n = count($sortedAsc);
+		$v = (float)$v;
+		$eps = 1e-9;
+		$lo = 0; $hi = $n;
+		while ($lo < $hi) {
+			$mid = ($lo + $hi) >> 1;
+			if ((float)$sortedAsc[$mid] < $v - $eps) { $lo = $mid + 1; } else { $hi = $mid; }
+		}
+		$lower = $lo;
+		$lo = $lower; $hi = $n;
+		while ($lo < $hi) {
+			$mid = ($lo + $hi) >> 1;
+			if ((float)$sortedAsc[$mid] <= $v + $eps) { $lo = $mid + 1; } else { $hi = $mid; }
+		}
+		$upper = $lo;
+		$better = $fromHigh ? ($n - $upper) : $lower;
+		return array(
+			'rank' => $better + 1,
+			'n' => $n,
+			'tied' => ($upper - $lower) > 1,
+		);
+	}
+
+
 }
 ?>
