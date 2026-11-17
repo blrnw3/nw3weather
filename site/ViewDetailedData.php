@@ -2146,20 +2146,7 @@ class ViewDetailedData {
 		}
 		Html::tr_end();
 
-		for ($i = 1; $i <= $rankNum; $i++) {
-			Html::tr(Html::colcol($i));
-			Html::td($i, $this->cssClass);
-			foreach ($cols as $col) {
-				$j = $col['j'];
-				$unit = isset($col['unit']) ? $col['unit'] : $this->conv;
-				$dpa = isset($col['dpa']) ? (int)$col['dpa'] : 0;
-				$v = isset($rankArray[$j][$type][1][0][$i]) ? $rankArray[$j][$type][1][0][$i] : null;
-				$d = isset($rankArray[$j][$type][1][1][$i]) ? $rankArray[$j][$type][1][1][$i] : '';
-				Html::td($this->disp($v, $unit, $dpa) . $this->dateHtml($d), $this->cssClass);
-			}
-			Html::tr_end();
-		}
-		$this->appendCurrentRankRow($rankArray, $rankNum, $type, 1, $cols);
+		$this->renderRankTableBody($type, 1, $rankNum, $cols, $hiOnly);
 		Html::table_end();
 		echo '</div>';
 		echo "</div>";
@@ -2176,20 +2163,7 @@ class ViewDetailedData {
 			}
 			Html::tr_end();
 
-			for ($i = 1; $i <= $rankNum; $i++) {
-				Html::tr(Html::colcol($i));
-				Html::td($i, $this->cssClass);
-				foreach ($cols as $col) {
-					$j = $col['j'];
-					$unit = isset($col['unit']) ? $col['unit'] : $this->conv;
-					$dpa = isset($col['dpa']) ? (int)$col['dpa'] : 0;
-					$v = isset($rankArray[$j][$type][0][0][$i]) ? $rankArray[$j][$type][0][0][$i] : null;
-					$d = isset($rankArray[$j][$type][0][1][$i]) ? $rankArray[$j][$type][0][1][$i] : '';
-					Html::td($this->disp($v, $unit, $dpa) . $this->dateHtml($d), $this->cssClass);
-				}
-				Html::tr_end();
-			}
-			$this->appendCurrentRankRow($rankArray, $rankNum, $type, 0, $cols);
+			$this->renderRankTableBody($type, 0, $rankNum, $cols, false);
 			Html::table_end();
 			echo '</div>';
 			echo "</div>";
@@ -2408,17 +2382,83 @@ class ViewDetailedData {
 	}
 
 	/**
-	 * Footer row: where the current period ranks, when it is not already in the
-	 * displayed top N. Each column is its own ranking (a value already shown
-	 * in that column is left blank). Label matches existing Current / Today rows.
+	 * Body of one high or low rank table, then an optional current-period footer.
+	 * Incomplete current periods are omitted from the main top-N (they stay in
+	 * the footer) even when RankFlags would treat the rank as certain or likely.
 	 */
-	private function appendCurrentRankRow($rankArray, $rankNum, $type, $hilo, $cols) {
+	private function renderRankTableBody($type, $hilo, $rankNum, $cols, $hiOnly) {
+		$lists = array();
+		foreach ($cols as $idx => $col) {
+			$lists[$idx] = $this->rankDisplayList($type, $col['j'], $hilo, $rankNum);
+		}
+		for ($i = 1; $i <= $rankNum; $i++) {
+			Html::tr(Html::colcol($i));
+			Html::td($i, $this->cssClass);
+			foreach ($cols as $idx => $col) {
+				$unit = isset($col['unit']) ? $col['unit'] : $this->conv;
+				$dpa = isset($col['dpa']) ? (int)$col['dpa'] : 0;
+				$v = isset($lists[$idx][0][$i]) ? $lists[$idx][0][$i] : null;
+				$d = isset($lists[$idx][1][$i]) ? $lists[$idx][1][$i] : '';
+				Html::td($this->disp($v, $unit, $dpa) . $this->dateHtml($d), $this->cssClass);
+			}
+			Html::tr_end();
+		}
+		$this->appendCurrentRankRow($type, $hilo, $cols, $hiOnly);
+	}
+
+	/**
+	 * Top-N values/dates for one column, excluding an incomplete current period
+	 * so it is not mixed into the main table.
+	 * @return array [0 => vals, 1 => dates] keyed 1..rankNum
+	 */
+	private function rankDisplayList($type, $j, $hilo, $rankNum) {
+		$univ = $this->rankValueUniverse($type, $j);
+		$skip = $this->omitCurrentFromMain($type) ? $this->currentPeriodKey($type) : null;
+		$clean = array();
+		foreach ($univ as $k => $v) {
+			if ($skip !== null && (string)$k === (string)$skip) {
+				continue;
+			}
+			if (nw3_is_numeric($v)) {
+				$clean[$k] = (float)$v;
+			}
+		}
+		if (!count($clean)) {
+			return array(array(), array());
+		}
+		nw3_asort($clean);
+		if ($hilo === 1) {
+			$clean = array_reverse($clean, true);
+		}
+		$vals = array();
+		$dates = array();
+		$i = 1;
+		foreach ($clean as $k => $v) {
+			if ($i > $rankNum) {
+				break;
+			}
+			$vals[$i] = $v;
+			$dates[$i] = $this->fmtRankDate($k, $type);
+			$i++;
+		}
+		return array($vals, $dates);
+	}
+
+	/**
+	 * Footer row: current period's value and rank, only in the paired table
+	 * where it ranks better (closer to 1), per column. Ties go on the high table.
+	 * Value cells are just the value and ordinal; the row label is the identifier.
+	 */
+	private function appendCurrentRankRow($type, $hilo, $cols, $hiOnly) {
 		$cells = array();
 		$need = false;
 		foreach ($cols as $col) {
-			$info = $this->currentPeriodRankInfo($rankArray, $type, $col['j'], $hilo, $rankNum);
+			$info = $this->currentPeriodRankInfo($type, $col['j'], $hilo);
+			if ($info !== null && !$this->currentPeriodShowsOnTable($type, $col['j'], $hilo, $hiOnly)) {
+				$info = null;
+			}
 			$cells[] = $info;
-			if ($info !== null && empty($info['shown'])) {
+			if ($info !== null) {
 				$need = true;
 			}
 		}
@@ -2430,7 +2470,7 @@ class ViewDetailedData {
 		Html::td($this->currentPeriodFooterLabel($type), $this->cssClass);
 		foreach ($cols as $idx => $col) {
 			$info = $cells[$idx];
-			if ($info === null || !empty($info['shown'])) {
+			if ($info === null) {
 				Html::td('&nbsp;', $this->cssClass);
 				continue;
 			}
@@ -2440,7 +2480,6 @@ class ViewDetailedData {
 				. ' of ' . number_format($info['n']);
 			Html::td(
 				$this->disp($info['val'], $unit, $dpa)
-					. $this->dateHtml($info['label'])
 					. '<br /><span class="wx-date rank-foot-ord">' . htmlspecialchars($ord) . '</span>',
 				$this->cssClass
 			);
@@ -2458,9 +2497,9 @@ class ViewDetailedData {
 	 * Rank of the current year, month or day in one column, or null when that
 	 * period has no value in the same universe as the table (e.g. today not
 	 * yet in the daily series).
-	 * @return array|null val, rank, n, tied, label, shown
+	 * @return array|null val, rank, n, tied, hiRank, loRank
 	 */
-	private function currentPeriodRankInfo($rankArray, $type, $j, $hilo, $rankNum) {
+	private function currentPeriodRankInfo($type, $j, $hilo) {
 		$univ = $this->rankValueUniverse($type, $j);
 		if (!is_array($univ) || !count($univ)) {
 			return null;
@@ -2472,23 +2511,64 @@ class ViewDetailedData {
 		$val = $univ[$key];
 		$vals = array_values($univ);
 		sort($vals, SORT_NUMERIC);
-		$st = $this->currentRankStats($vals, $val, $hilo === 1);
-		$shown = false;
-		for ($i = 1; $i <= $rankNum; $i++) {
-			$d = isset($rankArray[$j][$type][$hilo][1][$i]) ? $rankArray[$j][$type][$hilo][1][$i] : '';
-			if ($this->rankDateIsCurrent($d, $type)) {
-				$shown = true;
-				break;
-			}
-		}
+		$hi = $this->currentRankStats($vals, $val, true);
+		$lo = $this->currentRankStats($vals, $val, false);
+		$st = ($hilo === 1) ? $hi : $lo;
 		return array(
 			'val' => $val,
 			'rank' => $st['rank'],
 			'n' => $st['n'],
 			'tied' => $st['tied'],
-			'label' => $this->fmtRankDate($key, $type),
-			'shown' => $shown,
+			'hiRank' => $hi['rank'],
+			'loRank' => $lo['rank'],
 		);
+	}
+
+	/**
+	 * Show this column's footer only on the paired table where the current
+	 * period ranks better (closer to 1). Equal ranks go on the high table.
+	 * A high-only pair (e.g. wettest days) shows the footer only when high
+	 * is the better or tied side.
+	 */
+	private function currentPeriodShowsOnTable($type, $j, $hilo, $hiOnly) {
+		$info = $this->currentPeriodRankInfo($type, $j, $hilo);
+		if ($info === null) {
+			return false;
+		}
+		if ($info['hiRank'] < $info['loRank']) {
+			$better = 1;
+		} elseif ($info['loRank'] < $info['hiRank']) {
+			$better = 0;
+		} else {
+			$better = 1;
+		}
+		if ($hilo !== $better) {
+			return false;
+		}
+		if ($hiOnly && $better !== 1) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Incomplete current year / month / day is kept out of the main top-N.
+	 * RankFlags treats a partial period as certain in its monotone direction,
+	 * or likely in both directions once it is COMPLETE_FRAC (90%) elapsed;
+	 * even then the detail tables show it in the footer, not among the
+	 * completed periods in the main table.
+	 */
+	private function omitCurrentFromMain($type) {
+		return $this->isCurrentPeriodIncomplete($type);
+	}
+
+	/** True while today / this month / this year is still running. */
+	private function isCurrentPeriodIncomplete($type) {
+		if ($type === 'annual' || $type === 'monthly' || $type === 'monthlyCM'
+			|| $type === 'daily' || $type === 'dailyCM') {
+			return true;
+		}
+		return false;
 	}
 
 	private function currentPeriodKey($type) {
@@ -2505,16 +2585,6 @@ class ViewDetailedData {
 			return sprintf('%04d-%02d-%02d', $y, $m, $d);
 		}
 		return null;
-	}
-
-	private function rankDateIsCurrent($html, $type) {
-		if ($html === null || $html === '') {
-			return false;
-		}
-		if ($type === 'daily' || $type === 'dailyCM') {
-			return strpos($html, 'Today') !== false;
-		}
-		return strpos($html, 'Current') !== false;
 	}
 
 	/** Full set of values for one rank column, same window as the displayed table. */
