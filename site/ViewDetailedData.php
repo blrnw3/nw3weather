@@ -1593,18 +1593,6 @@ class ViewDetailedData {
 		echo '<div class="detail-grid current-latest-grid">';
 		echo ' <div class="kv-table">';
 		foreach ($data as $r => $row) {
-			if (isset($row['normKind'])) {
-				echo '<div class="' . Html::colcol($r) . ' kv-norm-block">';
-				echo '<div class="kv-norm-stack">';
-				echo '<div>' . $row['label'] . ': ' . $row['value'] . '</div>';
-				echo $this->rainNormLinesHtml(
-					isset($row['actual']) ? $row['actual'] : null,
-					$row['normKind']
-				);
-				echo '</div>';
-				echo '</div>';
-				continue;
-			}
 			echo '<div class="' . Html::colcol($r) . '">';
 			echo '<div>' . $row['label'] . '</div>';
 			$val = $row['value'];
@@ -1618,6 +1606,12 @@ class ViewDetailedData {
 				} else {
 					$val .= '&nbsp; (' . Wx::conv($row['anomaly'], Wx::AbsTemp, 0, 1) . ')';
 				}
+			}
+			if (isset($row['normKind'])) {
+				$val .= $this->rainNormLinesHtml(
+					isset($row['actual']) ? $row['actual'] : null,
+					$row['normKind']
+				);
 			}
 			echo '<div>' . $val . '</div>';
 			echo '</div>';
