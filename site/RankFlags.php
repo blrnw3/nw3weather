@@ -127,6 +127,41 @@ class RankFlags {
 		return isset(self::$certainDir[$var]) ? self::$certainDir[$var] : null;
 	}
 
+	/**
+	 * Completeness (0–1) of a still-running period, same formulas as build().
+	 * $kind: day, month, year, mtd, ytd.
+	 */
+	public static function periodFrac($kind) {
+		$dayLen = max(1, strtotime('tomorrow', Date::$dtstamp) - Date::$dtstamp);
+		$dayFrac = min(1.0, max(0.0, (time() - Date::$dtstamp) / $dayLen));
+		$dom = (int)Date::$dday;
+		$doy = (int)date('z', Date::$dtstamp) + 1;
+		if ($kind === 'day') { return $dayFrac; }
+		if ($kind === 'month') { return ($dom - 1 + $dayFrac) / (int)date('t', Date::$dtstamp); }
+		if ($kind === 'year') { return ($doy - 1 + $dayFrac) / (365 + (int)date('L', Date::$dtstamp)); }
+		if ($kind === 'mtd') { return ($dom > 0) ? (($dom - 1 + $dayFrac) / $dom) : 0.0; }
+		if ($kind === 'ytd') { return ($doy > 0) ? (($doy - 1 + $dayFrac) / $doy) : 0.0; }
+		return 0.0;
+	}
+
+	/**
+	 * True when a still-running period's rank in $dir ('hi' or 'lo') is certain
+	 * (more data cannot undo it) or likely (the period is at least COMPLETE_FRAC
+	 * complete). Same direction rule as build(), without the homepage-only
+	 * "boring low" notability filter.
+	 *
+	 * $scope 'daily' uses monotoneDir($var). 'period' (month, year, MTD, YTD)
+	 * treats totals and counts as certain only in the high direction, and means
+	 * as uncertain until COMPLETE_FRAC.
+	 */
+	public static function partialDirHolds($var, $dir, $frac, $scope) {
+		if ($frac >= self::COMPLETE_FRAC) { return true; }
+		$mono = ($scope === 'daily')
+			? self::monotoneDir($var)
+			: (self::isSum($var) ? 'hi' : null);
+		return ($mono !== null && $mono === $dir);
+	}
+
 	private static function qualifies($st) {
 		return $st['n'] > 1
 			&& ($st['pct'] >= self::PCT || ($st['rank'] <= self::TOP_N && $st['pct'] >= self::TOP_N_PCT));
@@ -192,12 +227,9 @@ class RankFlags {
 		$dom = (int)Date::$dday;
 		$doy = (int)date('z', Date::$dtstamp) + 1;
 		// How complete today / this month / this year are (0–1).
-		// Share of today elapsed, in London time (dtstamp = local midnight; the
-		// day length allows for 23 / 25 h clock-change days).
-		$dayLen = max(1, strtotime('tomorrow', Date::$dtstamp) - Date::$dtstamp);
-		$dayFrac = min(1.0, max(0.0, (time() - Date::$dtstamp) / $dayLen));
-		$monFrac = ($dom - 1 + $dayFrac) / (int)date('t', Date::$dtstamp);
-		$yrFrac = ($doy - 1 + $dayFrac) / (365 + (int)date('L', Date::$dtstamp));
+		$dayFrac = self::periodFrac('day');
+		$monFrac = self::periodFrac('month');
+		$yrFrac = self::periodFrac('year');
 
 		foreach (self::vars() as $var) {
 			$meta = Wx::$daily[$var];
@@ -298,7 +330,7 @@ class RankFlags {
 					'vartype' => $var, 'month' => $curM, 'start_year_rep' => $start,
 					'summary_type' => $st, 'rankLimit' => 25, 'span' => 'mtd',
 				]);
-				$mtdFrac = ($dom > 0) ? (($dom - 1 + $dayFrac) / $dom) : 0.0;
+				$mtdFrac = self::periodFrac('mtd');
 				$mtdDirs = self::partialDirs($isSum ? 'hi' : null, $mtdFrac, self::windMaxBoring($var));
 				if (isset($cur['today']) && count($mtdDirs)) {
 					self::consider($items, $cur['today'], $mtdDirs, $common + [
@@ -325,7 +357,7 @@ class RankFlags {
 					'vartype' => $var, 'start_year_rep' => $start,
 					'summary_type' => $st, 'span' => 'ytd',
 				]);
-				$ytdFrac = ($doy > 0) ? (($doy - 1 + $dayFrac) / $doy) : 0.0;
+				$ytdFrac = self::periodFrac('ytd');
 				$ytdDirs = self::partialDirs($isSum ? 'hi' : null, $ytdFrac, self::windMaxBoring($var));
 				if (isset($cur['today']) && count($ytdDirs)) {
 					self::consider($items, $cur['today'], $ytdDirs, $common + [

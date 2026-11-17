@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/RankFlags.php';
+
 class ViewDetailedData {
 
 	private $group;
@@ -2383,13 +2385,14 @@ class ViewDetailedData {
 
 	/**
 	 * Body of one high or low rank table, then an optional current-period footer.
-	 * Incomplete current periods are omitted from the main top-N (they stay in
-	 * the footer) even when RankFlags would treat the rank as certain or likely.
+	 * An incomplete current period is mixed into the main top-N of a column
+	 * only when RankFlags says that rank is certain or likely; otherwise it
+	 * stays in the footer of the better-ranked paired table.
 	 */
 	private function renderRankTableBody($type, $hilo, $rankNum, $cols, $hiOnly) {
 		$lists = array();
 		foreach ($cols as $idx => $col) {
-			$lists[$idx] = $this->rankDisplayList($type, $col['j'], $hilo, $rankNum);
+			$lists[$idx] = $this->rankDisplayList($type, $col['j'], $hilo, $rankNum, $hiOnly);
 		}
 		for ($i = 1; $i <= $rankNum; $i++) {
 			Html::tr(Html::colcol($i));
@@ -2403,17 +2406,20 @@ class ViewDetailedData {
 			}
 			Html::tr_end();
 		}
-		$this->appendCurrentRankRow($type, $hilo, $cols, $hiOnly);
+		$this->appendCurrentRankRow($type, $hilo, $cols, $hiOnly, $rankNum);
 	}
 
 	/**
-	 * Top-N values/dates for one column, excluding an incomplete current period
-	 * so it is not mixed into the main table.
+	 * Top-N values/dates for one column. An incomplete current period is
+	 * included only when its rank in this table is certain or likely and
+	 * falls inside the top N (and this is the better-ranked paired table).
 	 * @return array [0 => vals, 1 => dates] keyed 1..rankNum
 	 */
-	private function rankDisplayList($type, $j, $hilo, $rankNum) {
+	private function rankDisplayList($type, $j, $hilo, $rankNum, $hiOnly) {
 		$univ = $this->rankValueUniverse($type, $j);
-		$skip = $this->omitCurrentFromMain($type) ? $this->currentPeriodKey($type) : null;
+		$skip = $this->includeCurrentInMain($type, $j, $hilo, $rankNum, $hiOnly)
+			? null
+			: $this->currentPeriodKey($type);
 		$clean = array();
 		foreach ($univ as $k => $v) {
 			if ($skip !== null && (string)$k === (string)$skip) {
@@ -2449,12 +2455,15 @@ class ViewDetailedData {
 	 * where it ranks better (closer to 1), per column. Ties go on the high table.
 	 * Value cells are just the value and ordinal; the row label is the identifier.
 	 */
-	private function appendCurrentRankRow($type, $hilo, $cols, $hiOnly) {
+	private function appendCurrentRankRow($type, $hilo, $cols, $hiOnly, $rankNum) {
 		$cells = array();
 		$need = false;
 		foreach ($cols as $col) {
 			$info = $this->currentPeriodRankInfo($type, $col['j'], $hilo);
 			if ($info !== null && !$this->currentPeriodShowsOnTable($type, $col['j'], $hilo, $hiOnly)) {
+				$info = null;
+			}
+			if ($info !== null && $this->includeCurrentInMain($type, $col['j'], $hilo, $rankNum, $hiOnly)) {
 				$info = null;
 			}
 			$cells[] = $info;
@@ -2552,14 +2561,46 @@ class ViewDetailedData {
 	}
 
 	/**
-	 * Incomplete current year / month / day is kept out of the main top-N.
-	 * RankFlags treats a partial period as certain in its monotone direction,
-	 * or likely in both directions once it is COMPLETE_FRAC (90%) elapsed;
-	 * even then the detail tables show it in the footer, not among the
-	 * completed periods in the main table.
+	 * Put the incomplete current period in this column's main top-N when the
+	 * RankFlags heuristic says the rank is certain or likely, it falls inside
+	 * the displayed N, and this is the better-ranked paired table.
 	 */
-	private function omitCurrentFromMain($type) {
-		return $this->isCurrentPeriodIncomplete($type);
+	private function includeCurrentInMain($type, $j, $hilo, $rankNum, $hiOnly) {
+		if (!$this->isCurrentPeriodIncomplete($type)) {
+			return false;
+		}
+		if (!$this->currentPeriodRankHolds($type, $j, $hilo)) {
+			return false;
+		}
+		$info = $this->currentPeriodRankInfo($type, $j, $hilo);
+		if ($info === null || $info['rank'] > $rankNum) {
+			return false;
+		}
+		return $this->currentPeriodShowsOnTable($type, $j, $hilo, $hiOnly);
+	}
+
+	/**
+	 * Certain in the monotone direction, or likely in both directions once
+	 * RankFlags::COMPLETE_FRAC (90%) of the period has elapsed.
+	 */
+	private function currentPeriodRankHolds($type, $j, $hilo) {
+		$var = $this->rankVarForJ($j);
+		if (!$var) {
+			return false;
+		}
+		$dir = ($hilo === 1) ? 'hi' : 'lo';
+		$toDate = $this->isToDateRanks() && ($type === 'annual' || $type === 'monthlyCM');
+		if ($type === 'daily' || $type === 'dailyCM') {
+			$kind = 'day';
+			$scope = 'daily';
+		} elseif ($type === 'annual') {
+			$kind = $toDate ? 'ytd' : 'year';
+			$scope = 'period';
+		} else {
+			$kind = $toDate ? 'mtd' : 'month';
+			$scope = 'period';
+		}
+		return RankFlags::partialDirHolds($var, $dir, RankFlags::periodFrac($kind), $scope);
 	}
 
 	/** True while today / this month / this year is still running. */
