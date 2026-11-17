@@ -43,29 +43,673 @@ class Forecast {
 		return isset($data['updated']) ? (int)$data['updated'] : 0;
 	}
 
-	/** Prefer Open-Meteo 10-day meteogram cache; fall back to Yr hourly. */
+	/**
+	 * Prefer Yr.no (same source as the wx5 tables) so hourly temps match the
+	 * daily / 6-hour views. Yr shortIntervals cover ~2.5 days; later hours are
+	 * stitched from 6-hour longIntervals (no POP). Fall back to the Open-Meteo
+	 * 10-day hourly cache if Yr is unavailable.
+	 */
 	private static function meteogramHours() {
+		$hourly = self::hourly();
+		if ($hourly) {
+			$hours = $hourly;
+			$lastT = 0;
+			foreach ($hourly as $iv) {
+				if (!empty($iv['t']) && (int)$iv['t'] > $lastT) {
+					$lastT = (int)$iv['t'];
+				}
+			}
+			foreach (self::periods() as $p) {
+				if (empty($p['t']) || (int)$p['t'] <= $lastT) { continue; }
+				$start = (int)$p['t'];
+				$range = (!empty($p['end']) && (int)$p['end'] > $start)
+					? ((int)$p['end'] - $start)
+					: (6 * 3600 * 1000);
+				$temp = isset($p['temp']) ? $p['temp'] : null;
+				$hours[] = array(
+					't' => $start,
+					'temp' => $temp,
+					'dew' => isset($p['dew']) ? $p['dew'] : null,
+					'precip' => isset($p['precip']) ? $p['precip'] : null,
+					'precipRange' => $range,
+					'cloud' => isset($p['cloud']) ? $p['cloud'] : null,
+					'wind' => isset($p['wind']) ? $p['wind'] : null,
+					'gust' => isset($p['gust']) ? $p['gust'] : null,
+				);
+			}
+			// Densify the 6h tail to hourly with monotone interpolation so the
+			// line stays smooth (no min/max sawtooth). Daily table extremes
+			// are shown separately as a range band.
+			$hours = self::interpolateSixHourTail($hours, $lastT);
+			$hours = self::mergeOpenMeteoGaps($hours);
+			return array($hours, self::updated(), 'yr', self::meteogramIcons(self::periods()));
+		}
 		$path = V5_CACHE_ROOT . 'forecast_meteogram.json';
 		if (is_file($path)) {
 			$json = json_decode(file_get_contents($path), true);
 			if (is_array($json) && !empty($json['hourly']) && is_array($json['hourly'])) {
-				return array($json['hourly'], isset($json['updated']) ? (int)$json['updated'] : 0, 'open-meteo');
+				$omHours = $json['hourly'];
+				return array(
+					$omHours,
+					isset($json['updated']) ? (int)$json['updated'] : 0,
+					'open-meteo',
+					self::meteogramIcons(array(), $omHours)
+				);
 			}
 		}
-		return array(self::hourly(), self::updated(), 'yr');
+		return array(array(), 0, 'yr', array());
+	}
+
+	/** 6-hour weather icons from Yr longIntervals (same set as the period table). */
+	private static function iconsFromPeriods($periods) {
+		$out = array();
+		$img = Site::IMG_ROOT;
+		$step = 6 * 3600 * 1000;
+		foreach ($periods as $p) {
+			if (empty($p['t'])) { continue; }
+			$start = (int)$p['t'];
+			$end = !empty($p['end']) ? (int)$p['end'] : ($start + $step);
+			$icon = isset($p['icon']) ? $p['icon'] : 'cloudy';
+			$slot = self::londonSlotStart((int)(($start + $end) / 2), 6);
+			$t = $slot + (int)($step / 2);
+			// One chip per 6h clock slot so a leftover first period cannot sit
+			// 5h from the next mid-point and overlap its neighbour.
+			$out[$slot] = array(
+				't' => $t,
+				'start' => $start,
+				'end' => $end,
+				'icon' => $img . $icon . '_lg.png',
+				'desc' => isset($p['desc']) ? $p['desc'] : '',
+			);
+		}
+		ksort($out);
+		return array_values($out);
+	}
+
+	/**
+	 * 6-hour icons from hourly points that already carry an icon (Open-Meteo
+	 * fallback, once cron has stored weather-code mappings).
+	 */
+	private static function iconsFromHours($hours) {
+		$buckets = array();
+		$img = Site::IMG_ROOT;
+		$step = 6 * 3600 * 1000;
+		foreach ($hours as $iv) {
+			if (empty($iv['t']) || empty($iv['icon'])) { continue; }
+			$t = (int)$iv['t'];
+			$key = (int)(floor($t / $step) * $step);
+			if (!isset($buckets[$key])) {
+				$buckets[$key] = array('icon' => $iv['icon'], 'desc' => isset($iv['desc']) ? $iv['desc'] : '', 'n' => 1);
+			} else {
+				$buckets[$key]['n']++;
+				// Prefer a non-generic icon if the mid-slot one was cloudy/clear.
+			}
+		}
+		if (!$buckets) { return array(); }
+		$out = array();
+		foreach ($buckets as $start => $b) {
+			$out[] = array(
+				't' => $start + (int)($step / 2),
+				'start' => $start,
+				'end' => $start + $step,
+				'icon' => $img . $b['icon'] . '_lg.png',
+				'desc' => $b['desc'],
+			);
+		}
+		return $out;
+	}
+
+	/** Prefer more significant weather when collapsing hours into a period icon. */
+	private static function iconRank($icon) {
+		$order = array(
+			'tstorms_showers' => 90,
+			'tstorms' => 85,
+			'snow_showers' => 80,
+			'snow' => 75,
+			'rain_showers' => 70,
+			'rain' => 65,
+			'fog' => 40,
+			'partlycloudy' => 30,
+			'cloudy' => 20,
+			'clear' => 10,
+		);
+		return isset($order[$icon]) ? $order[$icon] : 0;
+	}
+
+	/** London-local 3-hour slot start (ms) for a UTC epoch-ms timestamp. */
+	private static function londonSlotStart($tMs, $hours = 3) {
+		$dt = new DateTime('@' . (int)($tMs / 1000));
+		$dt->setTimezone(new DateTimeZone('Europe/London'));
+		$hour = (int)$dt->format('G');
+		$step = max(1, (int)$hours);
+		$dt->setTime($hour - ($hour % $step), 0, 0);
+		return $dt->getTimestamp() * 1000;
+	}
+
+	/** Open-Meteo hourly cache, keyed by timestamp (ms). Units already mph / °C. */
+	private static function openMeteoHoursByT() {
+		static $map = null;
+		if ($map !== null) { return $map; }
+		$map = array();
+		$path = V5_CACHE_ROOT . 'forecast_meteogram.json';
+		if (!is_file($path)) { return $map; }
+		$json = json_decode(file_get_contents($path), true);
+		if (!is_array($json) || empty($json['hourly']) || !is_array($json['hourly'])) {
+			return $map;
+		}
+		foreach ($json['hourly'] as $iv) {
+			if (!empty($iv['t'])) { $map[(int)$iv['t']] = $iv; }
+		}
+		return $map;
+	}
+
+	/**
+	 * Fill missing POP / gust from Open-Meteo where Yr (or interpolation) has none.
+	 * Yr's public location forecast currently has no probability or gust fields.
+	 */
+	private static function mergeOpenMeteoGaps($hours) {
+		$om = self::openMeteoHoursByT();
+		if (!$om) { return $hours; }
+		foreach ($hours as &$iv) {
+			if (empty($iv['t'])) { continue; }
+			$t = (int)$iv['t'];
+			$src = isset($om[$t]) ? $om[$t] : null;
+			if (!$src) { continue; }
+			if ((!isset($iv['pop']) || $iv['pop'] === null) && isset($src['pop']) && $src['pop'] !== null) {
+				$iv['pop'] = $src['pop'];
+			}
+			if ((!isset($iv['gust']) || $iv['gust'] === null) && isset($src['gust']) && $src['gust'] !== null) {
+				$iv['gust'] = $src['gust'];
+			}
+			if ((!isset($iv['windDir']) || $iv['windDir'] === null) && isset($src['windDir']) && $src['windDir'] !== null) {
+				$iv['windDir'] = $src['windDir'];
+			}
+		}
+		unset($iv);
+		return $hours;
+	}
+
+	/**
+	 * 3-hour periods from Yr shortIntervals, from the current slot up to $untilMs
+	 * (default: +36 hours). Used by the period table and near-term meteogram icons.
+	 */
+	public static function threeHourPeriods($untilMs = null) {
+		$hourly = self::hourly();
+		if (!$hourly) { return array(); }
+		$now = (int) floor(microtime(true) * 1000);
+		if ($untilMs === null) { $untilMs = $now + 36 * 3600 * 1000; }
+		$buckets = array();
+		foreach ($hourly as $iv) {
+			if (empty($iv['t'])) { continue; }
+			$t = (int)$iv['t'];
+			if ($t >= $untilMs) { continue; }
+			$start = self::londonSlotStart($t, 3);
+			$end = $start + 3 * 3600 * 1000;
+			if ($end <= $now) { continue; }
+			if (!isset($buckets[$start])) {
+				$buckets[$start] = array('t' => $start, 'end' => $end, 'hours' => array());
+			}
+			$buckets[$start]['hours'][] = $iv;
+		}
+		ksort($buckets);
+		$out = array();
+		foreach ($buckets as $b) {
+			$out[] = self::summariseHourBucket($b);
+		}
+		return $out;
+	}
+
+	private static function summariseHourBucket($b) {
+		$hours = $b['hours'];
+		$temp = $tmin = $tmax = $precip = null;
+		$windSum = 0.0;
+		$windN = 0;
+		$dirX = 0.0;
+		$dirY = 0.0;
+		$dirN = 0;
+		$bestIcon = 'cloudy';
+		$bestDesc = '';
+		$bestRank = -1;
+		foreach ($hours as $iv) {
+			if (isset($iv['temp']) && $iv['temp'] !== null) {
+				$v = (float)$iv['temp'];
+				$temp = $v;
+				$tmin = ($tmin === null) ? $v : min($tmin, $v);
+				$tmax = ($tmax === null) ? $v : max($tmax, $v);
+			}
+			if (isset($iv['precip']) && $iv['precip'] !== null) {
+				$precip = ($precip === null ? 0.0 : $precip) + (float)$iv['precip'];
+			}
+			if (isset($iv['wind']) && $iv['wind'] !== null) {
+				$windSum += (float)$iv['wind'];
+				$windN++;
+			}
+			if (isset($iv['windDir']) && $iv['windDir'] !== null) {
+				$rad = deg2rad((float)$iv['windDir']);
+				$dirX += cos($rad);
+				$dirY += sin($rad);
+				$dirN++;
+			}
+			$icon = isset($iv['icon']) ? $iv['icon'] : 'cloudy';
+			$rank = self::iconRank($icon);
+			if ($rank > $bestRank) {
+				$bestRank = $rank;
+				$bestIcon = $icon;
+				$bestDesc = isset($iv['desc']) ? $iv['desc'] : '';
+			}
+		}
+		$windDir = null;
+		if ($dirN && ($dirX != 0.0 || $dirY != 0.0)) {
+			$windDir = (int)nw3_round(fmod(rad2deg(atan2($dirY, $dirX)) + 360.0, 360.0));
+		}
+		$tz = new DateTimeZone('Europe/London');
+		$labelDt = new DateTime('@' . (int)($b['t'] / 1000));
+		$labelDt->setTimezone($tz);
+		return array(
+			't' => $b['t'],
+			'end' => $b['end'],
+			'label' => $labelDt->format('D H:i'),
+			'temp' => $temp,
+			'tmin' => $tmin,
+			'tmax' => $tmax,
+			'precip' => ($precip !== null) ? nw3_round($precip, 2) : null,
+			'wind' => $windN ? nw3_round($windSum / $windN, 1) : null,
+			'windDir' => $windDir,
+			'icon' => $bestIcon,
+			'desc' => $bestDesc,
+		);
+	}
+
+	/**
+	 * 6-hour weather icons along the meteogram. Near-term 3-hour detail is in
+	 * the period table — 3h chips overlap on a shared 10-day axis.
+	 */
+	private static function meteogramIcons($periods, $omHours = null) {
+		$img = Site::IMG_ROOT;
+		$now = (int) floor(microtime(true) * 1000);
+		$out = array();
+		$step = 6 * 3600 * 1000;
+		if ($periods) {
+			foreach ($periods as $p) {
+				if (empty($p['t'])) { continue; }
+				$start = (int)$p['t'];
+				$end = !empty($p['end']) ? (int)$p['end'] : ($start + $step);
+				if ($end <= $now) { continue; }
+				$icon = isset($p['icon']) ? $p['icon'] : 'cloudy';
+				// Place every chip on a 6h London clock mid-point (03/09/15/21)
+				// so a current leftover period (e.g. 02–06) is not 5h from the
+				// next 6h icon and the chips do not overlap.
+				$slot = self::londonSlotStart((int)(($start + $end) / 2), 6);
+				$t = $slot + (int)($step / 2);
+				$out[$slot] = array(
+					't' => $t,
+					'start' => $start,
+					'end' => $end,
+					'icon' => $img . $icon . '_lg.png',
+					'desc' => isset($p['desc']) ? $p['desc'] : '',
+					'step' => 6,
+				);
+			}
+			ksort($out);
+			$out = array_values($out);
+		} elseif ($omHours) {
+			foreach (self::hoursToPeriodBuckets($omHours, 6, $now, null) as $p) {
+				$out[] = array(
+					't' => (int)(($p['t'] + $p['end']) / 2),
+					'start' => $p['t'],
+					'end' => $p['end'],
+					'icon' => $img . $p['icon'] . '_lg.png',
+					'desc' => isset($p['desc']) ? $p['desc'] : '',
+					'step' => 6,
+				);
+			}
+		}
+		return $out;
+	}
+
+	private static function hoursToPeriodBuckets($hours, $stepHours, $fromMs, $untilMs) {
+		$step = $stepHours * 3600 * 1000;
+		$buckets = array();
+		foreach ($hours as $iv) {
+			if (empty($iv['t']) || empty($iv['icon'])) { continue; }
+			$t = (int)$iv['t'];
+			if ($untilMs !== null && $t >= $untilMs) { continue; }
+			$start = self::londonSlotStart($t, $stepHours);
+			$end = $start + $step;
+			if ($end <= $fromMs) { continue; }
+			if ($untilMs !== null && $start >= $untilMs) { continue; }
+			if (!isset($buckets[$start])) {
+				$buckets[$start] = array('t' => $start, 'end' => $end, 'hours' => array());
+			}
+			$buckets[$start]['hours'][] = $iv;
+		}
+		ksort($buckets);
+		$out = array();
+		foreach ($buckets as $b) {
+			$out[] = self::summariseHourBucket($b);
+		}
+		return $out;
+	}
+
+	/**
+	 * Per-day hi/lo, description, rain and wind for the meteogram header/footer,
+	 * using the same Yr dayIntervals values as the (removed) daily table.
+	 */
+	private static function dailySummaries() {
+		$om = self::openMeteoHoursByT();
+		$samples = array();
+		foreach (array_merge(self::hourly(), self::periods()) as $iv) {
+			if (!empty($iv['t'])) { $samples[(int)$iv['t']] = $iv; }
+		}
+		foreach ($om as $t => $iv) {
+			if (!isset($samples[$t])) {
+				$samples[$t] = $iv;
+			} else {
+				if ((!isset($samples[$t]['gust']) || $samples[$t]['gust'] === null)
+					&& isset($iv['gust']) && $iv['gust'] !== null) {
+					$samples[$t]['gust'] = $iv['gust'];
+				}
+				if ((!isset($samples[$t]['windDir']) || $samples[$t]['windDir'] === null)
+					&& isset($iv['windDir']) && $iv['windDir'] !== null) {
+					$samples[$t]['windDir'] = $iv['windDir'];
+				}
+			}
+		}
+
+		$out = array();
+		foreach (self::days() as $d) {
+			if (empty($d['date'])) { continue; }
+			$startTs = strtotime($d['date'] . ' 00:00:00');
+			if ($startTs === false) { continue; }
+			$start = $startTs * 1000;
+			$end = $start + 24 * 3600 * 1000;
+			$mid = $start + 12 * 3600 * 1000;
+
+			$dirX = 0.0;
+			$dirY = 0.0;
+			$dirN = 0;
+			$gustMax = null;
+			$windSum = 0.0;
+			$windN = 0;
+			foreach ($samples as $t => $iv) {
+				if ($t < $start || $t >= $end) { continue; }
+				if (isset($iv['wind']) && $iv['wind'] !== null) {
+					$windSum += (float)$iv['wind'];
+					$windN++;
+				}
+				if (isset($iv['windDir']) && $iv['windDir'] !== null) {
+					$rad = deg2rad((float)$iv['windDir']);
+					$dirX += cos($rad);
+					$dirY += sin($rad);
+					$dirN++;
+				}
+				if (isset($iv['gust']) && $iv['gust'] !== null) {
+					$g = (float)$iv['gust'];
+					$gustMax = ($gustMax === null) ? $g : max($gustMax, $g);
+				}
+			}
+
+			$mean = null;
+			if (isset($d['windMin'], $d['windMax']) && $d['windMin'] !== null && $d['windMax'] !== null) {
+				$mean = ((float)$d['windMin'] + (float)$d['windMax']) / 2.0;
+			} elseif (isset($d['windMax']) && $d['windMax'] !== null) {
+				$mean = (float)$d['windMax'];
+			} elseif ($windN) {
+				$mean = $windSum / $windN;
+			}
+			$dirTxt = '';
+			if ($dirN && ($dirX != 0.0 || $dirY != 0.0)) {
+				$deg = fmod(rad2deg(atan2($dirY, $dirX)) + 360.0, 360.0);
+				$dirTxt = Wx::degname($deg);
+			}
+			$windTxt = '—';
+			$gustTxt = '';
+			if ($mean !== null) {
+				$windTxt = trim($dirTxt . ' ' . Wx::conv($mean, Wx::Wind, true, false, -1));
+				if ($gustMax !== null) {
+					$gustTxt = 'gust ' . Wx::conv($gustMax, Wx::Wind, true, false, -1);
+				}
+			} elseif ($dirTxt !== '') {
+				$windTxt = $dirTxt;
+			}
+
+			$precip = isset($d['precip']) ? $d['precip'] : null;
+			$precipTxt = ($precip !== null && (float)$precip > 0)
+				? Wx::conv($precip, Wx::Rain, true)
+				: '—';
+			$hi = (isset($d['tmax']) && $d['tmax'] !== null)
+				? Wx::conv($d['tmax'], Wx::Temperature, false, false, -1) : '—';
+			$lo = (isset($d['tmin']) && $d['tmin'] !== null)
+				? Wx::conv($d['tmin'], Wx::Temperature, false, false, -1) : '—';
+			$deg = '°';
+
+			$out[] = array(
+				't' => $mid,
+				'start' => $start,
+				'end' => $end,
+				'label' => isset($d['label']) ? $d['label'] : '',
+				'desc' => isset($d['desc']) ? htmlspecialchars($d['desc']) : '',
+				'hi' => $hi,
+				'lo' => $lo,
+				'hiLo' => '<span class="fc-mg-hi">' . htmlspecialchars($hi) . $deg
+					. '</span><span class="fc-mg-lo">' . htmlspecialchars($lo) . $deg . '</span>',
+				'precip' => $precipTxt,
+				'wind' => $windTxt,
+				'gust' => $gustTxt,
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * Fill the 6-hour tail with hourly points via Fritsch–Carlson monotone
+	 * cubic interpolation of temp/dew/wind/cloud. Does not invent new local
+	 * extrema between the 6h instantaneous values. Precip stays as 6h totals.
+	 */
+	private static function interpolateSixHourTail($hours, $lastT) {
+		if ($lastT <= 0 || !$hours) { return $hours; }
+		$head = array();
+		$tail = array();
+		$anchor = null;
+		foreach ($hours as $iv) {
+			if (empty($iv['t'])) { continue; }
+			$t = (int)$iv['t'];
+			if ($t < $lastT) {
+				$head[] = $iv;
+			} elseif ($t === $lastT) {
+				$anchor = $iv;
+				$head[] = $iv;
+			} else {
+				$tail[] = $iv;
+			}
+		}
+		if (!$anchor || !$tail) { return $hours; }
+		$step = 3600 * 1000;
+		$fields = array('temp', 'dew', 'wind', 'cloud');
+		$knots = array();
+		foreach (array_merge(array($anchor), $tail) as $iv) {
+			$knots[] = $iv;
+		}
+		$byT = array();
+		foreach ($tail as $iv) {
+			$byT[(int)$iv['t']] = $iv;
+		}
+		$end = (int)$tail[count($tail) - 1]['t'];
+		$out = $head;
+		for ($t = $lastT + $step; $t <= $end; $t += $step) {
+			$row = array('t' => $t);
+			foreach ($fields as $f) {
+				$pts = array();
+				foreach ($knots as $iv) {
+					if (isset($iv[$f]) && $iv[$f] !== null) {
+						$pts[] = array((int)$iv['t'], (float)$iv[$f]);
+					}
+				}
+				$val = self::monotoneAt($pts, $t);
+				if ($val !== null) { $row[$f] = nw3_round($val, ($f === 'cloud') ? 0 : 1); }
+			}
+			if (isset($byT[$t])) {
+				$src = $byT[$t];
+				foreach (array('precip', 'precipRange', 'gust', 'icon', 'desc') as $k) {
+					if (isset($src[$k])) { $row[$k] = $src[$k]; }
+				}
+			}
+			$out[] = $row;
+		}
+		return $out;
+	}
+
+	/**
+	 * Evaluate a Fritsch–Carlson monotone cubic at $x. $pts is [[x,y], ...]
+	 * sorted by x. Returns null if there are fewer than 2 points.
+	 */
+	private static function monotoneAt($pts, $x) {
+		$n = count($pts);
+		if ($n === 0) { return null; }
+		if ($n === 1) { return $pts[0][1]; }
+		if ($x <= $pts[0][0]) { return $pts[0][1]; }
+		if ($x >= $pts[$n - 1][0]) { return $pts[$n - 1][1]; }
+		$h = $delta = $m = array();
+		for ($i = 0; $i < $n - 1; $i++) {
+			$h[$i] = $pts[$i + 1][0] - $pts[$i][0];
+			if ($h[$i] == 0) { $delta[$i] = 0.0; }
+			else { $delta[$i] = ($pts[$i + 1][1] - $pts[$i][1]) / $h[$i]; }
+		}
+		$m[0] = $delta[0];
+		$m[$n - 1] = $delta[$n - 2];
+		for ($i = 1; $i < $n - 1; $i++) {
+			if ($delta[$i - 1] * $delta[$i] <= 0) {
+				$m[$i] = 0.0;
+			} else {
+				$w1 = 2 * $h[$i] + $h[$i - 1];
+				$w2 = $h[$i] + 2 * $h[$i - 1];
+				$m[$i] = ($w1 + $w2) / ($w1 / $delta[$i - 1] + $w2 / $delta[$i]);
+			}
+		}
+		$i = 0;
+		while ($i < $n - 2 && $x > $pts[$i + 1][0]) { $i++; }
+		$hi = $h[$i];
+		if ($hi == 0) { return $pts[$i][1]; }
+		$t = ($x - $pts[$i][0]) / $hi;
+		$t2 = $t * $t;
+		$t3 = $t2 * $t;
+		$h00 = 2 * $t3 - 3 * $t2 + 1;
+		$h10 = $t3 - 2 * $t2 + $t;
+		$h01 = -2 * $t3 + 3 * $t2;
+		$h11 = $t3 - $t2;
+		return $h00 * $pts[$i][1] + $h10 * $hi * $m[$i] + $h01 * $pts[$i + 1][1] + $h11 * $hi * $m[$i + 1];
+	}
+
+	/**
+	 * Daily tmin/tmax band from Yr dayIntervals for every day in the meteogram
+	 * (including days that also have hourly points).
+	 */
+	private static function dailyTempRange() {
+		$out = array();
+		foreach (self::days() as $d) {
+			if (empty($d['date']) || !isset($d['tmin']) || !isset($d['tmax'])
+				|| $d['tmin'] === null || $d['tmax'] === null) {
+				continue;
+			}
+			$start = strtotime($d['date'] . ' 00:00:00');
+			if ($start === false) { continue; }
+			$startMs = $start * 1000;
+			$endMs = $startMs + 24 * 3600 * 1000 - 1;
+			$lo = Wx::convNum($d['tmin'], Wx::Temperature, 1);
+			$hi = Wx::convNum($d['tmax'], Wx::Temperature, 1);
+			if ($out) { $out[] = null; }
+			$out[] = array($startMs, $lo, $hi);
+			$out[] = array($endMs, $lo, $hi);
+		}
+		return $out;
+	}
+
+	/**
+	 * meteogram can shade elapsed time and draw a now-line with real context.
+	 * The current (incomplete) hour is omitted so it does not collide with the
+	 * first forecast step.
+	 */
+	private static function todayObservedHours() {
+		$path = ROOT . 'logfiles/daily/todaylog.txt';
+		if (!is_file($path)) {
+			$path = ROOT . 'logfiles/daily/' . date('Ymd') . 'log.txt';
+		}
+		if (!is_file($path)) { return array(); }
+		$today = (int)date('j');
+		$buckets = array();
+		$lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+		if ($lines === false) { return array(); }
+		foreach ($lines as $line) {
+			$p = explode(',', $line);
+			if (count($p) < 10) { continue; }
+			if ((int)$p[2] !== $today) { continue; }
+			if (!is_numeric($p[6])) { continue; }
+			$h = (int)$p[0];
+			if (!isset($buckets[$h])) {
+				$buckets[$h] = array('t' => 0.0, 'd' => 0.0, 'w' => 0.0, 'n' => 0, 'nd' => 0, 'nw' => 0);
+			}
+			$buckets[$h]['t'] += (float)$p[6];
+			$buckets[$h]['n']++;
+			if (is_numeric($p[9])) {
+				$buckets[$h]['d'] += (float)$p[9];
+				$buckets[$h]['nd']++;
+			}
+			if (is_numeric($p[3])) {
+				$buckets[$h]['w'] += (float)$p[3];
+				$buckets[$h]['nw']++;
+			}
+		}
+		$currentHour = (int)date('G');
+		$dayStamp = date('Y-m-d');
+		$out = array();
+		ksort($buckets);
+		foreach ($buckets as $h => $b) {
+			if ((int)$h === $currentHour) { continue; }
+			if ($b['n'] < 10) { continue; }
+			$ts = strtotime($dayStamp . sprintf(' %02d:00:00', $h));
+			if ($ts === false) { continue; }
+			$iv = array('t' => $ts * 1000, 'temp' => nw3_round($b['t'] / $b['n'], 1));
+			if ($b['nd'] > 0) {
+				$iv['dew'] = nw3_round($b['d'] / $b['nd'], 1);
+			}
+			if ($b['nw'] > 0) {
+				$iv['wind'] = nw3_round($b['w'] / $b['nw'], 1);
+			}
+			$out[] = $iv;
+		}
+		return $out;
+	}
+
+	/** Prepend today's observed hours that fall before the first forecast step. */
+	private static function prependObserved($hours) {
+		$obs = self::todayObservedHours();
+		if (!$obs) { return $hours; }
+		$first = null;
+		foreach ($hours as $iv) {
+			if (!empty($iv['t'])) { $first = (int)$iv['t']; break; }
+		}
+		if ($first === null) { return $obs; }
+		$head = array();
+		foreach ($obs as $iv) {
+			if ((int)$iv['t'] < $first) { $head[] = $iv; }
+		}
+		return $head ? array_merge($head, $hours) : $hours;
 	}
 
 	/**
 	 * Unit-converted series for the stacked 10-day meteogram.
-	 * Open-Meteo supplies 10-day temp/dew/precip/POP/cloud/wind; Yr fallback has no POP.
+	 * Yr is the primary source (aligned with the daily / period views). Open-Meteo
+	 * fills precipitation probability and gusts when Yr does not provide them, and
+	 * is the fallback if the Yr cache is missing.
 	 */
 	public static function meteogramSeries() {
 		$tempU = Wx::getUnitsText(Wx::Temperature);
 		$rainU = Wx::getUnitsText(Wx::Rain);
 		$windU = Wx::getUnitsText(Wx::Wind);
-		list($hours, $updated, $src) = self::meteogramHours();
+		list($hours, $updated, $src, $icons) = self::meteogramHours();
+		$hours = self::prependObserved($hours);
 
-		$temp = $dew = $precip = $pop = $cloud = $wind = $gust = array();
+		$temp = $dew = $precip = $precip6h = $pop = $cloud = $wind = $gust = array();
 		foreach ($hours as $iv) {
 			if (empty($iv['t'])) { continue; }
 			$t = (int)$iv['t'];
@@ -76,7 +720,14 @@ class Forecast {
 				$dew[] = array($t, Wx::convNum($iv['dew'], Wx::Temperature, 1));
 			}
 			if (isset($iv['precip']) && $iv['precip'] !== null) {
-				$precip[] = array($t, Wx::convNum($iv['precip'], Wx::Rain, 2));
+				$val = Wx::convNum($iv['precip'], Wx::Rain, 2);
+				if ($val === null || (float)$val <= 0) { /* skip dry hours: zero columns render as hairlines */ }
+				elseif (!empty($iv['precipRange']) && (int)$iv['precipRange'] >= 2 * 3600 * 1000) {
+					$range = (int)$iv['precipRange'];
+					$precip6h[] = array($t + (int)($range / 2), $val);
+				} else {
+					$precip[] = array($t + 30 * 60 * 1000, $val);
+				}
 			}
 			if (isset($iv['pop']) && $iv['pop'] !== null) {
 				$pop[] = array($t, (float)$iv['pop']);
@@ -107,11 +758,17 @@ class Forecast {
 			),
 			'temp' => $temp,
 			'dew' => $dew,
+			'tempRange' => ($src === 'yr') ? self::dailyTempRange() : array(),
 			'precip' => $precip,
+			'precip6h' => $precip6h,
 			'pop' => $pop,
 			'cloud' => $cloud,
 			'wind' => $wind,
 			'gust' => $gust,
+			'icons' => $icons,
+			'daily' => ($src === 'yr') ? self::dailySummaries() : array(),
+			'popSource' => ($src === 'yr' && $pop) ? 'open-meteo' : $src,
+			'gustSource' => ($src === 'yr' && $gust) ? 'open-meteo' : $src,
 		);
 	}
 
@@ -466,15 +1123,20 @@ class Forecast {
 			. '.</p>';
 	}
 
-	/** Near-term 6-hour period table (next ~2 days of longIntervals). */
-	public static function renderPeriodTable($limit = 8) {
-		$periods = array_slice(self::periods(), 0, (int)$limit);
+	/** Near-term 3-hour period table (next 36 hours from shortIntervals). */
+	public static function renderPeriodTable($limit = null) {
+		$periods = self::threeHourPeriods();
+		if (!count($periods)) {
+			$fallback = self::periods();
+			if ($limit !== null) { $fallback = array_slice($fallback, 0, (int)$limit); }
+			$periods = $fallback;
+		}
 		if (!count($periods)) { return; }
 
 		echo '<div class="fc-table-wrap">';
 		echo '<table class="table1 fc-table" width="100%" cellpadding="3" cellspacing="0">';
 		echo '<tr class="table-head"><td class="td12" style="padding:0.5em" colspan="5">'
-			. 'Next periods (6-hourly)</td></tr>';
+			. 'Next 36 hours (3-hourly)</td></tr>';
 		echo '<tr class="table-top">';
 		echo '<td class="td4">Period</td><td class="td4" colspan="2">Conditions</td>'
 			. '<td class="td4">Temp</td><td class="td4">Rain</td>';

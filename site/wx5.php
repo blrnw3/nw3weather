@@ -25,14 +25,21 @@ require Site::$rareTags;
 <div id="widgets" class="fc-widgets">
 	<div class="fc-meteogram-wrap">
 		<h2>Hampstead 10-day meteogram</h2>
-		<p class="hm-break-note">Temperature &amp; dew point, precipitation amount &amp; chance, cloud cover and wind. Data: Open-Meteo (falls back to Yr.no if needed).</p>
-		<?php Charts::meteogram(null, ['height' => 620]); ?>
+		<?php
+		$mg = Forecast::meteogramSeries();
+		$mgNote = ($mg['source'] === 'yr')
+			? 'Temperature &amp; dew point, precipitation amount &amp; chance, cloud cover and wind. Data: Yr.no / MET Norway; precip chance and gusts: Open-Meteo.'
+			: 'Temperature &amp; dew point, precipitation amount &amp; chance, cloud cover and wind. Data: Open-Meteo.';
+		?>
+		<p class="hm-break-note"><?php echo $mgNote; ?></p>
+		<div class="fc-mg-scroll">
+			<?php Charts::meteogram($mg, ['height' => 860]); ?>
+		</div>
 	</div>
 
 	<div>
 		<h2>Forecast for NW3</h2>
-		<?php Forecast::renderDailyTable(); ?>
-		<?php Forecast::renderPeriodTable(8); ?>
+		<?php Forecast::renderPeriodTable(); ?>
 	</div>
 
 	<?php Forecast::renderPressureChart(); ?>

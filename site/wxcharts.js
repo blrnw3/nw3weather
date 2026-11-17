@@ -1305,7 +1305,7 @@
 		var cCloud = cols.cloud || '#5a7a9a';
 		var cWind = cols.wind || '#c01717';
 		var cGust = cols.gust || '#c23b86';
-		var src = data.source || 'open-meteo';
+		var src = data.source || 'yr';
 		var credit = (src === 'yr')
 			? { href: 'https://www.yr.no/en/forecast/graph/2-2647553/', text: 'Data: Yr.no / MET Norway' }
 			: { href: 'https://open-meteo.com/', text: 'Data: Open-Meteo' };
@@ -1314,22 +1314,29 @@
 		if (!el) { return; }
 		el.className = (el.className || '').replace(/\bwxchart-loading\b/g, '') + ' fc-meteogram-stack';
 		el.style.minHeight = '';
-		el.innerHTML =
-			'<div class="fc-mg-panel" id="' + containerId + '-temp"></div>' +
-			'<div class="fc-mg-panel" id="' + containerId + '-precip"></div>' +
-			'<div class="fc-mg-panel" id="' + containerId + '-cloud"></div>' +
-			'<div class="fc-mg-panel" id="' + containerId + '-wind"></div>';
 
 		// Identical x-range and tick positions so stacked panels stay time-aligned.
 		var xMin = Infinity, xMax = -Infinity;
-		[data.temp, data.dew, data.precip, data.pop, data.cloud, data.wind, data.gust].forEach(function (series) {
+		[data.temp, data.dew, data.precip, data.precip6h, data.pop, data.cloud, data.wind, data.gust, data.daily].forEach(function (series) {
 			(series || []).forEach(function (pt) {
-				if (!pt || pt[0] == null) { return; }
-				if (pt[0] < xMin) { xMin = pt[0]; }
-				if (pt[0] > xMax) { xMax = pt[0]; }
+				if (!pt) { return; }
+				var x = (pt.x != null) ? pt.x : pt[0];
+				if (x == null) { return; }
+				if (x < xMin) { xMin = x; }
+				if (x > xMax) { xMax = x; }
 			});
 		});
 		if (!isFinite(xMin)) { xMin = undefined; xMax = undefined; }
+		// Keep "now" and today's column on the axis even if the first
+		// forecast step is slightly ahead of the clock (or observed hours
+		// have not been prepended yet).
+		if (isFinite(xMin) && isFinite(xMax)) {
+			var nowMs = Date.now();
+			if (data.daily && data.daily[0] && data.daily[0].start != null && data.daily[0].start < xMax) {
+				xMin = Math.min(xMin, data.daily[0].start);
+			}
+			if (nowMs < xMax) { xMin = Math.min(xMin, nowMs); }
+		}
 		var dayMs = 24 * 3600 * 1000;
 		var tickPositions;
 		if (isFinite(xMin) && isFinite(xMax)) {
@@ -1339,18 +1346,100 @@
 			if (!tickPositions.length) { tickPositions = [xMin]; }
 		}
 
+		// Size 6h icon chips so they do not overlap. Grow the scrollable
+		// min-width if the natural desktop plot would pack them closer than
+		// the target chip plus a 2px gap.
+		var sixH = 6 * 3600 * 1000;
+		var nSlots = (isFinite(xMin) && isFinite(xMax) && xMax > xMin) ? ((xMax - xMin) / sixH) : 36;
+		var CHIP_GAP = 2;
+		var TARGET_CHIP = 22;
+		var neededPlot = Math.ceil(nSlots * (TARGET_CHIP + CHIP_GAP));
+		var MG_MIN_WIDTH = Math.max(960, neededPlot + 56 + 48);
+		el.style.minWidth = MG_MIN_WIDTH + 'px';
+		var plotWidth = Math.max(200, (el.clientWidth || MG_MIN_WIDTH) - 56 - 48);
+		var spacing = nSlots > 0 ? (plotWidth / nSlots) : TARGET_CHIP;
+		var chipSize = Math.max(18, Math.min(32, Math.floor(spacing - CHIP_GAP)));
+		var iconSize = Math.max(14, chipSize - 6);
+		function londonHour(ms) {
+			return parseInt(Highcharts.dateFormat('%H', ms), 10);
+		}
+		function startHour(ic) {
+			return londonHour(ic.start != null ? ic.start : ic.t);
+		}
+		var iconList = data.icons || [];
+		var hasIcons = iconList.length > 0;
+		var dailyList = data.daily || [];
+		var hasDaily = dailyList.length > 0;
+
+		el.innerHTML =
+			(hasDaily ? '<div class="fc-mg-panel" id="' + containerId + '-hi"></div>' : '') +
+			(hasDaily ? '<div class="fc-mg-panel" id="' + containerId + '-desc"></div>' : '') +
+			(hasIcons ? '<div class="fc-mg-panel fc-mg-icons" id="' + containerId + '-icons"></div>' : '') +
+			(hasDaily ? '<div class="fc-mg-panel" id="' + containerId + '-rain"></div>' : '') +
+			(hasDaily ? '<div class="fc-mg-panel" id="' + containerId + '-daywind"></div>' : '') +
+			'<div class="fc-mg-panel" id="' + containerId + '-temp"></div>' +
+			'<div class="fc-mg-panel" id="' + containerId + '-precip"></div>' +
+			'<div class="fc-mg-panel" id="' + containerId + '-cloud"></div>' +
+			'<div class="fc-mg-panel" id="' + containerId + '-wind"></div>';
+
+		function nowAnnot(withLabel) {
+			var now = Date.now();
+			var bands = [];
+			if (isFinite(xMin) && now > xMin) {
+				bands.push({
+					id: 'fc-elapsed',
+					from: xMin,
+					to: isFinite(xMax) ? Math.min(now, xMax) : now,
+					color: 'rgba(40, 48, 56, 0.08)',
+					zIndex: 1
+				});
+			}
+			return {
+				plotBands: bands,
+				plotLines: [{
+					id: 'fc-now',
+					value: now,
+					color: '#5a5a5a',
+					width: 1,
+					zIndex: 7,
+					label: withLabel ? {
+						text: 'now',
+						rotation: 0,
+						align: 'left',
+						verticalAlign: 'bottom',
+						x: 3,
+						y: -4,
+						style: { color: '#555', fontSize: '10px', fontWeight: 'normal' }
+					} : { text: null }
+				}]
+			};
+		}
+
+		// Column pointRange (6h rain) otherwise adds minPointOffset / pointRangePadding
+		// which shifts that pane's scale even when min/max are shared. Zeroed in
+		// afterSetAxisTranslation (registered before the first Highcharts.chart()).
 		var xCommon = {
 			type: 'datetime',
 			min: xMin,
 			max: xMax,
+			minPadding: 0,
+			maxPadding: 0,
 			tickPositions: tickPositions,
 			startOnTick: false,
 			endOnTick: false,
+			ordinal: false,
 			crosshair: true,
 			gridLineWidth: 1,
 			gridLineColor: '#cccccc',
 			dateTimeLabelFormats: { hour: '%H', day: '%a %e' },
-			labels: { format: '{value:%a %e}', style: { color: TEXT, fontSize: '0.72rem' } }
+			labels: {
+				format: undefined,
+				autoRotation: false,
+				style: { color: TEXT, fontSize: '0.72rem', textOverflow: 'none' },
+				formatter: function () {
+					return Highcharts.dateFormat('%a %e', this.value);
+				}
+			}
 		};
 		var tipShared = { shared: true, xDateFormat: '%a %e %b %H:%M' };
 		// Fixed left/right gutters so plot-area edges match even when a panel has no right axis.
@@ -1390,38 +1479,335 @@
 			});
 		}
 		xCommon.events = { setExtremes: syncExtremes };
+		// v13 recomputes minPointOffset / pointRangePadding inside
+		// setAxisTranslation. Zero them after that and rebuild transA so
+		// every pane shares one translation (and therefore identical gridlines).
+		function lockXTranslation() {
+			if (!this.isXAxis) { return; }
+			this.minPointOffset = 0;
+			this.pointRangePadding = 0;
+			this.pointRange = 0;
+			this.minPixelPadding = 0;
+			var range = (this.max - this.min) || 1;
+			this.translationSlope = this.transA = this.staticScale || this.len / range;
+		}
+		if (!Highcharts._nw3LockXTrans) {
+			Highcharts._nw3LockXTrans = true;
+			Highcharts.addEvent(Highcharts.Axis, 'afterSetAxisTranslation', function () {
+				var id = this.chart && this.chart.renderTo && this.chart.renderTo.id;
+				if (!id || !/-(hi|desc|icons|rain|daywind|temp|precip|cloud|wind)$/.test(id)) { return; }
+				lockXTranslation.call(this);
+			});
+		}
+		function refreshXGrid(ax) {
+			var live = [];
+			Highcharts.objectEach(ax.ticks, function (tick) {
+				if (!tick) { return; }
+				if (tick.gridLine) {
+					tick.gridLine.destroy();
+					tick.gridLine = undefined;
+				}
+				tick.isNew = true;
+				if (typeof tick.renderGridLine === 'function') {
+					tick.renderGridLine(false, 1);
+				}
+				if (tick.gridLine && tick.gridLine.element) {
+					live.push(tick.gridLine.element);
+				}
+			});
+			var group = ax.gridGroup && ax.gridGroup.element;
+			if (group && group.querySelectorAll) {
+				var paths = group.querySelectorAll('path.highcharts-grid-line');
+				for (var i = 0; i < paths.length; i++) {
+					if (live.indexOf(paths[i]) === -1) {
+						paths[i].parentNode.removeChild(paths[i]);
+					}
+				}
+			}
+		}
+		// Forecast-only filled series (cloud) would otherwise start mid-elapsed
+		// band with a hard vertical edge, which reads as a darker strip just
+		// left of the now line. Start those series at now.
+		function clipSeriesAtNow(points) {
+			var now = Date.now();
+			if (!points || !points.length) { return points; }
+			var out = [], prev = null, i, pt, x, y, yNow;
+			for (i = 0; i < points.length; i++) {
+				pt = points[i];
+				if (!pt) { continue; }
+				x = (pt.x != null) ? pt.x : pt[0];
+				y = (pt.y != null) ? pt.y : pt[1];
+				if (x == null) { continue; }
+				if (x < now) { prev = [x, y]; continue; }
+				if (out.length === 0 && x > now) {
+					yNow = y;
+					if (prev && prev[1] != null && y != null && x !== prev[0]) {
+						yNow = prev[1] + (y - prev[1]) * (now - prev[0]) / (x - prev[0]);
+					} else if (prev && prev[1] != null) {
+						yNow = prev[1];
+					}
+					out.push([now, yNow]);
+				}
+				out.push(pt);
+			}
+			if (!out.length && prev) { out.push([now, prev[1]]); }
+			return out;
+		}
+		function attachXLock(c) {
+			var ax = c.xAxis && c.xAxis[0];
+			if (!ax || ax._nw3XLock) { return; }
+			ax._nw3XLock = true;
+			if (isFinite(xMin) && isFinite(xMax)) {
+				ax.setExtremes(xMin, xMax, false, false, { trigger: 'syncExtremes' });
+			}
+			ax.setAxisTranslation();
+			c.redraw(false);
+			refreshXGrid(ax);
+			// Plot lines/bands may keep paths from a pre-lock translation
+			// (same min/max, so Highcharts skips a redraw of them). Re-add.
+			var topId = '-temp';
+			var withLabel = c.renderTo && c.renderTo.id.indexOf(topId, c.renderTo.id.length - topId.length) !== -1;
+			ax.removePlotBand('fc-elapsed');
+			ax.removePlotLine('fc-now');
+			var annot = nowAnnot(withLabel);
+			annot.plotBands.forEach(function (b) { ax.addPlotBand(b); });
+			annot.plotLines.forEach(function (l) { ax.addPlotLine(l); });
+		}
+
+		function escLbl(v) {
+			return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		}
+		function headerPane(suffix, height, points, formatter, nowLabel) {
+			charts.push(Highcharts.chart(containerId + '-' + suffix, {
+				chart: Highcharts.merge(baseChart, {
+					height: height,
+					spacing: [0, 10, 0, 8],
+					marginTop: 0,
+					marginBottom: 0,
+					backgroundColor: 'transparent'
+				}),
+				title: { text: null },
+				credits: { enabled: false },
+				legend: { enabled: false },
+				xAxis: Highcharts.merge(xCommon, nowAnnot(!!nowLabel), { labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
+				yAxis: { min: 0, max: 1, visible: false, title: { text: null }, gridLineWidth: 0 },
+				tooltip: { enabled: false },
+				plotOptions: { series: { animation: false, enableMouseTracking: false, states: { inactive: { opacity: 1 } } } },
+				series: [{
+					name: suffix,
+					type: 'scatter',
+					data: points,
+					marker: { enabled: false },
+					dataLabels: {
+						enabled: true,
+						useHTML: false,
+						allowOverlap: true,
+						crop: false,
+						overflow: 'allow',
+						padding: 0,
+						verticalAlign: 'middle',
+						y: 0,
+						formatter: formatter,
+						style: { textOutline: 'none', fontWeight: 'normal', fontSize: '11px', color: '#334' }
+					}
+				}]
+			}));
+		}
+
+		if (hasDaily) {
+			headerPane('hi', 26, dailyList.map(function (d) {
+				return { x: d.t, y: 0.5, hi: d.hi, lo: d.lo };
+			}), function () {
+				return '<span style="color:#d34f00;font-weight:bold">' + escLbl(this.point.hi) + '\u00B0</span>'
+					+ ' / <span style="color:#2554c7">' + escLbl(this.point.lo) + '\u00B0</span>';
+			}, false);
+			headerPane('desc', 22, dailyList.map(function (d) {
+				return { x: d.t, y: 0.5, txt: d.desc || '' };
+			}), function () {
+				return '<span style="font-weight:600;color:#1f303a;font-size:10px">' + escLbl(this.point.txt) + '</span>';
+			}, false);
+		}
+
+		if (hasIcons) {
+			charts.push(Highcharts.chart(containerId + '-icons', {
+				chart: Highcharts.merge(baseChart, {
+					height: Math.max(40, chipSize + 16),
+					spacing: [2, 10, 0, 8],
+					marginTop: 2,
+					marginBottom: 0,
+					backgroundColor: 'transparent'
+				}),
+				title: { text: null },
+				credits: { enabled: false },
+				legend: { enabled: false },
+				xAxis: Highcharts.merge(xCommon, nowAnnot(false), { labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
+				yAxis: { min: 0, max: 1, visible: false, title: { text: null }, gridLineWidth: 0 },
+				tooltip: {
+					useHTML: true,
+					headerFormat: '',
+					pointFormat: '{point.desc}',
+					xDateFormat: '%a %e %b %H:%M'
+				},
+				plotOptions: {
+					series: { animation: false, states: { inactive: { opacity: 1 } } },
+					scatter: { stickyTracking: false }
+				},
+				series: [{
+					name: 'Weather',
+					type: 'scatter',
+					data: iconList.map(function (ic) {
+						return {
+							x: ic.t,
+							y: 0.5,
+							desc: ic.desc || '',
+							icon: ic.icon
+						};
+					}),
+					marker: { enabled: false, states: { hover: { enabled: false } } },
+					dataLabels: {
+						enabled: true,
+						useHTML: true,
+						allowOverlap: true,
+						crop: false,
+						overflow: 'allow',
+						padding: 0,
+						verticalAlign: 'middle',
+						y: 0,
+						formatter: function () {
+							var safe = String(this.point.icon || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+							var desc = String(this.point.desc || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+							return '<span class="fc-mg-iconchip" style="width:' + chipSize + 'px;height:' + chipSize + 'px">'
+								+ '<img src="' + safe + '" width="' + iconSize + '" height="' + iconSize + '" alt="' + desc + '" style="width:' + iconSize + 'px;height:' + iconSize + 'px" /></span>';
+						},
+						style: { textOutline: 'none' }
+					},
+					tooltip: { pointFormat: '{point.desc}' }
+				}]
+			}));
+		}
+
+		if (hasDaily) {
+			headerPane('rain', 20, dailyList.map(function (d) {
+				return { x: d.t, y: 0.5, txt: d.precip || '' };
+			}), function () {
+				return '<span style="color:#2554c7;font-size:10px">' + escLbl(this.point.txt) + '</span>';
+			}, false);
+			headerPane('daywind', 48, dailyList.map(function (d) {
+				var wind = d.wind || '';
+				var gust = d.gust || '';
+				return { x: d.t, y: 0.5, txt: gust
+					? ('<span style="color:#c01717;font-size:10px">' + escLbl(wind) + '</span><br/><span style="color:#c23b86;font-size:10px">' + escLbl(gust) + '</span>')
+					: ('<span style="color:#c01717;font-size:10px">' + escLbl(wind) + '</span>') };
+			}), function () { return this.point.txt; }, false);
+		}
+
+		function tightAxis(seriesList, pad) {
+			pad = (pad == null) ? 1 : pad;
+			var vals = [];
+			function take(pt) {
+				if (pt == null) { return; }
+				if (Array.isArray(pt)) {
+					if (pt[1] != null) { vals.push(pt[1]); }
+					if (pt.length > 2 && pt[2] != null) { vals.push(pt[2]); }
+				} else {
+					if (pt.y != null) { vals.push(pt.y); }
+					if (pt.low != null) { vals.push(pt.low); }
+					if (pt.high != null) { vals.push(pt.high); }
+				}
+			}
+			(seriesList || []).forEach(function (s) { (s || []).forEach(take); });
+			if (!vals.length) { return {}; }
+			var lo = Math.min.apply(null, vals);
+			var hi = Math.max.apply(null, vals);
+			var min = Math.floor(lo - pad);
+			var max = Math.ceil(hi + pad);
+			if (min >= max) { max = min + 1; }
+			return { min: min, max: max, minPadding: 0, maxPadding: 0, startOnTick: false, endOnTick: false };
+		}
+		var tempScale = tightAxis([data.temp, data.dew, data.tempRange], 1);
 
 		charts.push(Highcharts.chart(containerId + '-temp', {
-			chart: Highcharts.merge(baseChart, { height: 170 }),
+			chart: Highcharts.merge(baseChart, { height: 240 }),
 			title: { text: 'Temperature & dew point', align: 'left', margin: 6,
 				style: { color: TEXT, fontSize: '0.9rem', fontWeight: 'normal' } },
 			credits: { enabled: false },
 			legend: { enabled: true, align: 'right', verticalAlign: 'top', floating: true,
 				itemStyle: { color: TEXT, fontSize: '0.75rem' }, symbolHeight: 8, symbolWidth: 12 },
-			xAxis: Highcharts.merge(xCommon, { labels: { enabled: false }, tickLength: 0 }),
+			xAxis: Highcharts.merge(xCommon, nowAnnot(true), { labels: { enabled: false }, tickLength: 0 }),
 			yAxis: [
-				{ title: { text: tempU, style: { color: cTemp, fontSize: '0.75rem' } },
-					labels: { style: { color: cTemp, fontSize: '0.72rem' } }, gridLineColor: '#eee',
-					softMin: undefined, softMax: undefined },
+				Highcharts.merge({
+					title: { text: tempU, style: { color: cTemp, fontSize: '0.75rem' } },
+					labels: { style: { color: cTemp, fontSize: '0.72rem' } },
+					gridLineColor: '#eee'
+				}, tempScale),
 				rightGutter()
 			],
 			tooltip: tipShared,
 			plotOptions: plotBase,
-			series: [
-				{ name: 'Temperature', type: 'spline', data: data.temp, color: cTemp, lineWidth: 2,
-					tooltip: { valueSuffix: ' ' + tempU, valueDecimals: 1 }, zIndex: 2 },
-				{ name: 'Dew point', type: 'spline', data: data.dew || [], color: cDew, lineWidth: 1.5,
-					dashStyle: 'ShortDash', tooltip: { valueSuffix: ' ' + tempU, valueDecimals: 1 }, zIndex: 1 }
-			]
+			series: (function () {
+				var s = [];
+				if (data.tempRange && data.tempRange.length) {
+					s.push({
+						name: 'Daily range',
+						type: 'arearange',
+						data: data.tempRange,
+						color: cTemp,
+						fillColor: 'rgba(211,79,0,0.14)',
+						lineWidth: 0,
+						zIndex: 0,
+						tooltip: {
+							valueDecimals: 1,
+							pointFormat: '<span style="color:{point.color}">\u25cf</span> {series.name}: {point.low}\u2013{point.high} ' + tempU + '<br/>'
+						}
+					});
+				}
+				s.push(
+					{ name: 'Temperature', type: 'spline', data: data.temp, color: cTemp, lineWidth: 2,
+						tooltip: { valueSuffix: ' ' + tempU, valueDecimals: 1 }, zIndex: 2 },
+					{ name: 'Dew point', type: 'spline', data: data.dew || [], color: cDew, lineWidth: 1.5,
+						dashStyle: 'ShortDash', tooltip: { valueSuffix: ' ' + tempU, valueDecimals: 1 }, zIndex: 1 }
+				);
+				return s;
+			}())
 		}));
 
-		var precipSeries = [
-			{ name: 'Rain', type: 'column', data: data.precip || [], color: cRain, yAxis: 0,
-				tooltip: { valueSuffix: ' ' + rainU, valueDecimals: 1 }, zIndex: 2 }
-		];
+		var precipCol = {
+			type: 'column',
+			color: cRain,
+			yAxis: 0,
+			borderWidth: 0,
+			borderColor: cRain,
+			crisp: false,
+			minPointLength: 0,
+			pointPadding: 0.06,
+			groupPadding: 0,
+			grouping: false,
+			shadow: false,
+			tooltip: { valueSuffix: ' ' + rainU, valueDecimals: 1 },
+			zIndex: 2
+		};
+		var precipSeries = [];
+		var hasHourlyRain = data.precip && data.precip.length;
+		var has6hRain = data.precip6h && data.precip6h.length;
+		if (hasHourlyRain) {
+			precipSeries.push(Highcharts.merge(precipCol, {
+				name: 'Rain',
+				data: data.precip,
+				pointRange: 3600 * 1000
+			}));
+		}
+		if (has6hRain) {
+			precipSeries.push(Highcharts.merge(precipCol, {
+				name: 'Rain',
+				data: data.precip6h,
+				pointRange: 6 * 3600 * 1000,
+				linkedTo: hasHourlyRain ? ':previous' : undefined,
+				showInLegend: !hasHourlyRain
+			}));
+		}
 		if (data.pop && data.pop.length) {
 			precipSeries.push({
-				name: 'Precip chance', type: 'areaspline', data: data.pop, color: cPop, yAxis: 1,
+				name: 'Precip chance', type: 'areaspline', data: clipSeriesAtNow(data.pop), color: cPop, yAxis: 1,
 				tooltip: { valueSuffix: ' %', valueDecimals: 0 }, zIndex: 1, fillColor: cPop, lineWidth: 0
 			});
 		}
@@ -1432,16 +1818,30 @@
 			credits: { enabled: false },
 			legend: { enabled: true, align: 'right', verticalAlign: 'top', floating: true,
 				itemStyle: { color: TEXT, fontSize: '0.75rem' }, symbolHeight: 8, symbolWidth: 12 },
-			xAxis: Highcharts.merge(xCommon, { labels: { enabled: false }, tickLength: 0 }),
-			yAxis: [
-				{ title: { text: rainU, style: { color: cRain, fontSize: '0.75rem' } },
-					labels: { style: { color: cRain, fontSize: '0.72rem' } }, min: 0, softMax: 0.5, gridLineColor: '#eee' },
-				{ title: { text: '%', style: { color: '#2554c7', fontSize: '0.75rem' } },
-					labels: { style: { color: '#2554c7', fontSize: '0.72rem' } }, min: 0, max: 100,
-					opposite: true, gridLineWidth: 0, showEmpty: false }
-			],
+			xAxis: Highcharts.merge(xCommon, nowAnnot(false), { labels: { enabled: false }, tickLength: 0 }),
+			yAxis: (data.pop && data.pop.length)
+				? [
+					{ title: { text: rainU, style: { color: cRain, fontSize: '0.75rem' } },
+						labels: { style: { color: cRain, fontSize: '0.72rem' } }, min: 0, softMax: 0.5, gridLineColor: '#eee' },
+					{ title: { text: '%', style: { color: '#2554c7', fontSize: '0.75rem' } },
+						labels: { style: { color: '#2554c7', fontSize: '0.72rem' } }, min: 0, max: 100,
+						opposite: true, gridLineWidth: 0, showEmpty: false }
+				]
+				: [
+					{ title: { text: rainU, style: { color: cRain, fontSize: '0.75rem' } },
+						labels: { style: { color: cRain, fontSize: '0.72rem' } }, min: 0, softMax: 0.5, gridLineColor: '#eee' },
+					rightGutter()
+				],
 			tooltip: tipShared,
-			plotOptions: plotBase,
+			plotOptions: Highcharts.merge(plotBase, {
+				column: {
+					borderWidth: 0,
+					borderColor: 'transparent',
+					crisp: false,
+					minPointLength: 0,
+					shadow: false
+				}
+			}),
 			series: precipSeries
 		}));
 
@@ -1451,7 +1851,7 @@
 				style: { color: TEXT, fontSize: '0.9rem', fontWeight: 'normal' } },
 			credits: { enabled: false },
 			legend: { enabled: false },
-			xAxis: Highcharts.merge(xCommon, { labels: { enabled: false }, tickLength: 0 }),
+			xAxis: Highcharts.merge(xCommon, nowAnnot(false), { labels: { enabled: false }, tickLength: 0 }),
 			yAxis: [
 				{ title: { text: '%', style: { color: cCloud, fontSize: '0.75rem' } },
 					labels: { style: { color: cCloud, fontSize: '0.72rem' } }, min: 0, max: 100, gridLineColor: '#eee' },
@@ -1460,7 +1860,7 @@
 			tooltip: tipShared,
 			plotOptions: plotBase,
 			series: [
-				{ name: 'Cloud', type: 'areaspline', data: data.cloud || [], color: cCloud,
+				{ name: 'Cloud', type: 'areaspline', data: clipSeriesAtNow(data.cloud || []), color: cCloud,
 					fillColor: 'rgba(90,122,154,0.35)', lineWidth: 1,
 					tooltip: { valueSuffix: ' %', valueDecimals: 0 } }
 			]
@@ -1482,13 +1882,18 @@
 				itemStyle: { color: TEXT, fontSize: '0.75rem' }, symbolHeight: 8, symbolWidth: 12 }
 			: { enabled: false };
 		charts.push(Highcharts.chart(containerId + '-wind', {
-			chart: Highcharts.merge(baseChart, { height: hasGust ? 150 : 130 }),
+			chart: Highcharts.merge(baseChart, {
+				height: hasGust ? 168 : 148,
+				marginBottom: 36,
+				spacing: [6, 10, 10, 8]
+			}),
 			title: { text: 'Wind', align: 'left', margin: 6,
 				style: { color: TEXT, fontSize: '0.9rem', fontWeight: 'normal' } },
 			credits: { enabled: true, href: credit.href, text: credit.text,
-				style: { color: '#999', fontSize: '9px' } },
+				style: { color: '#999', fontSize: '9px' },
+				position: { align: 'right', verticalAlign: 'bottom', x: -6, y: -2 } },
 			legend: windLegend,
-			xAxis: xCommon,
+			xAxis: Highcharts.merge(xCommon, nowAnnot(false)),
 			yAxis: [
 				{ title: { text: windU, style: { color: cWind, fontSize: '0.75rem' } },
 					labels: { style: { color: cWind, fontSize: '0.72rem' } }, min: 0, softMax: 5, gridLineColor: '#eee' },
@@ -1498,6 +1903,21 @@
 			plotOptions: plotBase,
 			series: windSeries
 		}));
+
+		charts.forEach(attachXLock);
+
+		(function scrollNowIntoView() {
+			var scroller = el.closest ? el.closest('.fc-mg-scroll') : null;
+			if (!scroller || !isFinite(xMin) || !isFinite(xMax) || xMax <= xMin) { return; }
+			if (scroller.scrollWidth <= scroller.clientWidth + 2) { return; }
+			var now = Date.now();
+			var nowPx = 56 + ((Math.min(Math.max(now, xMin), xMax) - xMin) / (xMax - xMin)) * (el.clientWidth - 56 - 48);
+			// Only shift when 'now' would be off the right of the visible area.
+			// A small nudge when now is already on the left clips pane titles.
+			if (nowPx < scroller.clientWidth - 24) { return; }
+			scroller.scrollLeft = Math.max(0, nowPx - 72);
+		}());
+
 	}
 
 	window.NW3 = window.NW3 || {};
