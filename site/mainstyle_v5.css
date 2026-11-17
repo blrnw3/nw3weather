@@ -1856,9 +1856,11 @@ div.charts.detail-chart-pair {
 }
 .fc-mg-hi {
 	font-weight: 700;
+	font-size: 15px;
 	color: #d34f00;
 }
 .fc-mg-lo {
+	font-size: 15px;
 	color: #2554c7;
 }
 .fc-discuss {

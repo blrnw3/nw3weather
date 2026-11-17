@@ -102,28 +102,7 @@ class Forecast {
 
 	/** 6-hour weather icons from Yr longIntervals (same set as the period table). */
 	private static function iconsFromPeriods($periods) {
-		$out = array();
-		$img = Site::IMG_ROOT;
-		$step = 6 * 3600 * 1000;
-		foreach ($periods as $p) {
-			if (empty($p['t'])) { continue; }
-			$start = (int)$p['t'];
-			$end = !empty($p['end']) ? (int)$p['end'] : ($start + $step);
-			$icon = isset($p['icon']) ? $p['icon'] : 'cloudy';
-			$slot = self::londonSlotStart((int)(($start + $end) / 2), 6);
-			$t = $slot + (int)($step / 2);
-			// One chip per 6h clock slot so a leftover first period cannot sit
-			// 5h from the next mid-point and overlap its neighbour.
-			$out[$slot] = array(
-				't' => $t,
-				'start' => $start,
-				'end' => $end,
-				'icon' => $img . $icon . '_lg.png',
-				'desc' => isset($p['desc']) ? $p['desc'] : '',
-			);
-		}
-		ksort($out);
-		return array_values($out);
+		return self::iconsAtTwelveHourSlots($periods, null);
 	}
 
 	/**
@@ -133,11 +112,11 @@ class Forecast {
 	private static function iconsFromHours($hours) {
 		$buckets = array();
 		$img = Site::IMG_ROOT;
-		$step = 6 * 3600 * 1000;
+		$step = 12 * 3600 * 1000;
 		foreach ($hours as $iv) {
 			if (empty($iv['t']) || empty($iv['icon'])) { continue; }
 			$t = (int)$iv['t'];
-			$key = (int)(floor($t / $step) * $step);
+			$key = self::londonSlotStart($t, 12);
 			if (!isset($buckets[$key])) {
 				$buckets[$key] = array('icon' => $iv['icon'], 'desc' => isset($iv['desc']) ? $iv['desc'] : '', 'n' => 1);
 			} else {
@@ -321,50 +300,77 @@ class Forecast {
 	}
 
 	/**
-	 * 6-hour weather icons along the meteogram. Near-term 3-hour detail is in
-	 * the period table — 3h chips overlap on a shared 10-day axis.
+	 * 12-hour weather icons along the meteogram, placed at London 12h slot
+	 * mid-points (06:00 and 18:00). Near-term 3-hour detail is in the period
+	 * table.
 	 */
 	private static function meteogramIcons($periods, $omHours = null) {
 		$img = Site::IMG_ROOT;
 		$now = (int) floor(microtime(true) * 1000);
-		$out = array();
-		$step = 6 * 3600 * 1000;
 		if ($periods) {
-			foreach ($periods as $p) {
-				if (empty($p['t'])) { continue; }
-				$start = (int)$p['t'];
-				$end = !empty($p['end']) ? (int)$p['end'] : ($start + $step);
-				if ($end <= $now) { continue; }
-				$icon = isset($p['icon']) ? $p['icon'] : 'cloudy';
-				// Place every chip on a 6h London clock mid-point (03/09/15/21)
-				// so a current leftover period (e.g. 02–06) is not 5h from the
-				// next 6h icon and the chips do not overlap.
-				$slot = self::londonSlotStart((int)(($start + $end) / 2), 6);
-				$t = $slot + (int)($step / 2);
-				$out[$slot] = array(
-					't' => $t,
-					'start' => $start,
-					'end' => $end,
-					'icon' => $img . $icon . '_lg.png',
-					'desc' => isset($p['desc']) ? $p['desc'] : '',
-					'step' => 6,
-				);
-			}
-			ksort($out);
-			$out = array_values($out);
-		} elseif ($omHours) {
-			foreach (self::hoursToPeriodBuckets($omHours, 6, $now, null) as $p) {
+			return self::iconsAtTwelveHourSlots($periods, $now);
+		}
+		if ($omHours) {
+			$out = array();
+			foreach (self::hoursToPeriodBuckets($omHours, 12, $now, null) as $p) {
 				$out[] = array(
 					't' => (int)(($p['t'] + $p['end']) / 2),
 					'start' => $p['t'],
 					'end' => $p['end'],
 					'icon' => $img . $p['icon'] . '_lg.png',
 					'desc' => isset($p['desc']) ? $p['desc'] : '',
-					'step' => 6,
+					'step' => 12,
 				);
 			}
+			return $out;
 		}
-		return $out;
+		return array();
+	}
+
+	/**
+	 * One icon per London 12-hour clock slot (00–12 / 12–24), drawn at the
+	 * slot mid-point (06:00 / 18:00). Prefer the period that contains the
+	 * mid-point; otherwise the closest mid.
+	 */
+	private static function iconsAtTwelveHourSlots($periods, $nowMs) {
+		$img = Site::IMG_ROOT;
+		$step = 12 * 3600 * 1000;
+		$chosen = array();
+		foreach ($periods as $p) {
+			if (empty($p['t'])) { continue; }
+			$start = (int)$p['t'];
+			$end = !empty($p['end']) ? (int)$p['end'] : ($start + 6 * 3600 * 1000);
+			if ($nowMs !== null && $end <= $nowMs) { continue; }
+			$icon = isset($p['icon']) ? $p['icon'] : 'cloudy';
+			$slot = self::londonSlotStart((int)(($start + $end) / 2), 12);
+			$t = $slot + (int)($step / 2);
+			$item = array(
+				't' => $t,
+				'start' => $start,
+				'end' => $end,
+				'icon' => $img . $icon . '_lg.png',
+				'desc' => isset($p['desc']) ? $p['desc'] : '',
+				'step' => 12,
+			);
+			if (!isset($chosen[$slot])) {
+				$chosen[$slot] = $item;
+				continue;
+			}
+			$prev = $chosen[$slot];
+			$prevContains = ($prev['start'] <= $t && $t < $prev['end']);
+			$thisContains = ($start <= $t && $t < $end);
+			if ($thisContains && !$prevContains) {
+				$chosen[$slot] = $item;
+			} elseif ($thisContains === $prevContains) {
+				$prevMid = (int)(($prev['start'] + $prev['end']) / 2);
+				$thisMid = (int)(($start + $end) / 2);
+				if (abs($thisMid - $t) < abs($prevMid - $t)) {
+					$chosen[$slot] = $item;
+				}
+			}
+		}
+		ksort($chosen);
+		return array_values($chosen);
 	}
 
 	private static function hoursToPeriodBuckets($hours, $stepHours, $fromMs, $untilMs) {
