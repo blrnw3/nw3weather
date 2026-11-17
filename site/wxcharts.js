@@ -1406,8 +1406,9 @@
 						text: 'now',
 						rotation: 0,
 						align: 'left',
+						verticalAlign: 'bottom',
 						x: 3,
-						y: 12,
+						y: -4,
 						style: { color: '#555', fontSize: '10px', fontWeight: 'normal' }
 					} : { text: null }
 				}]
@@ -1564,7 +1565,7 @@
 			refreshXGrid(ax);
 			// Plot lines/bands may keep paths from a pre-lock translation
 			// (same min/max, so Highcharts skips a redraw of them). Re-add.
-			var topId = hasDaily ? '-hi' : (hasIcons ? '-icons' : '-temp');
+			var topId = '-temp';
 			var withLabel = c.renderTo && c.renderTo.id.indexOf(topId, c.renderTo.id.length - topId.length) !== -1;
 			ax.removePlotBand('fc-elapsed');
 			ax.removePlotLine('fc-now');
@@ -1619,7 +1620,7 @@
 			}), function () {
 				return '<span style="color:#d34f00;font-weight:bold">' + escLbl(this.point.hi) + '\u00B0</span>'
 					+ ' / <span style="color:#2554c7">' + escLbl(this.point.lo) + '\u00B0</span>';
-			}, true);
+			}, false);
 			headerPane('desc', 22, dailyList.map(function (d) {
 				return { x: d.t, y: 0.5, txt: d.desc || '' };
 			}), function () {
@@ -1639,7 +1640,7 @@
 				title: { text: null },
 				credits: { enabled: false },
 				legend: { enabled: false },
-				xAxis: Highcharts.merge(xCommon, nowAnnot(!hasDaily), { labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
+				xAxis: Highcharts.merge(xCommon, nowAnnot(false), { labels: { enabled: false }, tickLength: 0, lineWidth: 0 }),
 				yAxis: { min: 0, max: 1, visible: false, title: { text: null }, gridLineWidth: 0 },
 				tooltip: {
 					useHTML: true,
@@ -1732,7 +1733,7 @@
 			credits: { enabled: false },
 			legend: { enabled: true, align: 'right', verticalAlign: 'top', floating: true,
 				itemStyle: { color: TEXT, fontSize: '0.75rem' }, symbolHeight: 8, symbolWidth: 12 },
-			xAxis: Highcharts.merge(xCommon, nowAnnot(!hasDaily && !hasIcons), { labels: { enabled: false }, tickLength: 0 }),
+			xAxis: Highcharts.merge(xCommon, nowAnnot(true), { labels: { enabled: false }, tickLength: 0 }),
 			yAxis: [
 				Highcharts.merge({
 					title: { text: tempU, style: { color: cTemp, fontSize: '0.75rem' } },
