@@ -1640,7 +1640,7 @@ class ViewDetailedData {
 	/**
 	 * Temperature heatwave / cold snap tables (past 12 months and all-time).
 	 * Uses the same RankSpells definitions: daily max > normal + 5 °C, or
-	 * daily min < normal − 5 °C (1991-2020 daily normal; Spells::ANOM_DEFAULT).
+	 * daily max < normal − 5 °C (1991-2020 daily normal; Spells::ANOM_DEFAULT).
 	 */
 	public function tempSpells($limitRecent = 5, $limitAll = 10) {
 		if ($this->groupName !== 'temp') { return; }
@@ -1652,11 +1652,11 @@ class ViewDetailedData {
 
 		// High limit so the 12-month filter is not capped to the all-time top-N.
 		$hw = Spells::rankLongest('tmax', $x, 'heatwave', $startY, 10000, 0);
-		$cs = Spells::rankLongest('tmin', $x, 'coldsnap', $startY, 10000, 0);
+		$cs = Spells::rankLongest('tmax', $x, 'coldsnap', $startY, 10000, 0);
 		$hwSpells = $this->spellsAtLeastDays($hw['spells'], 3);
 		$csSpells = $this->spellsAtLeastDays($cs['spells'], 3);
 		$hwUrl = $this->spellRankUrl('tmax', 'heatwave', $x);
-		$csUrl = $this->spellRankUrl('tmin', 'coldsnap', $x);
+		$csUrl = $this->spellRankUrl('tmax', 'coldsnap', $x);
 
 		$allLabel = $this->usesHistorical()
 			? ('All time (' . $startY . '–' . Date::$dyear . ')')
@@ -1667,7 +1667,7 @@ class ViewDetailedData {
 		echo '<div id="temp-spells">';
 		echo '<h2>Heatwaves and Cold Snaps</h2>';
 		echo '<p>A heatwave is 3 or more consecutive days with the max more than '
-			. htmlspecialchars($xTxt) . ' above normal; a cold snap is 3 or more days with the min more than '
+			. htmlspecialchars($xTxt) . ' above normal; a cold snap is 3 or more days with the max more than '
 			. htmlspecialchars($xTxt) . ' below normal.</p>';
 		$this->tempSpellPair(
 			'Past 12 months',
@@ -1719,7 +1719,7 @@ class ViewDetailedData {
 
 	private function tempSpellPair($heading, $heatwaves, $coldsnaps, $hwUrl, $csUrl, $x) {
 		$hwRule = 'Maximum Temperature ' . Spells::anomalyPhrase('heatwave', $x);
-		$csRule = 'Minimum Temperature ' . Spells::anomalyPhrase('coldsnap', $x);
+		$csRule = 'Maximum Temperature ' . Spells::anomalyPhrase('coldsnap', $x);
 		echo '<h3>' . htmlspecialchars($heading) . '</h3>';
 		echo '<div class="detail-grid">';
 		$this->tempSpellTable('Heatwaves', $heatwaves, $hwUrl, $hwRule, true, 'View heatwave rankings');
@@ -1737,7 +1737,7 @@ class ViewDetailedData {
 		Html::td('Rank', $this->cssClass);
 		Html::td('Length', $this->cssClass);
 		Html::td('Mean', $this->cssClass);
-		Html::td($hot ? 'Highest' : 'Lowest', $this->cssClass);
+		Html::td($hot ? 'Highest max' : 'Lowest max', $this->cssClass);
 		Html::tr_end();
 
 		if (!count($spells)) {
