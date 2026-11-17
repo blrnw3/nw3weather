@@ -189,11 +189,25 @@ JS;
 		return $sign . ($m ? $m . 'm ' . sprintf('%02d', $s) . 's' : $s . 's');
 	}
 
-	/** Sunshine, possible sunshine and the % for a day (so far when $until is given), from the model. */
+	/**
+	 * Sunshine, possible sunshine and the % for a day (so far when $until is given).
+	 * Hours come from the webcam model; "possible" and the percentage use the same
+	 * nw3 maxsun.csv climatology as historical sunhrp (% of Max), so today is
+	 * comparable with past days.
+	 */
 	public static function total(string $ymd, ?int $until = null): ?array {
 		$tot = SunLog::dayTotal($ymd, $until);
 		if ($tot === null) { return null; }
-		$tot['pct'] = $tot['possible'] > 0 ? (int)round(100 * min($tot['hours'], $tot['possible']) / $tot['possible']) : null;
+		$day = mktime(12, 0, 0, (int)substr($ymd, 4, 2), (int)substr($ymd, 6, 2), (int)substr($ymd, 0, 4));
+		$max = SunLog::sunmax($day);
+		if ($max !== null && $max > 0) {
+			$tot['possible'] = $max;
+			$tot['pct'] = (int)round(100 * min($tot['hours'], $max) / $max);
+		} else {
+			$tot['pct'] = $tot['possible'] > 0
+				? (int)round(100 * min($tot['hours'], $tot['possible']) / $tot['possible'])
+				: null;
+		}
 		return $tot;
 	}
 

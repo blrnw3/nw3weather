@@ -6,6 +6,8 @@ customtextout.txt
 goodlog.txt
 todaylog.txt
 *.csv
+# Climate constant (not live station data); must be tracked so deploy can ship it.
+!maxsun.csv
 serialised_*.txt
 rareTags.php
 *Tags.php
