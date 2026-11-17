@@ -1650,6 +1650,34 @@ div.charts.detail-chart-pair {
 	}
 }
 
+#temp-spells tr.row-coolsnap > td {
+	background-color: #eef2f5;
+	color: #3f4a54;
+}
+#temp-spells tr.row-coolsnap.rowdark > td,
+#temp-spells tr.row-coolsnap.rowdark > td:first-child {
+	background-color: #e4eaef;
+}
+#temp-spells tr.row-coolsnap.rowlight > td,
+#temp-spells tr.row-coolsnap.rowlight > td:first-child,
+#temp-spells tr.row-coolsnap > td:first-child {
+	background-color: #eef2f5;
+}
+#temp-spells tr.row-coolsnap.rowcurrent > td,
+#temp-spells tr.row-coolsnap.rowcurrent > td:first-child {
+	background-color: #e4edf5;
+}
+#temp-spells .cool-snap-tag {
+	display: block;
+	margin-top: 0.15em;
+	font-size: 0.75em;
+	font-weight: 500;
+	font-style: normal;
+	color: #5d6d7a;
+	letter-spacing: 0.02em;
+	white-space: nowrap;
+}
+
 /****************** Home dashboard ***************************/
 .home-head {
 	display: flex;

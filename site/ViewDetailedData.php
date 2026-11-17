@@ -1646,11 +1646,15 @@ class ViewDetailedData {
 	 * Temperature heatwave / cold snap tables (past 12 months and all-time).
 	 * Uses the same RankSpells definitions: daily max > normal + 5 °C, or
 	 * daily max < normal − 5 °C (1991-2020 daily normal; Spells::ANOM_DEFAULT).
+	 * Cold snap tables with fewer than 5 rows are filled with cool snaps
+	 * (daily max < normal − 3 °C, 3+ days, no overlap with a listed cold snap).
 	 */
 	public function tempSpells($limitRecent = 5, $limitAll = 10) {
 		if ($this->groupName !== 'temp') { return; }
 
 		$x = Spells::ANOM_DEFAULT;
+		$coolX = 3;
+		$fillTo = 5;
 		$startY = $this->effectiveStartYear();
 		$todayTs = Date::mkdate((int)Date::$dmonth, (int)Date::$dday, (int)Date::$dyear);
 		$cutoff = date('Y-m-d', strtotime('-12 months', $todayTs));
@@ -1658,32 +1662,49 @@ class ViewDetailedData {
 		// High limit so the 12-month filter is not capped to the all-time top-N.
 		$hw = Spells::rankLongest('tmax', $x, 'heatwave', $startY, 10000, 0);
 		$cs = Spells::rankLongest('tmax', $x, 'coldsnap', $startY, 10000, 0);
+		$cool = Spells::rankLongest('tmax', $coolX, 'coldsnap', $startY, 10000, 0);
 		$hwSpells = $this->spellsAtLeastDays($hw['spells'], 3);
 		$csSpells = $this->spellsAtLeastDays($cs['spells'], 3);
+		$coolSpells = $this->spellsAtLeastDays($cool['spells'], 3);
 		$hwUrl = $this->spellRankUrl('tmax', 'heatwave', $x);
 		$csUrl = $this->spellRankUrl('tmax', 'coldsnap', $x);
+		$coolUrl = $this->spellRankUrl('tmax', 'coldsnap', $coolX);
 
 		$allLabel = $this->usesHistorical()
 			? ('All time (' . $startY . '–' . Date::$dyear . ')')
 			: 'All time';
 
+		$csRecent = $this->fillCoolSnaps(
+			$this->spellsEndingOnOrAfter($csSpells, $cutoff),
+			$this->spellsEndingOnOrAfter($coolSpells, $cutoff),
+			$fillTo
+		);
+		$csAll = $this->fillCoolSnaps($csSpells, $coolSpells, $fillTo, (int)$limitAll);
+		$hasCool = $this->hasCoolSnap($csRecent) || $this->hasCoolSnap($csAll);
+
 		$xTxt = Wx::plainText(Wx::conv($x, Wx::AbsTemp, true, false, -1));
+		$coolTxt = Wx::plainText(Wx::conv($coolX, Wx::AbsTemp, true, false, -1));
 
 		echo '<div id="temp-spells">';
 		echo '<h2>Heatwaves and Cold Snaps</h2>';
 		echo '<p>A heatwave is 3 or more consecutive days with the max more than '
 			. htmlspecialchars($xTxt) . ' above normal; a cold snap is 3 or more days with the max more than '
-			. htmlspecialchars($xTxt) . ' below normal.</p>';
+			. htmlspecialchars($xTxt) . ' below normal.';
+		if ($hasCool) {
+			echo ' A <a href="' . htmlspecialchars($coolUrl) . '">cool snap</a> is 3 or more days with the max more than '
+				. htmlspecialchars($coolTxt) . ' below normal.';
+		}
+		echo '</p>';
 		$this->tempSpellPair(
 			'Past 12 months',
 			array_slice($this->spellsEndingOnOrAfter($hwSpells, $cutoff), 0, (int)$limitRecent),
-			array_slice($this->spellsEndingOnOrAfter($csSpells, $cutoff), 0, (int)$limitRecent),
+			$csRecent,
 			$hwUrl, $csUrl, $x
 		);
 		$this->tempSpellPair(
 			$allLabel,
 			array_slice($hwSpells, 0, (int)$limitAll),
-			array_slice($csSpells, 0, (int)$limitAll),
+			$csAll,
 			$hwUrl, $csUrl, $x
 		);
 		echo '</div>';
@@ -1710,6 +1731,47 @@ class ViewDetailedData {
 			if ((int)$sp['length'] >= (int)$minDays) { $out[] = $sp; }
 		}
 		return $out;
+	}
+
+	/**
+	 * If a cold snap list has fewer than $fillTo rows, append non-overlapping
+	 * cool snaps (already ranked) until $fillTo, then cap at $limit.
+	 */
+	private function fillCoolSnaps($cold, $cool, $fillTo, $limit = null) {
+		$fillTo = (int)$fillTo;
+		$limit = ($limit === null) ? $fillTo : (int)$limit;
+		$coldOut = array_slice($cold, 0, $limit);
+		if (count($coldOut) >= $fillTo) {
+			return $coldOut;
+		}
+		$need = $fillTo - count($coldOut);
+		$added = [];
+		foreach ($cool as $sp) {
+			if (count($added) >= $need) { break; }
+			if ($this->spellOverlapsAny($sp, $cold)) { continue; }
+			$sp['_cool'] = true;
+			$added[] = $sp;
+		}
+		return array_merge($coldOut, $added);
+	}
+
+	private function hasCoolSnap($spells) {
+		foreach ($spells as $sp) {
+			if (!empty($sp['_cool'])) { return true; }
+		}
+		return false;
+	}
+
+	/** Inclusive Y-m-d range overlap; ongoing spells extend to far future. */
+	private function spellOverlapsAny($spell, $others) {
+		$a0 = $spell['startDate'];
+		$a1 = !empty($spell['ongoing']) ? '9999-12-31' : $spell['endDate'];
+		foreach ($others as $o) {
+			$b0 = $o['startDate'];
+			$b1 = !empty($o['ongoing']) ? '9999-12-31' : $o['endDate'];
+			if ($a0 <= $b1 && $a1 >= $b0) { return true; }
+		}
+		return false;
 	}
 
 	/** Spells that ended on/after $cutoffYmd, or are still in progress. */
@@ -1755,8 +1817,15 @@ class ViewDetailedData {
 		} else {
 			foreach ($spells as $i => $spell) {
 				$cur = !empty($spell['ongoing']);
-				Html::tr($cur ? 'rowcurrent' : Html::colcol($i));
-				Html::td($i + 1, $this->cssClass);
+				$cool = !empty($spell['_cool']);
+				$rowClass = $cur ? 'rowcurrent' : Html::colcol($i);
+				if ($cool) { $rowClass .= ' row-coolsnap'; }
+				Html::tr($rowClass);
+				$rank = (string)($i + 1);
+				if ($cool) {
+					$rank .= '<br /><span class="cool-snap-tag">cool snap</span>';
+				}
+				Html::td($rank, $this->cssClass);
 				$n = (int)$spell['length'];
 				Html::td(
 					$n . ' day' . ($n === 1 ? '' : 's') . ($cur ? '+' : '')
