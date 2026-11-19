@@ -18,6 +18,10 @@ date_default_timezone_set('Europe/London');
 
 // NB: see end of file for other inclusions and init
 require_once("UtilsAndConsts.php");
+if (PHP_SAPI !== 'cli') {
+	require_once __DIR__ . '/AzureBlock.php';
+	nw3_azure_maybe_block($isLocal);
+}
 require_once("WxDefinition.php");
 require_once("WxFn.php");
 require_once("SunLog.php");

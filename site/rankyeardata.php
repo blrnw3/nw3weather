@@ -5,6 +5,7 @@
 require __DIR__ . '/Page.php';
 require __DIR__ . '/Report.php';
 require __DIR__ . '/rankyear-body.php';
+require __DIR__ . '/ExpensivePage.php';
 
 Page::init([
 	'fileNum' => 42.1,
@@ -20,7 +21,7 @@ header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-store');
 
 ob_start();
-$meta = nw3_rankyear_render($report);
+$meta = nw3_expensive_html('rankyear', $report, 'nw3_rankyear_render', nw3_expensive_key_parts('rankyear', $report));
 $html = ob_get_clean();
 
 $thLabels = isset($meta['thresholdLabels']) ? $meta['thresholdLabels'] : [];

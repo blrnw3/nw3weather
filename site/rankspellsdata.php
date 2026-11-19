@@ -5,6 +5,7 @@
 require __DIR__ . '/Page.php';
 require __DIR__ . '/Report.php';
 require __DIR__ . '/rankspells-body.php';
+require __DIR__ . '/ExpensivePage.php';
 
 Page::init([
 	'fileNum' => 43,
@@ -24,7 +25,7 @@ header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-store');
 
 ob_start();
-$meta = nw3_rankspells_render($report);
+$meta = nw3_expensive_html('rankspells', $report, 'nw3_rankspells_render', nw3_expensive_key_parts('rankspells', $report));
 $html = ob_get_clean();
 
 /** "above:Above,below:Below,…" for the JS chip re-render. */

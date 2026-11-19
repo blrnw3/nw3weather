@@ -2,6 +2,7 @@
 require "Page.php";
 require "Report.php";
 require "rankspells-body.php";
+require "ExpensivePage.php";
 Page::init([
 	"fileNum" => 43,
 	"title" => "Ranked Spells",
@@ -29,7 +30,7 @@ $report->controls([
 ]);
 
 echo '<div id="rs-ajax">';
-nw3_rankspells_render($report);
+nw3_expensive_html('rankspells', $report, 'nw3_rankspells_render', nw3_expensive_key_parts('rankspells', $report));
 echo '</div>';
 
 Page::End();

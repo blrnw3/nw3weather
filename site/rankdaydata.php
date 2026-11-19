@@ -5,6 +5,7 @@
 require __DIR__ . '/Page.php';
 require __DIR__ . '/Report.php';
 require __DIR__ . '/rankday-body.php';
+require __DIR__ . '/ExpensivePage.php';
 
 // Daily fog rankings are binary (fog/no fog) and not meaningful; keep fog on monthly+.
 if (isset($_GET['vartype']) && $_GET['vartype'] === 'fog') { unset($_GET['vartype']); }
@@ -23,7 +24,7 @@ header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-store');
 
 ob_start();
-$meta = nw3_rankday_render($report);
+$meta = nw3_expensive_html('rankday', $report, 'nw3_rankday_render', nw3_expensive_key_parts('rankday', $report));
 $html = ob_get_clean();
 
 echo '<div id="rd-fragment"'

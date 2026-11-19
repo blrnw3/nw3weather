@@ -6,6 +6,7 @@
 require __DIR__ . '/Page.php';
 require __DIR__ . '/Report.php';
 require __DIR__ . '/dataday-body.php';
+require __DIR__ . '/ExpensivePage.php';
 
 Page::init([
 	'fileNum' => 40,
@@ -19,7 +20,7 @@ $report = new Report(['default' => 'rain', 'badCats' => ['cloud']]);
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
-$payload = nw3_dataday_payload($report);
+$payload = nw3_expensive_payload('dataday', $report, 'nw3_dataday_payload', nw3_expensive_key_parts('dataday', $report));
 $json = nw3_json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 if ($json === false) {
 	http_response_code(500);
