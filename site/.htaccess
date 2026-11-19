@@ -21,18 +21,10 @@ RewriteRule ^ - [F,L]
 RewriteCond %{REMOTE_ADDR} ^66\.249\.
 RewriteRule ^(?:Rank(?:Day|Month|Year|Periods|Spells)|rank(?:day|month|year|periods|spells)data)\.php$ - [F,L,NC]
 
-# Azure / Microsoft cloud on expensive ranking reports only (2026-08-06).
-# Same scope as the Googlebot rule above. UK weather site - almost no
-# legitimate RankPeriods browsers come from Azure VMs; scrapers do.
-# Covers MSFT space seen in siteV5Access: 13/20/40/52/104.40-47/168.61-63/172.160-191.
-RewriteCond %{REMOTE_ADDR} ^(?:13|20|40|52)\.
-RewriteRule ^(?:Rank(?:Day|Month|Year|Periods|Spells)|rank(?:day|month|year|periods|spells)data)\.php$ - [F,L,NC]
-RewriteCond %{REMOTE_ADDR} ^104\.4[0-7]\.
-RewriteRule ^(?:Rank(?:Day|Month|Year|Periods|Spells)|rank(?:day|month|year|periods|spells)data)\.php$ - [F,L,NC]
-RewriteCond %{REMOTE_ADDR} ^168\.6[1-3]\.
-RewriteRule ^(?:Rank(?:Day|Month|Year|Periods|Spells)|rank(?:day|month|year|periods|spells)data)\.php$ - [F,L,NC]
-RewriteCond %{REMOTE_ADDR} ^172\.1(?:6[0-9]|7[0-9]|8[0-9]|9[01])\.
-RewriteRule ^(?:Rank(?:Day|Month|Year|Periods|Spells)|rank(?:day|month|year|periods|spells)data)\.php$ - [F,L,NC]
+# Azure public-cloud ranges are blocked site-wide in AzureBlock.php
+# (precise Service Tags CIDRs; Bingbot 40.77.x / 157.55.x / 207.46.x excluded).
+# The old first-octet 13/20/40/52 / 104.40-47 / 168.61-63 / 172.160-191 rules
+# also matched bingbot (40.77.x) and were removed.
 
 # Meta / Facebook cloud on expensive ranking reports only (2026-08-08).
 # Same scope as Azure/Googlebot. Scrapers on 57.141.20/24 (AS32934) have been

@@ -2,6 +2,7 @@
 require "Page.php";
 require "Report.php";
 require "rankday-body.php";
+require "ExpensivePage.php";
 Page::init([
 	"fileNum" => 41,
 	"title" => "Ranked Daily Data",
@@ -26,7 +27,7 @@ $report->controls([
 ]);
 
 echo '<div id="rd-ajax">';
-nw3_rankday_render($report);
+nw3_expensive_html('rankday', $report, 'nw3_rankday_render', nw3_expensive_key_parts('rankday', $report));
 echo '</div>';
 
 Page::End();

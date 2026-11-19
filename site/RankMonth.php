@@ -2,6 +2,7 @@
 require "Page.php";
 require "Report.php";
 require "rankmonth-body.php";
+require "ExpensivePage.php";
 Page::init([
 	"fileNum" => 42,
 	"title" => "Ranked Monthly Data",
@@ -25,7 +26,7 @@ $report->controls([
 ]);
 
 echo '<div id="rm-ajax">';
-nw3_rankmonth_render($report);
+nw3_expensive_html('rankmonth', $report, 'nw3_rankmonth_render', nw3_expensive_key_parts('rankmonth', $report));
 echo '</div>';
 
 Page::End();

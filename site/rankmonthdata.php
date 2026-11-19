@@ -5,6 +5,7 @@
 require __DIR__ . '/Page.php';
 require __DIR__ . '/Report.php';
 require __DIR__ . '/rankmonth-body.php';
+require __DIR__ . '/ExpensivePage.php';
 
 Page::init([
 	'fileNum' => 42,
@@ -20,7 +21,7 @@ header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-store');
 
 ob_start();
-$meta = nw3_rankmonth_render($report);
+$meta = nw3_expensive_html('rankmonth', $report, 'nw3_rankmonth_render', nw3_expensive_key_parts('rankmonth', $report));
 $html = ob_get_clean();
 
 $thLabels = isset($meta['thresholdLabels']) ? $meta['thresholdLabels'] : [];

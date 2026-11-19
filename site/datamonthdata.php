@@ -6,6 +6,7 @@
 require __DIR__ . '/Page.php';
 require __DIR__ . '/Report.php';
 require __DIR__ . '/datamonth-body.php';
+require __DIR__ . '/ExpensivePage.php';
 
 Page::init([
 	'fileNum' => 40.1,
@@ -21,7 +22,7 @@ header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-store');
 
 ob_start();
-$meta = nw3_datamonth_render($report);
+$meta = nw3_expensive_html('datamonth', $report, 'nw3_datamonth_render', nw3_expensive_key_parts('datamonth', $report));
 $html = ob_get_clean();
 
 $thLabels = isset($meta['thresholdLabels']) ? $meta['thresholdLabels'] : [];

@@ -2,6 +2,7 @@
 require "Page.php";
 require "Report.php";
 require "rankyear-body.php";
+require "ExpensivePage.php";
 Page::init([
 	"fileNum" => 42.1,
 	"title" => "Ranked Annual Data",
@@ -25,7 +26,7 @@ $report->controls([
 ]);
 
 echo '<div id="ry-ajax">';
-nw3_rankyear_render($report);
+nw3_expensive_html('rankyear', $report, 'nw3_rankyear_render', nw3_expensive_key_parts('rankyear', $report));
 echo '</div>';
 
 Page::End();

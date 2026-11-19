@@ -2,6 +2,7 @@
 require "Page.php";
 require "Report.php";
 require "dataday-body.php";
+require "ExpensivePage.php";
 Page::init([
 	"fileNum" => 40,
 	"title" => "Daily Data Tables",
@@ -20,7 +21,7 @@ $report->controls([
 ]);
 
 echo '<div id="dd-ajax">';
-nw3_dataday_render($report);
+nw3_expensive_html('dataday', $report, 'nw3_dataday_render', nw3_expensive_key_parts('dataday', $report));
 echo '</div>';
 
 Page::End();

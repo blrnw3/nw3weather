@@ -2,6 +2,7 @@
 require "Page.php";
 require "Report.php";
 require "datamonth-body.php";
+require "ExpensivePage.php";
 Page::init([
 	"fileNum" => 40.1,
 	"title" => "Monthly Data Tables",
@@ -23,7 +24,7 @@ $report->controls([
 ]);
 
 echo '<div id="dm-ajax">';
-nw3_datamonth_render($report);
+nw3_expensive_html('datamonth', $report, 'nw3_datamonth_render', nw3_expensive_key_parts('datamonth', $report));
 echo '</div>';
 
 Page::End();
