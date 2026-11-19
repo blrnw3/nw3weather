@@ -1,0 +1,14 @@
+[Unit]
+Description=nw3 prune RankPeriods / report file caches hourly at :30 London
+
+[Timer]
+# Hourly, not daily: crawlers have been adding ~350 MiB/day of rankperiods JSON,
+# which would blow the 200 MiB cap between once-a-day 04:30 runs. :30 London
+# stays clear of cron_main at :00, data-backup at :25, and cron_cam at :39-:43.
+OnCalendar=*-*-* *:30:00 Europe/London
+RandomizedDelaySec=5min
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
