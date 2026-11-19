@@ -1,0 +1,23 @@
+[Unit]
+Description=nw3 prune stale RankPeriods / expensive-report file caches under cache/v5
+Documentation=file:///usr/local/sbin/nw3-cache-prune
+
+[Service]
+Type=oneshot
+User=nw3
+Group=nw3web
+ExecStart=/usr/local/sbin/nw3-cache-prune
+Nice=19
+IOSchedulingClass=idle
+TimeoutStartSec=15min
+ProtectSystem=strict
+ReadWritePaths=/var/www/html/cache/v5/rankperiods -/var/www/html/cache/v5/reports /var/lib/nw3
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
