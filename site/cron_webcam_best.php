@@ -48,14 +48,13 @@ nw3_atomic_write(WebcamBest::selectionFile(), json_encode($sel, JSON_PRETTY_PRIN
 
 if(isset($opts['write-seed'])) {
 	file_put_contents(WebcamBest::seedFile(), "<?php\n// Saved by cron_webcam_best.php --write-seed on " . date('j M Y')
-		. ": shown on wx2 until the cron's own selection exists.\nreturn " . var_export($sel, true) . ";\n");
+		. ": shown on webcambest.php until the cron's own selection exists.\nreturn " . var_export($sel, true) . ";\n");
 }
 
 $thumbs = 0;
 if(!isset($opts['no-thumbs'])) {
 	$keep = array();
-	foreach(WebcamBest::gallery() as $e) {   // includes pins
-		if(!$e) { continue; }
+	foreach(WebcamBest::galleryFrames() as $e) {   // includes pins
 		$cam = isset($e['cam']) ? $e['cam'] : 'hik';
 		$keep[WebcamBest::thumbName($e['date'], $e['hm'], $cam)] = true;
 		if(WebcamBest::makeThumb($e['date'], $e['hm'], $cam)) { $thumbs++; }
