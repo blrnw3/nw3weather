@@ -1518,10 +1518,12 @@ class Data {
 	const SUMMARY_COUNT_BELOW = 7;
 	/** Mean daily anomaly vs the 1991-2020 normal (Ranked Periods, temperature only). */
 	const SUMMARY_ANOM = 8;
+	/** Longest qualifying spell overlapping each month (TablesDataMonth). */
+	const SUMMARY_SPELLS = 9;
 
 	public static $SUMMARY_NAMES = [
 		"mean", "total", "count", "lowest", "highest",
-		"range", "count ≥", "count <", "anomaly"
+		"range", "count ≥", "count <", "anomaly", "spells"
 	];
 	public static $SUMMARY_EXPLAIN = [
 		"monthly average",
@@ -1533,6 +1535,7 @@ class Data {
 		"number of days at or above a threshold",
 		"number of days below a threshold",
 		"mean difference from the daily normal",
+		"length of the longest qualifying spell overlapping each month",
 	];
 
 	/** True for thresholded day-count summaries. */

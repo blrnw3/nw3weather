@@ -431,6 +431,7 @@ function nw3_expensive_key_parts($kind, $report) {
 				(string)(int)$report->summaryType,
 				(string)$report->spellThreshold,
 				(string)$report->span,
+				(string)$report->spellDir,
 			);
 		case 'dataday':
 			return array(

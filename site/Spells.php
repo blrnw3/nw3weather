@@ -238,24 +238,20 @@ class Spells {
 	}
 
 	/**
-	 * Top-N longest spells for a variable / threshold / direction.
+	 * All qualifying consecutive-day spells for a variable / threshold / direction.
+	 * Same matching rules as RankSpells (including rain wet/dry blanks, anomaly
+	 * heatwave/coldsnap, and the ongoing current spell). Not month-filtered or top-N-capped.
 	 *
-	 * @param string $varName
-	 * @param float $threshold
-	 * @param string $direction 'above'|'below'
-	 * @param int $startYear
-	 * @param int $limit
-	 * @param int $month 0 = all; 1–12 = midpoint month filter
-	 * @return array spells, total, current, startYear
+	 * @return array{spells: array, current: ?array, startYear: int}
 	 */
-	public static function rankLongest($varName, $threshold, $direction, $startYear, $limit, $month = 0) {
+	public static function collectRuns($varName, $threshold, $direction, $startYear) {
 		$vals = self::loadDailySeries($varName, $startYear);
 		$varStart = isset(Wx::$daily[$varName]['start_year'])
 			? (int)Wx::$daily[$varName]['start_year'] : Site::BASE_YEAR;
 		$effStart = max((int)$startYear, $varStart);
 
 		if (self::isAnomalyDir($direction)) {
-			return self::rankAnomaly($varName, $vals, (float)$threshold, $direction, $effStart, $limit, $month);
+			return self::collectAnomalyRuns($varName, $vals, (float)$threshold, $direction, $effStart);
 		}
 
 		$opts = [];
@@ -280,22 +276,6 @@ class Spells {
 			$runs = self::findRuns($vals, $threshold, $direction, $opts);
 		}
 
-		$month = (int)$month;
-		if ($month >= 1 && $month <= 12) {
-			$filtered = [];
-			foreach ($runs as $spell) {
-				if ((int)substr($spell['midpointDate'], 5, 2) === $month) {
-					$filtered[] = $spell;
-				}
-			}
-			$runs = $filtered;
-		}
-
-		$top = [];
-		foreach ($runs as $spell) {
-			self::keepTop($top, $spell, (int)$limit);
-		}
-
 		$current = null;
 		if (count($vals)) {
 			$allForCurrent = ($varName === 'rain')
@@ -314,6 +294,70 @@ class Spells {
 		}
 
 		return [
+			'spells' => $runs,
+			'current' => $current,
+			'startYear' => $effStart,
+		];
+	}
+
+	/**
+	 * Longest qualifying spell that overlaps an inclusive Y-m-d range, or null.
+	 * Length is the spell's full consecutive-day length (RankSpells semantics),
+	 * not a running or in-range partial length.
+	 * @param array $spells from collectRuns()
+	 * @return int|null
+	 */
+	public static function longestOverlap($spells, $startYmd, $endYmd) {
+		$best = null;
+		foreach ($spells as $sp) {
+			if ($sp['endDate'] < $startYmd || $sp['startDate'] > $endYmd) { continue; }
+			$n = (int)$sp['length'];
+			if ($best === null || $n > $best) { $best = $n; }
+		}
+		return $best;
+	}
+
+	/**
+	 * Top-N longest spells for a variable / threshold / direction.
+	 *
+	 * @param string $varName
+	 * @param float $threshold
+	 * @param string $direction 'above'|'below'
+	 * @param int $startYear
+	 * @param int $limit
+	 * @param int $month 0 = all; 1–12 = midpoint month filter
+	 * @return array spells, total, current, startYear
+	 */
+	public static function rankLongest($varName, $threshold, $direction, $startYear, $limit, $month = 0) {
+		if (self::isAnomalyDir($direction)) {
+			$vals = self::loadDailySeries($varName, $startYear);
+			$varStart = isset(Wx::$daily[$varName]['start_year'])
+				? (int)Wx::$daily[$varName]['start_year'] : Site::BASE_YEAR;
+			$effStart = max((int)$startYear, $varStart);
+			return self::rankAnomaly($varName, $vals, (float)$threshold, $direction, $effStart, $limit, $month);
+		}
+		$found = self::collectRuns($varName, $threshold, $direction, $startYear);
+		$runs = $found['spells'];
+		$current = $found['current'];
+		$effStart = $found['startYear'];
+
+		$month = (int)$month;
+		if ($month >= 1 && $month <= 12) {
+			$filtered = [];
+			foreach ($runs as $spell) {
+				if ((int)substr($spell['midpointDate'], 5, 2) === $month) {
+					$filtered[] = $spell;
+				}
+			}
+			$runs = $filtered;
+		}
+
+		$top = [];
+		foreach ($runs as $spell) {
+			self::keepTop($top, $spell, (int)$limit);
+		}
+
+		return [
 			'spells' => $top,
 			'total' => count($runs),
 			'current' => $current,
@@ -329,7 +373,7 @@ class Spells {
  * heatwave, lowest in a cold snap) and that day's date.
 	 * @return array same shape as rankLongest
 	 */
-	private static function rankAnomaly($varName, $vals, $x, $direction, $effStart, $limit, $month) {
+	private static function collectAnomalyRuns($varName, $vals, $x, $direction, $effStart) {
 		$anom = self::anomalySeries($varName, $vals);
 		$hot = ($direction === 'heatwave');
 		$runs = [];
@@ -387,6 +431,23 @@ class Spells {
 				$current = $last;
 			}
 		}
+
+		return [
+			'spells' => $runs,
+			'current' => $current,
+			'startYear' => $effStart,
+		];
+	}
+
+	/**
+	 * Heatwave / cold snap ranking: runs of days each beyond normal ± X.
+	 * @return array same shape as rankLongest
+	 */
+	private static function rankAnomaly($varName, $vals, $x, $direction, $effStart, $limit, $month) {
+		$found = self::collectAnomalyRuns($varName, $vals, $x, $direction, $effStart);
+		$runs = $found['spells'];
+		$current = $found['current'];
+		$hot = ($direction === 'heatwave');
 
 		$month = (int)$month;
 		if ($month >= 1 && $month <= 12) {

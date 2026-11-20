@@ -16,7 +16,7 @@ Page::init([
 Page::requireNw3Ajax();
 
 
-$report = new Report(['default' => 'rain', 'badCats' => ['cloud']]);
+$report = new Report(['default' => 'rain', 'badCats' => ['cloud'], 'spellSummary' => true]);
 
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-store');
@@ -27,6 +27,9 @@ $html = ob_get_clean();
 
 $thLabels = isset($meta['thresholdLabels']) ? $meta['thresholdLabels'] : [];
 $thresholds = isset($meta['thresholds']) ? $meta['thresholds'] : [];
+$spellDirLabels = isset($meta['spellDirLabels']) ? $meta['spellDirLabels'] : [];
+$spellDirAttr = [];
+foreach ($spellDirLabels as $k => $v) { $spellDirAttr[] = $k . ':' . $v; }
 
 echo '<div id="dm-fragment"'
 	. ' data-type="' . htmlspecialchars($meta['type']) . '"'
@@ -37,6 +40,8 @@ echo '<div id="dm-fragment"'
 	. ' data-threshold="' . htmlspecialchars((string)$meta['threshold']) . '"'
 	. ' data-thresholds="' . htmlspecialchars(implode(',', $thresholds)) . '"'
 	. ' data-threshold-labels="' . htmlspecialchars(implode('|', $thLabels)) . '"'
+	. ' data-spell-dir="' . htmlspecialchars(isset($meta['spellDir']) ? $meta['spellDir'] : '') . '"'
+	. ' data-spell-dir-labels="' . htmlspecialchars(implode(',', $spellDirAttr)) . '"'
 	. ' data-title="' . htmlspecialchars($meta['title']) . '"'
 	. ' data-span="' . htmlspecialchars(isset($meta['span']) ? $meta['span'] : 'full') . '"'
 	. '>';
