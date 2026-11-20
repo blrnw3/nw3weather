@@ -21,13 +21,8 @@ RewriteRule ^ - [F,L]
 RewriteCond %{REMOTE_ADDR} ^66\.249\.
 RewriteRule ^(?:Rank(?:Day|Month|Year|Periods|Spells)|rank(?:day|month|year|periods|spells)data)\.php$ - [F,L,NC]
 
-# Azure public-cloud ranges are blocked site-wide in AzureBlock.php
-# (precise Service Tags CIDRs; Bingbot 40.77.x / 157.55.x / 207.46.x excluded).
-# The old first-octet 13/20/40/52 / 104.40-47 / 168.61-63 / 172.160-191 rules
-# also matched bingbot (40.77.x) and were removed.
-
 # Meta / Facebook cloud on expensive ranking reports only (2026-08-08).
-# Same scope as Azure/Googlebot. Scrapers on 57.141.20/24 (AS32934) have been
+# Same scope as the Googlebot rule above. Scrapers on 57.141.20/24 (AS32934) have been
 # combinatorially harvesting RankPeriods; also cover common FB crawl prefixes.
 RewriteCond %{REMOTE_ADDR} ^57\.141\.
 RewriteRule ^(?:Rank(?:Day|Month|Year|Periods|Spells)|rank(?:day|month|year|periods|spells)data)\.php$ - [F,L,NC]
@@ -119,19 +114,6 @@ deny from 14.63.229.34
 # Ezooms bot
 deny from 208.115.113.86
 deny from 208.115.111.70
-
-#azure
-deny from 20.245.68.8
-deny from 20.245.48.27
-deny from 20.245.27.17
-deny from 20.245.132.44
-deny from 20.245.53.246
-deny from 20.245.185.245
-deny from 20.168.156.18
-deny from 20.66.123.252
-deny from 168.62.6.194
-deny from 172.184.113.4
-deny from 52.241.253.39
 
 # Alibaba Cloud (AS45102/AS134963/AS37963/AS24429) + Aceville (AS132203)
 # RIPE announced prefixes, collapsed. Added 2026-08-02 vs RankDay scraper farm.
