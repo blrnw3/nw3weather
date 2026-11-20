@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Regenerate site/config/azure_cidrs.php and the Apache Require-not-ip snippet.
+"""Regenerate the Apache Require-not-ip snippet for Azure public-cloud ranges.
+
+Writes scripts/hardening/nw3-azure-block.conf and nw3-azure-block.inc only.
+Does not write a PHP CIDR file (site-level Azure blocking was removed).
 
 Source: Microsoft Azure Service Tags (Public cloud), tag AzureCloud, minus
 Bing/Microsoft search-crawler ranges from bingbot.json plus the well-known
@@ -20,7 +23,6 @@ import sys
 import urllib.request
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DEFAULT_OUT_PHP = os.path.join(REPO, "site", "config", "azure_cidrs.php")
 DEFAULT_OUT_CONF = os.path.join(REPO, "scripts", "hardening", "nw3-azure-block.conf")
 DEFAULT_OUT_INC = os.path.join(REPO, "scripts", "hardening", "nw3-azure-block.inc")
 
@@ -148,56 +150,6 @@ def subtract_holes(bases, holes):
     )
 
 
-def php_escape(s):
-    return s.replace("\\", "\\\\").replace("'", "\\'")
-
-
-def write_php(path, meta, v4, v6):
-    lines = [
-        "<?php",
-        "/**",
-        " * Generated Azure public-cloud CIDRs to block at the application layer.",
-        " * Do not edit by hand. Regenerate with:",
-        " *   python3 scripts/generate_azure_blocklist.py",
-        " *",
-        " * Source: Microsoft Service Tags Public, tag AzureCloud, changeNumber %s," % meta["changeNumber"],
-        " * file %s" % meta["source_file"],
-        " * %s" % meta["source_url"],
-        " * Bing/Microsoft crawler ranges excluded (bingbot.json + 40.77/16, 157.55/16, 207.46/16).",
-        " * DigitalOcean uptime probes are not in AzureCloud and are not blocked.",
-        " */",
-        "return array(",
-        "\t'meta' => array(",
-        "\t\t'source_file' => '%s'," % php_escape(meta["source_file"]),
-        "\t\t'source_url' => '%s'," % php_escape(meta["source_url"]),
-        "\t\t'changeNumber' => %s," % int(meta["changeNumber"]),
-        "\t\t'cloud' => 'Public',",
-        "\t\t'generated_at' => '%s'," % php_escape(meta["generated_at"]),
-        "\t\t'bingbot_creationTime' => '%s'," % php_escape(str(meta.get("bingbot_creationTime") or "")),
-        "\t\t'azurecloud_v4' => %d," % meta["azurecloud_v4"],
-        "\t\t'azurecloud_v6' => %d," % meta["azurecloud_v6"],
-        "\t\t'excluded_bing_cidrs' => %d," % meta["excluded_bing_cidrs"],
-        "\t\t'blocked_v4' => %d," % len(v4),
-        "\t\t'blocked_v6' => %d," % len(v6),
-        "\t\t'blocked_total' => %d," % (len(v4) + len(v6)),
-        "\t),",
-        "\t'v4' => array(",
-    ]
-    for n in v4:
-        lines.append("\t\t'%s'," % n)
-    lines.append("\t),")
-    lines.append("\t'v6' => array(")
-    for n in v6:
-        lines.append("\t\t'%s'," % n)
-    lines.append("\t),")
-    lines.append(");")
-    lines.append("")
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w") as f:
-        f.write("\n".join(lines))
-    log("Wrote %s (%d v4, %d v6)" % (path, len(v4), len(v6)))
-
-
 def write_apache(conf_path, inc_path, meta, v4, v6):
     header_inc = (
         "# Generated Require-not-ip lines for Azure public-cloud ranges.\n"
@@ -216,8 +168,8 @@ def write_apache(conf_path, inc_path, meta, v4, v6):
         f.writelines(inc_lines)
 
     conf = """# nw3-azure-block.conf
-# Apache-level equivalent of site/AzureBlock.php (Azure public-cloud CIDRs,
-# Bingbot excluded). PREPARE ONLY — do not apply without Ben's review.
+# Apache-level block of Azure public-cloud CIDRs (Bingbot excluded).
+# This is the site's Azure defence; there is no application-level block.
 #
 # Generated: {generated_at}
 # Source: {source_file} (Microsoft Service Tags Public, AzureCloud, changeNumber {changeNumber})
@@ -231,12 +183,10 @@ def write_apache(conf_path, inc_path, meta, v4, v6):
 #    A standalone `Require not ip` list will deny all clients.
 #  - Review AuthMerging / existing <Directory /var/www/html> Require rules (geofence,
 #    cam aliases) before enabling, then configtest, then reload. Do not restart first.
-#  - The application-level block in AzureBlock.php is the primary defence and can
-#    ship without this Apache snippet.
 #
-# Commands on nw3weather-v2 (after copying the file from a checkout of this PR):
+# Commands on nw3weather-v2 (after copying the file to /home/ben/nw3-azure-block/):
 #
-#   sudo install -m 644 scripts/hardening/nw3-azure-block.conf \\
+#   sudo install -o root -g root -m 644 /home/ben/nw3-azure-block/nw3-azure-block.conf \\
 #     /etc/apache2/conf-available/nw3-azure-block.conf
 #   sudo apache2ctl configtest
 #   sudo a2enconf nw3-azure-block
@@ -280,7 +230,6 @@ def main():
     ap.add_argument("--service-tags", help="Path to a ServiceTags_Public_*.json file")
     ap.add_argument("--bingbot", help="Path to bingbot.json")
     ap.add_argument("--cache-dir", default="/tmp/azure-ranges")
-    ap.add_argument("--out-php", default=DEFAULT_OUT_PHP)
     ap.add_argument("--out-conf", default=DEFAULT_OUT_CONF)
     ap.add_argument("--out-inc", default=DEFAULT_OUT_INC)
     args = ap.parse_args()
@@ -324,7 +273,6 @@ def main():
         "azurecloud_v6": len(azure_v6),
         "excluded_bing_cidrs": len(holes),
     }
-    write_php(args.out_php, meta, v4, v6)
     write_apache(args.out_conf, args.out_inc, meta, v4, v6)
     print(json.dumps({
         "source_file": source_file,
