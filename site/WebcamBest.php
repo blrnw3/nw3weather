@@ -249,6 +249,19 @@ class WebcamBest {
 	}
 
 	/**
+	 * A month's pins as a list: one pin ('JAN-03', '2026-01-14 07:30', array('JAN-03', 'caption')) or several,
+	 * array('JAN-05', 'JAN-06', array('JAN-08', 'caption')). A plain array counts as a list when every value is
+	 * itself a pin (an ID, a frame or an array); otherwise it is one pin with a caption.
+	 */
+	public static function pinList($pins) {
+		if (!is_array($pins)) { return $pins ? array($pins) : array(); }
+		foreach ($pins as $v) {
+			if (!is_array($v) && !preg_match('/^([A-Za-z]{3}-\d\d|\d{4}-\d\d-\d\d[ T]\d\d:?\d\d)$/', trim((string)$v))) { return array($pins); }
+		}
+		return array_values($pins);
+	}
+
+	/**
 	 * Parse a pin: a candidate ID ('JAN-03'), a frame ('2026-11-14 07:30'), or an array of either plus a caption
 	 * and optional camera: ['JAN-03', 'caption'] / ['2026-11-14 07:30', 'caption', 'hik']. Returns an entry or null.
 	 */
@@ -352,12 +365,18 @@ class WebcamBest {
 
 		$months = array(); $shown = array();
 		for ($mo = 1; $mo <= 12; $mo++) {
-			$e = isset($sel['months'][$mo]) ? $sel['months'][$mo] : null;
-			$p = isset($pins['months'][$mo]) ? self::pinEntry($pins['months'][$mo]) : null;
-			if ($p && (int)substr($p['date'], 5, 2) === $mo) { $e = $p; }
-			elseif ($e && self::isExcluded($ex, $e['date'], $e['hm'])) { $e = null; }
-			if ($e) { $shown[$e['date'] . ' ' . $e['hm']] = true; }
-			$months[$mo] = $e;
+			// hand picks win, in the order listed; otherwise the automatic pick
+			$list = array();
+			foreach (isset($pins['months'][$mo]) ? self::pinList($pins['months'][$mo]) : array() as $pin) {
+				$p = self::pinEntry($pin);
+				if (!$p || (int)substr($p['date'], 5, 2) !== $mo || isset($shown[$p['date'] . ' ' . $p['hm']])) { continue; }
+				$list[] = $p; $shown[$p['date'] . ' ' . $p['hm']] = true;
+			}
+			if (!$list) {
+				$e = isset($sel['months'][$mo]) ? $sel['months'][$mo] : null;
+				if ($e && !self::isExcluded($ex, $e['date'], $e['hm'])) { $list[] = $e; $shown[$e['date'] . ' ' . $e['hm']] = true; }
+			}
+			$months[$mo] = $list;
 		}
 		$slots = array();
 		foreach ($from as $k => $start) {
@@ -377,17 +396,28 @@ class WebcamBest {
 			if ($e) { $shown[$e['date'] . ' ' . $e['hm']] = true; }
 			$slots[$k] = $e;
 		}
-		$all = $slots + $months;
-		foreach ($all as $k => $e) {
-			if (!$e) { continue; }
-			$cam = isset($e['cam']) ? $e['cam'] : 'hik';
-			$e['src'] = self::frameUrl($e['date'], $e['hm'], $cam);
-			$tn = self::thumbName($e['date'], $e['hm'], $cam);
-			$e['thumb'] = is_file(self::thumbDir() . $tn) ? '/camchive/thumbs/best/' . $tn : $e['src'];
-			$e['ts'] = strtotime($e['date'] . ' ' . substr($e['hm'], 0, 2) . ':' . substr($e['hm'], 2));
-			$all[$k] = $e;
+		foreach ($slots as $k => $e) { $slots[$k] = $e ? self::withUrls($e) : null; }
+		foreach ($months as $mo => $list) { $months[$mo] = array_map(array(__CLASS__, 'withUrls'), $list); }
+		return $slots + $months;
+	}
+
+	/** Every frame the gallery shows (past month/year entries and each month's list), for the thumbnail cron. */
+	public static function galleryFrames() {
+		$out = array();
+		foreach (self::gallery() as $k => $v) {
+			if (!$v) { continue; }
+			if (is_int($k)) { foreach ($v as $e) { $out[] = $e; } } else { $out[] = $v; }
 		}
-		return $all;
+		return $out;
+	}
+
+	private static function withUrls($e) {
+		$cam = isset($e['cam']) ? $e['cam'] : 'hik';
+		$e['src'] = self::frameUrl($e['date'], $e['hm'], $cam);
+		$tn = self::thumbName($e['date'], $e['hm'], $cam);
+		$e['thumb'] = is_file(self::thumbDir() . $tn) ? '/camchive/thumbs/best/' . $tn : $e['src'];
+		$e['ts'] = strtotime($e['date'] . ' ' . substr($e['hm'], 0, 2) . ':' . substr($e['hm'], 2));
+		return $e;
 	}
 
 	/** Make (or keep) the 600x400 thumbnail for a frame. Local archive first, else the public archive host. */

@@ -34,7 +34,7 @@ function cam_best_figure($e, $heading) {
 $best_recent = array_filter(array('Past month' => $best['past_month'], 'Past year' => $best['past_year']));
 $best_months = array();
 foreach ($best_month_names as $mo => $name) {
-	if ($best[$mo]) { $best_months[$name] = $best[$mo]; }
+	foreach ($best[$mo] as $e) { $best_months[] = array($name, $e); }   // a month can have several hand picks
 }
 if ($best_recent || $best_months) { ?>
 <style>
@@ -74,7 +74,7 @@ if ($best_recent || $best_months) { ?>
 <?php if ($best_months) { ?>
 <h3>Best of each month, all years</h3>
 <div class="cam-best cam-best-months">
-<?php foreach ($best_months as $heading => $e) { cam_best_figure($e, $heading); } ?>
+<?php foreach ($best_months as $m) { cam_best_figure($m[1], $m[0]); } ?>
 </div>
 <?php } ?>
 <p>Picked automatically from the daily webcam summaries (colourful skies, sunrises and sunsets, snow, frost and fog), with some chosen by hand. Click an image for the full-size frame.</p>
