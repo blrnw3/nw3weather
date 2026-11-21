@@ -21,12 +21,19 @@ function dm_cell($html, $class = 'reportday', $extraClass = '') {
  * @param int $st Data::SUMMARY_*
  * @return string
  */
-function dm_spell_val($runs, $sy, $sm, $sd, $ey, $em, $ed) {
-	return Spells::longestOverlap(
+function dm_spell_val($runs, $kind, $periodKey, $sy, $sm, $sd, $ey, $em, $ed) {
+	return Spells::longestAttributed(
 		$runs,
+		$kind,
+		$periodKey,
 		sprintf('%04d-%02d-%02d', (int)$sy, (int)$sm, (int)$sd),
 		sprintf('%04d-%02d-%02d', (int)$ey, (int)$em, (int)$ed)
 	);
+}
+
+function dm_fmt_spell($val, $isRepeat) {
+	$txt = (string)(int)$val;
+	return $isRepeat ? ($txt . '*') : $txt;
 }
 
 function dm_fmt($report, $val, $st) {
@@ -120,6 +127,7 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 	$gridClass = $layout['gridClass'] ? (' ' . $layout['gridClass']) : '';
 	$fromYr = max((int)$startYr, (int)$report->startYear);
 	$spellRuns = [];
+	$hadSpellRepeat = false;
 	if ($isSpell) {
 		$spellFrom = ($span === 'seasonal') ? max(1, $fromYr - 1) : $fromYr;
 		$found = Spells::collectRuns($report->type, $report->spellThreshold, $report->spellDir, $spellFrom);
@@ -176,8 +184,13 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 					continue;
 				}
 				$days = Data::MDtoZ(Data::mergeYearMonths(Data::sliceSeasonDays($DAT, $ss, $y)));
+				$spellRepeat = false;
 				if ($isSpell) {
-					$val = dm_spell_val($spellRuns, $b['sy'], $b['sm'], $b['sd'], $b['ey'], $b['em'], $b['ed']);
+					list($val, $spellRepeat) = dm_spell_val(
+						$spellRuns, 'season', $y . '-' . $ss,
+						$b['sy'], $b['sm'], $b['sd'], $b['ey'], $b['em'], $b['ed']
+					);
+					if ($spellRepeat) { $hadSpellRepeat = true; }
 				} else {
 					$val = Data::summarize($days, $st, $threshold, $report->type);
 				}
@@ -186,7 +199,7 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 				if ($val !== null && !Util::isBlank($val)) {
 					$extreme[$y][$colKey] = $val;
 					$extreme[$colKey][$y] = $val;
-					$value = dm_fmt($report, $val, $st);
+					$value = $isSpell ? dm_fmt_spell($val, $spellRepeat) : dm_fmt($report, $val, $st);
 					$num = $report->valcolConvert ? Wx::convNum($val, $unit) : (float)$val;
 					$class = $isCount
 						? Report::dayCountClass($val)
@@ -234,9 +247,14 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 			} else {
 				$days = isset($yearDays[$m]) && is_array($yearDays[$m]) ? $yearDays[$m] : [];
 			}
+			$spellRepeat = false;
 			if ($isSpell) {
 				$lastD = $ytdThis ? $anomEndD : Date::get_days_in_month($m, $srcY);
-				$val = dm_spell_val($spellRuns, $srcY, $m, 1, $srcY, $m, $lastD);
+				list($val, $spellRepeat) = dm_spell_val(
+					$spellRuns, 'month', sprintf('%04d-%02d', $srcY, $m),
+					$srcY, $m, 1, $srcY, $m, $lastD
+				);
+				if ($spellRepeat) { $hadSpellRepeat = true; }
 			} else {
 				$val = Data::summarize($days, $st, $threshold, $report->type);
 			}
@@ -245,7 +263,7 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 			if ($val !== null && !Util::isBlank($val)) {
 				$extreme[$y][$colKey] = $val;
 				$extreme[$colKey][$y] = $val;
-				$value = dm_fmt($report, $val, $st);
+				$value = $isSpell ? dm_fmt_spell($val, $spellRepeat) : dm_fmt($report, $val, $st);
 				$num = $report->valcolConvert ? Wx::convNum($val, $unit) : (float)$val;
 				$class = $isCount
 					? Report::dayCountClass($val)
@@ -276,26 +294,34 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 		}
 
 		if ($isSpell) {
+			$spellRepeat = false;
+			$yrVal = null;
 			if ($span === 'ytd') {
-				if (Data::dateIsFuture($y, 1, 1)) {
-					$yrVal = null;
-				} else {
+				if (!Data::dateIsFuture($y, 1, 1)) {
 					$last = Data::clampDay($y, $endM, $endD);
-					$yrVal = dm_spell_val($spellRuns, $y, 1, 1, $y, $endM, $last);
+					list($yrVal, $spellRepeat) = dm_spell_val(
+						$spellRuns, 'year', (string)$y, $y, 1, 1, $y, $endM, $last
+					);
 				}
 			} elseif ($span === 'seasonal') {
 				$b = dm_seasonal_year_bounds($y);
-				$yrVal = ($b === null) ? null : dm_spell_val(
-					$spellRuns, $b['sy'], $b['sm'], $b['sd'], $b['ey'], $b['em'], $b['ed']
-				);
+				if ($b !== null) {
+					list($yrVal, $spellRepeat) = dm_spell_val(
+						$spellRuns, 'seasonal_year', (string)$y,
+						$b['sy'], $b['sm'], $b['sd'], $b['ey'], $b['em'], $b['ed']
+					);
+				}
 			} else {
-				$yrVal = dm_spell_val($spellRuns, $y, 1, 1, $y, 12, 31);
+				list($yrVal, $spellRepeat) = dm_spell_val(
+					$spellRuns, 'year', (string)$y, $y, 1, 1, $y, 12, 31
+				);
 			}
+			if ($spellRepeat) { $hadSpellRepeat = true; }
 			if ($yrVal === null || Util::isBlank($yrVal)) {
 				dm_cell('', 'reportday', 'dm-yr');
 			} else {
 				$yrAgg[$y] = $yrVal;
-				$valyr = dm_fmt($report, $yrVal, $st);
+				$valyr = dm_fmt_spell($yrVal, $spellRepeat);
 				dm_cell($valyr, Report::dayCountClass($yrVal), 'dm-yr');
 			}
 		} elseif ($span === 'ytd') {
@@ -443,11 +469,13 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 		echo '</div>';
 	}
 
+	echo '</div></div>'; // .dm-grid + .dm-scroll
 	if ($span === 'seasonal') {
 		echo '<p class="rk-blurb">* December is from the previous year (Winter YYYY = Dec of YYYY−1 + Jan–Feb of YYYY).</p>';
 	}
-
-	echo '</div></div>'; // .dm-grid + .dm-scroll
+	if ($isSpell && $hadSpellRepeat) {
+		echo '<p class="rk-blurb">* Repeated from the period that contains the spell midpoint.</p>';
+	}
 }
 
 /**

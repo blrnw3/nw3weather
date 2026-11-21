@@ -318,6 +318,135 @@ class Spells {
 	}
 
 	/**
+	 * Period key for a Y-m-d date.
+	 * $kind: month (YYYY-MM) | year (YYYY) | season (YYYY-winter|spring|summer|autumn)
+	 *        | seasonal_year (meteorological year, Winter-labelled).
+	 * @return string
+	 */
+	public static function periodKey($ymd, $kind) {
+		$y = (int)substr($ymd, 0, 4);
+		$m = (int)substr($ymd, 5, 2);
+		if ($kind === 'month') {
+			return sprintf('%04d-%02d', $y, $m);
+		}
+		if ($kind === 'year') {
+			return (string)$y;
+		}
+		$labelY = Data::seasonLabelYear($y, $m);
+		if ($kind === 'seasonal_year') {
+			return (string)$labelY;
+		}
+		if ($m === 12 || $m <= 2) { $season = 'winter'; }
+		elseif ($m <= 5) { $season = 'spring'; }
+		elseif ($m <= 8) { $season = 'summer'; }
+		else { $season = 'autumn'; }
+		return $labelY . '-' . $season;
+	}
+
+	/** First day of the period after the one containing $ymd, as Y-m-d. */
+	public static function nextPeriodStart($ymd, $kind) {
+		$y = (int)substr($ymd, 0, 4);
+		$m = (int)substr($ymd, 5, 2);
+		if ($kind === 'month') {
+			$m++;
+			if ($m > 12) { $m = 1; $y++; }
+			return sprintf('%04d-%02d-01', $y, $m);
+		}
+		if ($kind === 'year') {
+			return sprintf('%04d-01-01', $y + 1);
+		}
+		$labelY = Data::seasonLabelYear($y, $m);
+		if ($kind === 'seasonal_year') {
+			return sprintf('%04d-12-01', $labelY);
+		}
+		if ($m === 12 || $m <= 2) { return sprintf('%04d-03-01', $labelY); }
+		if ($m <= 5) { return sprintf('%04d-06-01', $y); }
+		if ($m <= 8) { return sprintf('%04d-09-01', $y); }
+		return sprintf('%04d-12-01', $y);
+	}
+
+	/**
+	 * Period keys a spell's inclusive date range touches, in order.
+	 * @return string[]
+	 */
+	public static function periodsTouched($startYmd, $endYmd, $kind) {
+		$keys = [];
+		$cur = $startYmd;
+		$guard = 0;
+		while ($cur <= $endYmd && $guard++ < 400) {
+			$key = self::periodKey($cur, $kind);
+			$keys[] = $key;
+			$cur = self::nextPeriodStart($cur, $kind);
+		}
+		return $keys;
+	}
+
+	/**
+	 * Assign a spell to period keys under the midpoint / repeat rule.
+	 *
+	 * Midpoint is the spell's midpointDate: start + floor((length-1)/2) days,
+	 * i.e. the earlier of the two central days when length is even (same rule
+	 * RankSpells uses for its month filter).
+	 *
+	 * One period: plain in that period.
+	 * Exactly two periods (crosses one boundary): plain only in the midpoint period.
+	 * Three or more: plain in the midpoint period, repeat in every other period touched.
+	 *
+	 * @return array{plain: string[], repeat: string[]}
+	 */
+	public static function attributeToPeriods($spell, $kind) {
+		$touched = self::periodsTouched($spell['startDate'], $spell['endDate'], $kind);
+		$mid = self::periodKey($spell['midpointDate'], $kind);
+		$n = count($touched);
+		if ($n <= 1) {
+			return ['plain' => $touched, 'repeat' => []];
+		}
+		if ($n === 2) {
+			return ['plain' => [$mid], 'repeat' => []];
+		}
+		$repeat = [];
+		foreach ($touched as $k) {
+			if ($k !== $mid) { $repeat[] = $k; }
+		}
+		return ['plain' => [$mid], 'repeat' => $repeat];
+	}
+
+	/**
+	 * Longest spell attributed to a display cell.
+	 *
+	 * $kind / $periodKey are the midpoint-rule periodization and the cell's key.
+	 * $cellStart / $cellEnd are the inclusive display range (may be YTD-truncated);
+	 * a spell must overlap that range to appear.
+	 *
+	 * If the longest attributed spell is a repeat but a non-repeat of equal
+	 * length exists, the plain (non-repeat) value is used.
+	 *
+	 * @param array $spells from collectRuns()
+	 * @return array{0:int|null,1:bool} [length, isRepeat]
+	 */
+	public static function longestAttributed($spells, $kind, $periodKey, $cellStart, $cellEnd) {
+		$bestPlain = null;
+		$bestRepeat = null;
+		foreach ($spells as $sp) {
+			if ($sp['endDate'] < $cellStart || $sp['startDate'] > $cellEnd) { continue; }
+			$attr = self::attributeToPeriods($sp, $kind);
+			$n = (int)$sp['length'];
+			if (in_array($periodKey, $attr['plain'], true)) {
+				if ($bestPlain === null || $n > $bestPlain) { $bestPlain = $n; }
+			} elseif (in_array($periodKey, $attr['repeat'], true)) {
+				if ($bestRepeat === null || $n > $bestRepeat) { $bestRepeat = $n; }
+			}
+		}
+		if ($bestPlain !== null && ($bestRepeat === null || $bestPlain >= $bestRepeat)) {
+			return [$bestPlain, false];
+		}
+		if ($bestRepeat !== null) {
+			return [$bestRepeat, true];
+		}
+		return [null, false];
+	}
+
+	/**
 	 * Top-N longest spells for a variable / threshold / direction.
 	 *
 	 * @param string $varName
