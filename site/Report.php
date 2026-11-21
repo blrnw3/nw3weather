@@ -153,6 +153,9 @@ class Report {
 			if ($this->needsThreshold()) {
 				$bits[] = 'threshold=' . $this->spellThreshold;
 			}
+			if ($kind === 'datamonth' && $this->summaryType === Data::SUMMARY_SPELLS) {
+				$bits[] = 'dir=' . $this->spellDir;
+			}
 		}
 		if ($kind === 'month' || $kind === 'year' || $kind === 'datamonth') {
 			$bits[] = 'span=' . $this->span;
@@ -188,7 +191,8 @@ class Report {
 	/** True when the current (or given) summary type needs a threshold chip row. */
 	public function needsThreshold($summaryType = null) {
 		$st = ($summaryType === null) ? $this->summaryType : (int)$summaryType;
-		return Data::isThresholdSummary($st) || $st === Data::SUMMARY_ANOM;
+		return Data::isThresholdSummary($st) || $st === Data::SUMMARY_ANOM
+			|| $st === Data::SUMMARY_SPELLS;
 	}
 
 	/** Display labels for anomaly presets ("±5 °C"). */
@@ -202,7 +206,10 @@ class Report {
 	 */
 	public function summaryTitleSuffix($summaryType = null) {
 		$st = ($summaryType === null) ? $this->summaryType : (int)$summaryType;
-		if (Data::isThresholdSummary($st)) {
+		if ($st === Data::SUMMARY_SPELLS) {
+			$base = $this->description . ' · '
+				. Spells::directionLabel($this->type, $this->spellDir, $this->spellThreshold);
+		} elseif (Data::isThresholdSummary($st)) {
 			$base = $this->description . ' · days ' . $this->summaryThresholdPhrase($st);
 		} elseif (!empty($this->meta['annual_only'])) {
 			$base = $this->description;
@@ -486,7 +493,9 @@ class Report {
 		$gSum = isset($_GET['summary_type']) ? (int)$_GET['summary_type'] : 0;
 		$anomThresh = !empty($opts['spellPage'])
 			? Spells::isAnomalyDir($this->spellDir)
-			: ($this->periodAnom && $gSum === Data::SUMMARY_ANOM);
+			: (($this->periodAnom && $gSum === Data::SUMMARY_ANOM)
+				|| (!empty($opts['spellSummary']) && $gSum === Data::SUMMARY_SPELLS
+					&& Spells::isAnomalyDir($this->spellDir)));
 		// Spell / count-threshold selectors share the same preset list; anomaly
 		// modes use °C-from-normal presets instead.
 		$this->spellThresholds = $anomThresh ? Spells::$anomPresets : Wx::thresholdPresets($this->type);
@@ -526,10 +535,13 @@ class Report {
 		if ($this->periodAnom) {
 			$this->availSummaryTypes[] = Data::SUMMARY_ANOM;
 		}
+		if (!empty($opts['spellSummary']) && !$this->isNotSummarisable) {
+			$this->availSummaryTypes[] = Data::SUMMARY_SPELLS;
+		}
 		}
 
 		$g = isset($_GET['summary_type']) ? (int)$_GET['summary_type'] : 0;
-		if ($g < 0 || $g > 8) { $g = 0; }
+		if ($g < 0 || $g > Data::SUMMARY_SPELLS) { $g = 0; }
 		if ($g <= 1) { $g = (int)$this->isSum; }
 		if (!in_array($g, $this->availSummaryTypes, true)) { $g = $this->availSummaryTypes[0]; }
 		$this->summaryType = $g;
@@ -1173,6 +1185,8 @@ class Report {
 		if ($mode === 'monthly' || $mode === 'rank-monthly' || $mode === 'rank-annual') {
 			$this->normalizeSpanFor($mode);
 		}
+		$showSpellRow = $showSpell || ($mode === 'monthly' && $showSummary);
+		$spellRowVisible = $showSpell || ($mode === 'monthly' && $this->summaryType === Data::SUMMARY_SPELLS);
 
 		$unitTxt0 = Wx::getUnitsText($this->unit);
 		$titleSuffix = ($unitTxt0 === '') ? $this->description : ($this->description . ' / ' . $unitTxt0);
@@ -1262,6 +1276,11 @@ class Report {
 				}
 			}
 			foreach ($overrides as $k => $v) { $params[$k] = $v; }
+			$stUrl = isset($params['summary_type']) ? (int)$params['summary_type'] : $this->summaryType;
+			if ($mode === 'monthly' && $stUrl === Data::SUMMARY_SPELLS) {
+				$params['spell_dir'] = $this->spellDir;
+				$params['threshold'] = $this->spellThreshold;
+			}
 			if (isset($params['day']) && (int)$params['day'] <= 0) {
 				unset($params['day'], $params['win']);
 			}
@@ -1328,8 +1347,9 @@ class Report {
 		}
 		echo '</div></div>';
 
-		if ($showSpell) {
-			echo '<div class="report-sel-row report-sel-labelled">';
+		if ($showSpellRow) {
+			echo '<div class="report-sel-row report-sel-labelled" id="report-sel-spell-dir"'
+				. ($spellRowVisible ? '' : ' hidden') . '>';
 			echo '<div class="wxsel-label">Spell</div>';
 			echo '<div class="wxsel-scale wxsel-spell-dir" role="tablist">';
 			foreach (Spells::directionChipLabels($this->type) as $dir => $lab) {

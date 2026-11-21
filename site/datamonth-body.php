@@ -21,7 +21,18 @@ function dm_cell($html, $class = 'reportday', $extraClass = '') {
  * @param int $st Data::SUMMARY_*
  * @return string
  */
+function dm_spell_val($runs, $sy, $sm, $sd, $ey, $em, $ed) {
+	return Spells::longestOverlap(
+		$runs,
+		sprintf('%04d-%02d-%02d', (int)$sy, (int)$sm, (int)$sd),
+		sprintf('%04d-%02d-%02d', (int)$ey, (int)$em, (int)$ed)
+	);
+}
+
 function dm_fmt($report, $val, $st) {
+	if ($st === Data::SUMMARY_SPELLS) {
+		return (string)(int)$val;
+	}
 	if (Data::isCountSummary($st)) {
 		return (string)nw3_round($val, 1);
 	}
@@ -92,7 +103,8 @@ function dm_seasonal_year_bounds($year, $present = null) {
 
 function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null) {
 	$unit = $report->summaryDisplayUnit($st);
-	$isCount = Data::isCountSummary($st);
+	$isSpell = ($st === Data::SUMMARY_SPELLS);
+	$isCount = Data::isCountSummary($st) || $isSpell;
 	$isAnom = $report->isAnom && ($st === Data::SUMMARY_MEAN || $st === Data::SUMMARY_SUM);
 	$sumOff = ($st === Data::SUMMARY_SUM) ? $report->valcolSumOffset() : 1;
 	$yrYest = (int)Date::$yr_yest;
@@ -107,6 +119,12 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 	$rowClass = $layout['rowClass'] ? (' ' . $layout['rowClass']) : '';
 	$gridClass = $layout['gridClass'] ? (' ' . $layout['gridClass']) : '';
 	$fromYr = max((int)$startYr, (int)$report->startYear);
+	$spellRuns = [];
+	if ($isSpell) {
+		$spellFrom = ($span === 'seasonal') ? max(1, $fromYr - 1) : $fromYr;
+		$found = Spells::collectRuns($report->type, $report->spellThreshold, $report->spellDir, $spellFrom);
+		$spellRuns = $found['spells'];
+	}
 	if ($span === 'full') {
 		$lastYr = $yrYest;
 	} elseif ($span === 'seasonal') {
@@ -158,7 +176,11 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 					continue;
 				}
 				$days = Data::MDtoZ(Data::mergeYearMonths(Data::sliceSeasonDays($DAT, $ss, $y)));
-				$val = Data::summarize($days, $st, $threshold, $report->type);
+				if ($isSpell) {
+					$val = dm_spell_val($spellRuns, $b['sy'], $b['sm'], $b['sd'], $b['ey'], $b['em'], $b['ed']);
+				} else {
+					$val = Data::summarize($days, $st, $threshold, $report->type);
+				}
 				$partial = !Data::seasonIsComplete($ss, $y);
 				$anom = ''; $value = '-'; $class = 'reportday';
 				if ($val !== null && !Util::isBlank($val)) {
@@ -174,6 +196,8 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 					}
 				} elseif (Util::mycount($days) === 0) {
 					$value = '-';
+				} elseif ($isSpell) {
+					$value = ''; $class = 'reportday';
 				} else {
 					$value = ''; $class = 'invalid';
 				}
@@ -210,7 +234,12 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 			} else {
 				$days = isset($yearDays[$m]) && is_array($yearDays[$m]) ? $yearDays[$m] : [];
 			}
-			$val = Data::summarize($days, $st, $threshold, $report->type);
+			if ($isSpell) {
+				$lastD = $ytdThis ? $anomEndD : Date::get_days_in_month($m, $srcY);
+				$val = dm_spell_val($spellRuns, $srcY, $m, 1, $srcY, $m, $lastD);
+			} else {
+				$val = Data::summarize($days, $st, $threshold, $report->type);
+			}
 
 			$colKey = (!empty($col['prevYear']) ? 'prev-' : '') . $m;
 			if ($val !== null && !Util::isBlank($val)) {
@@ -230,6 +259,8 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 				}
 			} elseif (Util::mycount($days) === 0) {
 				$value = '-';
+			} elseif ($isSpell) {
+				$value = ''; $class = 'reportday';
 			} else {
 				$value = ''; $class = 'invalid';
 			}
@@ -244,7 +275,30 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 			continue;
 		}
 
-		if ($span === 'ytd') {
+		if ($isSpell) {
+			if ($span === 'ytd') {
+				if (Data::dateIsFuture($y, 1, 1)) {
+					$yrVal = null;
+				} else {
+					$last = Data::clampDay($y, $endM, $endD);
+					$yrVal = dm_spell_val($spellRuns, $y, 1, 1, $y, $endM, $last);
+				}
+			} elseif ($span === 'seasonal') {
+				$b = dm_seasonal_year_bounds($y);
+				$yrVal = ($b === null) ? null : dm_spell_val(
+					$spellRuns, $b['sy'], $b['sm'], $b['sd'], $b['ey'], $b['em'], $b['ed']
+				);
+			} else {
+				$yrVal = dm_spell_val($spellRuns, $y, 1, 1, $y, 12, 31);
+			}
+			if ($yrVal === null || Util::isBlank($yrVal)) {
+				dm_cell('', 'reportday', 'dm-yr');
+			} else {
+				$yrAgg[$y] = $yrVal;
+				$valyr = dm_fmt($report, $yrVal, $st);
+				dm_cell($valyr, Report::dayCountClass($yrVal), 'dm-yr');
+			}
+		} elseif ($span === 'ytd') {
 			$yearDays = isset($DAT[$y]) && is_array($DAT[$y]) ? $DAT[$y] : [];
 			if (Data::dateIsFuture($y, 1, 1)) {
 				$yrVal = null;
@@ -416,6 +470,8 @@ function nw3_datamonth_render(Report $report) {
 			'threshold' => $report->spellThreshold,
 			'thresholds' => $report->spellThresholds,
 			'thresholdLabels' => $report->thresholdLabels(),
+			'spellDir' => $report->spellDir,
+			'spellDirLabels' => Spells::directionChipLabels($report->type),
 			'description' => $report->description,
 			'title' => $report->summaryTitleSuffix(),
 			'span' => $report->span,
@@ -437,6 +493,7 @@ function nw3_datamonth_render(Report $report) {
 		Data::SUMMARY_RANGE => 'range of daily values each month (max − min)',
 		Data::SUMMARY_COUNT_ABOVE => 'count of days at or above the chosen threshold',
 		Data::SUMMARY_COUNT_BELOW => 'count of days below the chosen threshold',
+		Data::SUMMARY_SPELLS => 'length of the longest qualifying spell overlapping each month',
 	];
 
 	$fromYr = max((int)$report->startYrReport, (int)$report->startYear);
@@ -446,7 +503,7 @@ function nw3_datamonth_render(Report $report) {
 		if ($st !== $report->summaryType) {
 			continue;
 		}
-		$th = Data::isThresholdSummary($st) ? $threshold : null;
+		$th = (Data::isThresholdSummary($st) || $st === Data::SUMMARY_SPELLS) ? $threshold : null;
 		echo "<div id='rank-$st' class='rank-tab scroll'>";
 		tdmMakeTable(
 			$report, $DAT, $st,
@@ -457,6 +514,10 @@ function nw3_datamonth_render(Report $report) {
 		$extra = '';
 		if (Data::isThresholdSummary($st)) {
 			$extra = ' (' . $report->summaryThresholdPhrase($st) . ')';
+		} elseif ($st === Data::SUMMARY_SPELLS) {
+			$extra = ' (' . htmlspecialchars(Spells::directionLabel(
+				$report->type, $report->spellDir, $report->spellThreshold
+			)) . ')';
 		}
 		echo '<p>' . $report->description . ': ' . $explain[$st] . $extra . ' for all months since '
 			. $fromYr . ' in London, NW3. Data for ' . $report->description
@@ -486,6 +547,8 @@ function nw3_datamonth_render(Report $report) {
 		'threshold' => $report->spellThreshold,
 		'thresholds' => $report->spellThresholds,
 		'thresholdLabels' => $report->thresholdLabels(),
+		'spellDir' => $report->spellDir,
+		'spellDirLabels' => Spells::directionChipLabels($report->type),
 		'description' => $report->description,
 		'title' => $report->summaryTitleSuffix(),
 		'span' => $report->span,

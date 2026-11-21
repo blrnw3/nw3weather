@@ -11,7 +11,7 @@ Page::init([
 ]);
 Page::Start();
 
-$report = new Report(["default" => "rain", "badCats" => ["cloud"]]);
+$report = new Report(["default" => "rain", "badCats" => ["cloud"], "spellSummary" => true]);
 $report->controls([
 	"heading" => "Monthly Data Tables",
 	"mode" => "monthly",

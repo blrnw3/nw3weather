@@ -274,10 +274,23 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			st = parseInt(st, 10);
 			return st === 6 || st === 7 || st === 8; // 8 = anomaly (± normal)
 		}
+		function isSpellSummary(st) {
+			return parseInt(st, 10) === 9; // Data::SUMMARY_SPELLS
+		}
+		function needsThreshold(st) {
+			return isThresholdSummary(st) || isSpellSummary(st);
+		}
 		function syncThresholdVisibility() {
 			var row = document.getElementById('report-sel-threshold');
 			if (!row) { return; }
-			var show = (mode === 'rank-spells') || isThresholdSummary(curSummary);
+			var show = (mode === 'rank-spells') || needsThreshold(curSummary);
+			if (show) { row.removeAttribute('hidden'); }
+			else { row.setAttribute('hidden', ''); }
+		}
+		function syncSpellDirVisibility() {
+			var row = document.getElementById('report-sel-spell-dir');
+			if (!row) { return; }
+			var show = (mode === 'rank-spells') || (mode === 'monthly' && isSpellSummary(curSummary));
 			if (show) { row.removeAttribute('hidden'); }
 			else { row.setAttribute('hidden', ''); }
 		}
@@ -303,10 +316,13 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				}
 				if (!curShowYears) { p.years = 0; }
 			} else if (mode === 'monthly') {
+				var sumM = curSummary;
+				if (overrides && overrides.summary_type != null) { sumM = parseInt(overrides.summary_type, 10); }
 				p.start_year_rep = curStart;
-				p.summary_type = curSummary;
+				p.summary_type = sumM;
 				p.span = curSpan;
-				if (isThresholdSummary(curSummary)) { p.threshold = curThreshold; }
+				if (needsThreshold(sumM)) { p.threshold = curThreshold; }
+				if (isSpellSummary(sumM)) { p.spell_dir = curSpellDir; }
 			} else if (isRank) {
 				p.start_year_rep = curStart;
 				if (mode !== 'rank-annual') { p.rankLimit = curRankLimit; }
@@ -572,6 +588,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 					+ spellDirLabels[d] + '</a>';
 			}
 			spellDirEl.innerHTML = html;
+			syncSpellDirVisibility();
 		}
 		function syncThresholdChips() {
 			if (!thresholdEl) { return; }
@@ -621,6 +638,8 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				});
 			}
 			root.setAttribute('data-summary-type', String(curSummary));
+			syncThresholdVisibility();
+			syncSpellDirVisibility();
 		}
 		function syncNavVartype() {
 			if (!curType) { return; }
@@ -633,7 +652,8 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		function stateObj() {
 			if (mode === 'monthly') {
 				var o = { vartype: curType, start_year_rep: curStart, summary_type: curSummary, span: curSpan };
-				if (isThresholdSummary(curSummary)) { o.threshold = curThreshold; }
+				if (needsThreshold(curSummary)) { o.threshold = curThreshold; }
+				if (isSpellSummary(curSummary)) { o.spell_dir = curSpellDir; }
 				return o;
 			}
 			if (mode === 'rank-daily') {
@@ -757,7 +777,8 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 			}
 			if (mode === 'monthly') {
 				if (o.start !== curStart || o.summary !== curSummary || (o.span || 'full') !== curSpan) { return false; }
-				if (isThresholdSummary(curSummary) && Math.abs(o.threshold - curThreshold) >= 1e-9) { return false; }
+				if (needsThreshold(curSummary) && Math.abs(o.threshold - curThreshold) >= 1e-9) { return false; }
+				if (isSpellSummary(curSummary) && o.spellDir !== curSpellDir) { return false; }
 				return true;
 			}
 			if (mode === 'rank-daily') {
@@ -829,10 +850,11 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				&& rankLimit === curRankLimit && period === curPeriod && noOverlap === curNoOverlap
 				&& span === curSpan
 				&& summary !== curSummary
-				&& !isThresholdSummary(summary) && !isThresholdSummary(curSummary)
+				&& !needsThreshold(summary) && !needsThreshold(curSummary)
 				&& document.getElementById('rank-' + summary)) {
 				showSummaryTab(summary);
 				syncThresholdVisibility();
+				syncSpellDirVisibility();
 				if (push !== false) { history.pushState(stateObj(), '', pageUrl()); }
 				return;
 			}
@@ -859,7 +881,8 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 				urlOverrides.start_year_rep = start;
 				urlOverrides.summary_type = summary;
 				urlOverrides.span = span;
-				if (isThresholdSummary(summary)) { urlOverrides.threshold = threshold; }
+				if (needsThreshold(summary)) { urlOverrides.threshold = threshold; }
+				if (isSpellSummary(summary)) { urlOverrides.spell_dir = spellDir; }
 			} else if (isRank) {
 				urlOverrides.start_year_rep = start;
 				if (mode !== 'rank-annual') { urlOverrides.rankLimit = rankLimit; }
@@ -1155,6 +1178,7 @@ $camImgNew .= (Page::$fileNum === 1) ? '_home.jpg' : '_wx2.jpg';
 		syncSpanChips();
 		syncStartYearVisibility();
 		syncThresholdVisibility();
+		syncSpellDirVisibility();
 		syncThresholdChips();
 		syncAggChips();
 		syncStartYearChips();
