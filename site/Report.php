@@ -644,6 +644,14 @@ class Report {
 		return 'level' . $level . '_' . $i;
 	}
 
+	/** valcolSumOffset() for a variable name, without a Report instance (1 when it has no scale). */
+	public static function valcolSumOffsetForType($type) {
+		self::initThresholds();
+		if (!isset(self::$valcolMap[$type], self::$thresholds[self::$valcolMap[$type]])) { return 1; }
+		$t = self::$thresholds[self::$valcolMap[$type]];
+		return 250 / $t[count($t) - 1];
+	}
+
 	/** Offset used to scale summed (total) values onto the per-value colour scale. */
 	public function valcolSumOffset() {
 		if ($this->valcolIdx === null) { return 1; }

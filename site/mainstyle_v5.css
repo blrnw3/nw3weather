@@ -977,6 +977,51 @@ div.charts-with-title .wxchart {
 	}
 }
 
+/* Annual report (wxhistyear): summary cards and monthly breakdown */
+.wx-cards.ar-cards {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	margin: 0.5rem 0 1rem;
+}
+@media only screen and (max-width: 1000px) {
+	.wx-cards.ar-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media only screen and (max-width: 560px) {
+	.wx-cards.ar-cards { grid-template-columns: minmax(0, 1fr); }
+}
+.ar-card .wx-card-now { font-size: 1.7rem; }
+.ar-card .wx-card-sub { font-size: 0.9rem; min-height: 1.2em; }
+.ar-card .wx-card-rows { font-size: 0.92rem; }
+.ar-card .wx-card-rows .v { white-space: nowrap; }
+.wx-card.wx-card-frost { border-top-color: #2B7BB9; }
+.wx-card-frost .wx-card-head.wx-card-head { color: #2B7BB9; }
+.wx-card.wx-card-storm { border-top-color: #6B5B95; }
+.wx-card-storm .wx-card-head.wx-card-head { color: #6B5B95; }
+.ar-anom {
+	font-size: 0.6em;
+	font-weight: 600;
+	color: #556;
+	background: #eef2ef;
+	border-radius: 0.6em;
+	padding: 0.05em 0.45em;
+	vertical-align: 0.25em;
+	white-space: nowrap;
+}
+.wx-card-rows .ar-anom { font-size: 0.8em; vertical-align: 0.05em; }
+.ar-unit { font-size: 0.55em; font-weight: 400; color: #555; }
+.ar-rank { color: #444; }
+.ar-rank-top { color: #15866A; font-weight: 600; }
+.ar-note { color: #555; font-size: 0.9rem; margin: 0.2rem 0 0.6rem; }
+.ar-break { font-size: 0.82rem; }
+.ar-break th, .ar-break td { padding: 0.3rem 0.5rem; }
+.ar-break thead tr.ar-units th { font-weight: 400; font-size: 0.72rem; color: #555; top: 1.55rem; }
+.ar-break .hm-day { text-align: left; min-width: 4.6rem; }
+.ar-break .ar-sub { display: block; font-size: 0.72rem; opacity: 0.85; }
+.ar-break td.ar-future { background: #f6f7f8; }
+.ar-break td.ar-zero { color: #999; }
+.ar-break tr.ar-total th, .ar-break tr.ar-total td { border-top: 2px solid #9aa5ad; font-weight: 700; }
+.ar-break tr.ar-total .ar-sub { font-weight: 400; }
+.ar-manual { margin-top: 1.5rem; }
+
 /* Legacy wide HTML tables: scroll rather than crush the page */
 .table-scroll {
 	overflow-x: auto;

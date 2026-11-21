@@ -257,7 +257,7 @@ Page::Start();
 			<a href="https://twitter.com/nw3weather">Link to nw3weather's twitter page</a> <br />
 			I have also put the feed at the bottom of the homepage so visitors can find it.
 		</p>
-		<p>P.S. The 2014 annual weather report has been archived <a href="repyear.php">here</a></p>
+		<p>P.S. The 2014 annual weather report has been archived <a href="wxhistyear.php?year=2014">here</a></p>
 		<span style="color:gray;font-style:italic">Posted: 3rd Oct 2015</span><br />
 	</td></tr>
 	<tr id="post-20141116"><td>

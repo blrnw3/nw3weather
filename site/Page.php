@@ -145,7 +145,7 @@ class Page {
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<!-- Buffered: $buffered -->
 		$metaRefresh
-		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20261117j" media="screen" title="screen" />
+		<link rel="stylesheet" type="text/css" href="/$styleSheet.css?20261121a" media="screen" title="screen" />
 		$colorCss
 		$scripts
 	</head>
@@ -550,7 +550,7 @@ END;
 				[
 					"title" => "Annual",
 					"text" => "Narrative annual weather summaries",
-					"page" => "repyear",
+					"page" => "wxhistyear",
 					"num" => 87,
 					"subhead" => true,
 				],
