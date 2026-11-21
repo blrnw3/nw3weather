@@ -1,13 +1,16 @@
 <?php
 require "Page.php";
 require "Report.php";
+require_once __DIR__ . '/AnnualReport.php';
 Page::init([
 	"fileNum" => 87,
 	"title" => "Annual Reports",
 	"description" => "Historical annual weather charts and summaries for Hampstead, London (NW3).",
 	"isSubFile" => true,
+	"needValcolStyle" => true,
 ]);
 Page::Start();
+Charts::assets();
 
 $yproc = isset($_GET['year']) ? intval($_GET['year']) : (int)Date::$yr_yest;
 $toofar = ($yproc < 2009 || $yproc > (int)Date::$dyear);
@@ -29,13 +32,39 @@ echo '</select></form></td><td align="right">';
 if ($cond2) { echo '<a href="/wxhistyear.php?year=' . ($yproc + 1) . '" title="Next year">Next Year&gt;&gt;</a>'; } else { echo 'Next Year&gt;&gt;'; }
 echo '</td></tr></table>';
 
-echo '<p>Monthly weather charts for every available variable in ' . $yproc . ' for London, NW3. '
-	. 'Long-term climate normals are overlaid where available. '
-	. '<a href="/wxhistmonth.php?year=' . $yproc . '&month=1" title="Detailed monthly reports">View detailed monthly reports</a>.</p>';
+// Old repyear.php#report-YYYY links arrive here: open that year's report.
+echo '<script>(function(){var m=/^#report-(\\d{4})$/.exec(location.hash);'
+	. 'if(m&&+m[1]!==' . $yproc . '&&+m[1]>=2009&&+m[1]<=' . (int)Date::$dyear . '){location.replace("/wxhistyear.php?year="+m[1]+location.hash);}})();</script>';
+
+// Data summary cards and the month-by-month table
+$annual = new AnnualReport($yproc);
+if ($annual->hasData()) {
+	echo '<h2 id="summary">Summary</h2>';
+	if ($annual->partial) {
+		echo '<p class="ar-note">1 Jan to ' . date('j M', Date::mkdate($annual->endM, $annual->endD, $yproc)) . ' ' . $yproc . '.</p>';
+	}
+	echo $annual->cardsHtml();
+	echo '<h2 id="monthly-breakdown">Monthly breakdown</h2>';
+	echo $annual->breakdownHtml();
+	echo '<p class="ar-note">Anomalies and percentages are against the 1991-2020 normal.</p>';
+}
+
+// Hand-written report for the year (annual-reports/YYYY.php), where there is one
+$manual = __DIR__ . '/annual-reports/' . $yproc . '.php';
+if (is_file($manual)) {
+	define('NW3_ANNUAL_REPORT', true);
+	echo '<section class="ar-manual" id="annual-report">';
+	include $manual;
+	echo '</section>';
+}
 
 // Written report for the year (Recap.php), or the year so far for the current year
 require_once __DIR__ . '/Recap.php';
 echo Recap::yearSection($yproc);
+
+echo '<p>Monthly weather charts for every available variable in ' . $yproc . ' for London, NW3. '
+	. 'Long-term climate normals are overlaid where available. '
+	. '<a href="/wxhistmonth.php?year=' . $yproc . '&month=1" title="Detailed monthly reports">View detailed monthly reports</a>.</p>';
 
 // Grid of monthly charts per variable for the chosen year
 echo '<div class="annual-charts">';
