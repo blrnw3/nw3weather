@@ -31,9 +31,9 @@ function dm_spell_val($runs, $kind, $periodKey, $sy, $sm, $sd, $ey, $em, $ed) {
 	);
 }
 
-function dm_fmt_spell($val, $isRepeat) {
+function dm_fmt_spell($val, $star) {
 	$txt = (string)(int)$val;
-	return $isRepeat ? ($txt . '*') : $txt;
+	return $star ? ($txt . '*') : $txt;
 }
 
 function dm_fmt($report, $val, $st) {
@@ -474,7 +474,7 @@ function tdmMakeTable($report, $DAT, $st, $heading, $startYr, $threshold = null)
 		echo '<p class="rk-blurb">* December is from the previous year (Winter YYYY = Dec of YYYY−1 + Jan–Feb of YYYY).</p>';
 	}
 	if ($isSpell && $hadSpellRepeat) {
-		echo '<p class="rk-blurb">* Repeated from the period that contains the spell midpoint.</p>';
+		echo '<p class="rk-blurb">* Spell crosses a period boundary; full length counted in the period containing its midpoint.</p>';
 	}
 }
 

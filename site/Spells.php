@@ -382,33 +382,46 @@ class Spells {
 	}
 
 	/**
-	 * Assign a spell to period keys under the midpoint / repeat rule.
+	 * Inclusive calendar-day count of the overlap of two Y-m-d ranges, or 0.
+	 */
+	public static function overlapDays($aStart, $aEnd, $bStart, $bEnd) {
+		$from = ($aStart > $bStart) ? $aStart : $bStart;
+		$to = ($aEnd < $bEnd) ? $aEnd : $bEnd;
+		if ($from > $to) { return 0; }
+		$p1 = array_map('intval', explode('-', $from));
+		$p2 = array_map('intval', explode('-', $to));
+		return gregoriantojd($p2[1], $p2[2], $p2[0]) - gregoriantojd($p1[1], $p1[2], $p1[0]) + 1;
+	}
+
+	/**
+	 * Contribution of one spell to a display cell under the midpoint / portion rule.
 	 *
 	 * Midpoint is the spell's midpointDate: start + floor((length-1)/2) days,
 	 * i.e. the earlier of the two central days when length is even (same rule
 	 * RankSpells uses for its month filter).
 	 *
-	 * One period: plain in that period.
-	 * Exactly two periods (crosses one boundary): plain only in the midpoint period.
-	 * Three or more: plain in the midpoint period, repeat in every other period touched.
+	 * The period containing the midpoint gets the spell's full qualifying length.
+	 * Every other period the spell touches gets only the number of spell days
+	 * falling inside the cell's display range (which may be YTD-truncated).
 	 *
-	 * @return array{plain: string[], repeat: string[]}
+	 * The star flag is true when that displayed value is a boundary-crossing
+	 * full length, or a truncated portion of a spell counted in another period.
+	 *
+	 * @return array{0:int,1:bool}|null [length, star], or null if no contribution
 	 */
-	public static function attributeToPeriods($spell, $kind) {
-		$touched = self::periodsTouched($spell['startDate'], $spell['endDate'], $kind);
-		$mid = self::periodKey($spell['midpointDate'], $kind);
-		$n = count($touched);
-		if ($n <= 1) {
-			return ['plain' => $touched, 'repeat' => []];
+	public static function cellContribution($spell, $kind, $periodKey, $cellStart, $cellEnd) {
+		if ($spell['endDate'] < $cellStart || $spell['startDate'] > $cellEnd) {
+			return null;
 		}
-		if ($n === 2) {
-			return ['plain' => [$mid], 'repeat' => []];
+		$midKey = self::periodKey($spell['midpointDate'], $kind);
+		if ($midKey === $periodKey) {
+			$touched = self::periodsTouched($spell['startDate'], $spell['endDate'], $kind);
+			$star = count($touched) >= 2;
+			return [(int)$spell['length'], $star];
 		}
-		$repeat = [];
-		foreach ($touched as $k) {
-			if ($k !== $mid) { $repeat[] = $k; }
-		}
-		return ['plain' => [$mid], 'repeat' => $repeat];
+		$days = self::overlapDays($spell['startDate'], $spell['endDate'], $cellStart, $cellEnd);
+		if ($days <= 0) { return null; }
+		return [$days, true];
 	}
 
 	/**
@@ -418,30 +431,32 @@ class Spells {
 	 * $cellStart / $cellEnd are the inclusive display range (may be YTD-truncated);
 	 * a spell must overlap that range to appear.
 	 *
-	 * If the longest attributed spell is a repeat but a non-repeat of equal
-	 * length exists, the plain (non-repeat) value is used.
+	 * The cell shows the max of (full length of spells whose midpoint is in this
+	 * period, clipped portions of spells whose midpoint is elsewhere). Colour
+	 * uses this displayed number. If a contained (plain) spell and a boundary
+	 * or portion value have equal length, the plain value is preferred.
 	 *
 	 * @param array $spells from collectRuns()
-	 * @return array{0:int|null,1:bool} [length, isRepeat]
+	 * @return array{0:int|null,1:bool} [length, star]
 	 */
 	public static function longestAttributed($spells, $kind, $periodKey, $cellStart, $cellEnd) {
 		$bestPlain = null;
-		$bestRepeat = null;
+		$bestStar = null;
 		foreach ($spells as $sp) {
-			if ($sp['endDate'] < $cellStart || $sp['startDate'] > $cellEnd) { continue; }
-			$attr = self::attributeToPeriods($sp, $kind);
-			$n = (int)$sp['length'];
-			if (in_array($periodKey, $attr['plain'], true)) {
+			$contrib = self::cellContribution($sp, $kind, $periodKey, $cellStart, $cellEnd);
+			if ($contrib === null) { continue; }
+			$n = $contrib[0];
+			if ($contrib[1]) {
+				if ($bestStar === null || $n > $bestStar) { $bestStar = $n; }
+			} else {
 				if ($bestPlain === null || $n > $bestPlain) { $bestPlain = $n; }
-			} elseif (in_array($periodKey, $attr['repeat'], true)) {
-				if ($bestRepeat === null || $n > $bestRepeat) { $bestRepeat = $n; }
 			}
 		}
-		if ($bestPlain !== null && ($bestRepeat === null || $bestPlain >= $bestRepeat)) {
+		if ($bestPlain !== null && ($bestStar === null || $bestPlain >= $bestStar)) {
 			return [$bestPlain, false];
 		}
-		if ($bestRepeat !== null) {
-			return [$bestRepeat, true];
+		if ($bestStar !== null) {
+			return [$bestStar, true];
 		}
 		return [null, false];
 	}
